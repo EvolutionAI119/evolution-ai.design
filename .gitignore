@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.python312/
+.venv/
+venv/
+env/
+
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+dist/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# Logs
+*.log
+
+# Model output files
+*.glb
+*.stl
+*.obj
+*.step
+*.iges
+*.gltf
