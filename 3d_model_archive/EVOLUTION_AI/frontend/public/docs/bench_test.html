@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>竞品对标浮窗 - 渲染测试</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0a0a1a;color:#c8d6e5;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+/* Topbar */
+#topbar{height:42px;flex-shrink:0;background:rgba(10,10,26,.85);backdrop-filter:blur(8px);display:flex;align-items:center;padding:0 12px;border-bottom:1px solid rgba(0,212,255,.1);z-index:200}
+.logo{color:#00d4ff;font-size:12px;font-weight:bold;letter-spacing:2px}
+.logo span{color:#3a506b;font-size:9px;margin-left:6px;font-weight:normal}
+.sep{width:1px;height:20px;background:rgba(0,212,255,.15);margin:0 10px}
+.actions{display:flex;gap:4px;margin-left:auto}
+.tbtn{padding:4px 10px;background:rgba(26,26,62,.6);border:1px solid rgba(0,212,255,.15);border-radius:4px;color:#5a6e8a;cursor:pointer;font-size:9px;transition:all .2s}
+.tbtn:hover{color:#00d4ff;border-color:rgba(0,212,255,.4)}
+.tbtn.on{background:rgba(0,212,255,.15);color:#00d4ff;border-color:rgba(0,212,255,.4)}
+
+/* Main area */
+#main{flex:1;position:relative;overflow:hidden;background:linear-gradient(135deg,#0a0a1a 0%,#0d1b2a 50%,#0a0a1a 100%);display:flex;align-items:center;justify-content:center}
+#main::after{content:'3D视口区域';color:#1a2a4a;font-size:24px;letter-spacing:4px}
+
+/* Benchmark panel */
+#bench2panel{position:absolute;left:50%;top:8px;width:min(860px,calc(100vw - 32px));max-height:calc(100vh - 90px);background:rgba(10,10,26,.96);border:1px solid rgba(0,212,255,.2);border-radius:10px;z-index:170;display:none;backdrop-filter:blur(10px);transform:translateX(-50%);overflow:hidden;flex-direction:column}
+.ptitle{cursor:grab;user-select:none}
+.b2tab{padding:4px 10px;background:rgba(26,26,62,.6);border:1px solid transparent;border-radius:4px;color:#5a6e8a;cursor:pointer;font-size:9px;transition:all .15s}
+.b2tab:hover{color:#8b9dc3;border-color:rgba(0,212,255,.2)}
+.b2tab.on{background:rgba(0,212,255,.15);color:#00d4ff;border-color:rgba(0,212,255,.3)}
+.b2content{min-height:260px}
+
+/* Status bar */
+#sbar{height:32px;flex-shrink:0;background:rgba(10,10,26,.85);border-top:1px solid rgba(0,212,255,.1);display:flex;align-items:center;padding:0 12px;font-size:9px;color:#3a506b;gap:16px;z-index:200}
+
+/* Draggable panel enhancement */
+#bench2panel.dragging{opacity:.85;box-shadow:0 8px 32px rgba(0,212,255,.15)}
+#bench2panel .ptitle:active{cursor:grabbing}
+
+/* Collapsible sidebar demo */
+#demoSidebar{position:absolute;left:-180px;top:42px;bottom:32px;width:200px;background:rgba(10,10,26,.92);border:1px solid rgba(0,212,255,.15);border-right:none;border-radius:0 8px 8px 0;z-index:150;display:flex;transition:left .35s cubic-bezier(.4,0,.2,1)}
+#demoSidebar.open{left:0}
+#demoSidebarToggle{position:absolute;top:50%;right:-28px;width:24px;height:60px;background:rgba(26,26,62,.8);border:1px solid rgba(0,212,255,.2);border-left:none;border-radius:0 6px 6px 0;color:#00d4ff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .25s}
+#demoSidebar:hover{background:rgba(0,212,255,.12)}
+#demoSidebar.open #demoSidebarToggle{transform:translateX(-100%)}
+#demoSidebarContent{width:180px;padding:8px;overflow-y:auto}
+#demoSidebarTitle{font-size:10px;color:#00d4ff;letter-spacing:1px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(0,212,255,.1)}
+.demoItem{padding:5px 8px;font-size:9px;color:#8b9dc3;border-radius:4px;cursor:pointer;transition:all .15s;margin-bottom:2px}
+.demoItem:hover{color:#c8d6e5;background:rgba(0,212,255,.08)}
+.demoItem.active{color:#00d4ff;background:rgba(0,212,255,.15)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo">EVOLUTION AI<span>Hardpoint-Driven Design</span></div>
+  <div class="sep"></div>
+  <div class="actions">
+    <button class="tbtn">旋转</button>
+    <button class="tbtn">线框</button>
+    <button class="tbtn">标杆</button>
+    <button class="tbtn" id="bBench2">竞品对标</button>
+    <button class="tbtn">VR模式</button>
+  </div>
+</div>
+
+<div id="main">
+  <!-- 可折叠侧栏演示 -->
+  <div id="demoSidebar">
+    <div id="demoSidebarToggle">◀</div>
+    <div id="demoSidebarContent">
+      <div class="ptitle" id="demoSidebarTitle">车型库</div>
+      <div class="demoItem active">C级轿车 (当前)</div>
+      <div class="demoItem">中型SUV</div>
+      <div class="demoItem">行政轿车</div>
+      <div class="demoItem">电动轿跑</div>
+      <div class="demoItem">大型SUV</div>
+      <div style="margin-top:12px;padding-top:8px;border-top:1px solid rgba(0,212,255,.1)">
+        <div class="ptitle" id="demoSidebarTitle2" style="font-size:9px;color:#5a6e8a;letter-spacing:.5px">UI功能演示</div>
+        <div style="font-size:8px;color:#3a506b;margin-bottom:4px">点击下方按钮测试:</div>
+        <div class="demoItem" id="btnDragDemo" style="background:rgba(0,212,255,.08);color:#00d4ff">→ 拖拽浮窗标题栏</div>
+        <div class="demoItem" id="btnCollapseDemo" style="background:rgba(0,212,255,.08);color:#00d4ff">← 折叠此侧栏</div>
+        <div class="demoItem" id="btnResetPos" style="background:rgba(0,212,255,.08);color:#00d4ff">↺ 重置面板位置</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 竞品对标面板 -->
+  <div id="bench2panel">
+    <div class="ptitle" style="padding:10px 14px;background:rgba(0,212,255,.06);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,212,255,.1);flex-shrink:0">
+      <span style="color:#00d4ff;font-size:11px;letter-spacing:1px">竞品对标可视化分析</span>
+      <span style="color:#5a6e8a;cursor:pointer;font-size:14px" id="bench2Close">✕</span>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:12px">
+      <div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="b2tab on" data-tab="radar">雷达图</button>
+        <button class="b2tab" data-tab="market">市场规模</button>
+        <button class="b2tab" data-tab="heatmap">能力矩阵</button>
+        <button class="b2tab" data-tab="position">定位象限</button>
+        <button class="b2tab" data-tab="gap">差距分析</button>
+        <button class="b2tab" data-tab="unique">独特优势</button>
+        <button class="b2tab" data-tab="tech">技术栈</button>
+      </div>
+      <div id="b2radar" class="b2content"><div style="position:relative;height:340px"><canvas id="b2chartRadar"></canvas></div>
+        <div id="b2radarLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;justify-content:center"></div>
+      </div>
+      <div id="b2market" class="b2content" style="display:none"><div style="position:relative;height:280px"><canvas id="b2chartMarket"></canvas></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px">
+          <div style="text-align:center;padding:8px;background:rgba(26,26,62,.4);border-radius:6px"><div style="font-size:20px;color:#00ff88;font-weight:bold">47.8</div><div style="font-size:9px;color:#5a6e8a">亿元(2025)</div></div>
+          <div style="text-align:center;padding:8px;background:rgba(26,26,62,.4);border-radius:6px"><div style="font-size:20px;color:#00d4ff;font-weight:bold">12.6%</div><div style="font-size:9px;color:#5a6e8a">同比增长</div></div>
+          <div style="text-align:center;padding:8px;background:rgba(26,26,62,.4);border-radius:6px"><div style="font-size:20px;color:#ffd700;font-weight:bold">9.0%</div><div style="font-size:9px;color:#5a6e8a">国产化率↑</div></div>
+        </div>
+      </div>
+      <div id="b2heatmap" class="b2content" style="display:none"><div style="position:relative;height:340px"><canvas id="b2chartHeatmap"></canvas></div></div>
+      <div id="b2position" class="b2content" style="display:none">
+        <div id="b2posMap" style="position:relative;width:100%;height:300px;background:rgba(26,26,62,.3);border-radius:8px;overflow:hidden">
+          <div style="position:absolute;bottom:28px;left:50px;right:16px;height:1px;background:rgba(0,212,255,.2)"></div>
+          <div style="position:absolute;left:50px;top:16px;bottom:28px;width:1px;background:rgba(0,212,255,.2)"></div>
+          <div style="position:absolute;left:50px;bottom:10px;font-size:8px;color:#3a506b">低创意自由</div>
+          <div style="position:absolute;right:16px;bottom:10px;font-size:8px;color:#3a506b">高创意自由</div>
+          <div style="position:absolute;left:6px;top:16px;font-size:8px;color:#3a506b">高精度</div>
+          <div style="position:absolute;left:6px;bottom:28px;font-size:8px;color:#3a506b">低精度</div>
+        </div>
+      </div>
+      <div id="b2gap" class="b2content" style="display:none">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="border-bottom:1px solid rgba(0,212,255,.15)"><th style="font-size:9px;color:#00d4ff;text-align:left;padding:5px 8px">差距领域</th><th style="font-size:9px;color:#00d4ff;text-align:left;padding:5px 8px">竞品水平</th><th style="font-size:9px;color:#00d4ff;text-align:left;padding:5px 8px">当前→目标</th><th style="font-size:9px;color:#00d4ff;text-align:left;padding:5px 8px">改进方向</th></tr></thead>
+          <tbody id="b2gapBody"></tbody>
+        </table>
+      </div>
+      <div id="b2unique" class="b2content" style="display:none"><div style="position:relative;height:280px"><canvas id="b2chartUnique"></canvas></div></div>
+      <div id="b2tech" class="b2content" style="display:none"><div style="position:relative;height:340px"><canvas id="b2chartTech"></canvas></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;justify-content:center" id="b2techLegend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sbar">
+  <span>EVOLUTION AI v3.1</span>
+  <span>竞品对标渲染测试</span>
+  <span style="margin-left:auto;color:#00ff88">Chart.js Ready</span>
+</div>
+
+<script>
+// ========== 模拟竞品数据 ==========
+var COMP=['阿尔特太乙','FORMA','质境','AIVA','NURBGen','EVOLUTION AI'];
+var CLR=['#ff6b6b','#ffa502','#7bed9f','#70a1ff','#a29bfe','#00d4ff'];
+var BGC=CLR.map(function(c){return c+'33'});
+
+var DIMS=['文本→3D','NURBS曲面','IGES/STEP','实时交互','空气动力学','车型数据库','开源可用','卡尔曼滤波','多CAD对接'];
+var DATA={
+  '阿尔特太乙':[9,8,9,7,9,9,0,0,8],
+  'FORMA':[3,0,0,8,0,3,0,0,0],
+  '质境':[6,3,3,4,0,4,0,0,3],
+  'AIVA':[2,8,0,0,2,0,0,0,0],
+  'NURBGen':[8,9,7,0,0,4,7,0,6],
+  'EVOLUTION AI':[6,9,8,9,0,8,10,10,8]
+};
+
+var MKT_YEARS=['2022','2023','2024','2025','2026E'];
+var MKT_SIZE=[32.1,36.5,42.4,47.8,53.8];
+var DOM_RATE=[4.2,5.1,6.5,9.0,13.5];
+
+var POS=[
+  {name:'阿尔特太乙',x:30,y:88,sub:'B2B整车厂'},
+  {name:'FORMA',x:82,y:22,sub:'设计师辅助'},
+  {name:'质境',x:45,y:48,sub:'B2B设计院'},
+  {name:'AIVA',x:70,y:55,sub:'新势力车企'},
+  {name:'NURBGen',x:55,y:62,sub:'学术研究'},
+  {name:'EVOLUTION AI',x:52,y:78,sub:'教学/研究'}
+];
+
+var GAPS=[
+  {name:'Text-to-3D',compete:'NURBGen LLM→NURBS',cur:30,tgt:70,dir:'接入LLM翻译HP参数'},
+  {name:'CFD风阻预测',compete:'太乙"御风"偏差3-5%',cur:0,tgt:60,dir:'集成OpenFOAM/Modulus'},
+  {name:'A级曲面连续性',compete:'AIVA G4连续',cur:50,tgt:85,dir:'NURBS degree 3→5'},
+  {name:'云协作',compete:'质境云端部署',cur:0,tgt:50,dir:'WebSocket同步'},
+  {name:'VR/AR预览',compete:'部分竞品支持',cur:15,tgt:60,dir:'WebXR完整实现'}
+];
+
+var UDIMS=['硬点驱动','卡尔曼滤波','A2MAC1断面','三区权重','Tumblehome','全开源','零依赖','多后端'];
+var USCORES=[9,10,8,7,8,10,9,8];
+
+var TLABELS=['LLM/AI','CAD内核','实时渲染','CFD仿真','数据格式','开源生态'];
+var TDATA={
+  '阿尔特太乙':[9,8,7,9,8,2],
+  'FORMA':[8,2,6,0,2,1],
+  '质境':[7,5,5,0,4,1],
+  'AIVA':[7,6,4,2,3,1],
+  'NURBGen':[8,7,0,0,6,7],
+  'EVOLUTION AI':[4,9,9,0,9,10]
+};
+
+// ========== 面板控制 ==========
+var panelOpen=false;
+document.getElementById('bBench2').onclick=function(e){
+  panelOpen=!panelOpen;
+  document.getElementById('bench2panel').style.display=panelOpen?'flex':'none';
+  e.target.classList.toggle('on',panelOpen);
+  if(panelOpen&&!window._b2init){initBench2();window._b2init=true;}
+};
+document.getElementById('bench2Close').onclick=function(){
+  document.getElementById('bench2panel').style.display='none';
+  document.getElementById('bBench2').classList.remove('on');
+  panelOpen=false;
+};
+
+// ========== 图表初始化 ==========
+function initBench2(){
+  // Tab切换
+  document.querySelectorAll('.b2tab').forEach(function(tab){
+    tab.onclick=function(){
+      document.querySelectorAll('.b2tab').forEach(function(t){t.classList.remove('on')});
+      tab.classList.add('on');
+      document.querySelectorAll('.b2content').forEach(function(c){c.style.display='none'});
+      var el=document.getElementById('b2'+tab.dataset.tab);
+      if(el)el.style.display='block';
+      // 定位象限图需要在可见后重新计算位置
+      if(tab.dataset.tab==='position') setTimeout(renderPosMap,50);
+    };
+  });
+
+  // 1. 雷达图
+  new Chart(document.getElementById('b2chartRadar'),{
+    type:'radar',
+    data:{labels:DIMS,datasets:COMP.map(function(n,i){
+      return{label:n,data:DATA[n],borderColor:CLR[i],backgroundColor:BGC[i],borderWidth:2,pointBackgroundColor:CLR[i],pointRadius:3}
+    })},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{r:{beginAtZero:true,max:10,
+        ticks:{stepSize:2,color:'#3a506b',backdropColor:'transparent',font:{size:7}},
+        grid:{color:'rgba(0,212,255,.1)'},angleLines:{color:'rgba(0,212,255,.1)'},
+        pointLabels:{color:'#8b9dc3',font:{size:8}}
+      }}
+    }
+  });
+  document.getElementById('b2radarLegend').innerHTML=COMP.map(function(n,i){
+    return'<div style="display:flex;align-items:center;gap:3px;font-size:9px;color:#8b9dc3"><div style="width:8px;height:8px;border-radius:2px;background:'+CLR[i]+'"></div>'+n+'</div>';
+  }).join('');
+
+  // 2. 市场规模
+  new Chart(document.getElementById('b2chartMarket'),{
+    type:'bar',
+    data:{labels:MKT_YEARS,datasets:[
+      {label:'市场规模(亿元)',data:MKT_SIZE,backgroundColor:'rgba(0,212,255,.35)',borderColor:'#00d4ff',borderWidth:1,yAxisID:'y'},
+      {label:'国产化率(%)',data:DOM_RATE,type:'line',borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,.1)',pointBackgroundColor:'#00ff88',pointRadius:3,tension:.3,yAxisID:'y1',fill:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b9dc3',font:{size:9}}}},
+      scales:{
+        x:{ticks:{color:'#5a6e8a',font:{size:9}},grid:{color:'rgba(0,212,255,.06)'}},
+        y:{position:'left',ticks:{color:'#00d4ff',font:{size:8},callback:function(v){return v+'亿'}},grid:{color:'rgba(0,212,255,.06)'}},
+        y1:{position:'right',ticks:{color:'#00ff88',font:{size:8},callback:function(v){return v+'%'}},grid:{display:false}}
+      }
+    }
+  });
+
+  // 3. 能力矩阵
+  new Chart(document.getElementById('b2chartHeatmap'),{
+    type:'bar',
+    data:{labels:DIMS,datasets:COMP.map(function(name,ci){
+      return{label:name,data:DIMS.map(function(d,di){return DATA[name][di]}),
+        backgroundColor:DIMS.map(function(d,di){
+          var v=DATA[name][di];
+          if(v===0)return'rgba(26,26,62,.6)';if(v<=3)return'rgba(255,165,2,.25)';
+          if(v<=6)return'rgba(0,212,255,.35)';if(v<=8)return'rgba(0,255,136,.4)';
+          return'rgba(0,255,136,.7)';
+        }),borderColor:'rgba(10,10,26,.8)',borderWidth:1}
+    })},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b9dc3',font:{size:8}},position:'right'},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.raw+'/10'}}}
+      },
+      scales:{
+        x:{stacked:true,max:60,ticks:{color:'#3a506b',font:{size:8}},grid:{color:'rgba(0,212,255,.06)'}},
+        y:{stacked:true,ticks:{color:'#8b9dc3',font:{size:8}},grid:{display:false}}
+      }
+    }
+  });
+
+  // 4. 定位象限 - 延迟渲染（首次默认不显示，切到该tab时渲染）
+  window._posRendered=false;
+
+  // 5. 差距分析
+  var gb=document.getElementById('b2gapBody');
+  GAPS.forEach(function(g){
+    var tr=document.createElement('tr');
+    tr.style.borderBottom='1px solid rgba(0,212,255,.05)';
+    tr.innerHTML='<td style="font-size:9px;color:#e0e6ed;font-weight:bold;padding:5px 8px">'+g.name+'</td>'
+      +'<td style="font-size:9px;color:#ffa502;padding:5px 8px">'+g.compete+'</td>'
+      +'<td style="padding:5px 8px"><div style="height:6px;border-radius:3px;background:rgba(26,26,62,.6);width:100px;position:relative">'
+      +'<div style="height:100%;border-radius:3px;width:'+g.cur+'%;background:linear-gradient(90deg,#00d4ff,#00ff88)"></div>'
+      +'<div style="position:absolute;top:-3px;left:'+g.tgt+'%;width:2px;height:12px;background:#fff;border-radius:1px"></div>'
+      +'</div><div style="font-size:7px;color:#5a6e8a;margin-top:1px">'+g.cur+'% → '+g.tgt+'%</div></td>'
+      +'<td style="font-size:9px;color:#00d4ff;padding:5px 8px">'+g.dir+'</td>';
+    gb.appendChild(tr);
+  });
+
+  // 6. 独特优势
+  new Chart(document.getElementById('b2chartUnique'),{
+    type:'bar',
+    data:{labels:UDIMS,datasets:[{data:USCORES,
+      backgroundColor:USCORES.map(function(v){return v>=9?'rgba(0,255,136,.5)':v>=7?'rgba(0,212,255,.4)':'rgba(255,165,2,.3)'}),
+      borderColor:USCORES.map(function(v){return v>=9?'#00ff88':v>=7?'#00d4ff':'#ffa502'}),borderWidth:1
+    }]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{max:10,ticks:{color:'#5a6e8a',font:{size:8}},grid:{color:'rgba(0,212,255,.06)'}},
+        y:{ticks:{color:'#8b9dc3',font:{size:8}},grid:{display:false}}
+      }
+    }
+  });
+
+  // 7. 技术栈雷达
+  new Chart(document.getElementById('b2chartTech'),{
+    type:'radar',
+    data:{labels:TLABELS,datasets:COMP.map(function(n,i){
+      return{label:n,data:TDATA[n],borderColor:CLR[i],backgroundColor:BGC[i],borderWidth:2,pointBackgroundColor:CLR[i],pointRadius:3}
+    })},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8b9dc3',font:{size:8}},position:'right'}},
+      scales:{r:{beginAtZero:true,max:10,
+        ticks:{stepSize:2,color:'#3a506b',backdropColor:'transparent',font:{size:7}},
+        grid:{color:'rgba(0,212,255,.1)'},angleLines:{color:'rgba(0,212,255,.1)'},
+        pointLabels:{color:'#8b9dc3',font:{size:8}}
+      }}
+    }
+  });
+  document.getElementById('b2techLegend').innerHTML=COMP.map(function(n,i){
+    return'<div style="display:flex;align-items:center;gap:3px;font-size:9px;color:#8b9dc3"><div style="width:8px;height:8px;border-radius:2px;background:'+CLR[i]+'"></div>'+n+'</div>';
+  }).join('');
+
+  console.log('Benchmark panel initialized with mock data');
+}
+
+// 定位象限图渲染（延迟到tab可见时）
+function renderPosMap(){
+  var posMap=document.getElementById('b2posMap');
+  // 清除旧散点
+  posMap.querySelectorAll('.pos-dot').forEach(function(d){d.remove()});
+  var mw=posMap.offsetWidth-66,mh=posMap.offsetHeight-44;
+  if(mw<10||mh<10)return; // 面板不可见时跳过
+  POS.forEach(function(p,i){
+    var d=document.createElement('div');
+    d.className='pos-dot';
+    d.style.cssText='position:absolute;transform:translate(-50%,-50%);cursor:pointer;transition:all .3s';
+    d.style.left=(50+p.x/100*mw)+'px';
+    d.style.top=(16+(100-p.y)/100*mh)+'px';
+    d.innerHTML='<div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:#000;background:'+CLR[i]+';box-shadow:0 0 10px rgba(0,0,0,.3);transition:all .3s">'+p.name.charAt(0)+'</div>'
+      +'<div style="text-align:center;margin-top:3px;white-space:nowrap;font-size:8px;color:#8b9dc3">'+p.name+'<br><span style="font-size:7px;color:#3a506b">'+p.sub+'</span></div>';
+    d.onmouseenter=function(){d.querySelector('div').style.transform='scale(1.2)';d.querySelector('div').style.boxShadow='0 0 16px '+CLR[i]+'66'};
+    d.onmouseleave=function(){d.querySelector('div').style.transform='';d.querySelector('div').style.boxShadow='0 0 10px rgba(0,0,0,.3)'};
+    posMap.appendChild(d);
+  });
+  window._posRendered=true;
+}
+
+// 自动打开面板
+setTimeout(function(){
+  document.getElementById('bBench2').click();
+},500);
+
+// ========== 可拖拽面板 ==========
+(function(){
+  var panel=document.getElementById('bench2panel');
+  var title=panel.querySelector('.ptitle');
+  var isDragging=false,offsetX,offsetY,startX,startY;
+
+  title.addEventListener('mousedown',function(e){
+    if(e.target.id==='bench2Close')return;
+    // 切换到绝对定位（脱离居中）
+    panel.style.left=(panel.getBoundingClientRect().left)+'px';
+    panel.style.top=(panel.getBoundingClientRect().top)+'px';
+    panel.style.transform='none';
+    panel.classList.add('dragging');
+    isDragging=true;
+    offsetX=e.clientX-panel.getBoundingClientRect().left;
+    offsetY=e.clientY-panel.getBoundingClientRect().top;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove',function(e){
+    if(!isDragging)return;
+    var nx=e.clientX-offsetX;
+    var ny=e.clientY-offsetY;
+    // 边界约束
+    var mw=panel.offsetWidth,mh=panel.offsetHeight;
+    nx=Math.max(0,Math.min(nx,window.innerWidth-mw));
+    ny=Math.max(42,Math.min(ny,window.innerHeight-32-mh));
+    panel.style.left=nx+'px';
+    panel.style.top=ny+'px';
+  });
+
+  document.addEventListener('mouseup',function(){
+    if(isDragging){
+      isDragging=false;
+      panel.classList.remove('dragging');
+    }
+  });
+})();
+
+// ========== 可折叠侧栏 ==========
+(function(){
+  var sb=document.getElementById('demoSidebar');
+  var tg=document.getElementById('demoSidebarToggle');
+  tg.onclick=function(){
+    sb.classList.toggle('open');
+    tg.textContent=sb.classList.contains('open')?'▶':'◀';
+  };
+
+  // 演示按钮
+  document.getElementById('btnCollapseDemo').onclick=function(){sb.classList.toggle('open');tg.textContent=sb.classList.contains('open')?'▶':'◀';};
+  document.getElementById('btnResetPos').onclick=function(){
+    var p=document.getElementById('bench2panel');
+    p.style.left='50%';
+    p.style.top='8px';
+    p.style.transform='translateX(-50%)';
+  };
+  document.getElementById('btnDragDemo').onclick=function(){
+    if(!panelOpen)document.getElementById('bBench2').click();
+    alert('请用鼠标按住浮窗标题栏"竞品对标可视化分析"区域拖动');
+  };
+})();
+</script>
+</body>
+</html>

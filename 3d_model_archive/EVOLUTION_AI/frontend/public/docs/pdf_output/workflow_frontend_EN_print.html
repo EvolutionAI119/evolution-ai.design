@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVOLUTION AI Hardpoint-Driven Automotive Design System — Frontend Workflow & Algorithm Logic</title>
+<style>
+  @page {
+    size: 420mm 297mm;
+    margin: 12mm 15mm;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 420mm; min-height: 297mm;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: "Segoe UI", system-ui, "Microsoft YaHei", sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.55;
+    overflow-x: auto; overflow-y: auto;
+  }
+  .page {
+    width: 420mm; min-height: 297mm;
+    padding: 10mm 14mm 8mm 14mm;
+    display: flex; flex-direction: column;
+  }
+  /* ── Title Bar ── */
+  .title-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 0 6px 0;
+    border-bottom: 2px solid #58a6ff;
+    margin-bottom: 6px;
+  }
+  .title-bar h1 {
+    font-size: 15pt; font-weight: 700; color: #58a6ff;
+    letter-spacing: 1px;
+  }
+  .title-bar .sub {
+    font-size: 8pt; color: #8b949e;
+  }
+  /* ── Chapter Title ── */
+  .ch-title {
+    font-size: 12pt; font-weight: 700; color: #58a6ff;
+    margin: 6px 0 4px 0; padding-left: 8px;
+    border-left: 4px solid #58a6ff;
+  }
+  .ch-subtitle {
+    font-size: 10pt; font-weight: 600; color: #3fb950;
+    margin: 4px 0 3px 0;
+  }
+  /* ── Content Grid ── */
+  .content {
+    flex: 1; display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 6px 10px;
+    overflow: hidden;
+  }
+  .panel {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 6px 8px;
+    overflow: hidden;
+  }
+  .panel-ch2 { grid-column: 1 / -1; }
+  /* ── Table ── */
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 8.2pt; line-height: 1.35;
+  }
+  th {
+    background: #1f2937; color: #58a6ff;
+    font-weight: 600; padding: 3px 5px;
+    border: 1px solid #30363d; text-align: center;
+    white-space: nowrap;
+  }
+  td {
+    padding: 2px 5px; border: 1px solid #30363d;
+    text-align: center; white-space: nowrap;
+  }
+  td.name { text-align: left; }
+  tr:nth-child(even) td { background: #0d1117; }
+  tr:hover td { background: #1c2333; }
+  .grp-dim { color: #58a6ff; font-weight: 600; }
+  .grp-style { color: #d29922; font-weight: 600; }
+  .grp-adv { color: #f85149; font-weight: 600; }
+  /* ── SVG Container ── */
+  .svg-wrap {
+    display: flex; justify-content: center; align-items: center;
+    padding: 3px 0;
+  }
+  .svg-wrap svg { max-width: 100%; height: auto; }
+  /* ── Flow Annotation ── */
+  .flow-note {
+    font-size: 7.5pt; color: #8b949e;
+    text-align: center; margin-top: 2px;
+  }
+  /* ── Badge ── */
+  .badge {
+    display: inline-block; padding: 1px 6px;
+    border-radius: 10px; font-size: 7pt; font-weight: 600;
+    line-height: 1.4;
+  }
+  .badge-blue { background: #1a3a5c; color: #58a6ff; }
+  .badge-green { background: #1a3d2a; color: #3fb950; }
+  .badge-yellow { background: #3d311a; color: #d29922; }
+  .badge-red { background: #3d1a1a; color: #f85149; }
+  /* ── Code Snippet ── */
+  code {
+    background: #0d1117; color: #79c0ff;
+    padding: 1px 4px; border-radius: 3px;
+    font-family: "Consolas", "Source Code Pro", monospace;
+    font-size: 8pt;
+  }
+  /* ── Performance Bar ── */
+  .perf-bar {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 7.5pt; margin: 1px 0;
+  }
+  .perf-bar .bar {
+    height: 8px; border-radius: 3px;
+    background: linear-gradient(90deg, #3fb950, #d29922, #f85149);
+  }
+  /* ── Legend ── */
+  .legend {
+    display: flex; gap: 10px; justify-content: center;
+    font-size: 7.5pt; margin: 3px 0;
+  }
+  .legend span::before {
+    content: ""; display: inline-block;
+    width: 10px; height: 10px; border-radius: 2px;
+    margin-right: 3px; vertical-align: middle;
+  }
+  .legend .l-blue::before { background: #58a6ff; }
+  .legend .l-green::before { background: #3fb950; }
+  .legend .l-yellow::before { background: #d29922; }
+  .legend .l-red::before { background: #f85149; }
+  .legend .l-gray::before { background: #8b949e; }
+  /* ── Footer ── */
+  .footer {
+    text-align: center; font-size: 7pt; color: #484f58;
+    padding-top: 4px; border-top: 1px solid #21262d;
+    margin-top: auto;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ══════════ Title Bar ══════════ -->
+<div class="title-bar">
+  <h1>EVOLUTION AI Hardpoint-Driven Automotive Design System — Frontend Workflow &amp; Algorithm Logic</h1>
+  <div class="sub">Palantir Ontology UI · 21-Parameter Hardpoint System · Three.js Render Pipeline · A3 Landscape Technical Document · v3.1</div>
+</div>
+
+<!-- ══════════ Content Area ══════════ -->
+<div class="content">
+
+<!-- ╔══════════════════════════════════════════════╗ -->
+<!-- ║  Chapter 1: Frontend Architecture Overview    ║ -->
+<!-- ╚══════════════════════════════════════════════╝ -->
+<div class="panel">
+  <div class="ch-title">Chapter 1: Frontend Architecture Overview</div>
+
+  <div class="ch-subtitle">1.1 Palantir Ontology UI Three-Column Flex Layout</div>
+  <div class="svg-wrap">
+    <svg viewBox="0 0 680 140" width="640" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background -->
+      <rect x="0" y="0" width="680" height="140" rx="4" fill="#0d1117"/>
+      <!-- Top Bar -->
+      <rect x="2" y="2" width="676" height="22" rx="3" fill="#1f2937"/>
+      <text x="12" y="16" fill="#8b949e" font-size="8">Breadcrumb Nav</text>
+      <rect x="100" y="6" width="70" height="14" rx="2" fill="#21262d"/>
+      <text x="108" y="16" fill="#58a6ff" font-size="7">Home / Design</text>
+      <text x="280" y="16" fill="#8b949e" font-size="8">Global Search</text>
+      <rect x="440" y="6" width="100" height="14" rx="2" fill="#21262d"/>
+      <text x="448" y="16" fill="#d29922" font-size="7">Actions [Export|Undo|Redo]</text>
+      <rect x="580" y="6" width="90" height="14" rx="2" fill="#1a3d2a"/>
+      <text x="588" y="16" fill="#3fb950" font-size="7">FPS 60 | Render 8ms</text>
+      <!-- Left Column -->
+      <rect x="2" y="26" width="120" height="96" rx="3" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+      <text x="10" y="40" fill="#58a6ff" font-size="9" font-weight="600">Object Explorer</text>
+      <text x="12" y="54" fill="#c9d1d9" font-size="7">Whole Car (CarBody)</text>
+      <text x="12" y="66" fill="#c9d1d9" font-size="7">  +-- Body</text>
+      <text x="12" y="78" fill="#c9d1d9" font-size="7">  +-- Headlamp</text>
+      <text x="12" y="90" fill="#c9d1d9" font-size="7">  +-- Wheels x4</text>
+      <text x="12" y="102" fill="#c9d1d9" font-size="7">  +-- Grille</text>
+      <text x="14" y="116" fill="#8b949e" font-size="6.5">width: 220px</text>
+      <!-- Center Column -->
+      <rect x="124" y="26" width="410" height="96" rx="3" fill="#0d1117" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="280" y="70" fill="#58a6ff" font-size="11" font-weight="600" text-anchor="middle">3D Viewport (Three.js WebGL)</text>
+      <text x="280" y="84" fill="#8b949e" font-size="7" text-anchor="middle">flex: 1 · Responsive · OrbitControls</text>
+      <text x="280" y="96" fill="#3fb950" font-size="7" text-anchor="middle">BufferGeometry · NaN Guard · 60x40 Grid</text>
+      <text x="280" y="116" fill="#8b949e" font-size="6.5" text-anchor="middle">width: flex-1 auto-adapt</text>
+      <!-- Right Column -->
+      <rect x="536" y="26" width="142" height="96" rx="3" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+      <text x="544" y="40" fill="#d29922" font-size="9" font-weight="600">Property Editor</text>
+      <text x="544" y="54" fill="#c9d1d9" font-size="7">Param L  ====o==  4.84m</text>
+      <text x="544" y="66" fill="#c9d1d9" font-size="7">Param W  ===o===  1.83m</text>
+      <text x="544" y="78" fill="#c9d1d9" font-size="7">Param H  ==o====  1.45m</text>
+      <text x="544" y="90" fill="#c9d1d9" font-size="7">Param WB =====o=  2.96m</text>
+      <text x="544" y="102" fill="#c9d1d9" font-size="7">Param AA  ===o==  27 deg</text>
+      <text x="544" y="116" fill="#8b949e" font-size="6.5">width: 260px</text>
+      <!-- Bottom Bar -->
+      <rect x="2" y="124" width="676" height="14" rx="3" fill="#1f2937"/>
+      <text x="10" y="134" fill="#8b949e" font-size="7">C-Segment Sedan | Wheelbase 2960mm</text>
+      <text x="220" y="134" fill="#3fb950" font-size="7">GB1589 Compliant</text>
+      <text x="340" y="134" fill="#d29922" font-size="7">Render: 8.2ms</text>
+      <text x="460" y="134" fill="#8b949e" font-size="7">Mesh: 2400 faces | Verts: 1260</text>
+      <text x="590" y="134" fill="#58a6ff" font-size="7">Palantir Ontology v3.1</text>
+    </svg>
+  </div>
+
+  <div class="ch-subtitle">1.2 Top Bar / Bottom Bar / Floating Panels</div>
+  <div style="display:flex; gap:8px; font-size:7.8pt; line-height:1.5;">
+    <div style="flex:1;">
+      <b style="color:#58a6ff">Top Bar Components:</b><br>
+      <span class="badge badge-blue">Breadcrumb</span> Home / Project / Vehicle / Params<br>
+      <span class="badge badge-blue">Global Search</span> Cross-object fuzzy search (Ctrl+K)<br>
+      <span class="badge badge-yellow">Action Groups</span> Export STL / Undo / Redo / Screenshot<br>
+      <span class="badge badge-green">Perf Badges</span> FPS / Render Time / Memory Peak
+    </div>
+    <div style="flex:1;">
+      <b style="color:#3fb950">Bottom Bar Components:</b><br>
+      <span class="badge badge-green">Vehicle Info</span> Segment / Wheelbase / Powertrain<br>
+      <span class="badge badge-green">GB1589 Compliance</span> L/W/H / Wheelbase / Mass Limits<br>
+      <span class="badge badge-yellow">Render Time</span> deriveHP / createBody / render
+    </div>
+    <div style="flex:1.2;">
+      <b style="color:#d29922">Floating Panel System:</b><br>
+      <span class="badge badge-red">Competitor Benchmark</span> 7 Chart.js comparison charts (wheelbase/drag/power...)<br>
+      <span class="badge badge-yellow">Reference</span> Industry baseline lines overlaid on param sliders<br>
+      <span class="badge badge-blue">Methodology</span> Design guidelines / GB regulations / AI suggestions<br>
+      <span class="badge badge-blue">AI Assist</span> GPT param recommendation / compliance check<br>
+      <span class="badge badge-green">Multi-View</span> Side / Top / Front / Rear / 3D
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗ -->
+<!-- ║  Chapter 4: Frontend Interaction Model       ║ -->
+<!-- ╚══════════════════════════════════════════════╝ -->
+<div class="panel">
+  <div class="ch-title">Chapter 4: Frontend Interaction Model</div>
+
+  <div class="ch-subtitle">4.1 Palantir Ontology Event Flow</div>
+  <div class="svg-wrap">
+    <svg viewBox="0 0 660 110" width="620" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#58a6ff"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="660" height="110" rx="4" fill="#0d1117"/>
+      <!-- Slider -->
+      <rect x="10" y="35" width="90" height="40" rx="6" fill="#1f2937" stroke="#58a6ff" stroke-width="1"/>
+      <text x="55" y="52" fill="#58a6ff" font-size="8" text-anchor="middle" font-weight="600">Param Slider</text>
+      <text x="55" y="65" fill="#8b949e" font-size="7" text-anchor="middle">input event</text>
+      <!-- HP Update -->
+      <line x1="100" y1="55" x2="130" y2="55" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr4)"/>
+      <rect x="132" y="35" width="90" height="40" rx="6" fill="#1f2937" stroke="#3fb950" stroke-width="1"/>
+      <text x="177" y="52" fill="#3fb950" font-size="8" text-anchor="middle" font-weight="600">HP Update</text>
+      <text x="177" y="65" fill="#8b949e" font-size="7" text-anchor="middle">hardpoints[p]=v</text>
+      <!-- rebuild -->
+      <line x1="222" y1="55" x2="252" y2="55" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr4)"/>
+      <rect x="254" y="35" width="80" height="40" rx="6" fill="#1f2937" stroke="#d29922" stroke-width="1"/>
+      <text x="294" y="52" fill="#d29922" font-size="8" text-anchor="middle" font-weight="600">rebuild()</text>
+      <text x="294" y="65" fill="#8b949e" font-size="7" text-anchor="middle">debounce 16ms</text>
+      <!-- derive -->
+      <line x1="334" y1="55" x2="364" y2="55" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr4)"/>
+      <rect x="366" y="35" width="100" height="40" rx="6" fill="#1f2937" stroke="#f85149" stroke-width="1"/>
+      <text x="416" y="52" fill="#f85149" font-size="8" text-anchor="middle" font-weight="600">deriveHP()</text>
+      <text x="416" y="65" fill="#8b949e" font-size="7" text-anchor="middle">secondary hardpoints</text>
+      <!-- createBody -->
+      <line x1="466" y1="55" x2="496" y2="55" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr4)"/>
+      <rect x="498" y="35" width="80" height="40" rx="6" fill="#1f2937" stroke="#3fb950" stroke-width="1"/>
+      <text x="538" y="52" fill="#3fb950" font-size="8" text-anchor="middle" font-weight="600">createBody</text>
+      <text x="538" y="65" fill="#8b949e" font-size="7" text-anchor="middle">60x40 grid</text>
+      <!-- render -->
+      <line x1="578" y1="55" x2="600" y2="55" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr4)"/>
+      <rect x="602" y="35" width="48" height="40" rx="6" fill="#1f2937" stroke="#58a6ff" stroke-width="1"/>
+      <text x="626" y="58" fill="#58a6ff" font-size="8" text-anchor="middle" font-weight="600">Render</text>
+      <!-- Timeline Labels -->
+      <text x="55" y="95" fill="#3fb950" font-size="7" text-anchor="middle">~0ms</text>
+      <text x="177" y="95" fill="#3fb950" font-size="7" text-anchor="middle">~0ms</text>
+      <text x="294" y="95" fill="#d29922" font-size="7" text-anchor="middle">debounce</text>
+      <text x="416" y="95" fill="#f85149" font-size="7" text-anchor="middle">&lt;0.1ms</text>
+      <text x="538" y="95" fill="#d29922" font-size="7" text-anchor="middle">~2ms</text>
+      <text x="626" y="95" fill="#3fb950" font-size="7" text-anchor="middle">~8ms</text>
+    </svg>
+  </div>
+
+  <div class="ch-subtitle">4.2 Floating Panels &amp; Performance Monitoring</div>
+  <div style="display:flex; gap:10px; font-size:7.8pt;">
+    <div style="flex:1;">
+      <b style="color:#d29922">Competitor Benchmark Panel</b> — Chart.js 7 charts:<br>
+      (1) Wheelbase comparison bar chart (2) Drag coefficient radar chart<br>
+      (3) Power/torque scatter plot (4) Body proportion box plot<br>
+      (5) Curb weight distribution (6) Space efficiency comparison<br>
+      (7) Price-performance Pareto chart<br>
+      <b style="color:#58a6ff">Reference Panel</b> — Industry P25/P50/P75 lines overlaid on param slider background, real-time percentile indication.<br>
+      <b style="color:#3fb950">STL Loader Panel</b> — Drag-and-drop .stl upload, parsed via STLLoader into BufferGeometry for overlay display.
+    </div>
+    <div style="flex:1;">
+      <b style="color:#f85149">Performance Monitor Panel</b><br>
+      <div class="perf-bar"><span style="width:70px;color:#58a6ff">FPS</span><div class="bar" style="width:120px;background:linear-gradient(90deg,#3fb950 80%,#d29922 80%)"></div><span style="color:#3fb950">58~60</span></div>
+      <div class="perf-bar"><span style="width:70px;color:#d29922">RenderTime</span><div class="bar" style="width:80px;background:linear-gradient(90deg,#3fb950 60%,#d29922 60%,#f85149 85%)"></div><span style="color:#d29922">8.2ms</span></div>
+      <div class="perf-bar"><span style="width:70px;color:#f85149">DOM Nodes</span><div class="bar" style="width:100px;background:linear-gradient(90deg,#3fb950 70%,#d29922 70%)"></div><span style="color:#3fb950">342</span></div>
+      <div class="perf-bar"><span style="width:70px;color:#8b949e">Geometry</span><div class="bar" style="width:90px;background:linear-gradient(90deg,#3fb950 50%,#d29922 50%)"></div><span style="color:#d29922">2400 faces</span></div>
+      <br>
+      <b style="color:#8b949e">Event Debounce</b>: Slider <code>input</code> → <code>debounce(16ms)</code> → <code>rebuild()</code>, prevents redundant computation within a single frame.<br>
+      <b style="color:#8b949e">Change Detection</b>: <code>Object.is(oldVal, newVal)</code> skips re-derivation for unchanged parameters.
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗ -->
+<!-- ║  Chapter 2: 21-Parameter Hardpoint System     ║ -->
+<!-- ╚══════════════════════════════════════════════╝ -->
+<div class="panel panel-ch2">
+  <div class="ch-title">Chapter 2: 21-Parameter Hardpoint System (CORE)</div>
+
+  <div class="ch-subtitle">2.1 Complete Parameter Table</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:50px">Group</th>
+        <th style="width:85px">Parameter</th>
+        <th style="width:70px">Symbol</th>
+        <th style="width:55px">Baseline</th>
+        <th style="width:80px">Range</th>
+        <th style="width:35px">Unit</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Length</td><td>L</td><td>4.84</td><td>3.2 ~ 5.8</td><td>m</td><td class="name">Overall vehicle length</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Width</td><td>W</td><td>1.83</td><td>1.4 ~ 2.1</td><td>m</td><td class="name">Overall vehicle width</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Height</td><td>H</td><td>1.45</td><td>1.1 ~ 2.0</td><td>m</td><td class="name">Overall vehicle height</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Wheelbase</td><td>WB</td><td>2.96</td><td>2.0 ~ 3.6</td><td>m</td><td class="name">Front-to-rear axle distance</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Front Overhang</td><td>FO</td><td>0.92</td><td>0.5 ~ 1.2</td><td>m</td><td class="name">Front axle to nose tip</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Rear Overhang</td><td>RO</td><td>0.96</td><td>0.3 ~ 1.5</td><td>m</td><td class="name">Rear axle to tail tip</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Ground Clearance</td><td>GC</td><td>0.14</td><td>0.08 ~ 0.28</td><td>m</td><td class="name">Lowest body point to ground</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Wheel Radius</td><td>WR</td><td>0.335</td><td>0.24 ~ 0.44</td><td>m</td><td class="name">Tire outer radius</td></tr>
+      <tr><td class="grp-dim">Dimension</td><td class="name">Track Width</td><td>TW</td><td>1.59</td><td>1.2 ~ 1.8</td><td>m</td><td class="name">Left-right wheel center distance</td></tr>
+      <tr><td class="grp-style">Styling</td><td class="name">A-Pillar Angle</td><td>AA</td><td>27</td><td>16 ~ 40</td><td>deg</td><td class="name">Windshield rake angle</td></tr>
+      <tr><td class="grp-style">Styling</td><td class="name">C-Pillar Angle</td><td>RA</td><td>38</td><td>20 ~ 55</td><td>deg</td><td class="name">Rear window rake angle</td></tr>
+      <tr><td class="grp-style">Styling</td><td class="name">Windshield Angle</td><td>CA</td><td>42</td><td>22 ~ 60</td><td>deg</td><td class="name">Front windshield inclination</td></tr>
+      <tr><td class="grp-style">Styling</td><td class="name">Waistline Height</td><td>WL</td><td>0.76</td><td>0.45 ~ 1.0</td><td>m</td><td class="name">Beltline height from ground</td></tr>
+      <tr><td class="grp-style">Styling</td><td class="name">Shoulder Width Ratio</td><td>shoulderW</td><td>0.86</td><td>0.75 ~ 0.95</td><td>—</td><td class="name">Shoulder/body width ratio</td></tr>
+      <tr><td class="grp-style">Styling</td><td class="name">Arch Bulge</td><td>archBulge</td><td>0.10</td><td>0 ~ 0.25</td><td>—</td><td class="name">Wheel arch protrusion</td></tr>
+      <tr><td class="grp-adv">Advanced</td><td class="name">Hood Slope</td><td>hoodSlope</td><td>0.35</td><td>0.10 ~ 0.60</td><td>—</td><td class="name">Hood drop gradient</td></tr>
+      <tr><td class="grp-adv">Advanced</td><td class="name">Deck Height Ratio</td><td>deckRatio</td><td>0.55</td><td>0.35 ~ 0.75</td><td>—</td><td class="name">Trunk deck relative height</td></tr>
+      <tr><td class="grp-adv">Advanced</td><td class="name">Tumblehome</td><td>tumblehome</td><td>4</td><td>0 ~ 10</td><td>deg</td><td class="name">Cabin top inward lean</td></tr>
+      <tr><td class="grp-adv">Advanced</td><td class="name">Fender Flare</td><td>fenderFlare</td><td>0.06</td><td>0 ~ 0.15</td><td>m</td><td class="name">Fender protrusion beyond body</td></tr>
+      <tr><td class="grp-adv">Advanced</td><td class="name">Scuttle Point</td><td>scuttlePoint</td><td>0.48</td><td>0.35 ~ 0.60</td><td>—</td><td class="name">Scuttle/roof offset</td></tr>
+      <tr><td class="grp-adv">Advanced</td><td class="name">Rear Taper</td><td>rearTaper</td><td>0.70</td><td>0.50 ~ 1.00</td><td>—</td><td class="name">Rear fender taper ratio</td></tr>
+    </tbody>
+  </table>
+
+  <div style="display:flex; gap:10px; margin-top:4px;">
+    <!-- Parameter Dependency Diagram -->
+    <div style="flex:1.2;">
+      <div class="ch-subtitle">2.2 Parameter Dependency Diagram</div>
+      <div class="svg-wrap">
+        <svg viewBox="0 0 520 155" width="500" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+              <path d="M0,0 L10,5 L0,10 Z" fill="#58a6ff"/>
+            </marker>
+          </defs>
+          <rect x="0" y="0" width="520" height="155" rx="4" fill="#0d1117"/>
+          <!-- Dimension Parameters -->
+          <rect x="10" y="10" width="100" height="50" rx="5" fill="#1a3a5c" stroke="#58a6ff" stroke-width="1"/>
+          <text x="60" y="30" fill="#58a6ff" font-size="8" text-anchor="middle" font-weight="600">Dimension</text>
+          <text x="60" y="42" fill="#8b949e" font-size="6.5" text-anchor="middle">L W H WB FO RO</text>
+          <text x="60" y="52" fill="#8b949e" font-size="6.5" text-anchor="middle">GC WR TW</text>
+          <!-- Styling Parameters -->
+          <rect x="10" y="68" width="100" height="38" rx="5" fill="#3d311a" stroke="#d29922" stroke-width="1"/>
+          <text x="60" y="84" fill="#d29922" font-size="8" text-anchor="middle" font-weight="600">Styling</text>
+          <text x="60" y="96" fill="#8b949e" font-size="6.5" text-anchor="middle">AA RA CA WL shoulderW archBulge</text>
+          <!-- Advanced Parameters -->
+          <rect x="10" y="112" width="100" height="38" rx="5" fill="#3d1a1a" stroke="#f85149" stroke-width="1"/>
+          <text x="60" y="128" fill="#f85149" font-size="8" text-anchor="middle" font-weight="600">Advanced</text>
+          <text x="60" y="140" fill="#8b949e" font-size="6.5" text-anchor="middle">hoodSlope deckRatio tumblehome...</text>
+          <!-- deriveHardpoints -->
+          <line x1="110" y1="50" x2="155" y2="72" stroke="#58a6ff" stroke-width="1" marker-end="url(#arrD)"/>
+          <line x1="110" y1="87" x2="155" y2="80" stroke="#d29922" stroke-width="1" marker-end="url(#arrD)"/>
+          <line x1="110" y1="131" x2="155" y2="88" stroke="#f85149" stroke-width="1" marker-end="url(#arrD)"/>
+          <rect x="158" y="55" width="120" height="50" rx="5" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+          <text x="218" y="75" fill="#3fb950" font-size="9" text-anchor="middle" font-weight="600">deriveHardpoints()</text>
+          <text x="218" y="90" fill="#8b949e" font-size="7" text-anchor="middle">21 params → 48 secondary HP</text>
+          <text x="218" y="100" fill="#8b949e" font-size="6.5" text-anchor="middle">&lt;0.1ms</text>
+          <!-- Secondary Hardpoints -->
+          <line x1="278" y1="80" x2="310" y2="80" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arrD)"/>
+          <rect x="312" y="30" width="90" height="100" rx="5" fill="#161b22" stroke="#8b949e" stroke-width="1"/>
+          <text x="357" y="46" fill="#c9d1d9" font-size="7.5" text-anchor="middle" font-weight="600">Secondary HP</text>
+          <text x="320" y="60" fill="#8b949e" font-size="6.5">frontAxleX</text>
+          <text x="320" y="72" fill="#8b949e" font-size="6.5">rearAxleX</text>
+          <text x="320" y="84" fill="#8b949e" font-size="6.5">hoodHeight</text>
+          <text x="320" y="96" fill="#8b949e" font-size="6.5">roofPeak</text>
+          <text x="320" y="108" fill="#8b949e" font-size="6.5">beltLineY</text>
+          <text x="320" y="120" fill="#8b949e" font-size="6.5">deckLidY ...</text>
+          <!-- Geometry -->
+          <line x1="402" y1="80" x2="430" y2="80" stroke="#8b949e" stroke-width="1.5" marker-end="url(#arrD)"/>
+          <rect x="432" y="40" width="80" height="80" rx="5" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+          <text x="472" y="60" fill="#58a6ff" font-size="8.5" text-anchor="middle" font-weight="600">Geometry</text>
+          <text x="472" y="74" fill="#8b949e" font-size="6.5" text-anchor="middle">sideProfile()</text>
+          <text x="472" y="86" fill="#8b949e" font-size="6.5" text-anchor="middle">topWidthProfile()</text>
+          <text x="472" y="98" fill="#8b949e" font-size="6.5" text-anchor="middle">createBody()</text>
+          <text x="472" y="110" fill="#3fb950" font-size="6.5" text-anchor="middle">BufferGeometry</text>
+        </svg>
+      </div>
+    </div>
+    <!-- Parameter Group Explanation -->
+    <div style="flex:0.8; font-size:7.8pt; line-height:1.6;">
+      <div class="ch-subtitle">2.3 Parameter Groups &amp; Constraints</div>
+      <span class="badge badge-blue">Dimension (9)</span> Determines vehicle envelope and spatial layout; primary input to <code>deriveHardpoints()</code>.<br>
+      <span class="badge badge-yellow">Styling (6)</span> Controls body surface characteristics (pillar angles, waistline, shoulder); affects <code>sideProfile()</code> and <code>topWidthProfile()</code>.<br>
+      <span class="badge badge-red">Advanced (6)</span> Fine-tunes local styling details (hood slope, tumblehome, rear taper); applied as local surface deformation.<br><br>
+      <b style="color:#58a6ff">Hardpoint Derivation Rules:</b><br>
+      <code>frontAxleX = FO - L/2</code><br>
+      <code>rearAxleX = L/2 - RO</code><br>
+      <code>hoodHeight = GC + WR + hoodSlope*FO</code><br>
+      <code>roofPeak = H - GC</code><br>
+      <code>beltLineY = WL</code><br>
+      <code>deckLidY = GC + WR*deckRatio</code><br>
+      Total derived: <b style="color:#3fb950">48</b> secondary hardpoints, latency &lt;0.1ms.
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗ -->
+<!-- ║  Chapter 3: Frontend Rendering Pipeline       ║ -->
+<!-- ╚══════════════════════════════════════════════╝ -->
+<div class="panel">
+  <div class="ch-title">Chapter 3: Frontend Rendering Pipeline</div>
+
+  <div class="ch-subtitle">3.1 Complete Render Flow</div>
+  <div class="svg-wrap">
+    <svg viewBox="0 0 660 195" width="630" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#58a6ff"/>
+        </marker>
+        <marker id="arr3g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#3fb950"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="660" height="195" rx="4" fill="#0d1117"/>
+      <!-- Row 1: Param Change → rebuild → deriveHP -->
+      <rect x="10" y="10" width="85" height="32" rx="5" fill="#1f2937" stroke="#58a6ff" stroke-width="1"/>
+      <text x="52" y="28" fill="#58a6ff" font-size="7.5" text-anchor="middle" font-weight="600">Param Change</text>
+      <text x="52" y="38" fill="#8b949e" font-size="6" text-anchor="middle">slider input</text>
+      <line x1="95" y1="26" x2="115" y2="26" stroke="#58a6ff" stroke-width="1.2" marker-end="url(#arr3)"/>
+      <rect x="117" y="10" width="70" height="32" rx="5" fill="#1f2937" stroke="#d29922" stroke-width="1"/>
+      <text x="152" y="28" fill="#d29922" font-size="7.5" text-anchor="middle" font-weight="600">rebuild()</text>
+      <text x="152" y="38" fill="#8b949e" font-size="6" text-anchor="middle">debounce 16ms</text>
+      <line x1="187" y1="26" x2="207" y2="26" stroke="#58a6ff" stroke-width="1.2" marker-end="url(#arr3)"/>
+      <rect x="209" y="10" width="95" height="32" rx="5" fill="#1f2937" stroke="#3fb950" stroke-width="1"/>
+      <text x="256" y="28" fill="#3fb950" font-size="7.5" text-anchor="middle" font-weight="600">deriveHardpoints()</text>
+      <text x="256" y="38" fill="#8b949e" font-size="6" text-anchor="middle">&lt;0.1ms · 48 hardpoints</text>
+      <!-- Row 2: sideProfile → topWidthProfile → createBody -->
+      <line x1="256" y1="42" x2="256" y2="58" stroke="#3fb950" stroke-width="1.2" marker-end="url(#arr3g)"/>
+      <rect x="100" y="60" width="90" height="32" rx="5" fill="#1f2937" stroke="#d29922" stroke-width="1"/>
+      <text x="145" y="78" fill="#d29922" font-size="7.5" text-anchor="middle" font-weight="600">sideProfile()</text>
+      <text x="145" y="88" fill="#8b949e" font-size="6" text-anchor="middle">Side contour · 12 segments</text>
+      <rect x="210" y="60" width="110" height="32" rx="5" fill="#1f2937" stroke="#d29922" stroke-width="1"/>
+      <text x="265" y="78" fill="#d29922" font-size="7.5" text-anchor="middle" font-weight="600">topWidthProfile()</text>
+      <text x="265" y="88" fill="#8b949e" font-size="6" text-anchor="middle">Top width curve · 8 segments</text>
+      <rect x="340" y="60" width="100" height="32" rx="5" fill="#1f2937" stroke="#f85149" stroke-width="1"/>
+      <text x="390" y="78" fill="#f85149" font-size="7.5" text-anchor="middle" font-weight="600">createBody()</text>
+      <text x="390" y="88" fill="#8b949e" font-size="6" text-anchor="middle">60x40 grid · ~2ms</text>
+      <line x1="256" y1="60" x2="145" y2="60" stroke="#d29922" stroke-width="1" marker-end="url(#arr3)"/>
+      <line x1="190" y1="76" x2="210" y2="76" stroke="#d29922" stroke-width="1" marker-end="url(#arr3)"/>
+      <line x1="320" y1="76" x2="340" y2="76" stroke="#d29922" stroke-width="1" marker-end="url(#arr3)"/>
+      <!-- Row 3: BufferGeometry → NaN Guard → Three.js -->
+      <line x1="390" y1="92" x2="390" y2="108" stroke="#f85149" stroke-width="1.2" marker-end="url(#arr3)"/>
+      <rect x="310" y="110" width="100" height="32" rx="5" fill="#1f2937" stroke="#58a6ff" stroke-width="1"/>
+      <text x="360" y="128" fill="#58a6ff" font-size="7.5" text-anchor="middle" font-weight="600">BufferGeometry</text>
+      <text x="360" y="138" fill="#8b949e" font-size="6" text-anchor="middle">Float32Array vertices</text>
+      <line x1="410" y1="126" x2="430" y2="126" stroke="#58a6ff" stroke-width="1.2" marker-end="url(#arr3)"/>
+      <rect x="432" y="110" width="80" height="32" rx="5" fill="#1f2937" stroke="#f85149" stroke-width="1.5"/>
+      <text x="472" y="128" fill="#f85149" font-size="7.5" text-anchor="middle" font-weight="600">NaN Guard</text>
+      <text x="472" y="138" fill="#8b949e" font-size="6" text-anchor="middle">Number.isFinite()</text>
+      <line x1="512" y1="126" x2="532" y2="126" stroke="#3fb950" stroke-width="1.2" marker-end="url(#arr3g)"/>
+      <rect x="534" y="110" width="110" height="32" rx="5" fill="#1a3d2a" stroke="#3fb950" stroke-width="1.5"/>
+      <text x="589" y="128" fill="#3fb950" font-size="7.5" text-anchor="middle" font-weight="600">Three.js Render</text>
+      <text x="589" y="138" fill="#8b949e" font-size="6" text-anchor="middle">WebGL ~8ms</text>
+      <!-- Timing Annotations -->
+      <rect x="10" y="155" width="640" height="35" rx="4" fill="#161b22" stroke="#30363d" stroke-width="0.5"/>
+      <text x="20" y="170" fill="#58a6ff" font-size="7.5" font-weight="600">Timing:</text>
+      <text x="70" y="170" fill="#3fb950" font-size="7">deriveHardpoints &lt;0.1ms</text>
+      <text x="210" y="170" fill="#d29922" font-size="7">sideProfile ~0.3ms</text>
+      <text x="340" y="170" fill="#d29922" font-size="7">topWidthProfile ~0.2ms</text>
+      <text x="480" y="170" fill="#f85149" font-size="7">createBody ~2ms</text>
+      <text x="600" y="170" fill="#3fb950" font-size="7">render ~8ms</text>
+      <text x="70" y="183" fill="#58a6ff" font-size="7.5" font-weight="600">Total &lt;16ms (single frame 60FPS)</text>
+      <text x="300" y="183" fill="#8b949e" font-size="7">| Grid 60x40 = 2400 faces | Vertices 1260 | Triangles 4800</text>
+    </svg>
+  </div>
+
+  <div class="ch-subtitle">3.2 Bump Simulation</div>
+  <div style="display:flex; gap:8px; font-size:7.8pt;">
+    <div style="flex:1;">
+      <b style="color:#d29922">5 wave modes</b>, implemented via <code>car.position.y = offset</code> lightweight approach (no geometry rebuild):
+    </div>
+    <div style="flex:1.5;">
+      <span class="badge badge-blue">Sine</span> <code>y = A*sin(wt + phi)</code> &nbsp;
+      <span class="badge badge-blue">Step</span> <code>y = A*step(t)</code> &nbsp;
+      <span class="badge badge-yellow">Random</span> <code>y = A*rand()</code><br>
+      <span class="badge badge-yellow">Decay</span> <code>y = A*e^(-lambda*t)*sin(wt)</code> &nbsp;
+      <span class="badge badge-red">Composite</span> <code>y = sin + noise + step</code>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<!-- ══════════ Footer ══════════ -->
+<div class="footer">
+  EVOLUTION AI Hardpoint-Driven Automotive Design System · Palantir Ontology UI · Frontend Workflow &amp; Algorithm Logic · A3 Landscape Technical Document · 2026
+</div>
+
+</div><!-- /page -->
+
+<script>
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        window.print();
+    }, 500);
+});
+</script>
+</body>
+</html>

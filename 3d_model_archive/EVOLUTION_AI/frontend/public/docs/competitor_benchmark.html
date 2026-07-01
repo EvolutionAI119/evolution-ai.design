@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVOLUTION AI - 竞品对标可视化分析</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','Segoe UI',sans-serif;background:#0a0a1a;color:#c8d6e5;padding:24px;overflow-x:hidden}
+h1{text-align:center;font-size:22px;color:#00d4ff;margin-bottom:4px;letter-spacing:3px}
+.subtitle{text-align:center;font-size:12px;color:#5a6e8a;margin-bottom:28px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:1400px;margin:0 auto}
+.card{background:rgba(10,10,26,.92);border:1px solid rgba(0,212,255,.15);border-radius:12px;padding:20px;position:relative}
+.card-title{font-size:13px;color:#00d4ff;letter-spacing:1px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(0,212,255,.1);display:flex;align-items:center;gap:6px}
+.card-title .dot{width:6px;height:6px;border-radius:50%;background:#00d4ff}
+.card.full{grid-column:1/-1}
+canvas{max-width:100%;max-height:380px}
+.legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:#8b9dc3}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* Market size card */
+.market-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.stat-box{text-align:center;padding:12px 8px;background:rgba(26,26,62,.4);border-radius:8px;border:1px solid rgba(0,212,255,.08)}
+.stat-val{font-size:24px;color:#00ff88;font-weight:bold}
+.stat-unit{font-size:10px;color:#5a6e8a}
+.stat-label{font-size:9px;color:#3a506b;margin-top:2px}
+
+/* Position map */
+.pos-map{position:relative;width:100%;height:340px;background:rgba(26,26,62,.3);border-radius:8px;overflow:hidden}
+.pos-map .axis-x{position:absolute;bottom:30px;left:60px;right:20px;height:1px;background:rgba(0,212,255,.2)}
+.pos-map .axis-y{position:absolute;left:60px;top:20px;bottom:30px;width:1px;background:rgba(0,212,255,.2)}
+.pos-map .axis-label{position:absolute;font-size:9px;color:#3a506b}
+.pos-map .axis-label.x-left{left:60px;bottom:12px}
+.pos-map .axis-label.x-right{right:20px;bottom:12px}
+.pos-map .axis-label.y-top{left:8px;top:20px}
+.pos-map .axis-label.y-bottom{left:8px;bottom:30px}
+.pos-dot{position:absolute;transform:translate(-50%,-50%);cursor:pointer;transition:all .3s}
+.pos-dot .dot-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:#000;transition:all .3s;box-shadow:0 0 12px rgba(0,0,0,.3)}
+.pos-dot:hover .dot-circle{transform:scale(1.2);box-shadow:0 0 20px rgba(0,212,255,.4)}
+.pos-dot .dot-label{position:absolute;top:100%;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9px;color:#8b9dc3;margin-top:4px;text-align:center}
+.pos-dot .dot-sublabel{font-size:7px;color:#3a506b}
+
+/* Gap analysis */
+.gap-table{width:100%;border-collapse:collapse;margin-top:8px}
+.gap-table th{font-size:9px;color:#00d4ff;text-align:left;padding:6px 8px;border-bottom:1px solid rgba(0,212,255,.15)}
+.gap-table td{font-size:9px;color:#8b9dc3;padding:5px 8px;border-bottom:1px solid rgba(0,212,255,.05)}
+.gap-table .gap-name{color:#e0e6ed;font-weight:bold}
+.gap-bar{height:6px;border-radius:3px;background:rgba(26,26,62,.6);position:relative;min-width:80px}
+.gap-bar-fill{height:100%;border-radius:3px;position:absolute;left:0;top:0}
+.gap-bar-marker{position:absolute;top:-3px;width:2px;height:12px;background:#fff;border-radius:1px}
+
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>EVOLUTION AI 竞品对标可视化</h1>
+<div class="subtitle">Automotive AI Design Platform Competitive Analysis | 2026 Q2</div>
+
+<div class="grid">
+  <!-- 1. Market Size -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>市场规模与增长</div>
+    <canvas id="chartMarket"></canvas>
+    <div class="market-stats">
+      <div class="stat-box"><div class="stat-val">47.8</div><div class="stat-unit">亿元</div><div class="stat-label">2025年市场规模</div></div>
+      <div class="stat-box"><div class="stat-val">12.6%</div><div class="stat-unit">YoY</div><div class="stat-label">同比增长率</div></div>
+      <div class="stat-box"><div class="stat-val">9.0%</div><div class="stat-unit">国产化率</div><div class="stat-label">2025年↑2.5pp</div></div>
+    </div>
+  </div>
+
+  <!-- 2. Radar Chart -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>能力雷达图对比</div>
+    <canvas id="chartRadar"></canvas>
+    <div class="legend-row" id="radarLegend"></div>
+  </div>
+
+  <!-- 3. Capability Heatmap -->
+  <div class="card full">
+    <div class="card-title"><span class="dot"></span>能力矩阵热力图</div>
+    <canvas id="chartHeatmap"></canvas>
+  </div>
+
+  <!-- 4. Position Map -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>市场定位象限图</div>
+    <div class="pos-map" id="posMap">
+      <div class="axis-x"></div>
+      <div class="axis-y"></div>
+      <div class="axis-label x-left">低创意自由</div>
+      <div class="axis-label x-right">高创意自由</div>
+      <div class="axis-label y-top">高工程精度</div>
+      <div class="axis-label y-bottom">低工程精度</div>
+    </div>
+  </div>
+
+  <!-- 5. Gap Analysis -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>差距分析与改进方向</div>
+    <table class="gap-table">
+      <thead><tr><th>差距领域</th><th>竞品水平</th><th>当前→目标</th><th>改进方向</th></tr></thead>
+      <tbody id="gapBody"></tbody>
+    </table>
+  </div>
+
+  <!-- 6. Unique Advantages -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>EVOLUTION AI 独特竞争力评分</div>
+    <canvas id="chartUnique"></canvas>
+  </div>
+
+  <!-- 7. Tech Stack Comparison -->
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>技术栈对比</div>
+    <canvas id="chartTech"></canvas>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Data
+// ============================================================
+var COMPETITORS = ['阿尔特太乙','FORMA','质境','AIVA','NURBGen','EVOLUTION AI'];
+var COLORS = ['#ff6b6b','#ffa502','#7bed9f','#70a1ff','#a29bfe','#00d4ff'];
+var BG_COLORS = COLORS.map(function(c){return c+'33'});
+
+// Capability scores (0-10)
+var CAPABILITY_DIMS = ['文本→3D','NURBS曲面','IGES/STEP导出','实时交互','空气动力学','车型数据库','开源可用','卡尔曼滤波','多CAD对接'];
+var CAPABILITY_DATA = {
+  '阿尔特太乙': [9,8,9,7,9,9,0,0,8],
+  'FORMA':       [3,0,0,8,0,3,0,0,0],
+  '质境':        [6,3,3,4,0,4,0,0,3],
+  'AIVA':        [2,8,0,0,2,0,0,0,0],
+  'NURBGen':     [8,9,7,0,0,4,7,0,6],
+  'EVOLUTION AI':[6,9,8,9,0,8,10,10,8]
+};
+
+// Market data
+var MARKET_YEARS = ['2022','2023','2024','2025','2026E'];
+var MARKET_SIZE = [32.1, 36.5, 42.4, 47.8, 53.8];
+var DOMESTIC_RATE = [4.2, 5.1, 6.5, 9.0, 13.5];
+
+// Position map coordinates (x: creative freedom, y: engineering precision)
+var POSITIONS = [
+  {name:'阿尔特太乙',x:30,y:88,sub:'B2B整车厂',color:COLORS[0]},
+  {name:'FORMA',x:82,y:22,sub:'设计师辅助',color:COLORS[1]},
+  {name:'质境',x:45,y:48,sub:'B2B设计院',color:COLORS[2]},
+  {name:'AIVA',x:70,y:55,sub:'新势力车企',color:COLORS[3]},
+  {name:'NURBGen',x:55,y:62,sub:'学术研究',color:COLORS[4]},
+  {name:'EVOLUTION AI',x:52,y:78,sub:'教学/研究',color:COLORS[5]}
+];
+
+// Gap analysis
+var GAPS = [
+  {name:'Text-to-3D',compete:'NURBGen LLM→NURBS',current:30,target:70,direction:'接入LLM翻译HP参数'},
+  {name:'CFD风阻预测',compete:'太乙"御风"偏差3-5%',current:0,target:60,direction:'集成OpenFOAM/Modulus'},
+  {name:'A级曲面连续性',compete:'AIVA G4连续',current:50,target:85,direction:'NURBS degree 3→5'},
+  {name:'云协作',compete:'质境云端部署',current:0,target:50,direction:'WebSocket同步'},
+  {name:'VR/AR预览',compete:'部分竞品支持',current:15,target:60,direction:'WebXR完整实现'}
+];
+
+// Unique advantages
+var UNIQUE_DIMS = ['硬点驱动架构','卡尔曼滤波','A2MAC1断面','三区权重混合','Tumblehome控制','全开源','零依赖核心','多后端支持'];
+var UNIQUE_SCORES = [9,10,8,7,8,10,9,8];
+
+// Tech stack
+var TECH_LABELS = ['LLM/AI','CAD内核','实时渲染','CFD仿真','数据格式','开源生态'];
+var TECH_DATA = {
+  '阿尔特太乙': [9,8,7,9,8,2],
+  'FORMA':       [8,2,6,0,2,1],
+  '质境':        [7,5,5,0,4,1],
+  'AIVA':        [7,6,4,2,3,1],
+  'NURBGen':     [8,7,0,0,6,7],
+  'EVOLUTION AI':[4,9,9,0,9,10]
+};
+
+// ============================================================
+// 1. Market Size Chart
+// ============================================================
+new Chart(document.getElementById('chartMarket'),{
+  type:'bar',
+  data:{
+    labels:MARKET_YEARS,
+    datasets:[
+      {label:'市场规模(亿元)',data:MARKET_SIZE,backgroundColor:'rgba(0,212,255,.35)',borderColor:'#00d4ff',borderWidth:1,yAxisID:'y'},
+      {label:'国产化率(%)',data:DOMESTIC_RATE,type:'line',borderColor:'#00ff88',backgroundColor:'rgba(0,255,136,.1)',pointBackgroundColor:'#00ff88',pointRadius:4,tension:.3,yAxisID:'y1',fill:true}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#8b9dc3',font:{size:10}}}},
+    scales:{
+      x:{ticks:{color:'#5a6e8a',font:{size:10}},grid:{color:'rgba(0,212,255,.06)'}},
+      y:{position:'left',ticks:{color:'#00d4ff',font:{size:9},callback:function(v){return v+'亿'}},grid:{color:'rgba(0,212,255,.06)'},title:{display:true,text:'市场规模(亿元)',color:'#5a6e8a',font:{size:9}}},
+      y1:{position:'right',ticks:{color:'#00ff88',font:{size:9},callback:function(v){return v+'%'}},grid:{display:false},title:{display:true,text:'国产化率(%)',color:'#5a6e8a',font:{size:9}}}
+    }
+  }
+});
+
+// ============================================================
+// 2. Radar Chart
+// ============================================================
+var radarDatasets = COMPETITORS.map(function(name,i){
+  return {
+    label:name,
+    data:CAPABILITY_DATA[name],
+    borderColor:COLORS[i],
+    backgroundColor:BG_COLORS[i],
+    borderWidth:2,
+    pointBackgroundColor:COLORS[i],
+    pointRadius:3,
+    pointHoverRadius:5
+  };
+});
+new Chart(document.getElementById('chartRadar'),{
+  type:'radar',
+  data:{labels:CAPABILITY_DIMS,datasets:radarDatasets},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{r:{
+      beginAtZero:true,max:10,
+      ticks:{stepSize:2,color:'#3a506b',backdropColor:'transparent',font:{size:8}},
+      grid:{color:'rgba(0,212,255,.1)'},
+      angleLines:{color:'rgba(0,212,255,.1)'},
+      pointLabels:{color:'#8b9dc3',font:{size:9}}
+    }}
+  }
+});
+// Custom legend
+var legendHtml = COMPETITORS.map(function(n,i){
+  return '<div class="legend-item"><div class="legend-dot" style="background:'+COLORS[i]+'"></div>'+n+'</div>';
+}).join('');
+document.getElementById('radarLegend').innerHTML = legendHtml;
+
+// ============================================================
+// 3. Heatmap (Horizontal Stacked Bar)
+// ============================================================
+var heatCtx = document.getElementById('chartHeatmap').getContext('2d');
+var heatData = [];
+CAPABILITY_DIMS.forEach(function(dim,di){
+  COMPETITORS.forEach(function(comp,ci){
+    heatData.push({x:comp,y:dim,v:CAPABILITY_DATA[comp][di]});
+  });
+});
+
+// Use grouped bar chart as heatmap proxy
+var heatDatasets = COMPETITORS.map(function(name,ci){
+  return {
+    label:name,
+    data:CAPABILITY_DIMS.map(function(dim,di){return CAPABILITY_DATA[name][di]}),
+    backgroundColor:CAPABILITY_DIMS.map(function(dim,di){
+      var v = CAPABILITY_DATA[name][di];
+      if(v===0) return 'rgba(26,26,62,.6)';
+      if(v<=3) return 'rgba(255,165,2,.25)';
+      if(v<=6) return 'rgba(0,212,255,.35)';
+      if(v<=8) return 'rgba(0,255,136,.4)';
+      return 'rgba(0,255,136,.7)';
+    }),
+    borderColor:'rgba(10,10,26,.8)',
+    borderWidth:1
+  };
+});
+new Chart(heatCtx,{
+  type:'bar',
+  data:{labels:CAPABILITY_DIMS,datasets:heatDatasets},
+  options:{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{labels:{color:'#8b9dc3',font:{size:9}}},
+      tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.raw+'/10'}}}
+    },
+    scales:{
+      x:{stacked:true,max:60,ticks:{color:'#3a506b',font:{size:9}},grid:{color:'rgba(0,212,255,.06)'},title:{display:true,text:'能力评分(0-10, 6家合计)',color:'#5a6e8a',font:{size:9}}},
+      y:{stacked:true,ticks:{color:'#8b9dc3',font:{size:9}},grid:{display:false}}
+    }
+  }
+});
+
+// ============================================================
+// 4. Position Map
+// ============================================================
+var posMap = document.getElementById('posMap');
+POSITIONS.forEach(function(p){
+  var dot = document.createElement('div');
+  dot.className = 'pos-dot';
+  // Map x(0-100) to left(60px-95%), y(0-100) to top(20px-90%)
+  var mapW = posMap.offsetWidth - 80;
+  var mapH = posMap.offsetHeight - 50;
+  var left = 60 + (p.x / 100) * mapW;
+  var top = 20 + ((100 - p.y) / 100) * mapH;
+  dot.style.left = left + 'px';
+  dot.style.top = top + 'px';
+  var shortName = p.name.length > 6 ? p.name.substring(0,6) : p.name;
+  dot.innerHTML = '<div class="dot-circle" style="background:'+p.color+'">'+shortName.charAt(0)+'</div>'
+    +'<div class="dot-label">'+p.name+'<br><span class="dot-sublabel">'+p.sub+'</span></div>';
+  posMap.appendChild(dot);
+});
+
+// ============================================================
+// 5. Gap Analysis Table
+// ============================================================
+var gapBody = document.getElementById('gapBody');
+GAPS.forEach(function(g){
+  var tr = document.createElement('tr');
+  var barWidth = 120;
+  var currentPx = Math.round(g.current / 100 * barWidth);
+  var targetPx = Math.round(g.target / 100 * barWidth);
+  var markerLeft = targetPx;
+  tr.innerHTML = '<td class="gap-name">'+g.name+'</td>'
+    +'<td style="color:#ffa502">'+g.compete+'</td>'
+    +'<td><div class="gap-bar" style="width:'+barWidth+'px">'
+    +'<div class="gap-bar-fill" style="width:'+currentPx+'px;background:linear-gradient(90deg,#00d4ff,#00ff88)"></div>'
+    +'<div class="gap-bar-marker" style="left:'+markerLeft+'px"></div>'
+    +'</div><span style="font-size:8px;color:#5a6e8a">'+g.current+'% → '+g.target+'%</span></td>'
+    +'<td style="color:#00d4ff">'+g.direction+'</td>';
+  gapBody.appendChild(tr);
+});
+
+// ============================================================
+// 6. Unique Advantages
+// ============================================================
+new Chart(document.getElementById('chartUnique'),{
+  type:'bar',
+  data:{
+    labels:UNIQUE_DIMS,
+    datasets:[{
+      label:'竞争力评分',
+      data:UNIQUE_SCORES,
+      backgroundColor:UNIQUE_SCORES.map(function(v){
+        if(v>=9) return 'rgba(0,255,136,.5)';
+        if(v>=7) return 'rgba(0,212,255,.4)';
+        return 'rgba(255,165,2,.3)';
+      }),
+      borderColor:UNIQUE_SCORES.map(function(v){
+        if(v>=9) return '#00ff88';
+        if(v>=7) return '#00d4ff';
+        return '#ffa502';
+      }),
+      borderWidth:1
+    }]
+  },
+  options:{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{max:10,ticks:{color:'#5a6e8a',font:{size:9}},grid:{color:'rgba(0,212,255,.06)'}},
+      y:{ticks:{color:'#8b9dc3',font:{size:9}},grid:{display:false}}
+    }
+  }
+});
+
+// ============================================================
+// 7. Tech Stack Comparison
+// ============================================================
+var techDatasets = COMPETITORS.map(function(name,i){
+  return {
+    label:name,
+    data:TECH_DATA[name],
+    borderColor:COLORS[i],
+    backgroundColor:BG_COLORS[i],
+    borderWidth:2,
+    pointBackgroundColor:COLORS[i],
+    pointRadius:3
+  };
+});
+new Chart(document.getElementById('chartTech'),{
+  type:'radar',
+  data:{labels:TECH_LABELS,datasets:techDatasets},
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#8b9dc3',font:{size:9}}}},
+    scales:{r:{
+      beginAtZero:true,max:10,
+      ticks:{stepSize:2,color:'#3a506b',backdropColor:'transparent',font:{size:8}},
+      grid:{color:'rgba(0,212,255,.1)'},
+      angleLines:{color:'rgba(0,212,255,.1)'},
+      pointLabels:{color:'#8b9dc3',font:{size:9}}
+    }}
+  }
+});
+</script>
+</body>
+</html>

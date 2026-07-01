@@ -1,0 +1,524 @@
+From: <Saved by Blink>
+Snapshot-Content-Location: file:///C:/Users/Icemt/.qclaw/workspace/AI_3D_Model_Build_Presentation.html
+Subject: AI 3D Model Build - Presentation
+Date: Tue, 24 Mar 2026 11:36:36 -0000
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	type="text/html";
+	boundary="----MultipartBoundary--oi1Et5UtahbSmhBnB39bh7Lj49ACRyOedwYh659wHr----"
+
+
+------MultipartBoundary--oi1Et5UtahbSmhBnB39bh7Lj49ACRyOedwYh659wHr----
+Content-Type: text/html
+Content-ID: <frame-0128F0F98BED250C6423CE9D52B91946@mhtml.blink>
+Content-Transfer-Encoding: quoted-printable
+Content-Location: file:///C:/Users/Icemt/.qclaw/workspace/AI_3D_Model_Build_Presentation.html
+
+<!DOCTYPE html><html lang=3D"en"><head><meta http-equiv=3D"Content-Type" co=
+ntent=3D"text/html; charset=3DUTF-8"><link rel=3D"stylesheet" type=3D"text/=
+css" href=3D"cid:css-ea39a68d-b5fd-434a-8078-a5170cc4ea3a@mhtml.blink" />
+   =20
+    <meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=
+=3D1.0">
+    <title>AI 3D Model Build - Presentation</title>
+   =20
+</head>
+<body>
+
+<div class=3D"slide title-slide">
+    <h1>AI 3D Model Build</h1>
+    <h2 style=3D"border:none;font-size:32px;">The Revolution in 3D Content =
+Creation</h2>
+    <p class=3D"subtitle">Internal Presentation | Creative and Dynamic</p>
+    <p class=3D"subtitle" style=3D"margin-top:40px;">2026</p>
+</div>
+
+<div class=3D"slide">
+    <h2>Agenda</h2>
+    <ul>
+        <li>The AI 3D Revolution - Why Now?</li>
+        <li>Technology Deep Dive - 3 Major Approaches</li>
+        <li>Tools of the Trade - Whos Leading?</li>
+        <li>Industry Applications - Automotive Focus</li>
+        <li>ROI and Business Case</li>
+        <li>Implementation Roadmap</li>
+        <li>Next Steps</li>
+    </ul>
+</div>
+
+<div class=3D"slide">
+    <h2>The Big Picture</h2>
+    <div class=3D"grid">
+        <div class=3D"card">
+            <h4>From This...</h4>
+            <ul><li>Weeks of manual modeling</li><li>Expensive 3D scanning<=
+/li><li>Limited iteration speed</li></ul>
+        </div>
+        <div class=3D"card">
+            <h4>To This</h4>
+            <ul><li>Hours (not weeks) of AI-powered creation</li><li>Smartp=
+hone to 3D model</li><li>Unlimited rapid iterations</li></ul>
+        </div>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>What is AI 3D Modeling?</h2>
+    <p>AI uses artificial intelligence to <span class=3D"accent">create, re=
+construct, edit, and optimize</span> 3D content from 2D inputs.</p>
+    <h3>Key Capabilities</h3>
+    <ul>
+        <li><strong>Reconstruction:</strong> 2D photos to 3D model</li>
+        <li><strong>Generation:</strong> Text prompt to 3D asset</li>
+        <li><strong>Editing:</strong> Natural language to 3D modifications<=
+/li>
+        <li><strong>Texturing:</strong> AI-generated PBR materials</li>
+    </ul>
+</div>
+
+<div class=3D"slide">
+    <h2>Why Now? The Perfect Storm</h2>
+    <div class=3D"grid">
+        <div class=3D"card"><h4>1. Transformer + Diffusion</h4><p>Breakthro=
+ugh in generative AI quality</p></div>
+        <div class=3D"card"><h4>2. GPU Accessibility</h4><p>Real-time rende=
+ring now possible</p></div>
+        <div class=3D"card"><h4>3. Massive 3D Data</h4><p>Training data ava=
+ilability at scale</p></div>
+        <div class=3D"card"><h4>The Result</h4><p>What took 3 years now hap=
+pens in <span class=3D"accent">30 seconds</span></p></div>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>Three Technology Roads</h2>
+    <div class=3D"grid">
+        <div class=3D"card"><h4>RECONSTRUCTION</h4><p>NeRF / 3DGS<br>Best f=
+or: Scanning, reality capture</p></div>
+        <div class=3D"card"><h4>GENERATION</h4><p>Diffusion Models<br>Best =
+for: Creating new assets</p></div>
+        <div class=3D"card"><h4>EDITING</h4><p>AI-Powered<br>Best for: Modi=
+fying, optimizing</p></div>
+        <div class=3D"card"><h4>HYBRID</h4><p>Combined Approach<br>Best for=
+: Production workflows</p></div>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>Tech Road #1 - NeRF</h2>
+    <h3>Neural Radiance Fields</h3>
+    <p>A neural network that represents a 3D scene as a continuous function=
+.</p>
+    <h3>Key Features</h3>
+    <ul><li>Photo-realistic view synthesis</li><li>360 degree immersive exp=
+loration</li><li>Large scene capability</li></ul>
+    <h3>Limitations</h3>
+    <ul><li>Slow training and rendering</li><li>Large memory footprint</li>=
+<li>Difficult to edit</li></ul>
+</div>
+
+<div class=3D"slide">
+    <h2>Tech Road #2 - 3DGS</h2>
+    <h3>3D Gaussian Splatting - The Game Changer!</h3>
+    <p>Uses millions of 3D Gaussian functions instead of neural networks.</=
+p>
+    <div class=3D"grid">
+        <div class=3D"card"><h4>Training Speed</h4><p>Minutes <span class=
+=3D"accent">(vs 10+ hours)</span></p></div>
+        <div class=3D"card"><h4>Render Speed</h4><p><span class=3D"accent">=
+Real-time</span> 30+ FPS</p></div>
+        <div class=3D"card"><h4>Editability</h4><p><span class=3D"accent">E=
+ditable!</span></p></div>
+        <div class=3D"card"><h4>Status</h4><p>Research-grade to <span class=
+=3D"gradient-text">Production-grade</span></p></div>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>3DGS vs NeRF Comparison</h2>
+    <table>
+        <tbody><tr><th>Metric</th><th>NeRF</th><th>3DGS</th></tr>
+        <tr><td>Training Speed</td><td>10-24 hours</td><td class=3D"accent"=
+>10-30 minutes</td></tr>
+        <tr><td>Render Speed</td><td>30 sec/frame</td><td class=3D"accent">=
+30+ FPS</td></tr>
+        <tr><td>Quality</td><td>4 stars</td><td class=3D"accent">5 stars</t=
+d></tr>
+        <tr><td>Editability</td><td>2 stars</td><td class=3D"accent">4 star=
+s</td></tr>
+    </tbody></table>
+    <p style=3D"text-align:center;margin-top:20px;font-size:24px;">Winner: =
+<span class=3D"gradient-text">3DGS</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>Tech Road #3 - Diffusion Models</h2>
+    <h3>Text-to-3D Revolution</h3>
+    <p style=3D"text-align:center;margin:20px 0;">Prompt: <span class=3D"ac=
+cent">"a futuristic EV concept car"</span> -&gt; 3D Model</p>
+    <h3>Current State</h3>
+    <ul><li>Fast generation (10-30 seconds)</li><li>Creative freedom</li><l=
+i>Quality improving rapidly</li></ul>
+</div>
+
+<div class=3D"slide">
+    <h2>Generation Tech Evolution</h2>
+    <div class=3D"card" style=3D"margin-bottom:15px;"><span class=3D"phase"=
+>2022</span> Point-E - Crude, 2-3 min</div>
+    <div class=3D"card" style=3D"margin-bottom:15px;"><span class=3D"phase"=
+>2023</span> Shap-E - Better, 1-2 min</div>
+    <div class=3D"card" style=3D"margin-bottom:15px;"><span class=3D"phase"=
+>2024</span> DreamCraft3D - Good, 30-60 sec</div>
+    <div class=3D"card" style=3D"background:linear-gradient(90deg,rgba(0,21=
+2,255,0.2),rgba(123,44,191,0.2));"><span class=3D"phase">2025</span> CRM/Tr=
+ipo3D - <span class=3D"gradient-text">Production, 10-30 sec</span></div>
+</div>
+
+<div class=3D"slide">
+    <h2>Top AI 3D Tools in 2025</h2>
+    <div class=3D"grid">
+        <div class=3D"card"><h4>Luma AI</h4><p>End-to-end 3DGS<br>Quick rea=
+lity capture</p></div>
+        <div class=3D"card"><h4>Meshy</h4><p>Generation + Editing<br>API-fi=
+rst workflows</p></div>
+        <div class=3D"card"><h4>TripoSG</h4><p>Production quality<br>Superi=
+or geometry</p></div>
+        <div class=3D"card"><h4>Blender + AI</h4><p>Full pipeline<br>Custom=
+ workflows</p></div>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>Tool Spotlight - Luma AI</h2>
+    <h3>The Point-and-Shoot Solution</h3>
+    <ol style=3D"margin:15px 0;margin-left:30px;"><li>Scan with iPhone</li>=
+<li>Upload to cloud</li><li>Get 3D model in 2-4 hours</li></ol>
+    <h3>Automotive Use Cases</h3>
+    <ul><li>Design model rapid scanning</li><li>Factory/showroom digitizati=
+on</li><li>Marketing asset creation</li></ul>
+</div>
+
+<div class=3D"slide">
+    <h2>Tool Spotlight - Meshy</h2>
+    <h3>The API-First Platform</h3>
+    <h3>Key Features</h3>
+    <ul><li>Text-to-3D generation</li><li>Image-to-3D reconstruction</li><l=
+i>AI-powered editing</li><li>Batch processing</li></ul>
+    <p style=3D"text-align:center;margin:20px 0;">Your App -&gt; <span clas=
+s=3D"accent">Meshy API</span> -&gt; 3D Assets</p>
+</div>
+
+<div class=3D"slide">
+    <h2>Tool Spotlight - TripoSG</h2>
+    <h3>Production-Grade Quality</h3>
+    <ul><li>Superior geometry accuracy</li><li>Clean UV mapping</li><li>Hig=
+h-fidelity textures</li></ul>
+    <h3>Ideal For</h3>
+    <ul><li>High-end product visualization</li><li>Automotive design review=
+s</li><li>Film/Game asset creation</li></ul>
+</div>
+
+<div class=3D"slide">
+    <h2>Blender AI Ecosystem</h2>
+    <h3>The Open-Source Powerhouse</h3>
+    <div class=3D"grid">
+        <div class=3D"card"><h4>Meshy Add-on</h4><p>Cloud AI generation</p>=
+</div>
+        <div class=3D"card"><h4>Luma Import</h4><p>3DGS scene import</p></d=
+iv>
+        <div class=3D"card"><h4>ControlNet 3D</h4><p>Conditional editing</p=
+></div>
+        <div class=3D"card"><h4>QuadRemesher AI</h4><p>Auto-retopology</p><=
+/div>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>Industry Adoption Map</h2>
+    <table>
+        <tbody><tr><th>Industry</th><th>Adoption</th><th>Primary Use</th></=
+tr>
+        <tr><td>Gaming</td><td class=3D"accent">45%</td><td>Asset mass prod=
+uction</td></tr>
+        <tr><td>E-commerce</td><td class=3D"accent">55%</td><td>Product vis=
+ualization</td></tr>
+        <tr><td>Film/VFX</td><td>40%</td><td>Virtual production</td></tr>
+        <tr><td>Architecture</td><td>25%</td><td>Site scanning</td></tr>
+        <tr><td>Healthcare</td><td>30%</td><td>Medical imaging</td></tr>
+        <tr><td>Automotive</td><td class=3D"highlight">15-20%</td><td>Desig=
+n validation</td></tr>
+    </tbody></table>
+    <p style=3D"text-align:center;margin-top:20px;">Automotive is <span cla=
+ss=3D"gradient-text">UNDERUTILIZED =3D Opportunity!</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>Automotive Design Applications</h2>
+    <table>
+        <tbody><tr><th>Stage</th><th>Traditional</th><th>AI 3D</th></tr>
+        <tr><td>Concept Validation</td><td>3-7 days</td><td class=3D"accent=
+">Hours</td></tr>
+        <tr><td>Physical Model Scan</td><td>$50K+ scanner</td><td class=3D"=
+accent">Phone scan</td></tr>
+        <tr><td>Design Review</td><td>Physical studio</td><td class=3D"acce=
+nt">VR/AR</td></tr>
+        <tr><td>Design Iterations</td><td>5-8 per project</td><td class=3D"=
+accent">30-50</td></tr>
+    </tbody></table>
+    <p style=3D"text-align:center;margin-top:20px;font-size:24px;"><span cl=
+ass=3D"gradient-text">60-80% time reduction!</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>Design Validation Workflow</h2>
+    <div class=3D"card" style=3D"margin-bottom:20px;">
+        <h4>TRADITIONAL</h4>
+        <p>Sketch -&gt; Clay Model -&gt; 3D Scan -&gt; Alias -&gt; Render -=
+&gt; Review</p>
+        <p class=3D"accent">TOTAL: 6-12 WEEKS</p>
+    </div>
+    <div class=3D"card" style=3D"background:linear-gradient(90deg,rgba(0,21=
+2,255,0.2),rgba(123,44,191,0.2));">
+        <h4>AI 3D POWERED</h4>
+        <p>Sketch -&gt; AI 3D -&gt; VR Review -&gt; Iterate -&gt; Freeze</p=
+>
+        <p class=3D"gradient-text">TOTAL: 1-2 WEEKS</p>
+    </div>
+    <p style=3D"text-align:center;margin-top:20px;font-size:24px;">Speed Ga=
+in: <span class=3D"accent">5-6x faster</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>VR/AR Design Review</h2>
+    <h3>Immersive Decision Making</h3>
+    <ul>
+        <li>True-to-life <span class=3D"accent">1:1 scale review</span></li=
+>
+        <li>Multiple stakeholders, <span class=3D"accent">any location</spa=
+n></li>
+        <li><span class=3D"accent">Real-time</span> design changes</li>
+        <li><span class=3D"accent">Data-driven</span> design decisions</li>
+    </ul>
+    <h3>Tools</h3>
+    <ul><li>Meta Quest + Luma AI</li><li>Varjo XR headsets</li></ul>
+</div>
+
+<div class=3D"slide">
+    <h2>ROI - Efficiency Gains</h2>
+    <ul>
+        <li>Concept Exploration: <span class=3D"accent">+500%</span></li>
+        <li>Model-to-Review Time: <span class=3D"highlight">-80%</span></li=
+>
+        <li>Design Iterations: <span class=3D"highlight">-60%</span></li>
+        <li>Rendering Cost: <span class=3D"highlight">-70%</span></li>
+        <li>Physical Prototyping: <span class=3D"highlight">-50%</span></li=
+>
+    </ul>
+</div>
+
+<div class=3D"slide">
+    <h2>ROI - Cost Comparison</h2>
+    <h3>Annual Cost (Mid-size Design Team)</h3>
+    <div class=3D"grid">
+        <div class=3D"card"><h4>Traditional</h4><p style=3D"font-size:36px;=
+color:#ff6b6b;">$500K/year</p></div>
+        <div class=3D"card" style=3D"background:linear-gradient(90deg,rgba(=
+0,212,255,0.2),rgba(123,44,191,0.2));"><h4>AI 3D Powered</h4><p style=3D"fo=
+nt-size:36px;color:#00d4ff;">$282K/year</p></div>
+    </div>
+    <p style=3D"text-align:center;margin-top:20px;font-size:24px;">SAVINGS:=
+ <span class=3D"gradient-text">$218K/year (-44%)</span></p>
+    <p style=3D"text-align:center;margin-top:10px;">ROI Timeline: <span cla=
+ss=3D"accent">8-12 months payback</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>Implementation Roadmap</h2>
+    <div class=3D"card" style=3D"margin-bottom:15px;">
+        <span class=3D"phase">PHASE 1</span> <strong>Quick Wins (0-6 months=
+)</strong>
+        <p> Pilot Projects | Budget: $20-50K | ROI: 300%+</p>
+    </div>
+    <div class=3D"card" style=3D"margin-bottom:15px;">
+        <span class=3D"phase">PHASE 2</span> <strong>Deep Integration (6-18=
+ months)</strong>
+        <p> Full Pipeline | Budget: $150-400K | ROI: 200%+</p>
+    </div>
+    <div class=3D"card">
+        <span class=3D"phase">PHASE 3</span> <strong>Workflow Revolution (1=
+8-36 months)</strong>
+        <p> AI-Native System | Budget: $200-500K | ROI: 400%+</p>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>Phase 1 - Quick Wins (0-6 months)</h2>
+    <h3>Objective: Immediate productivity gains</h3>
+    <ul>
+        <li>Deploy Luma AI for rapid model scanning</li>
+        <li>Set up Blender + AI plugin workflow</li>
+        <li>Train team on AI 3D basics</li>
+        <li>Create internal prompt library</li>
+        <li>Pilot on 2-3 design projects</li>
+    </ul>
+    <p style=3D"margin-top:20px;">Investment: <span class=3D"accent">$20-50=
+K</span> | Expected ROI: <span class=3D"gradient-text">300%+</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>Phase 2 - Deep Integration (6-18 mo)</h2>
+    <h3>Objective: AI 3D as core workflow</h3>
+    <ul>
+        <li>Train brand-specific AI models (LoRA)</li>
+        <li>Deploy controlled generation pipeline</li>
+        <li>Build AI design evaluation system</li>
+        <li>Integrate with VR review system</li>
+        <li>Establish 3D asset management AI</li>
+    </ul>
+    <p style=3D"margin-top:20px;">Investment: <span class=3D"accent">$150-4=
+00K</span> | Expected ROI: <span class=3D"gradient-text">200%+</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>Phase 3 - Workflow Revolution</h2>
+    <h3>Objective: AI-native design operation</h3>
+    <ul>
+        <li>Multi-Agent Design Studio</li>
+        <li>Design Knowledge Graph (Brand DNA)</li>
+        <li>User Experience AI Loop</li>
+        <li>External AI 3D Standards Participation</li>
+    </ul>
+    <p style=3D"margin-top:20px;">Investment: <span class=3D"accent">$200-5=
+00K</span> | Expected ROI: <span class=3D"gradient-text">400%+</span></p>
+</div>
+
+<div class=3D"slide">
+    <h2>Challenges and Solutions</h2>
+    <div class=3D"grid">
+        <div class=3D"card"><h4>Data Privacy</h4><p>Local deployment + diff=
+erential privacy</p></div>
+        <div class=3D"card"><h4>Quality Control</h4><p>Human-in-the-loop wo=
+rkflows</p></div>
+        <div class=3D"card"><h4>Team Resistance</h4><p>Frame as superpower,=
+ not replacement</p></div>
+        <div class=3D"card"><h4>Engineering Handoff</h4><p>Early cross-func=
+tional involvement</p></div>
+    </div>
+</div>
+
+<div class=3D"slide">
+    <h2>Future Predictions (2025-2026)</h2>
+    <ul>
+        <li><span class=3D"phase">2025 MID</span> Text-to-3D Quality hits P=
+roduction</li>
+        <li><span class=3D"phase">2025 END</span> Real-time AI Edit Tools</=
+li>
+        <li><span class=3D"phase">2026</span> Multimodal Design Systems (2D=
++3D+Engineering)</li>
+    </ul>
+    <h3 style=3D"margin-top:20px;">Predictions</h3>
+    <ul>
+        <li>Text-to-3D hits production quality</li>
+        <li>VR design review becomes standard</li>
+        <li>Auto industry leads AI 3D adoption</li>
+    </ul>
+</div>
+
+<div class=3D"slide">
+    <h2>Call to Action</h2>
+    <h3>Immediate Next Steps</h3>
+    <ol style=3D"margin:20px 0;margin-left:30px;font-size:20px;">
+        <li>Form AI 3D task force (3 people)</li>
+        <li>Pilot: Choose 1 project for AI 3D workflow</li>
+        <li>Budget: Approve $30K for Phase 1 tools</li>
+        <li>Timeline: First pilot live in 60 days</li>
+    </ol>
+    <p style=3D"text-align:center;font-size:24px;margin-top:30px;">Lets mov=
+e fast - competitors are already on this journey!</p>
+</div>
+
+<div class=3D"slide title-slide">
+    <h1>Q and A</h1>
+    <p class=3D"subtitle">Questions? Ideas? Concerns?</p>
+    <p class=3D"subtitle" style=3D"margin-top:40px;">Thank You!</p>
+</div>
+
+
+
+</body></html>
+------MultipartBoundary--oi1Et5UtahbSmhBnB39bh7Lj49ACRyOedwYh659wHr----
+Content-Type: text/css
+Content-Transfer-Encoding: quoted-printable
+Content-Location: cid:css-ea39a68d-b5fd-434a-8078-a5170cc4ea3a@mhtml.blink
+
+@charset "utf-8";
+
+* { margin: 0px; padding: 0px; box-sizing: border-box; }
+
+body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; backgr=
+ound: linear-gradient(135deg, rgb(26, 26, 46) 0%, rgb(22, 33, 62) 50%, rgb(=
+15, 52, 96) 100%); color: rgb(255, 255, 255); min-height: 100vh; padding: 2=
+0px; }
+
+.slide { max-width: 1200px; margin: 0px auto 30px; background: linear-gradi=
+ent(145deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%); b=
+order-radius: 20px; padding: 50px; backdrop-filter: blur(10px); border: 1px=
+ solid rgba(255, 255, 255, 0.1); box-shadow: rgba(0, 0, 0, 0.3) 0px 20px 60=
+px; min-height: 500px; display: flex; flex-direction: column; justify-conte=
+nt: center; }
+
+h1 { font-size: 48px; background: linear-gradient(90deg, rgb(0, 212, 255), =
+rgb(123, 44, 191)) text; -webkit-text-fill-color: transparent; margin-botto=
+m: 20px; }
+
+h2 { font-size: 36px; color: rgb(0, 212, 255); margin-bottom: 25px; border-=
+bottom: 3px solid rgb(123, 44, 191); padding-bottom: 10px; display: inline-=
+block; }
+
+h3 { font-size: 24px; color: rgb(0, 212, 255); margin: 20px 0px 15px; }
+
+p, li { font-size: 18px; line-height: 1.8; color: rgb(224, 224, 224); }
+
+ul { margin-left: 30px; margin-bottom: 20px; }
+
+li { margin-bottom: 12px; }
+
+li::marker { color: rgb(123, 44, 191); }
+
+.title-slide { text-align: center; justify-content: center; }
+
+.title-slide h1 { font-size: 64px; margin-bottom: 30px; }
+
+.subtitle { font-size: 24px; color: rgb(170, 170, 170); margin-top: 20px; }
+
+.accent { color: rgb(0, 212, 255); font-weight: bold; }
+
+.highlight { color: rgb(255, 107, 107); font-weight: bold; }
+
+.gradient-text { background: linear-gradient(90deg, rgb(0, 212, 255), rgb(1=
+23, 44, 191), rgb(255, 107, 107)) text; -webkit-text-fill-color: transparen=
+t; font-weight: bold; }
+
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; ma=
+rgin-top: 20px; }
+
+.card { background: rgba(255, 255, 255, 0.08); border-radius: 12px; padding=
+: 20px; border: 1px solid rgba(255, 255, 255, 0.1); }
+
+.card h4 { color: rgb(0, 212, 255); font-size: 18px; margin-bottom: 10px; }
+
+table { width: 100%; border-collapse: collapse; margin: 20px 0px; }
+
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255=
+, 255, 255, 0.1); }
+
+th { background: rgba(0, 212, 255, 0.2); color: rgb(0, 212, 255); }
+
+tr:hover { background: rgba(255, 255, 255, 0.05); }
+
+.emoji { font-size: 24px; margin-right: 10px; }
+
+.phase { display: inline-block; background: linear-gradient(90deg, rgb(123,=
+ 44, 191), rgb(0, 212, 255)); padding: 5px 15px; border-radius: 20px; font-=
+size: 14px; font-weight: bold; margin-right: 10px; }
+------MultipartBoundary--oi1Et5UtahbSmhBnB39bh7Lj49ACRyOedwYh659wHr------

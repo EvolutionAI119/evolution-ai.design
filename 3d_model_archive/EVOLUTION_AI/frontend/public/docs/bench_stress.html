@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>竞品对标 - 边界压力测试</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0a0a1a;color:#c8d6e5;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+#topbar{height:42px;flex-shrink:0;background:rgba(10,10,26,.85);display:flex;align-items:center;padding:0 12px;border-bottom:1px solid rgba(0,212,255,.1);z-index:200;gap:8px}
+.logo{color:#00d4ff;font-size:12px;font-weight:bold;letter-spacing:2px}
+.logo span{color:#ff6b6b;font-size:9px;margin-left:6px;font-weight:bold;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.sep{width:1px;height:20px;background:rgba(0,212,255,.15);margin:0 6px}
+.ctrl{display:flex;align-items:center;gap:6px}
+.ctrl label{font-size:9px;color:#5a6e8a}
+.ctrl select,.ctrl input{background:rgba(26,26,62,.8);border:1px solid rgba(0,212,255,.2);border-radius:3px;color:#c8d6e5;font-size:9px;padding:2px 6px}
+.ctrl input[type=range]{width:80px;accent-color:#00d4ff}
+.ctrl button{padding:3px 10px;background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.3);border-radius:4px;color:#00d4ff;font-size:9px;cursor:pointer;transition:all .15s}
+.ctrl button:hover{background:rgba(0,212,255,.3)}
+.ctrl button.danger{background:rgba(255,107,107,.15);border-color:rgba(255,107,107,.3);color:#ff6b6b}
+.ctrl button.danger:hover{background:rgba(255,107,107,.3)}
+
+#main{flex:1;position:relative;overflow:hidden;display:flex}
+
+/* Sidebar */
+#sidebar{width:220px;flex-shrink:0;background:rgba(10,10,26,.92);border-right:1px solid rgba(0,212,255,.1);overflow-y:auto;padding:8px;transition:width .3s}
+#sidebar.collapsed{width:32px;padding:4px}
+#sidebar.collapsed .sb-body{display:none}
+.sb-toggle{width:24px;height:24px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);border-radius:4px;color:#00d4ff;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.sb-title{font-size:9px;color:#00d4ff;letter-spacing:1px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(0,212,255,.1)}
+.sb-item{padding:4px 6px;font-size:8px;color:#8b9dc3;border-radius:3px;cursor:pointer;margin-bottom:1px;transition:all .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-item:hover{background:rgba(0,212,255,.08);color:#c8d6e5}
+.sb-item.active{color:#00d4ff;background:rgba(0,212,255,.15)}
+.sb-item .tag{display:inline-block;font-size:7px;padding:0 3px;border-radius:2px;margin-left:3px}
+.sb-item .tag.extreme{background:rgba(255,107,107,.2);color:#ff6b6b}
+.sb-item .tag.zero{background:rgba(26,26,62,.6);color:#3a506b}
+.sb-item .tag.full{background:rgba(0,255,136,.2);color:#00ff88}
+
+/* Chart area */
+#chartArea{flex:1;overflow-y:auto;padding:12px;position:relative}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.tab{padding:4px 10px;background:rgba(26,26,62,.6);border:1px solid transparent;border-radius:4px;color:#5a6e8a;cursor:pointer;font-size:9px;transition:all .15s}
+.tab:hover{color:#8b9dc3;border-color:rgba(0,212,255,.2)}
+.tab.on{background:rgba(0,212,255,.15);color:#00d4ff;border-color:rgba(0,212,255,.3)}
+.tab .badge{font-size:7px;background:rgba(255,107,107,.3);color:#ff6b6b;padding:0 3px;border-radius:2px;margin-left:3px}
+
+.chart-wrap{position:relative;background:rgba(26,26,62,.2);border-radius:8px;padding:12px;margin-bottom:10px}
+.chart-wrap.hidden{display:none}
+.chart-title{font-size:10px;color:#00d4ff;margin-bottom:6px;letter-spacing:.5px}
+
+/* Perf monitor */
+#perfMon{position:fixed;top:48px;right:8px;width:180px;background:rgba(10,10,26,.95);border:1px solid rgba(0,212,255,.2);border-radius:6px;padding:8px;z-index:300;font-size:9px}
+#perfMon .pm-title{color:#00d4ff;margin-bottom:4px;letter-spacing:.5px}
+#perfMon .pm-row{display:flex;justify-content:space-between;margin-bottom:2px;color:#5a6e8a}
+#perfMon .pm-val{color:#c8d6e5;font-weight:bold}
+#perfMon .pm-val.good{color:#00ff88}
+#perfMon .pm-val.warn{color:#ffd700}
+#perfMon .pm-val.bad{color:#ff6b6b}
+#perfMon .pm-bar{height:3px;background:rgba(26,26,62,.6);border-radius:2px;margin-top:1px}
+#perfMon .pm-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+
+/* Status bar */
+#sbar{height:32px;flex-shrink:0;background:rgba(10,10,26,.85);border-top:1px solid rgba(0,212,255,.1);display:flex;align-items:center;padding:0 12px;font-size:9px;color:#3a506b;gap:16px;z-index:200}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:rgba(26,26,62,.3)}
+::-webkit-scrollbar-thumb{background:rgba(0,212,255,.2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo">STRESS TEST<span>BOUNDARY</span></div>
+  <div class="sep"></div>
+  <div class="ctrl">
+    <label>竞品数:</label>
+    <input type="range" id="ctrlComp" min="3" max="30" value="12">
+    <span id="ctrlCompVal" style="font-size:9px;color:#00d4ff;width:20px">12</span>
+  </div>
+  <div class="sep"></div>
+  <div class="ctrl">
+    <label>维度数:</label>
+    <input type="range" id="ctrlDim" min="5" max="25" value="15">
+    <span id="ctrlDimVal" style="font-size:9px;color:#00d4ff;width:20px">15</span>
+  </div>
+  <div class="sep"></div>
+  <div class="ctrl">
+    <label>极值比例:</label>
+    <input type="range" id="ctrlExtreme" min="0" max="80" value="30">
+    <span id="ctrlExtremeVal" style="font-size:9px;color:#00d4ff;width:24px">30%</span>
+  </div>
+  <div class="sep"></div>
+  <div class="ctrl">
+    <button id="btnRegen">重新生成</button>
+    <button id="btnDestroy" class="danger">销毁图表</button>
+    <button id="btnResize">超宽切换</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="sidebar">
+    <button class="sb-toggle" id="sbToggle">◀</button>
+    <div class="sb-body">
+      <div class="sb-title">竞品列表</div>
+      <div id="compList"></div>
+    </div>
+  </div>
+
+  <div id="chartArea">
+    <div class="tabs" id="tabBar"></div>
+    <div id="chartContainer"></div>
+  </div>
+</div>
+
+<div id="perfMon">
+  <div class="pm-title">性能监控</div>
+  <div class="pm-row"><span>FPS</span><span class="pm-val" id="pmFps">--</span></div>
+  <div class="pm-bar"><div class="pm-bar-fill" id="pmFpsBar" style="width:0;background:#00ff88"></div></div>
+  <div class="pm-row"><span>图表实例</span><span class="pm-val" id="pmCharts">0</span></div>
+  <div class="pm-row"><span>数据点</span><span class="pm-val" id="pmPoints">0</span></div>
+  <div class="pm-row"><span>渲染耗时</span><span class="pm-val" id="pmRender">--</span></div>
+  <div class="pm-bar"><div class="pm-bar-fill" id="pmRenderBar" style="width:0;background:#00d4ff"></div></div>
+  <div class="pm-row"><span>DOM节点</span><span class="pm-val" id="pmDom">0</span></div>
+  <div class="pm-row"><span>内存(MB)</span><span class="pm-val" id="pmMem">--</span></div>
+</div>
+
+<div id="sbar">
+  <span>边界压力测试 v1.0</span>
+  <span id="sbInfo">--</span>
+  <span style="margin-left:auto" id="sbStatus">就绪</span>
+</div>
+
+<script>
+// ========== 极端数据生成器 ==========
+var COMP_NAMES=[
+  '阿尔特太乙','FORMA','质境','AIVA','NURBGen','EVOLUTION AI',
+  'CATIA V6','Fusion 360','Rhino 8','Blender','Siemens NX','SolidWorks',
+  'Autodesk Alias','ICEM Surf','PolyCAD','Varkon','FreeCAD','SolveSpace',
+  'OpenSCAD','BRL-CAD','Salome','Gmsh','MeshLab','CloudCompare',
+  '3DEXPERIENCE','Onshape','Tinkercad','Shapr3D','uMake','Morpholio'
+];
+var DIM_NAMES=[
+  '文本→3D','NURBS曲面','IGES/STEP','实时交互','空气动力学','车型数据库',
+  '开源可用','卡尔曼滤波','多CAD对接','G2连续性','参数化建模',
+  '布尔运算','网格修复','逆向工程','渲染质量','VR/AR支持',
+  '云协作','AI辅助','物理仿真','拓扑优化','公差分析',
+  '装配建模','图纸生成','材料库','运动仿真'
+];
+
+var PALETTE=[
+  '#ff6b6b','#ffa502','#7bed9f','#70a1ff','#a29bfe','#00d4ff',
+  '#ff9ff3','#f368e0','#ee5a24','#009432','#0652DD','#833471',
+  '#ED4C67','#F79F1F','#A3CB38','#1289A7','#D980FA','#B53471',
+  '#FDA7DF','#BDC581','#C4E538','#12CBC4','#9AECDB','#EAB543',
+  '#FEA47F','#25CCF7','#EAB543','#55E6C1','#CAD3C8','#F8EFBA'
+];
+
+var charts=[];
+var currentData=null;
+
+function generateData(nComp,nDim,extremePct){
+  var comps=COMP_NAMES.slice(0,nComp);
+  var dims=DIM_NAMES.slice(0,nDim);
+  var extremeCount=Math.round(nComp*extremePct/100);
+  var data={comps:[],dims:dims,matrix:[],tags:[]};
+
+  comps.forEach(function(name,i){
+    var isExtreme=i<nComp-extremeCount?false:true;
+    var type=isExtreme?(Math.random()>.5?'zero':'full'):'normal';
+    data.comps.push(name);
+    data.tags.push(type);
+    var row=[];
+    dims.forEach(function(){
+      if(type==='zero') row.push(Math.random()>.3?0:Math.round(Math.random()*3));
+      else if(type==='full') row.push(Math.random()>.3?10:Math.round(7+Math.random()*3));
+      else row.push(Math.round(Math.random()*10));
+    });
+    data.matrix.push(row);
+  });
+  return data;
+}
+
+// ========== 渲染引擎 ==========
+function destroyCharts(){
+  charts.forEach(function(c){c.destroy()});
+  charts=[];
+  document.getElementById('chartContainer').innerHTML='';
+}
+
+function renderAll(data){
+  var t0=performance.now();
+  destroyCharts();
+  currentData=data;
+
+  // Sidebar
+  var list=document.getElementById('compList');
+  list.innerHTML='';
+  data.comps.forEach(function(name,i){
+    var div=document.createElement('div');
+    div.className='sb-item'+(i===0?' active':'');
+    var tag=data.tags[i];
+    var tagHtml=tag==='zero'?'<span class="tag zero">零值</span>':tag==='full'?'<span class="tag full">满值</span>':'';
+    div.innerHTML=name+tagHtml;
+    div.onclick=function(){
+      list.querySelectorAll('.sb-item').forEach(function(d){d.classList.remove('active')});
+      div.classList.add('active');
+    };
+    list.appendChild(div);
+  });
+
+  // Tabs
+  var tabBar=document.getElementById('tabBar');
+  tabBar.innerHTML='';
+  var tabDefs=[
+    {id:'radar',label:'雷达图',badge:data.comps.length>15?data.comps.length:''},
+    {id:'matrix',label:'能力矩阵',badge:data.dims.length>12?data.dims.length:''},
+    {id:'market',label:'市场模拟',badge:''},
+    {id:'scatter',label:'散点定位',badge:data.comps.length>20?'!':''},
+    {id:'gap',label:'差距分析',badge:''},
+    {id:'unique',label:'优势评分',badge:''}
+  ];
+  tabDefs.forEach(function(td,i){
+    var btn=document.createElement('button');
+    btn.className='tab'+(i===0?' on':'');
+    btn.innerHTML=td.label+(td.badge?'<span class="badge">'+td.badge+'</span>':'');
+    btn.onclick=function(){
+      tabBar.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
+      btn.classList.add('on');
+      document.querySelectorAll('.chart-wrap').forEach(function(w){w.classList.add('hidden')});
+      document.getElementById('cw_'+td.id).classList.remove('hidden');
+    };
+    tabBar.appendChild(btn);
+  });
+
+  var container=document.getElementById('chartContainer');
+  container.innerHTML='';
+
+  // Color arrays
+  var clrs=data.comps.map(function(_,i){return PALETTE[i%PALETTE.length]});
+  var bgcs=clrs.map(function(c){return c+'33'});
+
+  // 1. Radar
+  var cw1=mkWrap(container,'radar','多维能力雷达 ('+data.comps.length+'竞品 × '+data.dims.length+'维度)');
+  var c1=mkCanvas(cw1);
+  charts.push(new Chart(c1,{
+    type:'radar',
+    data:{labels:data.dims,datasets:data.comps.map(function(n,i){
+      return{label:n,data:data.matrix[i],borderColor:clrs[i],backgroundColor:bgcs[i],borderWidth:1.5,pointRadius:data.comps.length>15?0:2,pointBackgroundColor:clrs[i]}
+    })},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      plugins:{legend:{display:data.comps.length<=12,labels:{color:'#8b9dc3',font:{size:8}}}},
+      scales:{r:{beginAtZero:true,max:10,ticks:{stepSize:2,color:'#3a506b',backdropColor:'transparent',font:{size:7}},grid:{color:'rgba(0,212,255,.08)'},angleLines:{color:'rgba(0,212,255,.08)'},pointLabels:{color:'#8b9dc3',font:{size:data.dims.length>15?6:8}}}}
+    }
+  }));
+
+  // 2. Matrix heatmap
+  var cw2=mkWrap(container,'matrix','能力矩阵热力图');
+  cw2.classList.add('hidden');
+  var c2=mkCanvas(cw2);
+  charts.push(new Chart(c2,{
+    type:'bar',
+    data:{labels:data.dims,datasets:data.comps.map(function(name,i){
+      return{label:name,data:data.matrix[i],
+        backgroundColor:data.matrix[i].map(function(v){
+          if(v===0)return'rgba(26,26,62,.6)';if(v<=3)return'rgba(255,165,2,.2)';
+          if(v<=6)return'rgba(0,212,255,.3)';if(v<=8)return'rgba(0,255,136,.35)';
+          return'rgba(0,255,136,.65)';
+        }),borderColor:'rgba(10,10,26,.6)',borderWidth:.5}
+    })},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      plugins:{legend:{display:data.comps.length<=8,labels:{color:'#8b9dc3',font:{size:7}},position:'right'},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.raw+'/10'}}}
+      },
+      scales:{
+        x:{stacked:true,ticks:{color:'#3a506b',font:{size:7}},grid:{color:'rgba(0,212,255,.05)'}},
+        y:{stacked:true,ticks:{color:'#8b9dc3',font:{size:data.dims.length>15?6:8}},grid:{display:false}}
+      }
+    }
+  }));
+
+  // 3. Market simulation
+  var cw3=mkWrap(container,'market','市场规模模拟 (5年 × '+data.comps.length+'竞品)');
+  cw3.classList.add('hidden');
+  var c3=mkCanvas(cw3);
+  var years=['2022','2023','2024','2025','2026E'];
+  charts.push(new Chart(c3,{
+    type:'bar',
+    data:{labels:years,datasets:data.comps.slice(0,Math.min(10,data.comps.length)).map(function(name,i){
+      var base=5+Math.random()*20;
+      return{label:name,data:years.map(function(_,yi){return Math.round((base*(1+yi*0.15)+Math.random()*5)*10)/10}),
+        backgroundColor:bgcs[i],borderColor:clrs[i],borderWidth:1}
+    })},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      plugins:{legend:{labels:{color:'#8b9dc3',font:{size:7}}}},
+      scales:{
+        x:{ticks:{color:'#5a6e8a',font:{size:8}},grid:{color:'rgba(0,212,255,.05)'}},
+        y:{ticks:{color:'#5a6e8a',font:{size:7}},grid:{color:'rgba(0,212,255,.05)'}}
+      }
+    }
+  }));
+
+  // 4. Scatter position
+  var cw4=mkWrap(container,'scatter','市场定位散点 ('+data.comps.length+'点)');
+  cw4.classList.add('hidden');
+  var c4=mkCanvas(cw4);
+  var scatterData=data.comps.map(function(name,i){
+    var row=data.matrix[i];
+    var avg=row.reduce(function(a,b){return a+b},0)/row.length;
+    var variance=row.reduce(function(a,v){return a+(v-avg)*(v-avg)},0)/row.length;
+    return{x:Math.round(avg*10+Math.random()*15),y:Math.round(variance*5+Math.random()*10),label:name};
+  });
+  charts.push(new Chart(c4,{
+    type:'scatter',
+    data:{datasets:data.comps.map(function(name,i){
+      return{label:name,data:[scatterData[i]],backgroundColor:clrs[i],borderColor:clrs[i],pointRadius:6+scatterData[i].x*0.15,pointHoverRadius:10}
+    })},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      plugins:{legend:{display:data.comps.length<=12,labels:{color:'#8b9dc3',font:{size:7}}},
+        tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+' ('+ctx.parsed.x+', '+ctx.parsed.y+')'}}}
+      },
+      scales:{
+        x:{title:{display:true,text:'综合能力',color:'#5a6e8a',font:{size:9}},ticks:{color:'#5a6e8a',font:{size:8}},grid:{color:'rgba(0,212,255,.05)'}},
+        y:{title:{display:true,text:'能力方差',color:'#5a6e8a',font:{size:9}},ticks:{color:'#5a6e8a',font:{size:8}},grid:{color:'rgba(0,212,255,.05)'}}
+      }
+    }
+  }));
+
+  // 5. Gap analysis
+  var cw5=mkWrap(container,'gap','差距分析 (前10项)');
+  cw5.classList.add('hidden');
+  var gapHtml='<table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid rgba(0,212,255,.15)"><th style="font-size:8px;color:#00d4ff;text-align:left;padding:4px 6px">维度</th><th style="font-size:8px;color:#00d4ff;text-align:left;padding:4px 6px">最高竞品</th><th style="font-size:8px;color:#00d4ff;text-align:left;padding:4px 6px">我方</th><th style="font-size:8px;color:#00d4ff;text-align:left;padding:4px 6px">差距</th><th style="font-size:8px;color:#00d4ff;text-align:left;padding:4px 6px">进度</th></tr></thead><tbody>';
+  var myIdx=data.comps.length-1; // EVOLUTION AI is last
+  data.dims.slice(0,10).forEach(function(dim,di){
+    var maxVal=0,maxName='';
+    data.comps.forEach(function(name,ci){if(data.matrix[ci][di]>maxVal){maxVal=data.matrix[ci][di];maxName=name}});
+    var myVal=data.matrix[myIdx][di];
+    var gap=maxVal-myVal;
+    var pct=maxVal>0?Math.round(myVal/maxVal*100):0;
+    var gapColor=gap<=0?'#00ff88':gap<=2?'#ffd700':'#ff6b6b';
+    gapHtml+='<tr style="border-bottom:1px solid rgba(0,212,255,.05)">'
+      +'<td style="font-size:8px;color:#e0e6ed;padding:3px 6px">'+dim+'</td>'
+      +'<td style="font-size:8px;color:#ffa502;padding:3px 6px">'+maxName+'('+maxVal+')</td>'
+      +'<td style="font-size:8px;color:#00d4ff;padding:3px 6px">'+myVal+'</td>'
+      +'<td style="font-size:8px;color:'+gapColor+';padding:3px 6px;font-weight:bold">'+(gap>0?'+'+gap:'领先')+'</td>'
+      +'<td style="padding:3px 6px"><div style="height:4px;border-radius:2px;background:rgba(26,26,62,.6);width:80px"><div style="height:100%;border-radius:2px;width:'+pct+'%;background:linear-gradient(90deg,#00d4ff,#00ff88)"></div></div><div style="font-size:6px;color:#3a506b">'+pct+'%</div></td>'
+      +'</tr>';
+  });
+  gapHtml+='</tbody></table>';
+  cw5.innerHTML+='<div style="padding:4px">'+gapHtml+'</div>';
+
+  // 6. Unique scores
+  var cw6=mkWrap(container,'unique','差异化优势评分');
+  cw6.classList.add('hidden');
+  var c6=mkCanvas(cw6);
+  var uLabels=['硬点驱动','卡尔曼滤波','A2MAC1断面','三区权重','Tumblehome','全开源','零依赖','多后端','实时渲染','参数联动'];
+  var uScores=uLabels.map(function(){return Math.round(3+Math.random()*8)});
+  charts.push(new Chart(c6,{
+    type:'bar',
+    data:{labels:uLabels,datasets:[{data:uScores,
+      backgroundColor:uScores.map(function(v){return v>=9?'rgba(0,255,136,.5)':v>=7?'rgba(0,212,255,.4)':v>=4?'rgba(255,165,2,.3)':'rgba(255,107,107,.3)'}),
+      borderColor:uScores.map(function(v){return v>=9?'#00ff88':v>=7?'#00d4ff':v>=4?'#ffa502':'#ff6b6b'}),borderWidth:1
+    }]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:0},
+      plugins:{legend:{display:false}},
+      scales:{x:{max:10,ticks:{color:'#5a6e8a',font:{size:7}},grid:{color:'rgba(0,212,255,.05)'}},y:{ticks:{color:'#8b9dc3',font:{size:8}},grid:{display:false}}}
+    }
+  }));
+
+  // Perf stats
+  var t1=performance.now();
+  var totalPoints=data.comps.length*data.dims.length*charts.length;
+  updatePerf(t1-t0,totalPoints);
+  document.getElementById('sbInfo').textContent=data.comps.length+'竞品 × '+data.dims.length+'维度 | '+totalPoints+'数据点 | '+(t1-t0).toFixed(0)+'ms';
+  document.getElementById('sbStatus').textContent='渲染完成';
+  document.getElementById('sbStatus').style.color='#00ff88';
+}
+
+function mkWrap(parent,id,title){
+  var div=document.createElement('div');
+  div.className='chart-wrap';
+  div.id='cw_'+id;
+  div.innerHTML='<div class="chart-title">'+title+'</div>';
+  parent.appendChild(div);
+  return div;
+}
+
+function mkCanvas(wrap){
+  var div=document.createElement('div');
+  div.style.cssText='position:relative;height:380px';
+  var canvas=document.createElement('canvas');
+  div.appendChild(canvas);
+  wrap.appendChild(div);
+  return canvas;
+}
+
+// ========== 性能监控 ==========
+var fpsFrames=0,fpsLast=performance.now(),fpsVal=0;
+function fpsLoop(){
+  fpsFrames++;
+  var now=performance.now();
+  if(now-fpsLast>=1000){
+    fpsVal=Math.round(fpsFrames*1000/(now-fpsLast));
+    fpsFrames=0;fpsLast=now;
+    var el=document.getElementById('pmFps');
+    el.textContent=fpsVal;
+    el.className='pm-val '+(fpsVal>=50?'good':fpsVal>=30?'warn':'bad');
+    document.getElementById('pmFpsBar').style.width=Math.min(100,fpsVal)+'%';
+    document.getElementById('pmFpsBar').style.background=fpsVal>=50?'#00ff88':fpsVal>=30?'#ffd700':'#ff6b6b';
+  }
+  requestAnimationFrame(fpsLoop);
+}
+requestAnimationFrame(fpsLoop);
+
+function updatePerf(renderMs,totalPoints){
+  document.getElementById('pmCharts').textContent=charts.length;
+  document.getElementById('pmPoints').textContent=totalPoints.toLocaleString();
+  var el=document.getElementById('pmRender');
+  el.textContent=renderMs.toFixed(0)+'ms';
+  el.className='pm-val '+(renderMs<500?'good':renderMs<2000?'warn':'bad');
+  document.getElementById('pmRenderBar').style.width=Math.min(100,renderMs/30)+'%';
+  document.getElementById('pmRenderBar').style.background=renderMs<500?'#00d4ff':renderMs<2000?'#ffd700':'#ff6b6b';
+  document.getElementById('pmDom').textContent=document.querySelectorAll('*').length;
+  if(performance.memory){
+    document.getElementById('pmMem').textContent=(performance.memory.usedJSHeapSize/1048576).toFixed(1);
+  }
+}
+
+// ========== 控件绑定 ==========
+var ctrlComp=document.getElementById('ctrlComp');
+var ctrlDim=document.getElementById('ctrlDim');
+var ctrlExtreme=document.getElementById('ctrlExtreme');
+
+ctrlComp.oninput=function(){document.getElementById('ctrlCompVal').textContent=this.value};
+ctrlDim.oninput=function(){document.getElementById('ctrlDimVal').textContent=this.value};
+ctrlExtreme.oninput=function(){document.getElementById('ctrlExtremeVal').textContent=this.value+'%'};
+
+document.getElementById('btnRegen').onclick=function(){
+  var n=parseInt(ctrlComp.value),d=parseInt(ctrlDim.value),e=parseInt(ctrlExtreme.value);
+  document.getElementById('sbStatus').textContent='生成中...';
+  document.getElementById('sbStatus').style.color='#ffd700';
+  setTimeout(function(){
+    var data=generateData(n,d,e);
+    renderAll(data);
+  },50);
+};
+
+document.getElementById('btnDestroy').onclick=function(){
+  destroyCharts();
+  document.getElementById('compList').innerHTML='';
+  document.getElementById('chartContainer').innerHTML='';
+  document.getElementById('tabBar').innerHTML='';
+  document.getElementById('sbStatus').textContent='已销毁';
+  document.getElementById('sbStatus').style.color='#ff6b6b';
+  document.getElementById('pmCharts').textContent='0';
+  document.getElementById('pmPoints').textContent='0';
+};
+
+var isWide=false;
+document.getElementById('btnResize').onclick=function(){
+  isWide=!isWide;
+  document.getElementById('chartArea').style.minWidth=isWide?'2400px':'';
+  document.getElementById('main').style.overflowX=isWide?'auto':'hidden';
+  this.textContent=isWide?'正常宽度':'超宽切换';
+};
+
+document.getElementById('sbToggle').onclick=function(){
+  var sb=document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
+  this.textContent=sb.classList.contains('collapsed')?'▶':'◀';
+};
+
+// ========== 初始渲染 ==========
+setTimeout(function(){
+  var data=generateData(12,15,30);
+  renderAll(data);
+},300);
+</script>
+</body>
+</html>

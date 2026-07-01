@@ -48,3 +48,14 @@ coverage.xml
 *.step
 *.iges
 *.gltf
+
+# Large binary files (>100MB, exceed GitHub limit)
+*.fbx
+*.mp4
+*.zip
+*.pptx
+*.ppt
+*.pdf
+
+# Embedded Python
+.python312/

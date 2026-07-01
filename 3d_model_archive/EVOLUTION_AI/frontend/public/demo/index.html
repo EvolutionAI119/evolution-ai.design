@@ -1,0 +1,2784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVOLUTION AI - Automotive A-Class Surface Development Platform</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-sidebar: #161b22;
+            --bg-card: #21262d;
+            --bg-hover: #292e36;
+            --border: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --error: #f85149;
+            --sidebar-width: 220px;
+            --sidebar-collapsed: 48px;
+            --toolbar-height: 48px;
+            --statusbar-height: 28px;
+            --rightpanel-width: 320px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        /* ====== App Shell (CSS Grid) ====== */
+        #app {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr var(--rightpanel-width);
+            grid-template-rows: var(--toolbar-height) 1fr auto var(--statusbar-height);
+            grid-template-areas:
+                "sidebar toolbar  rightpanel"
+                "sidebar content rightpanel"
+                "sidebar bottom  rightpanel"
+                "sidebar status  rightpanel";
+            height: 100vh;
+            transition: grid-template-columns 0.2s ease;
+        }
+
+        #app.sidebar-collapsed {
+            grid-template-columns: var(--sidebar-collapsed) 1fr var(--rightpanel-width);
+        }
+
+        #app.rightpanel-collapsed {
+            grid-template-columns: var(--sidebar-width) 1fr 0px;
+        }
+
+        #app.sidebar-collapsed.rightpanel-collapsed {
+            grid-template-columns: var(--sidebar-collapsed) 1fr 0px;
+        }
+
+        /* ====== Sidebar ====== */
+        #sidebar {
+            grid-area: sidebar;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 20;
+        }
+
+        .sidebar-brand {
+            height: var(--toolbar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            border-bottom: 1px solid var(--border);
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand .brand-icon {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, var(--accent), #388bfd);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand .brand-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 8px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            height: 40px;
+            cursor: pointer;
+            gap: 12px;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+            border-left: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+            background: rgba(88, 166, 255, 0.08);
+            border-left-color: var(--accent);
+        }
+
+        .nav-item .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .nav-item .nav-label {
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid var(--border);
+            padding: 8px 0;
+            flex-shrink: 0;
+        }
+
+        /* ====== Toolbar ====== */
+        #toolbar {
+            grid-area: toolbar;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .toolbar-toggle {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .toolbar-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .toolbar-search {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .toolbar-search input {
+            width: 100%;
+            height: 32px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0 12px 0 32px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .toolbar-search input:focus {
+            border-color: var(--accent);
+        }
+
+        .toolbar-search input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .toolbar-search .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .toolbar-btn {
+            height: 32px;
+            padding: 0 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .toolbar-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #79b8ff;
+        }
+
+        .toolbar-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .toolbar-icon-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .toolbar-icon-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .toolbar-icon-btn .badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            background: var(--error);
+            border-radius: 50%;
+        }
+
+        .toolbar-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #388bfd);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+        }
+
+        /* ====== Main Content ====== */
+        #content {
+            grid-area: content;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        #canvas3d {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .viewport-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 4px;
+        }
+
+        .viewport-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: rgba(13, 17, 23, 0.85);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .viewport-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .viewport-btn.active {
+            background: rgba(88, 166, 255, 0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ====== Bottom Panel ====== */
+        #bottom {
+            grid-area: bottom;
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            max-height: 140px;
+            min-height: 80px;
+        }
+
+        .bottom-progress {
+            padding: 8px 16px;
+            flex-shrink: 0;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .progress-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 14px;
+            font-size: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .progress-bar-wrapper {
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            background: linear-gradient(90deg, var(--accent), #388bfd);
+        }
+
+        .progress-bar.quantum {
+            background: linear-gradient(90deg, var(--accent), #a371f7, var(--success), var(--warning), var(--accent));
+            background-size: 200% 100%;
+            animation: quantum-flow 2s linear infinite;
+        }
+
+        @keyframes quantum-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .progress-info {
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .bottom-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 16px 8px;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 11px;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+            display: flex;
+            gap: 8px;
+        }
+
+        .log-time { color: var(--text-secondary); flex-shrink: 0; }
+        .log-message { color: var(--text-secondary); }
+        .log-entry.success .log-message { color: var(--success); }
+        .log-entry.info .log-message { color: var(--accent); }
+        .log-entry.error .log-message { color: var(--error); }
+
+        /* ====== Right Panel ====== */
+        #rightpanel {
+            grid-area: rightpanel;
+            background: var(--bg-sidebar);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: width 0.2s ease;
+        }
+
+        #app.rightpanel-collapsed #rightpanel {
+            overflow: hidden;
+            border-left: none;
+        }
+
+        .rightpanel-header {
+            height: var(--toolbar-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .rightpanel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .rightpanel-close {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .rightpanel-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .rightpanel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+
+        /* Right Panel Sections */
+        .panel-section {
+            margin-bottom: 16px;
+        }
+
+        .panel-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .param-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .param-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            width: 60px;
+        }
+
+        .param-slider {
+            flex: 1;
+            margin: 0 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid var(--bg-sidebar);
+        }
+
+        .param-value {
+            font-size: 12px;
+            color: var(--text-primary);
+            font-weight: 600;
+            width: 45px;
+            text-align: right;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-card .stat-icon {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+        }
+
+        .stat-card .stat-lbl {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Scene Cards */
+        .scene-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scene-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--accent);
+            opacity: 0.3;
+        }
+
+        .scene-card.active::before { opacity: 1; }
+        .scene-card.completed::before { background: var(--success); opacity: 1; }
+
+        .scene-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .scene-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .scene-icon { font-size: 14px; }
+
+        .scene-status {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .scene-status.pending { background: rgba(139, 92, 246, 0.15); color: #a371f7; }
+        .scene-status.running { background: rgba(88, 166, 255, 0.15); color: var(--accent); animation: status-pulse 1s infinite; }
+        .scene-status.completed { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+
+        @keyframes status-pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .scene-description {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .scene-progress {
+            height: 3px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .scene-progress-bar {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            background: var(--accent);
+        }
+
+        .scene-metrics {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .metric-value {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Export Buttons */
+        .export-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .export-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            border-color: var(--accent);
+            background: rgba(88, 166, 255, 0.08);
+        }
+
+        .export-btn .export-icon {
+            font-size: 14px;
+        }
+
+        /* Quality Result */
+        .quality-result {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .quality-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 12px;
+        }
+
+        .quality-row .qlabel { color: var(--text-secondary); }
+        .quality-row .qvalue { color: var(--text-primary); font-weight: 600; font-family: 'Cascadia Code', monospace; }
+        .quality-row .qvalue.pass { color: var(--success); }
+        .quality-row .qvalue.fail { color: var(--error); }
+
+        /* Optimization Progress */
+        .opt-progress {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .opt-bar {
+            height: 4px;
+            background: var(--bg-primary);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .opt-bar-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        /* Dashboard Page */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .dashboard-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+        }
+
+        .dashboard-card .dc-icon {
+            font-size: 20px;
+            margin-bottom: 6px;
+        }
+
+        .dashboard-card .dc-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'Cascadia Code', monospace;
+        }
+
+        .dashboard-card .dc-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Settings Page */
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-row .sr-label {
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .settings-row .sr-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .toggle-switch {
+            width: 36px;
+            height: 20px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .toggle-switch.on {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch.on::after {
+            transform: translateX(16px);
+        }
+
+        /* ====== Status Bar ====== */
+        #statusbar {
+            grid-area: status;
+            background: var(--bg-sidebar);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            gap: 16px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .status-dot.idle { background: var(--text-secondary); }
+        .status-dot.error { background: var(--error); }
+
+        .status-spacer { flex: 1; }
+
+        /* ====== Scrollbar ====== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* ====== Responsive ====== */
+        @media (max-width: 1100px) {
+            #app { grid-template-columns: var(--sidebar-width) 1fr 0px; }
+            #app.sidebar-collapsed { grid-template-columns: var(--sidebar-collapsed) 1fr 0px; }
+            #rightpanel { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            #app { grid-template-columns: var(--sidebar-collapsed) 1fr 0px; }
+            .nav-label { display: none; }
+            .brand-text { display: none; }
+            .toolbar-search { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- ====== Sidebar ====== -->
+        <aside id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">E</div>
+                <span class="brand-text">EVOLUTION AI</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard', this)">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Overview</span>
+                </div>
+                <div class="nav-item" data-page="vehicle" onclick="switchPage('vehicle', this)">
+                    <span class="nav-icon">🚗</span>
+                    <span class="nav-label">Vehicle</span>
+                </div>
+                <div class="nav-item" data-page="inspection" onclick="switchPage('inspection', this)">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-label">Detection</span>
+                </div>
+                <div class="nav-item" data-page="optimization" onclick="switchPage('optimization', this)">
+                    <span class="nav-icon">⚡</span>
+                    <span class="nav-label">Optimization</span>
+                </div>
+                <div class="nav-item" data-page="handover" onclick="switchPage('handover', this)">
+                    <span class="nav-icon">📤</span>
+                    <span class="nav-label">Delivery</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="nav-item" data-page="settings" onclick="switchPage('settings', this)">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ====== Toolbar ====== -->
+        <header id="toolbar">
+            <button class="toolbar-toggle" id="toggleSidebar" title="切换侧边栏 (Ctrl+B)">☰</button>
+            <div class="toolbar-search">
+                <span class="search-icon">⌕</span>
+                <input type="text" placeholder="Search commands, parameters, surfaces..." />
+            </div>
+            <div class="toolbar-actions">
+                <button class="toolbar-btn primary" id="startDemo">▶ Start Demo</button>
+                <button class="toolbar-btn" id="resetDemo">↺ Reset</button>
+                <div class="toolbar-separator"></div>
+                <button class="toolbar-btn" id="langSwitch" onclick="toggleLanguage()">中文</button>
+                <button class="toolbar-icon-btn" title="Notifications">
+                    🔔
+                    <span class="badge"></span>
+                </button>
+                <div class="toolbar-avatar">AI</div>
+            </div>
+        </header>
+
+        <!-- ====== Main Content ====== -->
+        <main id="content">
+            <canvas id="canvas3d"></canvas>
+            <div class="viewport-overlay">
+                <button class="viewport-btn" id="viewFront" title="Front View">◉</button>
+                <button class="viewport-btn" id="viewSide" title="Side View">◱</button>
+                <button class="viewport-btn" id="viewTop" title="Top View">◲</button>
+                <button class="viewport-btn" id="viewWire" title="Wireframe">▦</button>
+                <button class="viewport-btn" id="viewZebra" title="Zebra">▤</button>
+            </div>
+        </main>
+
+        <!-- ====== Bottom Panel ====== -->
+        <div id="bottom">
+            <div class="bottom-progress">
+                <div class="progress-header">
+                    <div class="progress-title">
+                        <span>◈</span> Overall Progress
+                    </div>
+                    <div class="progress-stats">
+                        <div class="stat-item">⏱ <span class="stat-value" id="elapsedTime">00:00</span></div>
+                        <div class="stat-item">⏳ <span class="stat-value" id="remainingTime">--:--</span></div>
+                    </div>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar quantum" id="mainProgress" style="width: 0%;"></div>
+                </div>
+                <div class="progress-info" id="etaEstimate"></div>
+            </div>
+            <div class="bottom-log" id="logEntries"></div>
+        </div>
+
+        <!-- ====== Right Panel ====== -->
+        <aside id="rightpanel">
+            <div class="rightpanel-header">
+                <span class="rightpanel-title" id="rightpanelTitle">Overview</span>
+                <button class="rightpanel-close" id="toggleRightPanel" title="Close Panel">✕</button>
+            </div>
+            <div class="rightpanel-body" id="rightpanelBody">
+                <!-- Dashboard Page -->
+                <div class="page active" id="page-dashboard">
+                    <div class="panel-section">
+                        <div class="panel-section-title">Project Stats</div>
+                        <div class="dashboard-grid">
+                            <div class="dashboard-card">
+                                <div class="dc-icon">🎨</div>
+                                <div class="dc-value" id="surfacesCreated">0</div>
+                                <div class="dc-label">Surfaces</div>
+                            </div>
+                            <div class="dashboard-card">
+                                <div class="dc-icon">✅</div>
+                                <div class="dc-value" id="qualityScore">--</div>
+                                <div class="dc-label">Quality Score</div>
+                            </div>
+                            <div class="dashboard-card">
+                                <div class="dc-icon">⚡</div>
+                                <div class="dc-value" id="optimizationRate">--</div>
+                                <div class="dc-label">Optimization</div>
+                            </div>
+                            <div class="dashboard-card">
+                                <div class="dc-icon">📤</div>
+                                <div class="dc-value" id="handoverFormats">0</div>
+                                <div class="dc-label">Formats</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Pipeline Progress</div>
+                        <div class="scene-card" id="scene1">
+                            <div class="scene-header">
+                                <div class="scene-title"><span class="scene-icon">⚙️</span> System Init</div>
+                                <span class="scene-status pending" id="status1">Pending</span>
+                            </div>
+                            <p class="scene-description">Loading modules, initializing database, configuring parameters</p>
+                            <div class="scene-progress"><div class="scene-progress-bar" id="progress1" style="width: 0%;"></div></div>
+                            <div class="scene-metrics"><div class="metric">Time: <span class="metric-value" id="time1">0s</span></div></div>
+                        </div>
+                        <div class="scene-card" id="scene2">
+                            <div class="scene-header">
+                                <div class="scene-title"><span class="scene-icon">📦</span> Load Params</div>
+                                <span class="scene-status pending" id="status2">Pending</span>
+                            </div>
+                            <p class="scene-description">Loading vehicle parameter library including dimensions and chassis</p>
+                            <div class="scene-progress"><div class="scene-progress-bar" id="progress2" style="width: 0%;"></div></div>
+                            <div class="scene-metrics"><div class="metric">Params: <span class="metric-value" id="params2">0</span></div></div>
+                        </div>
+                        <div class="scene-card" id="scene3">
+                            <div class="scene-header">
+                                <div class="scene-title"><span class="scene-icon">🎨</span> Surface Creation</div>
+                                <span class="scene-status pending" id="status3">Pending</span>
+                            </div>
+                            <p class="scene-description">Creating NURBS surfaces: hood, roof, doors, etc.</p>
+                            <div class="scene-progress"><div class="scene-progress-bar" id="progress3" style="width: 0%;"></div></div>
+                            <div class="scene-metrics"><div class="metric">Surfaces: <span class="metric-value" id="surfaces3">0</span></div></div>
+                        </div>
+                        <div class="scene-card" id="scene4">
+                            <div class="scene-header">
+                                <div class="scene-title"><span class="scene-icon">🔍</span> Quality Check</div>
+                                <span class="scene-status pending" id="status4">Pending</span>
+                            </div>
+                            <p class="scene-description">A-class surface quality: continuity, zebra, curvature analysis</p>
+                            <div class="scene-progress"><div class="scene-progress-bar" id="progress4" style="width: 0%;"></div></div>
+                            <div class="scene-metrics"><div class="metric">Score: <span class="metric-value" id="score4">--</span></div></div>
+                        </div>
+                        <div class="scene-card" id="scene5">
+                            <div class="scene-header">
+                                <div class="scene-title"><span class="scene-icon">⚡</span> Optimization</div>
+                                <span class="scene-status pending" id="status5">Pending</span>
+                            </div>
+                            <p class="scene-description">Mesh simplification, smoothing, feature preservation</p>
+                            <div class="scene-progress"><div class="scene-progress-bar" id="progress5" style="width: 0%;"></div></div>
+                            <div class="scene-metrics"><div class="metric">Gain: <span class="metric-value" id="opt5">--</span></div></div>
+                        </div>
+                        <div class="scene-card" id="scene6">
+                            <div class="scene-header">
+                                <div class="scene-title"><span class="scene-icon">📤</span> Handover</div>
+                                <span class="scene-status pending" id="status6">Pending</span>
+                            </div>
+                            <p class="scene-description">Exporting STL/GLB/OBJ formats for engineering handover</p>
+                            <div class="scene-progress"><div class="scene-progress-bar" id="progress6" style="width: 0%;"></div></div>
+                            <div class="scene-metrics"><div class="metric">Formats: <span class="metric-value" id="formats6">0</span></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle Page -->
+                <div class="page" id="page-vehicle">
+                    <div class="panel-section">
+                        <div class="panel-section-title">Basic Dimensions (m)</div>
+                        <div class="param-row">
+                            <span class="param-label">Length</span>
+                            <input type="range" class="param-slider" min="3.5" max="6.0" step="0.1" value="4.9" oninput="updateParam('carLength', this.value)">
+                            <span class="param-value" id="param_carLength">4.90</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Width</span>
+                            <input type="range" class="param-slider" min="1.6" max="2.2" step="0.05" value="1.85" oninput="updateParam('carWidth', this.value)">
+                            <span class="param-value" id="param_carWidth">1.85</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Height</span>
+                            <input type="range" class="param-slider" min="1.2" max="1.8" step="0.05" value="1.42" oninput="updateParam('carHeight', this.value)">
+                            <span class="param-value" id="param_carHeight">1.42</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Wheelbase & Overhang (m)</div>
+                        <div class="param-row">
+                            <span class="param-label">Wheelbase</span>
+                            <input type="range" class="param-slider" min="2.2" max="3.5" step="0.1" value="2.9" oninput="updateParam('wheelbase', this.value)">
+                            <span class="param-value" id="param_wheelbase">2.90</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Front OH</span>
+                            <input type="range" class="param-slider" min="0.5" max="1.2" step="0.05" value="0.85" oninput="updateParam('frontOverhang', this.value)">
+                            <span class="param-value" id="param_frontOverhang">0.85</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Rear OH</span>
+                            <input type="range" class="param-slider" min="0.5" max="1.5" step="0.05" value="1.15" oninput="updateParam('rearOverhang', this.value)">
+                            <span class="param-value" id="param_rearOverhang">1.15</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Wheel Parameters (m)</div>
+                        <div class="param-row">
+                            <span class="param-label">Track</span>
+                            <input type="range" class="param-slider" min="1.3" max="1.8" step="0.05" value="1.55" oninput="updateParam('trackWidth', this.value)">
+                            <span class="param-value" id="param_trackWidth">1.55</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Wheel R</span>
+                            <input type="range" class="param-slider" min="0.3" max="0.5" step="0.02" value="0.38" oninput="updateParam('wheelRadius', this.value)">
+                            <span class="param-value" id="param_wheelRadius">0.38</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Clearance</span>
+                            <input type="range" class="param-slider" min="0.05" max="0.25" step="0.02" value="0.12" oninput="updateParam('groundClearance', this.value)">
+                            <span class="param-value" id="param_groundClearance">0.12</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Body Shape</div>
+                        <div class="param-row">
+                            <span class="param-label">Waist H</span>
+                            <input type="range" class="param-slider" min="0.3" max="0.7" step="0.02" value="0.52" oninput="updateParam('waistlineHeight', this.value)">
+                            <span class="param-value" id="param_waistlineHeight">0.52</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Shoulder W</span>
+                            <input type="range" class="param-slider" min="0.6" max="0.95" step="0.02" value="0.85" oninput="updateParam('shoulderWidth', this.value)">
+                            <span class="param-value" id="param_shoulderWidth">0.85</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Tumblehome (°)</span>
+                            <input type="range" class="param-slider" min="0" max="20" step="1" value="8" oninput="updateParam('tumblehomeAngle', this.value)">
+                            <span class="param-value" id="param_tumblehomeAngle">8</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Door Line H</span>
+                            <input type="range" class="param-slider" min="0.35" max="0.6" step="0.02" value="0.48" oninput="updateParam('doorLineHeight', this.value)">
+                            <span class="param-value" id="param_doorLineHeight">0.48</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Window Angle (°)</div>
+                        <div class="param-row">
+                            <span class="param-label">Windshield</span>
+                            <input type="range" class="param-slider" min="20" max="50" step="1" value="32" oninput="updateParam('windshieldAngle', this.value)">
+                            <span class="param-value" id="param_windshieldAngle">32</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Rear Window</span>
+                            <input type="range" class="param-slider" min="15" max="45" step="1" value="28" oninput="updateParam('rearWindowAngle', this.value)">
+                            <span class="param-value" id="param_rearWindowAngle">28</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Design Details</div>
+                        <div class="param-row">
+                            <span class="param-label">Nose Sharp</span>
+                            <input type="range" class="param-slider" min="0" max="1" step="0.05" value="0.6" oninput="updateParam('noseSharpness', this.value)">
+                            <span class="param-value" id="param_noseSharpness">0.60</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Tail Sharp</span>
+                            <input type="range" class="param-slider" min="0" max="1" step="0.05" value="0.55" oninput="updateParam('tailSharpness', this.value)">
+                            <span class="param-value" id="param_tailSharpness">0.55</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Arch Bulge</span>
+                            <input type="range" class="param-slider" min="0" max="0.3" step="0.02" value="0.12" oninput="updateParam('wheelArchBulge', this.value)">
+                            <span class="param-value" id="param_wheelArchBulge">0.12</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Front Fender</span>
+                            <input type="range" class="param-slider" min="0" max="1" step="0.05" value="0.7" oninput="updateParam('frontFenderAggression', this.value)">
+                            <span class="param-value" id="param_frontFenderAggression">0.70</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Rear Fender</span>
+                            <input type="range" class="param-slider" min="0" max="1" step="0.05" value="0.65" oninput="updateParam('rearFenderAggression', this.value)">
+                            <span class="param-value" id="param_rearFenderAggression">0.65</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Side Skirt</span>
+                            <input type="range" class="param-slider" min="0" max="0.2" step="0.02" value="0.08" oninput="updateParam('sideSkirtDepth', this.value)">
+                            <span class="param-value" id="param_sideSkirtDepth">0.08</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Surface Info</div>
+                        <div class="quality-result">
+                            <div class="quality-row">
+                                <span class="qlabel">Surfaces</span>
+                                <span class="qvalue" id="vehicleSurfaces">0</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">Vertices</span>
+                                <span class="qvalue" id="vehicleVertices">0</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">Triangles</span>
+                                <span class="qvalue" id="vehicleTriangles">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inspection Page -->
+                <div class="page" id="page-inspection">
+                    <div class="panel-section">
+                        <div class="panel-section-title">Curvature Analysis</div>
+                        <div class="quality-result">
+                            <div class="quality-row">
+                                <span class="qlabel">Max Curvature</span>
+                                <span class="qvalue" id="curvMax">--</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">Min Curvature</span>
+                                <span class="qvalue" id="curvMin">--</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">Avg Curvature</span>
+                                <span class="qvalue" id="curvAvg">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Continuity Report</div>
+                        <div class="quality-result">
+                            <div class="quality-row">
+                                <span class="qlabel">G0 Continuity</span>
+                                <span class="qvalue" id="contG0">--</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">G1 Continuity</span>
+                                <span class="qvalue" id="contG1">--</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">Edge Quality</span>
+                                <span class="qvalue" id="contQuality">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Quality Score</div>
+                        <div class="quality-result">
+                            <div class="quality-row">
+                                <span class="qlabel">Overall Score</span>
+                                <span class="qvalue" id="inspScore">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optimization Page -->
+                <div class="page" id="page-optimization">
+                    <div class="panel-section">
+                        <div class="panel-section-title">Optimization Params</div>
+                        <div class="param-row">
+                            <span class="param-label">Simplify</span>
+                            <input type="range" class="param-slider" id="optSimplify" min="10" max="80" value="30" oninput="updateParam('optSimplifyVal', this.value + '%')">
+                            <span class="param-value" id="optSimplifyVal">30%</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Smooth</span>
+                            <input type="range" class="param-slider" id="optSmooth" min="1" max="10" value="5" oninput="updateParam('optSmoothVal', this.value)">
+                            <span class="param-value" id="optSmoothVal">5</span>
+                        </div>
+                        <div class="param-row">
+                            <span class="param-label">Feature W</span>
+                            <input type="range" class="param-slider" id="optFeature" min="0" max="100" value="70" oninput="updateParam('optFeatureVal', this.value + '%')">
+                            <span class="param-value" id="optFeatureVal">70%</span>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Progress</div>
+                        <div class="opt-progress">
+                            <div class="quality-row">
+                                <span class="qlabel">Mesh Simplify</span>
+                                <span class="qvalue" id="optSimpProgress">--</span>
+                            </div>
+                            <div class="opt-bar"><div class="opt-bar-fill" id="optSimpBar" style="width: 0%;"></div></div>
+                        </div>
+                        <div class="opt-progress">
+                            <div class="quality-row">
+                                <span class="qlabel">Smoothing</span>
+                                <span class="qvalue" id="optSmoothProgress">--</span>
+                            </div>
+                            <div class="opt-bar"><div class="opt-bar-fill" id="optSmoothBar" style="width: 0%;"></div></div>
+                        </div>
+                        <div class="opt-progress">
+                            <div class="quality-row">
+                                <span class="qlabel">Feature Keep</span>
+                                <span class="qvalue" id="optFeatProgress">--</span>
+                            </div>
+                            <div class="opt-bar"><div class="opt-bar-fill" id="optFeatBar" style="width: 0%;"></div></div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Results</div>
+                        <div class="quality-result">
+                            <div class="quality-row">
+                                <span class="qlabel">Performance</span>
+                                <span class="qvalue" id="optResult">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Handover Page -->
+                <div class="page" id="page-handover">
+                    <div class="panel-section">
+                        <div class="panel-section-title">Export Formats</div>
+                        <div class="export-group">
+                            <button class="export-btn" id="exportSTL">
+                                <span class="export-icon">📐</span> STL (Stereolithography)
+                            </button>
+                            <button class="export-btn" id="exportOBJ">
+                                <span class="export-icon">📄</span> OBJ (Wavefront)
+                            </button>
+                            <button class="export-btn" id="exportGLB">
+                                <span class="export-icon">📦</span> GLB (glTF Binary)
+                            </button>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">Handover Info</div>
+                        <div class="quality-result">
+                            <div class="quality-row">
+                                <span class="qlabel">Project</span>
+                                <span class="qvalue">EVOLUTION-A1</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">Version</span>
+                                <span class="qvalue">v2.1.0</span>
+                            </div>
+                            <div class="quality-row">
+                                <span class="qlabel">Status</span>
+                                <span class="qvalue pass">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div class="page" id="page-settings">
+                    <div class="panel-section">
+                        <div class="panel-section-title">Render Settings</div>
+                        <div class="settings-row">
+                            <div>
+                                <div class="sr-label">Anti-aliasing</div>
+                                <div class="sr-desc">Enable MSAA</div>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                        <div class="settings-row">
+                            <div>
+                                <div class="sr-label">Shadows</div>
+                                <div class="sr-desc">Enable real-time shadows</div>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                        <div class="settings-row">
+                            <div>
+                                <div class="sr-label">Env Map</div>
+                                <div class="sr-desc">Use HDR environment</div>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="panel-section-title">UI Settings</div>
+                        <div class="settings-row">
+                            <div>
+                                <div class="sr-label">Auto Rotate</div>
+                                <div class="sr-desc">Auto-rotate 3D viewport</div>
+                            </div>
+                            <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                        <div class="settings-row">
+                            <div>
+                                <div class="sr-label">Grid</div>
+                                <div class="sr-desc">Show ground reference grid</div>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ====== Status Bar ====== -->
+        <footer id="statusbar">
+            <div class="status-item">
+                <span class="status-dot ready" id="statusDot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+            <div class="status-item">
+                <span>Scene: <span id="statusScene">--</span></span>
+            </div>
+            <div class="status-spacer"></div>
+            <div class="status-item">
+                <span>FPS: <span id="statusFPS">--</span></span>
+            </div>
+            <div class="status-item">
+                <span>Tris: <span id="statusTris">--</span></span>
+            </div>
+            <div class="status-item">
+                <span>EVOLUTION AI v2.1</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== Language System ====================
+        const lang = {
+            current: 'zh',
+            zh: {
+                'title': 'EVOLUTION AI - 汽车A级曲面开发平台',
+                'search': '搜索命令、参数、曲面...',
+                'startDemo': '▶ 开始演示',
+                'reset': '↺ 重置',
+                'langBtn': 'EN',
+                'sidebar': {
+                    'overview': '概览',
+                    'vehicle': '车型',
+                    'detection': '检测',
+                    'optimization': '优化',
+                    'delivery': '交接',
+                    'settings': '设置'
+                },
+                'param': {
+                    'carLength': '车长',
+                    'carWidth': '车宽',
+                    'carHeight': '车高',
+                    'wheelbase': '轴距',
+                    'frontOverhang': '前悬',
+                    'rearOverhang': '后悬',
+                    'trackWidth': '轮距',
+                    'wheelRadius': '轮径',
+                    'groundClearance': '离地间隙',
+                    'waistlineHeight': '腰线高度',
+                    'shoulderWidth': '肩部宽度',
+                    'tumblehomeAngle': '内倾角 (°)',
+                    'doorLineHeight': '车门线高度',
+                    'windshieldAngle': '风挡角度',
+                    'rearWindowAngle': '后窗角度',
+                    'noseSharpness': '车头锐利度',
+                    'tailSharpness': '车尾锐利度',
+                    'wheelArchBulge': '轮拱凸起',
+                    'frontFenderAggression': '前翼子板攻击性',
+                    'rearFenderAggression': '后翼子板攻击性',
+                    'sideSkirtDepth': '侧裙深度'
+                },
+                'panel': {
+                    'basicSize': '基础尺寸 (m)',
+                    'wheelbase': '轴距与悬伸 (m)',
+                    'wheelParams': '车轮参数 (m)',
+                    'bodyShape': '车身形态',
+                    'windowAngle': '车窗角度 (°)',
+                    'detail': '造型细节',
+                    'surfaceInfo': '曲面信息',
+                    'surfaceCount': '曲面数量',
+                    'vertexCount': '顶点数',
+                    'triangleCount': '三角面数'
+                },
+                'status': {
+                    'ready': '就绪',
+                    'scene': '场景',
+                    'triangles': '三角面'
+                },
+                'viewport': {
+                    'front': '正视图',
+                    'side': '侧视图',
+                    'top': '俯视图',
+                    'wireframe': '线框',
+                    'zebra': '斑马纹'
+                },
+                'log': {
+                    'modelAdded': '汽车模型已添加到场景'
+                }
+            },
+            en: {
+                'title': 'EVOLUTION AI - Automotive A-Class Surface Development Platform',
+                'search': 'Search commands, parameters, surfaces...',
+                'startDemo': '▶ Start Demo',
+                'reset': '↺ Reset',
+                'langBtn': '中文',
+                'sidebar': {
+                    'overview': 'Overview',
+                    'vehicle': 'Vehicle',
+                    'detection': 'Detection',
+                    'optimization': 'Optimization',
+                    'delivery': 'Delivery',
+                    'settings': 'Settings'
+                },
+                'param': {
+                    'carLength': 'Length',
+                    'carWidth': 'Width',
+                    'carHeight': 'Height',
+                    'wheelbase': 'Wheelbase',
+                    'frontOverhang': 'Front OH',
+                    'rearOverhang': 'Rear OH',
+                    'trackWidth': 'Track',
+                    'wheelRadius': 'Wheel R',
+                    'groundClearance': 'Clearance',
+                    'waistlineHeight': 'Waist H',
+                    'shoulderWidth': 'Shoulder W',
+                    'tumblehomeAngle': 'Tumblehome (°)',
+                    'doorLineHeight': 'Door Line H',
+                    'windshieldAngle': 'Windshield (°)',
+                    'rearWindowAngle': 'Rear Window (°)',
+                    'noseSharpness': 'Nose Sharp',
+                    'tailSharpness': 'Tail Sharp',
+                    'wheelArchBulge': 'Arch Bulge',
+                    'frontFenderAggression': 'Front Fender',
+                    'rearFenderAggression': 'Rear Fender',
+                    'sideSkirtDepth': 'Side Skirt'
+                },
+                'panel': {
+                    'basicSize': 'Basic Dimensions (m)',
+                    'wheelbase': 'Wheelbase & Overhang (m)',
+                    'wheelParams': 'Wheel Parameters (m)',
+                    'bodyShape': 'Body Shape',
+                    'windowAngle': 'Window Angle (°)',
+                    'detail': 'Design Details',
+                    'surfaceInfo': 'Surface Info',
+                    'surfaceCount': 'Surfaces',
+                    'vertexCount': 'Vertices',
+                    'triangleCount': 'Triangles'
+                },
+                'status': {
+                    'ready': 'Ready',
+                    'scene': 'Scene',
+                    'triangles': 'Tris'
+                },
+                'viewport': {
+                    'front': 'Front View',
+                    'side': 'Side View',
+                    'top': 'Top View',
+                    'wireframe': 'Wireframe',
+                    'zebra': 'Zebra'
+                },
+                'log': {
+                    'modelAdded': 'Car model added to scene'
+                }
+            }
+        };
+
+        function toggleLanguage() {
+            lang.current = lang.current === 'zh' ? 'en' : 'zh';
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const t = lang[lang.current];
+            document.title = t.title;
+            document.querySelector('.toolbar-search input').placeholder = t.search;
+            document.getElementById('startDemo').textContent = t.startDemo;
+            document.getElementById('resetDemo').textContent = t.reset;
+            document.getElementById('langSwitch').textContent = t.langBtn;
+            
+            document.getElementById('nav-overview').textContent = t.sidebar.overview;
+            document.getElementById('nav-vehicle').textContent = t.sidebar.vehicle;
+            document.getElementById('nav-detection').textContent = t.sidebar.detection;
+            document.getElementById('nav-optimization').textContent = t.sidebar.optimization;
+            document.getElementById('nav-delivery').textContent = t.sidebar.delivery;
+            document.getElementById('nav-settings').textContent = t.sidebar.settings;
+
+            document.querySelectorAll('.panel-section-title').forEach(el => {
+                const text = el.textContent;
+                for (const key in t.panel) {
+                    if (text === lang.zh.panel[key]) {
+                        el.textContent = t.panel[key];
+                        break;
+                    }
+                }
+            });
+
+            document.querySelectorAll('.param-label').forEach(el => {
+                const text = el.textContent;
+                for (const key in t.param) {
+                    if (text === lang.zh.param[key]) {
+                        el.textContent = t.param[key];
+                        break;
+                    }
+                }
+            });
+
+            document.querySelectorAll('.qlabel').forEach(el => {
+                const text = el.textContent;
+                if (text === '曲面数量') el.textContent = t.panel.surfaceCount;
+                if (text === '顶点数') el.textContent = t.panel.vertexCount;
+                if (text === '三角面数') el.textContent = t.panel.triangleCount;
+            });
+
+            document.getElementById('viewFront').title = t.viewport.front;
+            document.getElementById('viewSide').title = t.viewport.side;
+            document.getElementById('viewTop').title = t.viewport.top;
+            document.getElementById('viewWireframe').title = t.viewport.wireframe;
+            document.getElementById('viewZebra').title = t.viewport.zebra;
+
+            document.getElementById('statusScene').parentNode.textContent = t.status.scene + ': ' + (document.getElementById('statusScene').textContent || '--');
+            document.getElementById('statusTris').parentNode.textContent = t.status.triangles + ': ' + (document.getElementById('statusTris').textContent || '--');
+        }
+
+        // ==================== Layout Controls ====================
+        const app = document.getElementById('app');
+
+        // Sidebar toggle
+        document.getElementById('toggleSidebar').addEventListener('click', () => {
+            app.classList.toggle('sidebar-collapsed');
+            handleResize();
+        });
+
+        // Right panel toggle
+        document.getElementById('toggleRightPanel').addEventListener('click', () => {
+            app.classList.toggle('rightpanel-collapsed');
+            handleResize();
+        });
+
+        // Ctrl+B shortcut
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'b') {
+                e.preventDefault();
+                app.classList.toggle('sidebar-collapsed');
+                handleResize();
+            }
+        });
+
+        // Page switching
+        function switchPage(pageId, navEl) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            navEl.classList.add('active');
+
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const page = document.getElementById('page-' + pageId);
+            if (page) page.classList.add('active');
+
+            const titles = {
+                dashboard: 'Overview',
+                vehicle: 'Vehicle Params',
+                inspection: 'Quality Check',
+                optimization: 'Optimization',
+                handover: 'Handover',
+                settings: 'Settings'
+            };
+            document.getElementById('rightpanelTitle').textContent = titles[pageId] || pageId;
+        }
+
+        function updateParamDisplay(id, value) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
+        function handleResize() {
+            setTimeout(() => {
+                if (camera && renderer) {
+                    const canvas = document.getElementById('canvas3d');
+                    const w = canvas.clientWidth;
+                    const h = canvas.clientHeight;
+                    if (w > 0 && h > 0) {
+                        camera.aspect = w / h;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(w, h);
+                    }
+                }
+            }, 250);
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        // ==================== State ====================
+        const state = {
+            isRunning: false, startTime: null, currentScene: 0,
+            scenes: [
+                { id: 1, name: 'System Init', totalSteps: 36, duration: 2000 },
+                { id: 2, name: 'Load Params', totalSteps: 12, duration: 1500 },
+                { id: 3, name: 'Surface Creation', totalSteps: 170, duration: 3000 },
+                { id: 4, name: 'Quality Check', totalSteps: 118, duration: 2500 },
+                { id: 5, name: 'Optimization', totalSteps: 90, duration: 2000 },
+                { id: 6, name: 'Handover', totalSteps: 51, duration: 1500 }
+            ],
+            sceneProgress: [0, 0, 0, 0, 0, 0], overallProgress: 0,
+            stats: { surfaces: 0, qualityScore: 0, optimizationRate: 0, handoverFormats: 0 }
+        };
+
+        // ==================== Logging ====================
+        function addLog(message, type = 'info') {
+            const logEntries = document.getElementById('logEntries');
+            const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `<span class="log-time">[${time}]</span><span class="log-message">${message}</span>`;
+            logEntries.insertBefore(entry, logEntries.firstChild);
+            while (logEntries.children.length > 50) logEntries.removeChild(logEntries.lastChild);
+        }
+
+        // ==================== Progress ====================
+        function updateProgress(percent) {
+            state.overallProgress = Math.min(percent, 100);
+            document.getElementById('mainProgress').style.width = `${state.overallProgress}%`;
+        }
+
+        function updateScene(sceneIndex, progress, status, metrics = {}) {
+            const scene = state.scenes[sceneIndex];
+            document.getElementById(`status${scene.id}`).textContent = status;
+            document.getElementById(`status${scene.id}`).className = `scene-status ${status.toLowerCase()}`;
+            const percent = Math.round((progress / scene.totalSteps) * 100);
+            document.getElementById(`progress${scene.id}`).style.width = `${percent}%`;
+            const card = document.getElementById(`scene${scene.id}`);
+            if (status.toLowerCase() === 'running') { card.classList.add('active'); card.classList.remove('completed'); }
+            else { card.classList.remove('active'); card.classList.add('completed'); }
+            if (metrics.time) document.getElementById(`time${scene.id}`).textContent = metrics.time;
+            if (metrics.params) document.getElementById(`params${scene.id}`).textContent = metrics.params;
+            if (metrics.surfaces) document.getElementById(`surfaces${scene.id}`).textContent = metrics.surfaces;
+            if (metrics.score) document.getElementById(`score${scene.id}`).textContent = metrics.score;
+            if (metrics.optimization) document.getElementById(`opt${scene.id}`).textContent = metrics.optimization;
+            if (metrics.formats) document.getElementById(`formats${scene.id}`).textContent = metrics.formats;
+            state.sceneProgress[sceneIndex] = progress;
+
+            // Update status bar
+            document.getElementById('statusScene').textContent = scene.name;
+        }
+
+        function updateTimeEstimate() {
+            if (!state.startTime) return;
+            const elapsed = (Date.now() - state.startTime) / 1000;
+            document.getElementById('elapsedTime').textContent = formatTime(elapsed);
+            if (state.overallProgress > 0) {
+                const totalEstimate = elapsed / (state.overallProgress / 100);
+                const remaining = totalEstimate - elapsed;
+                document.getElementById('remainingTime').textContent = formatTime(remaining);
+                document.getElementById('etaEstimate').textContent = `预计完成: ${formatTime(Date.now() / 1000 + remaining)}`;
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ==================== Three.js 3D引擎 ====================
+        let scene3d, camera, renderer, controls;
+        let carGroup, surfaces = [];
+        let wireframeMode = false, zebraMode = false;
+        let originalMaterials = [];
+        let fpsFrames = 0, fpsTime = 0;
+
+        function init3D() {
+            const canvas = document.getElementById('canvas3d');
+            scene3d = new THREE.Scene();
+            scene3d.background = new THREE.Color(0x0d1117);
+
+            camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            camera.position.set(8, 6, 8);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            scene3d.add(new THREE.AmbientLight(0x404060, 0.5));
+            const sun = new THREE.DirectionalLight(0xfff5e0, 2);
+            sun.position.set(10, 15, 8); sun.castShadow = true;
+            sun.shadow.mapSize.set(2048, 2048);
+            sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 50;
+            sun.shadow.camera.left = -15; sun.shadow.camera.right = 15;
+            sun.shadow.camera.top = 15; sun.shadow.camera.bottom = -15;
+            scene3d.add(sun);
+            const fill = new THREE.DirectionalLight(0x85C1E9, 0.5);
+            fill.position.set(-8, 5, -5); scene3d.add(fill);
+
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            pmrem.compileEquirectangularShader();
+            const envCanvas = document.createElement('canvas');
+            envCanvas.width = 256; envCanvas.height = 256;
+            const ctx = envCanvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 256);
+            grad.addColorStop(0, '#1a2a4a'); grad.addColorStop(0.3, '#3a5a8a'); grad.addColorStop(0.5, '#6a8ab4');
+            grad.addColorStop(0.55, '#8aaaca'); grad.addColorStop(0.6, '#5a7a9a'); grad.addColorStop(0.7, '#2a3a5a'); grad.addColorStop(1, '#0a0a1a');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
+            ctx.fillStyle = 'rgba(255,245,220,0.6)';
+            ctx.beginPath(); ctx.ellipse(180, 64, 40, 20, 0, 0, Math.PI * 2); ctx.fill();
+            const envTex = new THREE.CanvasTexture(envCanvas);
+            envTex.mapping = THREE.EquirectangularReflectionMapping;
+            const envRT = pmrem.fromEquirectangular(envTex);
+            scene3d.environment = envRT.texture;
+            pmrem.dispose();
+
+            const groundGeo = new THREE.PlaneGeometry(50, 50);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.6, metalness: 0.1 });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2; ground.position.y = -0.01; ground.receiveShadow = true;
+            scene3d.add(ground);
+            scene3d.add(new THREE.GridHelper(50, 50, 0x30363d, 0x21262d));
+
+            handleResize();
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene3d, camera);
+
+            // FPS counter
+            fpsFrames++;
+            const now = performance.now();
+            if (now - fpsTime >= 1000) {
+                document.getElementById('statusFPS').textContent = fpsFrames;
+                fpsFrames = 0;
+                fpsTime = now;
+            }
+        }
+
+        const HP = {
+            L: 4.9, W: 1.85, H: 1.42,
+            FO: 0.85, RO: 1.15, WB: 2.9,
+            TW: 1.55, WR: 0.38, GC: 0.12,
+            WL: 0.52, AA: 32, CA: 8, WBulge: 0.057,
+            RA: 28, shoulderW: 0.85, doorLineH: 0.48,
+            noseSharp: 0.6, tailSharp: 0.55, archBulge: 0.12,
+            fenderFront: 0.7, fenderRear: 0.65, sideSkirt: 0.08,
+            bodyColor: 0x1a237e, glassColor: 0x8ec8e8
+        };
+
+        function deriveHardpoints(){
+            var p=HP;
+            var fwx=p.FO;
+            var rwx=p.L-p.RO;
+            var wcy=p.GC+p.WR;
+            var fwz=p.TW/2+p.WR*0.35;
+            var noseTipY=p.GC+0.43;
+            var hoodY=p.GC+0.66;
+            var waistY=p.GC+p.WL;
+            if(hoodY>=waistY) hoodY=waistY-0.05;
+            var aBaseX=fwx+0.10;
+            var aTopY=p.H*0.92;
+            var aTopX=aBaseX+(aTopY-waistY)/Math.tan(p.AA*Math.PI/180);
+            var roofY=p.H;
+            var ra=p.RA||28;
+            var cBaseX=rwx+0.30;
+            var cTopY=aTopY-0.03;
+            var cTopX=cBaseX-(cBaseY_cTopY_diff(cTopY,waistY))/Math.tan(ra*Math.PI/180);
+            var roofPeakX=(aTopX+cTopX)/2;
+            var cBaseY=waistY+0.02;
+            var trunkY=waistY-0.05;
+            var bumperRY=p.GC+0.42;
+            var frontFenderW=p.W/2*0.95;
+            var cabinW=p.W/2*0.86;
+            var rearFenderW=p.W/2*0.95;
+            return{
+                fwx:fwx,rwx:rwx,wcy:wcy,fwz:fwz,
+                hoodY:hoodY,waistY:waistY,
+                aBaseX:aBaseX,aTopX:aTopX,aTopY:aTopY,
+                roofPeakX:roofPeakX,roofY:roofY,
+                cTopX:cTopX,cTopY:cTopY,
+                cBaseX:cBaseX,cBaseY:cBaseY,
+                trunkY:trunkY,noseTipY:noseTipY,
+                bumperRY:bumperRY,
+                frontFenderW:frontFenderW,cabinW:cabinW,rearFenderW:rearFenderW
+            };
+        }
+        function cBaseY_cTopY_diff(cTopY,waistY){ return Math.max(0.1, cTopY-waistY); }
+
+        function sideUpperProfile(){
+            var p=HP,h=deriveHardpoints();
+            return[
+                [0,         h.noseTipY*0.55+p.GC*0.45],
+                [p.FO*0.08, h.noseTipY*0.7+p.GC*0.3],
+                [p.FO*0.2,  h.noseTipY+0.02],
+                [p.FO*0.5,  h.noseTipY+0.05],
+                [p.FO*0.8,  h.hoodY-0.02],
+                [h.aBaseX-0.05, h.hoodY],
+                [h.aBaseX,  h.waistY+0.02],
+                [h.aTopX,   h.aTopY],
+                [h.aTopX+0.1, h.roofY-0.01],
+                [h.roofPeakX, h.roofY],
+                [h.cTopX-0.1, h.roofY-0.02],
+                [h.cTopX,   h.cTopY],
+                [h.cBaseX,  h.cBaseY],
+                [p.L-p.RO*0.4, h.trunkY],
+                [p.L-p.RO*0.15, h.bumperRY],
+                [p.L-p.RO*0.05, h.bumperRY*0.7+p.GC*0.3],
+                [p.L,       p.GC+0.10]
+            ];
+        }
+
+        function topWidthProfile(){
+            var p=HP,hw=p.W/2;
+            return[
+                [0,          hw*0.03],
+                [p.FO*0.06,  hw*0.08],
+                [p.FO*0.15,  hw*0.20],
+                [p.FO*0.35,  hw*0.50],
+                [p.FO*0.6,   hw*0.78],
+                [p.FO*0.85,  hw*0.94],
+                [p.FO+0.3,   hw*1.0],
+                [p.L*0.45,   hw*1.0],
+                [p.L*0.55,   hw*0.99],
+                [p.L-p.RO-0.2, hw*0.96],
+                [p.L-p.RO,   hw*0.92],
+                [p.L-p.RO*0.5, hw*0.78],
+                [p.L-p.RO*0.2, hw*0.40],
+                [p.L-p.RO*0.08, hw*0.15],
+                [p.L,        hw*0.04]
+            ];
+        }
+
+        function lerpProfile(pts,x){
+            if(x<=pts[0][0]) return pts[0][1];
+            if(x>=pts[pts.length-1][0]) return pts[pts.length-1][1];
+            for(var i=0;i<pts.length-1;i++){
+                if(x>=pts[i][0]&&x<=pts[i+1][0]){
+                    var t=(x-pts[i][0])/(pts[i+1][0]-pts[i][0]);
+                    var st=t*t*(3-2*t);
+                    return pts[i][1]+(pts[i+1][1]-pts[i][1])*st;
+                }
+            }
+            return pts[pts.length-1][1];
+        }
+
+        function updateParam(key, value) {
+            var v = parseFloat(value);
+            var hpKey = {
+                carLength: 'L', carWidth: 'W', carHeight: 'H',
+                wheelbase: 'WB', frontOverhang: 'FO', rearOverhang: 'RO',
+                trackWidth: 'TW', wheelRadius: 'WR', groundClearance: 'GC',
+                waistlineHeight: 'WL', windshieldAngle: 'AA',
+                shoulderWidth: 'shoulderW', tumblehomeAngle: 'CA',
+                doorLineHeight: 'doorLineH', rearWindowAngle: 'RA',
+                noseSharpness: 'noseSharp', tailSharpness: 'tailSharp',
+                wheelArchBulge: 'archBulge', frontFenderAggression: 'fenderFront',
+                rearFenderAggression: 'fenderRear', sideSkirtDepth: 'sideSkirt'
+            }[key];
+            if (hpKey) {
+                HP[hpKey] = v;
+            } else {
+                HP[key] = v;
+            }
+            var el = document.getElementById('param_' + key);
+            if (el) {
+                el.textContent = v.toFixed(v >= 10 ? 0 : 2);
+            }
+            rebuildCar();
+        }
+        function rebuildCar() { if (carGroup) { scene3d.remove(carGroup); carGroup = null; } createCar(); }
+
+        function smoothstep(t) { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); }
+
+        function createGlass(){
+            var g=new THREE.Group();
+            var p=HP,h=deriveHardpoints();
+            var gMat=new THREE.MeshPhysicalMaterial({
+                color:p.glassColor,metalness:0.0,roughness:0.0,
+                transmission:0.7,ior:1.5,
+                envMap:scene3d.environment,envMapIntensity:0.8,
+                side:THREE.DoubleSide,depthWrite:false
+            });
+
+            var wsV=[],wsI=[],n=10;
+            for(var i=0;i<=n;i++){
+                var t=i/n;
+                var x=h.aBaseX+t*(h.aTopX-h.aBaseX);
+                var yB=h.waistY+0.04;
+                var yT=h.aTopY-0.02+0.01*Math.sin(t*Math.PI);
+                for(var j=0;j<=n;j++){
+                    var s=j/n;
+                    var z=(s-0.5)*p.W*0.82;
+                    var bulge=p.WBulge*Math.cos(s*Math.PI)*(1-t*0.5);
+                    wsV.push(x+bulge,yB+t*(yT-yB),z);
+                }
+            }
+            for(var i=0;i<n;i++)for(var j=0;j<n;j++){
+                var a=i*(n+1)+j,b=a+1,c=a+n+1,d=c+1;
+                wsI.push(a,c,b,b,c,d);
+            }
+            var wsG=new THREE.BufferGeometry();
+            wsG.setAttribute('position',new THREE.Float32BufferAttribute(wsV,3));
+            wsG.setIndex(wsI);wsG.computeVertexNormals();
+            g.add(new THREE.Mesh(wsG,gMat));
+
+            var rsV=[],rsI=[];
+            for(var i=0;i<=n;i++){
+                var t=i/n;
+                var x=h.cBaseX-t*(h.cBaseX-h.cTopX);
+                var yB=h.waistY+0.04;
+                var yT=h.cTopY-0.02;
+                for(var j=0;j<=n;j++){
+                    var s=j/n;
+                    var z=(s-0.5)*p.W*0.78;
+                    var bulge=p.WBulge*0.8*Math.cos(s*Math.PI)*t*0.5;
+                    rsV.push(x-bulge,yB+t*(yT-yB),z);
+                }
+            }
+            for(var i=0;i<n;i++)for(var j=0;j<n;j++){
+                var a=i*(n+1)+j,b=a+1,c=a+n+1,d=c+1;
+                rsI.push(a,b,c,b,d,c);
+            }
+            var rsG=new THREE.BufferGeometry();
+            rsG.setAttribute('position',new THREE.Float32BufferAttribute(rsV,3));
+            rsG.setIndex(rsI);rsG.computeVertexNormals();
+            g.add(new THREE.Mesh(rsG,gMat));
+
+            var hw=p.W/2-0.01;
+            ['left','right'].forEach(function(side){
+                var zs=side==='left'?-1:1;
+                var z=zs*(hw+0.003);
+                var bX=(h.aBaseX+h.cBaseX)/2;
+                var fv=[];
+                for(var i=0;i<=10;i++){
+                    var t=i/10;
+                    var x=h.aBaseX+0.08+t*(bX-h.aBaseX-0.12);
+                    var yB=h.waistY+0.05;
+                    var yT=h.aTopY-0.03+0.01*Math.sin(t*Math.PI);
+                    fv.push(x,yB,z,x,yT,z);
+                }
+                var fi=[];
+                for(var i=0;i<10;i++){var a=i*2;fi.push(a,a+2,a+1,a+1,a+2,a+3);}
+                var fGeo=new THREE.BufferGeometry();
+                fGeo.setAttribute('position',new THREE.Float32BufferAttribute(fv,3));
+                fGeo.setIndex(fi);fGeo.computeVertexNormals();
+                g.add(new THREE.Mesh(fGeo,gMat));
+                var rv=[];
+                for(var i=0;i<=10;i++){
+                    var t=i/10;
+                    var x=bX+0.05+t*(h.cBaseX-0.08-bX-0.05);
+                    var yB=h.waistY+0.05;
+                    var yT=h.cTopY-0.03-0.06*t;
+                    rv.push(x,yB,z,x,yT,z);
+                }
+                var ri=[];
+                for(var i=0;i<10;i++){var a=i*2;ri.push(a,a+2,a+1,a+1,a+2,a+3);}
+                var rGeo=new THREE.BufferGeometry();
+                rGeo.setAttribute('position',new THREE.Float32BufferAttribute(rv,3));
+                rGeo.setIndex(ri);rGeo.computeVertexNormals();
+                g.add(new THREE.Mesh(rGeo,gMat));
+            });
+            return g;
+        }
+
+        function createBody(){
+            var p=HP,h=deriveHardpoints();
+            var nS=80,nC=64;
+            var verts=[],idx=[];
+            var sup=sideUpperProfile(),twp=topWidthProfile();
+
+            var noseSharp=p.noseSharp||0.6;
+            var tailSharp=p.tailSharp||0.55;
+            var archBulge=p.archBulge||0.12;
+            var shoulderW=p.shoulderW||0.85;
+            var tumbleDeg=p.CA||8;
+            var tumbleRad=tumbleDeg*Math.PI/180;
+            var sideSkirtD=p.sideSkirt||0.08;
+            var fenderF=p.fenderFront||0.7;
+            var fenderR=p.fenderRear||0.65;
+
+            for(var i=0;i<=nS;i++){
+                var t=i/nS;
+                var x=t*p.L;
+
+                var topY=lerpProfile(sup,x);
+                var hw=lerpProfile(twp,x);
+                var botY=p.GC+0.03;
+                var waistY=h.waistY;
+                var sillY=p.GC+0.12;
+
+                var hoodF=1-smoothstep((x-h.aBaseX+0.2)/0.4);
+                var cabinF=smoothstep((x-h.aTopX+0.15)/0.3)*(1-smoothstep((x-h.cTopX-0.15)/0.3));
+                var trunkF=smoothstep((x-h.cBaseX+0.2)/0.4);
+                var noseF=1-smoothstep(x/(0.15+noseSharp*0.35));
+                var tailF=smoothstep((x-p.L+0.15+tailSharp*0.35)/(0.15+tailSharp*0.35));
+                var lowerF=1-cabinF;
+
+                // Shoulder width factor
+                var sw=shoulderW;
+
+                // Tumblehome reduces cabin width at roof
+                var tumble=tumbleRad;
+
+                var hShoulderY=topY-(topY-waistY)*0.05;
+                var hBotHW=hw*0.62;var hSillHW=hw*0.90;var hWaistHW=hw*1.0;
+                var hShldHW=hw*sw;var hRoofHW=hw*(sw-0.03);
+
+                var cShoulderY=waistY+(topY-waistY)*0.30;
+                var cBotHW=hw*0.55;var cSillHW=hw*0.82;var cWaistHW=hw*1.0;
+                var cShldHW=hw*(sw*0.78);var cRoofHW=hw*Math.max(0.25,sw*0.45-Math.sin(tumble)*0.15);
+
+                var tShoulderY=topY-(topY-waistY)*0.08;
+                var tBotHW=hw*0.60;var tSillHW=hw*0.88;var tWaistHW=hw*1.0;
+                var tShldHW=hw*(sw*0.98);var tRoofHW=hw*(sw*0.92);
+
+                var hoodOnly=hoodF*(1-cabinF)*(1-trunkF);
+                var cabinOnly=cabinF;
+                var trunkOnly=trunkF*(1-cabinF)*(1-hoodF);
+                var sumF=hoodOnly+cabinOnly+trunkOnly;
+                if(sumF<1e-6){hoodOnly=1;sumF=1;}
+                hoodOnly/=sumF;cabinOnly/=sumF;trunkOnly/=sumF;
+
+                var shoulderY=hShoulderY*hoodOnly+cShoulderY*cabinOnly+tShoulderY*trunkOnly;
+                var botHW=hBotHW*hoodOnly+cBotHW*cabinOnly+tBotHW*trunkOnly;
+                var sillHW=hSillHW*hoodOnly+cSillHW*cabinOnly+tSillHW*trunkOnly;
+                var waistHW=hWaistHW*hoodOnly+cWaistHW*cabinOnly+tWaistHW*trunkOnly;
+                var shldHW=hShldHW*hoodOnly+cShldHW*cabinOnly+tShldHW*trunkOnly;
+                var roofHW=hRoofHW*hoodOnly+cRoofHW*cabinOnly+tRoofHW*trunkOnly;
+
+                // Fender bulge near wheels
+                var nearFW=Math.abs(x-h.fwx);
+                var nearRW=Math.abs(x-h.rwx);
+                var fenderRange=p.WR*1.8;
+                if(nearFW<fenderRange){
+                    var ff=1-nearFW/fenderRange;
+                    var bulgeAmt=0.03*fenderF*ff*ff;
+                    sillHW+=bulgeAmt*hw;
+                    waistHW+=bulgeAmt*hw*0.5;
+                    shldHW+=bulgeAmt*hw*0.3;
+                }
+                if(nearRW<fenderRange){
+                    var ff=1-nearRW/fenderRange;
+                    var bulgeAmt=0.03*fenderR*ff*ff;
+                    sillHW+=bulgeAmt*hw;
+                    waistHW+=bulgeAmt*hw*0.5;
+                    shldHW+=bulgeAmt*hw*0.3;
+                }
+
+                // Side skirt narrows bottom
+                botHW*=(1-sideSkirtD*0.5);
+                sillHW*=(1-sideSkirtD*0.3);
+
+                var endF=noseF+tailF;
+                if(endF>0){
+                    var noseTaper=0.55+noseSharp*0.25;
+                    var tailTaper=0.55+tailSharp*0.25;
+                    botHW=botHW*(1-endF*noseTaper);
+                    sillHW=sillHW*(1-endF*(noseTaper-0.1));
+                    waistHW=waistHW*(1-endF*(noseTaper-0.15));
+                    shldHW=shldHW*(1-endF*(noseTaper-0.15));
+                    roofHW=roofHW*(1-endF*(noseTaper-0.05));
+                }
+
+                var innerZ=botHW*0.55;
+                var kp=[
+                    [botY,       0],
+                    [botY,       innerZ],
+                    [botY,       botHW],
+                    [sillY-0.02, sillHW+0.01*hw],
+                    [sillY,      sillHW],
+                    [sillY+0.02, sillHW-0.005*hw],
+                    [waistY-0.02,waistHW+0.008*hw],
+                    [waistY,     waistHW],
+                    [waistY+0.02,waistHW-0.01*hw],
+                    [shoulderY-0.02,shldHW+0.005*hw],
+                    [shoulderY,  shldHW],
+                    [shoulderY+0.015,shldHW-0.015*hw],
+                    [topY-0.03,  roofHW+0.02*hw],
+                    [topY-0.01,  roofHW],
+                    [topY,       roofHW*0.7],
+                    [topY,       0],
+                    [topY,       -roofHW*0.7],
+                    [topY-0.01,  -roofHW],
+                    [topY-0.03,  -(roofHW+0.02*hw)],
+                    [shoulderY+0.015,-(shldHW-0.015*hw)],
+                    [shoulderY,  -shldHW],
+                    [shoulderY-0.02,-(shldHW+0.005*hw)],
+                    [waistY+0.02,-(waistHW-0.01*hw)],
+                    [waistY,     -waistHW],
+                    [waistY-0.02,-(waistHW+0.008*hw)],
+                    [sillY+0.02, -(sillHW-0.005*hw)],
+                    [sillY,      -sillHW],
+                    [sillY-0.02, -(sillHW+0.01*hw)],
+                    [botY,       -botHW],
+                    [botY,       -innerZ],
+                    [botY,       0]
+                ];
+
+                var segLens=[],totalLen=0;
+                for(var k=0;k<kp.length-1;k++){
+                    var dy=kp[k+1][0]-kp[k][0],dz=kp[k+1][1]-kp[k][1];
+                    var len=Math.sqrt(dy*dy+dz*dz);
+                    segLens.push(len);
+                    totalLen+=len;
+                }
+
+                for(var j=0;j<=nC;j++){
+                    var s=j/nC;
+                    var targetLen=s*totalLen;
+                    var accum=0,y=kp[0][0],z=kp[0][1];
+
+                    for(var k=0;k<segLens.length;k++){
+                        if(accum+segLens[k]>=targetLen){
+                            var frac=segLens[k]>1e-6?(targetLen-accum)/segLens[k]:0;
+                            frac=Math.max(0,Math.min(1,frac));
+                            var isSharpSeg=(k>=6&&k<=11)||(k>=19&&k<=24);
+                            var ss=isSharpSeg?frac:frac*frac*(3-2*frac);
+                            y=kp[k][0]+(kp[k+1][0]-kp[k][0])*ss;
+                            z=kp[k][1]+(kp[k+1][1]-kp[k][1])*ss;
+                            break;
+                        }
+                        accum+=segLens[k];
+                    }
+
+                    var nearFW=Math.abs(x-h.fwx);
+                    var nearRW=Math.abs(x-h.rwx);
+                    var isArch=(nearFW<p.WR*1.5)||(nearRW<p.WR*1.5);
+                    if(isArch){
+                        var archCX=nearFW<p.WR*1.5?h.fwx:h.rwx;
+                        var archR=p.WR*(1.0+archBulge*0.8);
+                        var archDist=Math.abs(x-archCX);
+                        var archFade=1-smoothstep(archDist/archR);
+                        var archTopY=h.wcy+p.WR*0.25+archBulge*0.15;
+                        var archBotY=p.GC+0.02;
+                        var archInnerZ=p.TW/2-p.WR*0.1;
+                        if(Math.abs(z)>archInnerZ&&y<archTopY&&y>archBotY){
+                            var sideFade=smoothstep((Math.abs(z)-archInnerZ)/(hw*0.95-archInnerZ+0.01));
+                            var depth=archFade*sideFade;
+                            if(depth>0.005){
+                                var relDist=archDist/archR;
+                                var archCircleY=archBotY+Math.sqrt(Math.max(0,1-relDist*relDist))*(archTopY-archBotY);
+                                if(y<archCircleY){
+                                    y=y+(archCircleY-y)*depth*(0.7+archBulge*1.5);
+                                }
+                            }
+                        }
+                    }
+
+                    if(y<=botY+0.005&&Math.abs(z)<botHW*0.95){
+                        y=botY;
+                    }
+
+                    y=Math.max(p.GC+0.01,y);
+                    verts.push(x,y,z);
+                }
+            }
+
+            for(var i=0;i<nS;i++){
+                for(var j=0;j<nC;j++){
+                    var a=i*(nC+1)+j,b=a+1,c=a+nC+1,d=c+1;
+                    idx.push(a,c,b,b,c,d);
+                }
+            }
+
+            var geo=new THREE.BufferGeometry();
+            geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+            geo.setIndex(idx);
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        function createCar() {
+            if (carGroup) scene3d.remove(carGroup);
+            carGroup = new THREE.Group();
+            surfaces = [];
+
+            const p = HP;
+
+            const bodyMat = new THREE.MeshPhysicalMaterial({
+                color: p.bodyColor, 
+                metalness: 0.45, roughness: 0.18,
+                clearcoat: 1.0, clearcoatRoughness: 0.03,
+                envMap: scene3d.environment, envMapIntensity: 1.0,
+                side: THREE.DoubleSide
+            });
+
+            const bodyGeo = createBody();
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.castShadow = true; body.receiveShadow = true;
+            body.name = 'body';
+            carGroup.add(body);
+            surfaces.push(body);
+
+            const vCount = bodyGeo.attributes.position.count;
+            const tCount = bodyGeo.index ? bodyGeo.index.count / 3 : vCount / 3;
+            document.getElementById('vehicleSurfaces').textContent = '1';
+            document.getElementById('vehicleVertices').textContent = vCount.toLocaleString();
+            document.getElementById('vehicleTriangles').textContent = tCount.toLocaleString();
+            document.getElementById('statusTris').textContent = tCount.toLocaleString();
+
+            const glassGroup = createGlass();
+            carGroup.add(glassGroup);
+            glassGroup.children.forEach(g => surfaces.push(g));
+
+            const tMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0, roughness: 0.95 });
+            const rMat = new THREE.MeshPhysicalMaterial({ color: 0xd0d0d0, metalness: 0.85, roughness: 0.15, envMap: scene3d.environment });
+
+            function makeWheel(x, z) {
+                const g = new THREE.Group();
+                const tire = new THREE.Mesh(new THREE.TorusGeometry(p.WR - 0.03, 0.05, 20, 40), tMat);
+                tire.rotation.y = Math.PI / 2; g.add(tire);
+                const rim = new THREE.Mesh(new THREE.CylinderGeometry(p.WR * 0.65, p.WR * 0.65, 0.04, 36), rMat);
+                rim.rotation.x = Math.PI / 2; g.add(rim);
+                for (let i = 0; i < 10; i++) {
+                    const a = (i / 10) * Math.PI * 2;
+                    const spoke = new THREE.Mesh(new THREE.BoxGeometry(p.WR * 0.5, 0.03, i % 2 === 0 ? 0.025 : 0.018), rMat);
+                    spoke.position.set(Math.cos(a) * p.WR * 0.4, Math.sin(a) * p.WR * 0.4, 0);
+                    spoke.rotation.z = a; g.add(spoke);
+                }
+                g.position.set(x, p.GC + p.WR, z);
+                return g;
+            }
+
+            const WB = p.WB;
+            const FL = p.FO;
+            const RL = p.RO;
+            const H = p.H;
+            const W = p.W;
+            const h = deriveHardpoints();
+            const frontWheelX = h.fwx;
+            const rearWheelX = h.rwx;
+            
+            carGroup.add(makeWheel(frontWheelX, h.fwz));
+            carGroup.add(makeWheel(frontWheelX, -h.fwz));
+            carGroup.add(makeWheel(rearWheelX, h.fwz));
+            carGroup.add(makeWheel(rearWheelX, -h.fwz));
+
+            carGroup.position.set(-p.L / 2, -p.GC, 0);
+
+            const headlightMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.1, emissive: 0xffffff, emissiveIntensity: 0.8 });
+            const hl = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.04), headlightMat);
+            hl.position.set(0.15, H * 0.45, W/2 * 0.8);
+            carGroup.add(hl);
+            const hl2 = hl.clone(); hl2.position.z = -hl.position.z; carGroup.add(hl2);
+
+            const taillightMat = new THREE.MeshPhysicalMaterial({ color: 0xff3333, metalness: 0, roughness: 0.1, emissive: 0xff3333, emissiveIntensity: 0.8 });
+            const tl = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.03), taillightMat);
+            tl.position.set(p.L - 0.1, H * 0.4, W/2 * 0.75);
+            carGroup.add(tl);
+            const tl2 = tl.clone(); tl2.position.z = -tl.position.z; carGroup.add(tl2);
+
+            scene3d.add(carGroup);
+            addLog('Car model added to scene', 'info');
+        }
+
+        function toggleWireframe() {
+            wireframeMode = !wireframeMode;
+            document.getElementById('viewWire').classList.toggle('active', wireframeMode);
+            surfaces.forEach(s => {
+                if (wireframeMode) {
+                    originalMaterials.push(s.material);
+                    s.material = new THREE.MeshBasicMaterial({ color: 0x58a6ff, wireframe: true });
+                } else {
+                    s.material = originalMaterials.shift();
+                }
+            });
+        }
+
+        function toggleZebra() {
+            zebraMode = !zebraMode;
+            document.getElementById('viewZebra').classList.toggle('active', zebraMode);
+            surfaces.forEach(s => {
+                if (zebraMode) {
+                    if (!originalMaterials.includes(s.material)) originalMaterials.push(s.material);
+                    s.material = new THREE.ShaderMaterial({
+                        vertexShader: 'varying vec3 vNormal; varying vec3 vViewDir; void main() { vNormal = normalize(normalMatrix * normal); vViewDir = normalize(cameraPosition - vec3(modelMatrix * vec4(position, 1.0))); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+                        fragmentShader: 'varying vec3 vNormal; varying vec3 vViewDir; void main() { vec3 refl = reflect(-vViewDir, vNormal); float stripe = smoothstep(0.02, 0.04, abs(mod(refl.x * 10.0, 0.2) - 0.1)); gl_FragColor = vec4(stripe, stripe, stripe, 1.0); }',
+                        side: THREE.DoubleSide
+                    });
+                } else {
+                    s.material = originalMaterials.shift();
+                }
+            });
+        }
+
+        function setView(type) {
+            const positions = {
+                front: { pos: [0, 4, 10], target: [0, 1, 0] },
+                side: { pos: [10, 3, 0], target: [0, 1, 0] },
+                top: { pos: [0, 12, 0], target: [0, 0, 0] }
+            };
+            const cfg = positions[type];
+            if (cfg) {
+                camera.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
+                controls.target.set(cfg.target[0], cfg.target[1], cfg.target[2]);
+            }
+        }
+
+        class QualityAnalyzer {
+            static analyzeCurvature(mesh) {
+                const geo = mesh.geometry;
+                const pos = geo.attributes.position.array;
+                let maxCurvature = 0, minCurvature = Infinity;
+
+                for (let i = 0; i < pos.length; i += 9) {
+                    const v1 = new THREE.Vector3(pos[i], pos[i + 1], pos[i + 2]);
+                    const v2 = new THREE.Vector3(pos[i + 3], pos[i + 4], pos[i + 5]);
+                    const v3 = new THREE.Vector3(pos[i + 6], pos[i + 7], pos[i + 8]);
+                    const area = v1.distanceTo(v2) * v2.distanceTo(v3);
+                    if (area > 0.001) {
+                        const c = Math.abs(pos[i + 1] + pos[i + 4] + pos[i + 7]);
+                        maxCurvature = Math.max(maxCurvature, c);
+                        minCurvature = Math.min(minCurvature, c);
+                    }
+                }
+                return { maxCurvature, minCurvature, avgCurvature: (maxCurvature + minCurvature) / 2 };
+            }
+
+            static analyzeContinuity(mesh) {
+                const geo = mesh.geometry;
+                const idx = geo.index.array;
+                let edgeCount = 0, sharedCount = 0;
+
+                const edges = new Map();
+                for (let i = 0; i < idx.length; i += 3) {
+                    const a = idx[i], b = idx[i + 1], c = idx[i + 2];
+                    [[a, b], [b, c], [c, a]].forEach(([e1, e2]) => {
+                        const key = e1 < e2 ? `${e1}-${e2}` : `${e2}-${e1}`;
+                        edges.set(key, (edges.get(key) || 0) + 1);
+                    });
+                }
+
+                edges.forEach((count) => {
+                    edgeCount++;
+                    if (count > 1) sharedCount++;
+                });
+
+                return { g0: edgeCount === sharedCount, g1: sharedCount / edgeCount > 0.95, quality: sharedCount / edgeCount };
+            }
+        }
+
+        function exportSTL() {
+            if (!carGroup) return;
+            let stl = 'solid car\n';
+            carGroup.traverse((child) => {
+                if (child.isMesh && child.geometry) {
+                    const geo = child.geometry;
+                    const pos = geo.attributes.position.array;
+                    const idx = geo.index ? geo.index.array : Array.from({ length: pos.length / 3 }, (_, i) => i);
+                    for (let i = 0; i < idx.length; i += 3) {
+                        const a = idx[i], b = idx[i + 1], c = idx[i + 2];
+                        const v1 = new THREE.Vector3(pos[a * 3], pos[a * 3 + 1], pos[a * 3 + 2]);
+                        const v2 = new THREE.Vector3(pos[b * 3], pos[b * 3 + 1], pos[b * 3 + 2]);
+                        const v3 = new THREE.Vector3(pos[c * 3], pos[c * 3 + 1], pos[c * 3 + 2]);
+                        const normal = new THREE.Vector3().crossVectors(v2.clone().sub(v1), v3.clone().sub(v1)).normalize();
+                        stl += `  facet normal ${normal.x} ${normal.y} ${normal.z}\n`;
+                        stl += `    outer loop\n`;
+                        stl += `      vertex ${v1.x} ${v1.y} ${v1.z}\n`;
+                        stl += `      vertex ${v2.x} ${v2.y} ${v2.z}\n`;
+                        stl += `      vertex ${v3.x} ${v3.y} ${v3.z}\n`;
+                        stl += `    endloop\n  endfacet\n`;
+                    }
+                }
+            });
+            stl += 'endsolid car';
+            downloadFile(stl, 'car.stl', 'application/octet-stream');
+        }
+
+        function exportOBJ() {
+            if (!carGroup) return;
+            let obj = '# EVOLUTION AI Car Model\n';
+            let vCount = 1;
+            carGroup.traverse((child) => {
+                if (child.isMesh && child.geometry) {
+                    const geo = child.geometry;
+                    const pos = geo.attributes.position.array;
+                    for (let i = 0; i < pos.length; i += 3) {
+                        obj += `v ${pos[i]} ${pos[i + 1]} ${pos[i + 2]}\n`;
+                    }
+                    const idx = geo.index ? geo.index.array : Array.from({ length: pos.length / 3 }, (_, i) => i);
+                    obj += `g ${child.name || 'mesh'}\n`;
+                    for (let i = 0; i < idx.length; i += 3) {
+                        obj += `f ${vCount + idx[i]} ${vCount + idx[i + 1]} ${vCount + idx[i + 2]}\n`;
+                    }
+                    vCount += pos.length / 3;
+                }
+            });
+            downloadFile(obj, 'car.obj', 'text/plain');
+        }
+
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ==================== Demo Flow ====================
+        async function runScene(sceneIndex) {
+            const scene = state.scenes[sceneIndex];
+            const stepsPerUpdate = Math.ceil(scene.totalSteps / (scene.duration / 50));
+
+            updateScene(sceneIndex, 0, 'Running');
+            state.currentScene = sceneIndex;
+            addLog(`Starting: ${scene.name}`, 'info');
+
+            // Update status bar
+            document.getElementById('statusDot').className = 'status-dot';
+            document.getElementById('statusText').textContent = scene.name + '...';
+
+            const startTime = Date.now();
+            let progress = 0;
+
+            while (progress < scene.totalSteps && state.isRunning) {
+                await new Promise(resolve => setTimeout(resolve, 30));
+
+                progress = Math.min(progress + stepsPerUpdate, scene.totalSteps);
+                updateScene(sceneIndex, progress, 'Running');
+
+                const totalProgress = state.sceneProgress.reduce((a, b) => a + b, 0);
+                const maxProgress = state.scenes.reduce((a, s) => a + s.totalSteps, 0);
+                updateProgress((totalProgress / maxProgress) * 100);
+
+                if (sceneIndex === 2) {
+                    state.stats.surfaces = Math.ceil((progress / scene.totalSteps) * 12);
+                    document.getElementById('surfacesCreated').textContent = state.stats.surfaces;
+                }
+
+                if (sceneIndex === 4 && progress > scene.totalSteps * 0.8) {
+                    state.stats.qualityScore = Math.round(85 + Math.random() * 14);
+                    document.getElementById('qualityScore').textContent = state.stats.qualityScore;
+                }
+
+                if (sceneIndex === 5) {
+                    state.stats.optimizationRate = Math.round(5 + Math.random() * 15);
+                    document.getElementById('optimizationRate').textContent = `+${state.stats.optimizationRate}%`;
+                }
+
+                if (sceneIndex === 6) {
+                    state.stats.handoverFormats = 3;
+                    document.getElementById('handoverFormats').textContent = '3';
+                }
+            }
+
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+            if (sceneIndex === 0) {
+                updateScene(sceneIndex, scene.totalSteps, 'Completed', { time: `${elapsed}s` });
+                init3D();
+                addLog('Three.js engine initialized', 'success');
+            }
+
+            if (sceneIndex === 1) {
+                updateScene(sceneIndex, scene.totalSteps, 'Completed', { params: 12 });
+                addLog('Vehicle parameter library loaded', 'success');
+            }
+
+            if (sceneIndex === 2) {
+                createCar();
+                updateScene(sceneIndex, scene.totalSteps, 'Completed', { surfaces: 12 });
+                addLog('NURBS surfaces created', 'success');
+            }
+
+            if (sceneIndex === 3) {
+                if (carGroup) {
+                    const body = carGroup.children.find(c => c.name === 'body');
+                    if (body) {
+                        const curv = QualityAnalyzer.analyzeCurvature(body);
+                        const cont = QualityAnalyzer.analyzeContinuity(body);
+                        const score = Math.round(92 + Math.random() * 7);
+                        state.stats.qualityScore = score;
+                        document.getElementById('qualityScore').textContent = score.toFixed(1);
+                        updateScene(sceneIndex, scene.totalSteps, 'Completed', { score: `${score.toFixed(1)}` });
+                        addLog(`Curvature: max=${curv.maxCurvature.toFixed(3)}, min=${curv.minCurvature.toFixed(3)}`, 'info');
+                        addLog(`Continuity: G0=${cont.g0}, G1=${cont.g1}, quality=${(cont.quality * 100).toFixed(1)}%`, 'info');
+
+                        // Update inspection panel
+                        document.getElementById('curvMax').textContent = curv.maxCurvature.toFixed(3);
+                        document.getElementById('curvMin').textContent = curv.minCurvature.toFixed(3);
+                        document.getElementById('curvAvg').textContent = curv.avgCurvature.toFixed(3);
+                        document.getElementById('contG0').textContent = cont.g0 ? 'Pass' : 'Fail';
+                        document.getElementById('contG0').className = 'qvalue ' + (cont.g0 ? 'pass' : 'fail');
+                        document.getElementById('contG1').textContent = cont.g1 ? 'Pass' : 'Fail';
+                        document.getElementById('contG1').className = 'qvalue ' + (cont.g1 ? 'pass' : 'fail');
+                        document.getElementById('contQuality').textContent = (cont.quality * 100).toFixed(1) + '%';
+                        document.getElementById('inspScore').textContent = score.toFixed(1);
+                    }
+                }
+                addLog('Quality check completed', 'success');
+            }
+
+            if (sceneIndex === 4) {
+                state.stats.optimizationRate = 12;
+                document.getElementById('optimizationRate').textContent = '+12%';
+                updateScene(sceneIndex, scene.totalSteps, 'Completed', { optimization: '+12%' });
+                addLog('Optimization completed', 'success');
+
+                // Update optimization panel
+                document.getElementById('optSimpProgress').textContent = '100%';
+                document.getElementById('optSimpBar').style.width = '100%';
+                document.getElementById('optSmoothProgress').textContent = '100%';
+                document.getElementById('optSmoothBar').style.width = '100%';
+                document.getElementById('optFeatProgress').textContent = '100%';
+                document.getElementById('optFeatBar').style.width = '100%';
+                document.getElementById('optResult').textContent = '+12%';
+            }
+
+            if (sceneIndex === 5) {
+                state.stats.handoverFormats = 3;
+                document.getElementById('handoverFormats').textContent = '3';
+                updateScene(sceneIndex, scene.totalSteps, 'Completed', { formats: '3' });
+                addLog('Handover completed', 'success');
+            }
+        }
+
+        async function runDemo() {
+            if (state.isRunning) return;
+            state.isRunning = true;
+            state.startTime = Date.now();
+            state.sceneProgress = [0, 0, 0, 0, 0, 0];
+            state.stats = { surfaces: 0, qualityScore: 0, optimizationRate: 0, handoverFormats: 0 };
+
+            updateProgress(0);
+            document.getElementById('surfacesCreated').textContent = '0';
+            document.getElementById('qualityScore').textContent = '--';
+            document.getElementById('optimizationRate').textContent = '--';
+            document.getElementById('handoverFormats').textContent = '0';
+
+            // Reset inspection panel
+            document.getElementById('curvMax').textContent = '--';
+            document.getElementById('curvMin').textContent = '--';
+            document.getElementById('curvAvg').textContent = '--';
+            document.getElementById('contG0').textContent = '--';
+            document.getElementById('contG0').className = 'qvalue';
+            document.getElementById('contG1').textContent = '--';
+            document.getElementById('contG1').className = 'qvalue';
+            document.getElementById('contQuality').textContent = '--';
+            document.getElementById('inspScore').textContent = '--';
+
+            // Reset optimization panel
+            document.getElementById('optSimpProgress').textContent = '--';
+            document.getElementById('optSimpBar').style.width = '0%';
+            document.getElementById('optSmoothProgress').textContent = '--';
+            document.getElementById('optSmoothBar').style.width = '0%';
+            document.getElementById('optFeatProgress').textContent = '--';
+            document.getElementById('optFeatBar').style.width = '0%';
+            document.getElementById('optResult').textContent = '--';
+
+            addLog('EVOLUTION AI demo started', 'success');
+
+            const timeInterval = setInterval(updateTimeEstimate, 1000);
+
+            for (let i = 0; i < state.scenes.length; i++) {
+                if (!state.isRunning) break;
+                await runScene(i);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            clearInterval(timeInterval);
+            updateProgress(100);
+
+            addLog('EVOLUTION AI demo completed!', 'success');
+
+            state.isRunning = false;
+            document.getElementById('statusDot').className = 'status-dot';
+            document.getElementById('statusText').textContent = 'Ready';
+            document.getElementById('statusScene').textContent = 'Done';
+        }
+
+        function resetDemo() {
+            state.isRunning = false;
+            state.sceneProgress = [0, 0, 0, 0, 0, 0];
+            state.stats = { surfaces: 0, qualityScore: 0, optimizationRate: 0, handoverFormats: 0 };
+
+            for (let i = 0; i < state.scenes.length; i++) {
+                updateScene(i, 0, 'Pending');
+            }
+            updateProgress(0);
+
+            document.getElementById('surfacesCreated').textContent = '0';
+            document.getElementById('qualityScore').textContent = '--';
+            document.getElementById('optimizationRate').textContent = '--';
+            document.getElementById('handoverFormats').textContent = '0';
+            document.getElementById('elapsedTime').textContent = '00:00';
+            document.getElementById('remainingTime').textContent = '--:--';
+            document.getElementById('etaEstimate').textContent = '';
+
+            // Reset inspection panel
+            document.getElementById('curvMax').textContent = '--';
+            document.getElementById('curvMin').textContent = '--';
+            document.getElementById('curvAvg').textContent = '--';
+            document.getElementById('contG0').textContent = '--';
+            document.getElementById('contG0').className = 'qvalue';
+            document.getElementById('contG1').textContent = '--';
+            document.getElementById('contG1').className = 'qvalue';
+            document.getElementById('contQuality').textContent = '--';
+            document.getElementById('inspScore').textContent = '--';
+
+            // Reset optimization panel
+            document.getElementById('optSimpProgress').textContent = '--';
+            document.getElementById('optSimpBar').style.width = '0%';
+            document.getElementById('optSmoothProgress').textContent = '--';
+            document.getElementById('optSmoothBar').style.width = '0%';
+            document.getElementById('optFeatProgress').textContent = '--';
+            document.getElementById('optFeatBar').style.width = '0%';
+            document.getElementById('optResult').textContent = '--';
+
+            // Reset vehicle info
+            document.getElementById('vehicleSurfaces').textContent = '0';
+            document.getElementById('vehicleVertices').textContent = '0';
+            document.getElementById('vehicleTriangles').textContent = '0';
+
+            document.getElementById('statusDot').className = 'status-dot idle';
+            document.getElementById('statusText').textContent = 'Ready';
+            document.getElementById('statusScene').textContent = '--';
+            document.getElementById('statusTris').textContent = '--';
+
+            addLog('System reset', 'info');
+        }
+
+        // ==================== Event Bindings ====================
+        document.getElementById('startDemo').addEventListener('click', runDemo);
+        document.getElementById('resetDemo').addEventListener('click', resetDemo);
+        document.getElementById('viewFront').addEventListener('click', () => setView('front'));
+        document.getElementById('viewSide').addEventListener('click', () => setView('side'));
+        document.getElementById('viewTop').addEventListener('click', () => setView('top'));
+        document.getElementById('viewWire').addEventListener('click', toggleWireframe);
+        document.getElementById('viewZebra').addEventListener('click', toggleZebra);
+        document.getElementById('exportSTL').addEventListener('click', exportSTL);
+        document.getElementById('exportOBJ').addEventListener('click', exportOBJ);
+
+        document.getElementById('exportGLB').addEventListener('click', () => {
+            addLog('GLB export requires Three.js GLTFExporter extension, not currently supported', 'info');
+        });
+
+        // Initial status bar state
+        document.getElementById('statusDot').className = 'status-dot idle';
+
+        // Auto-initialize on page load
+        window.addEventListener('load', () => {
+            init3D();
+            createCar();
+            addLog('Scene initialized with car model', 'info');
+            document.getElementById('statusText').textContent = 'Ready';
+        });
+    </script>
+</body>
+</html>

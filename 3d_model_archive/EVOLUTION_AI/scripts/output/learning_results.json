@@ -1,0 +1,831 @@
+[
+  {
+    "model_key": "sedan_c",
+    "initial_score": 96.36,
+    "final_score": 98.75,
+    "improvement": 2.3900000000000006,
+    "best_params": {
+      "L": 5.1,
+      "W": 1.99,
+      "H": 1.51,
+      "WB": 3.06,
+      "FO": 0.9892779546689487,
+      "RO": 1.1145636838480575,
+      "GC": 0.14407752467357632,
+      "WR": 0.3603455436547222,
+      "TW": 1.6901194894739036,
+      "AA": 23.054133428230266,
+      "CA": 35.07859808542375,
+      "WL": 0.8199458851751261,
+      "WBulge": 0.01849871988189994
+    },
+    "generations": 20,
+    "elapsed": 0.0,
+    "emergence_events": [],
+    "convergence_history": [
+      {
+        "generation": 1,
+        "best": 96.59,
+        "average": 88.92,
+        "best_ever": 96.59
+      },
+      {
+        "generation": 2,
+        "best": 96.59,
+        "average": 89.99,
+        "best_ever": 96.59
+      },
+      {
+        "generation": 3,
+        "best": 96.59,
+        "average": 94.28,
+        "best_ever": 96.59
+      },
+      {
+        "generation": 4,
+        "best": 98.09,
+        "average": 92.16,
+        "best_ever": 98.09
+      },
+      {
+        "generation": 5,
+        "best": 98.09,
+        "average": 94.69,
+        "best_ever": 98.09
+      },
+      {
+        "generation": 6,
+        "best": 98.12,
+        "average": 95.19,
+        "best_ever": 98.12
+      },
+      {
+        "generation": 7,
+        "best": 98.16,
+        "average": 95.46,
+        "best_ever": 98.16
+      },
+      {
+        "generation": 8,
+        "best": 98.16,
+        "average": 95.75,
+        "best_ever": 98.16
+      },
+      {
+        "generation": 9,
+        "best": 98.23,
+        "average": 95.59,
+        "best_ever": 98.23
+      },
+      {
+        "generation": 10,
+        "best": 98.23,
+        "average": 93.29,
+        "best_ever": 98.23
+      },
+      {
+        "generation": 11,
+        "best": 98.71,
+        "average": 96.63,
+        "best_ever": 98.71
+      },
+      {
+        "generation": 12,
+        "best": 98.71,
+        "average": 92.88,
+        "best_ever": 98.71
+      },
+      {
+        "generation": 13,
+        "best": 98.71,
+        "average": 94.89,
+        "best_ever": 98.71
+      },
+      {
+        "generation": 14,
+        "best": 98.71,
+        "average": 94.59,
+        "best_ever": 98.71
+      },
+      {
+        "generation": 15,
+        "best": 98.75,
+        "average": 97.17,
+        "best_ever": 98.75
+      },
+      {
+        "generation": 16,
+        "best": 98.75,
+        "average": 94.27,
+        "best_ever": 98.75
+      },
+      {
+        "generation": 17,
+        "best": 98.75,
+        "average": 95.7,
+        "best_ever": 98.75
+      },
+      {
+        "generation": 18,
+        "best": 98.75,
+        "average": 95.05,
+        "best_ever": 98.75
+      },
+      {
+        "generation": 19,
+        "best": 98.75,
+        "average": 92.92,
+        "best_ever": 98.75
+      },
+      {
+        "generation": 20,
+        "best": 98.75,
+        "average": 94.37,
+        "best_ever": 98.75
+      }
+    ]
+  },
+  {
+    "model_key": "sedan_d",
+    "initial_score": 92.48,
+    "final_score": 97.48,
+    "improvement": 5.0,
+    "best_params": {
+      "L": 5.29,
+      "W": 1.925395115390379,
+      "H": 1.5,
+      "WB": 3.22,
+      "FO": 1.0071094707613255,
+      "RO": 1.141909259525215,
+      "GC": 0.13,
+      "WR": 0.39261163972947044,
+      "TW": 1.62,
+      "AA": 28.777460415224077,
+      "CA": 37.318215203555155,
+      "WL": 0.8448925956336084,
+      "WBulge": 0.011609933574212177
+    },
+    "generations": 15,
+    "elapsed": 0.0,
+    "emergence_events": [],
+    "convergence_history": [
+      {
+        "generation": 1,
+        "best": 92.55,
+        "average": 83.81,
+        "best_ever": 92.55
+      },
+      {
+        "generation": 2,
+        "best": 92.55,
+        "average": 87.86,
+        "best_ever": 92.55
+      },
+      {
+        "generation": 3,
+        "best": 94.11,
+        "average": 90.49,
+        "best_ever": 94.11
+      },
+      {
+        "generation": 4,
+        "best": 94.11,
+        "average": 91.3,
+        "best_ever": 94.11
+      },
+      {
+        "generation": 5,
+        "best": 94.69,
+        "average": 89.79,
+        "best_ever": 94.69
+      },
+      {
+        "generation": 6,
+        "best": 97.11,
+        "average": 90.54,
+        "best_ever": 97.11
+      },
+      {
+        "generation": 7,
+        "best": 97.11,
+        "average": 90.95,
+        "best_ever": 97.11
+      },
+      {
+        "generation": 8,
+        "best": 97.11,
+        "average": 92.59,
+        "best_ever": 97.11
+      },
+      {
+        "generation": 9,
+        "best": 97.22,
+        "average": 94.03,
+        "best_ever": 97.22
+      },
+      {
+        "generation": 10,
+        "best": 97.34,
+        "average": 93.46,
+        "best_ever": 97.34
+      },
+      {
+        "generation": 11,
+        "best": 97.4,
+        "average": 94.94,
+        "best_ever": 97.4
+      },
+      {
+        "generation": 12,
+        "best": 97.47,
+        "average": 93.48,
+        "best_ever": 97.47
+      },
+      {
+        "generation": 13,
+        "best": 97.47,
+        "average": 92.43,
+        "best_ever": 97.47
+      },
+      {
+        "generation": 14,
+        "best": 97.48,
+        "average": 92.66,
+        "best_ever": 97.48
+      },
+      {
+        "generation": 15,
+        "best": 97.48,
+        "average": 92.85,
+        "best_ever": 97.48
+      }
+    ]
+  },
+  {
+    "model_key": "suv_full",
+    "initial_score": 96.35,
+    "final_score": 97.24,
+    "improvement": 0.8900000000000006,
+    "best_params": {
+      "L": 5.06,
+      "W": 2.0,
+      "H": 1.78,
+      "WB": 3.11,
+      "FO": 0.9264566554150162,
+      "RO": 0.9230908995021789,
+      "GC": 0.22439151576871755,
+      "WR": 0.3700479272045671,
+      "TW": 1.68,
+      "AA": 24.092112882956545,
+      "CA": 48.92014047935468,
+      "WL": 0.85,
+      "WBulge": 0.02
+    },
+    "generations": 15,
+    "elapsed": 0.0,
+    "emergence_events": [],
+    "convergence_history": [
+      {
+        "generation": 1,
+        "best": 96.44,
+        "average": 87.45,
+        "best_ever": 96.44
+      },
+      {
+        "generation": 2,
+        "best": 96.46,
+        "average": 91.68,
+        "best_ever": 96.46
+      },
+      {
+        "generation": 3,
+        "best": 96.58,
+        "average": 91.73,
+        "best_ever": 96.58
+      },
+      {
+        "generation": 4,
+        "best": 96.59,
+        "average": 94.0,
+        "best_ever": 96.59
+      },
+      {
+        "generation": 5,
+        "best": 96.7,
+        "average": 90.15,
+        "best_ever": 96.7
+      },
+      {
+        "generation": 6,
+        "best": 97.09,
+        "average": 92.91,
+        "best_ever": 97.09
+      },
+      {
+        "generation": 7,
+        "best": 97.24,
+        "average": 93.84,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 8,
+        "best": 97.24,
+        "average": 93.91,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 9,
+        "best": 97.24,
+        "average": 93.17,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 10,
+        "best": 97.24,
+        "average": 94.71,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 11,
+        "best": 97.24,
+        "average": 93.74,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 12,
+        "best": 97.24,
+        "average": 94.11,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 13,
+        "best": 97.24,
+        "average": 93.81,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 14,
+        "best": 97.24,
+        "average": 93.74,
+        "best_ever": 97.24
+      },
+      {
+        "generation": 15,
+        "best": 97.24,
+        "average": 93.73,
+        "best_ever": 97.24
+      }
+    ]
+  },
+  {
+    "model_key": "coupe",
+    "initial_score": 88.59,
+    "final_score": 92.73,
+    "improvement": 4.140000000000001,
+    "best_params": {
+      "L": 4.52,
+      "W": 1.85,
+      "H": 1.3,
+      "WB": 2.45,
+      "FO": 0.8732886384170672,
+      "RO": 0.8637678357798635,
+      "GC": 0.13682590063320862,
+      "WR": 0.3612655408185408,
+      "TW": 1.5800011312427742,
+      "AA": 21.57145484588916,
+      "CA": 38.28026960004766,
+      "WL": 0.66,
+      "WBulge": 0.020153239165983085
+    },
+    "generations": 16,
+    "elapsed": 0.0,
+    "emergence_events": [],
+    "convergence_history": [
+      {
+        "generation": 1,
+        "best": 88.62,
+        "average": 83.69,
+        "best_ever": 88.62
+      },
+      {
+        "generation": 2,
+        "best": 89.17,
+        "average": 86.72,
+        "best_ever": 89.17
+      },
+      {
+        "generation": 3,
+        "best": 89.65,
+        "average": 84.89,
+        "best_ever": 89.65
+      },
+      {
+        "generation": 4,
+        "best": 89.71,
+        "average": 86.38,
+        "best_ever": 89.71
+      },
+      {
+        "generation": 5,
+        "best": 89.82,
+        "average": 86.7,
+        "best_ever": 89.82
+      },
+      {
+        "generation": 6,
+        "best": 89.97,
+        "average": 85.44,
+        "best_ever": 89.97
+      },
+      {
+        "generation": 7,
+        "best": 92.42,
+        "average": 86.11,
+        "best_ever": 92.42
+      },
+      {
+        "generation": 8,
+        "best": 92.42,
+        "average": 87.81,
+        "best_ever": 92.42
+      },
+      {
+        "generation": 9,
+        "best": 92.42,
+        "average": 88.8,
+        "best_ever": 92.42
+      },
+      {
+        "generation": 10,
+        "best": 92.42,
+        "average": 88.31,
+        "best_ever": 92.42
+      },
+      {
+        "generation": 11,
+        "best": 92.48,
+        "average": 90.57,
+        "best_ever": 92.48
+      },
+      {
+        "generation": 12,
+        "best": 92.67,
+        "average": 90.15,
+        "best_ever": 92.67
+      },
+      {
+        "generation": 13,
+        "best": 92.67,
+        "average": 87.29,
+        "best_ever": 92.67
+      },
+      {
+        "generation": 14,
+        "best": 92.67,
+        "average": 87.72,
+        "best_ever": 92.67
+      },
+      {
+        "generation": 15,
+        "best": 92.73,
+        "average": 89.45,
+        "best_ever": 92.73
+      },
+      {
+        "generation": 16,
+        "best": 92.73,
+        "average": 87.62,
+        "best_ever": 92.73
+      }
+    ]
+  },
+  {
+    "model_key": "sports",
+    "initial_score": 86.32,
+    "final_score": 87.7,
+    "improvement": 1.3800000000000097,
+    "best_params": {
+      "L": 4.57,
+      "W": 1.96,
+      "H": 1.22,
+      "WB": 2.6,
+      "FO": 0.88,
+      "RO": 0.8585036407034126,
+      "GC": 0.09790169886629942,
+      "WR": 0.3321910440472187,
+      "TW": 1.6728422943693293,
+      "AA": 21.525843646274453,
+      "CA": 30.564484316309457,
+      "WL": 0.5764885589688306,
+      "WBulge": 0.05
+    },
+    "generations": 16,
+    "elapsed": 0.0,
+    "emergence_events": [],
+    "convergence_history": [
+      {
+        "generation": 1,
+        "best": 86.56,
+        "average": 79.07,
+        "best_ever": 86.56
+      },
+      {
+        "generation": 2,
+        "best": 86.56,
+        "average": 83.02,
+        "best_ever": 86.56
+      },
+      {
+        "generation": 3,
+        "best": 86.57,
+        "average": 83.33,
+        "best_ever": 86.57
+      },
+      {
+        "generation": 4,
+        "best": 86.57,
+        "average": 83.63,
+        "best_ever": 86.57
+      },
+      {
+        "generation": 5,
+        "best": 86.7,
+        "average": 84.44,
+        "best_ever": 86.7
+      },
+      {
+        "generation": 6,
+        "best": 86.7,
+        "average": 84.56,
+        "best_ever": 86.7
+      },
+      {
+        "generation": 7,
+        "best": 87.7,
+        "average": 83.46,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 8,
+        "best": 87.7,
+        "average": 84.84,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 9,
+        "best": 87.7,
+        "average": 83.65,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 10,
+        "best": 87.7,
+        "average": 84.39,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 11,
+        "best": 87.7,
+        "average": 84.62,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 12,
+        "best": 87.7,
+        "average": 84.24,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 13,
+        "best": 87.7,
+        "average": 86.43,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 14,
+        "best": 87.7,
+        "average": 84.92,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 15,
+        "best": 87.7,
+        "average": 84.46,
+        "best_ever": 87.7
+      },
+      {
+        "generation": 16,
+        "best": 87.7,
+        "average": 85.76,
+        "best_ever": 87.7
+      }
+    ]
+  },
+  {
+    "model_key": "mpv",
+    "initial_score": 82.45,
+    "final_score": 92.21,
+    "improvement": 9.759999999999991,
+    "best_params": {
+      "L": 5.288458246653702,
+      "W": 1.98,
+      "H": 1.8699153851698314,
+      "WB": 3.2,
+      "FO": 1.0410059176044584,
+      "RO": 1.058518102376595,
+      "GC": 0.15881331635848825,
+      "WR": 0.3786688839237067,
+      "TW": 1.7011183943864563,
+      "AA": 28,
+      "CA": 49.89480372154516,
+      "WL": 0.9922864960763605,
+      "WBulge": 0.02
+    },
+    "generations": 29,
+    "elapsed": 0.0,
+    "emergence_events": [
+      {
+        "type": "plateau_breakthrough",
+        "generation": 29,
+        "plateau_length": 5,
+        "description": "Gen 29: 平台突破（停滞5代后提升）"
+      }
+    ],
+    "convergence_history": [
+      {
+        "generation": 1,
+        "best": 83.7,
+        "average": 76.94,
+        "best_ever": 83.7
+      },
+      {
+        "generation": 2,
+        "best": 83.7,
+        "average": 81.32,
+        "best_ever": 83.7
+      },
+      {
+        "generation": 3,
+        "best": 83.7,
+        "average": 79.1,
+        "best_ever": 83.7
+      },
+      {
+        "generation": 4,
+        "best": 84.2,
+        "average": 81.04,
+        "best_ever": 84.2
+      },
+      {
+        "generation": 5,
+        "best": 84.83,
+        "average": 80.74,
+        "best_ever": 84.83
+      },
+      {
+        "generation": 6,
+        "best": 85.78,
+        "average": 81.87,
+        "best_ever": 85.78
+      },
+      {
+        "generation": 7,
+        "best": 85.78,
+        "average": 82.58,
+        "best_ever": 85.78
+      },
+      {
+        "generation": 8,
+        "best": 87.06,
+        "average": 82.81,
+        "best_ever": 87.06
+      },
+      {
+        "generation": 9,
+        "best": 87.06,
+        "average": 83.95,
+        "best_ever": 87.06
+      },
+      {
+        "generation": 10,
+        "best": 87.06,
+        "average": 83.82,
+        "best_ever": 87.06
+      },
+      {
+        "generation": 11,
+        "best": 87.06,
+        "average": 84.5,
+        "best_ever": 87.06
+      },
+      {
+        "generation": 12,
+        "best": 87.06,
+        "average": 84.84,
+        "best_ever": 87.06
+      },
+      {
+        "generation": 13,
+        "best": 87.56,
+        "average": 81.92,
+        "best_ever": 87.56
+      },
+      {
+        "generation": 14,
+        "best": 87.56,
+        "average": 83.49,
+        "best_ever": 87.56
+      },
+      {
+        "generation": 15,
+        "best": 87.56,
+        "average": 83.76,
+        "best_ever": 87.56
+      },
+      {
+        "generation": 16,
+        "best": 87.64,
+        "average": 84.77,
+        "best_ever": 87.64
+      },
+      {
+        "generation": 17,
+        "best": 87.64,
+        "average": 83.97,
+        "best_ever": 87.64
+      },
+      {
+        "generation": 18,
+        "best": 88.53,
+        "average": 83.52,
+        "best_ever": 88.53
+      },
+      {
+        "generation": 19,
+        "best": 90.64,
+        "average": 84.35,
+        "best_ever": 90.64
+      },
+      {
+        "generation": 20,
+        "best": 91.89,
+        "average": 85.39,
+        "best_ever": 91.89
+      },
+      {
+        "generation": 21,
+        "best": 91.89,
+        "average": 87.81,
+        "best_ever": 91.89
+      },
+      {
+        "generation": 22,
+        "best": 91.89,
+        "average": 88.39,
+        "best_ever": 91.89
+      },
+      {
+        "generation": 23,
+        "best": 92.04,
+        "average": 88.08,
+        "best_ever": 92.04
+      },
+      {
+        "generation": 24,
+        "best": 92.04,
+        "average": 88.97,
+        "best_ever": 92.04
+      },
+      {
+        "generation": 25,
+        "best": 92.04,
+        "average": 87.58,
+        "best_ever": 92.04
+      },
+      {
+        "generation": 26,
+        "best": 92.04,
+        "average": 88.94,
+        "best_ever": 92.04
+      },
+      {
+        "generation": 27,
+        "best": 92.04,
+        "average": 88.83,
+        "best_ever": 92.04
+      },
+      {
+        "generation": 28,
+        "best": 92.04,
+        "average": 88.06,
+        "best_ever": 92.04
+      },
+      {
+        "generation": 29,
+        "best": 92.21,
+        "average": 89.67,
+        "best_ever": 92.21
+      }
+    ]
+  }
+]

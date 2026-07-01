@@ -1,0 +1,130 @@
+{
+  "automotive_parameters": {
+    "整车尺寸": {
+      "overall_length": {"name": "整车长度", "value": 4800, "unit": "mm", "type": "length", "min_value": 3000, "max_value": 6000, "category": "body"},
+      "overall_width": {"name": "整车宽度", "value": 1850, "unit": "mm", "type": "width", "min_value": 1500, "max_value": 2200, "category": "body"},
+      "overall_height": {"name": "整车高度", "value": 1450, "unit": "mm", "type": "height", "min_value": 1200, "max_value": 2000, "category": "body"},
+      "wheelbase": {"name": "轴距", "value": 2800, "unit": "mm", "type": "length", "min_value": 2000, "max_value": 4000, "category": "chassis"},
+      "track_width": {"name": "轮距", "value": 1600, "unit": "mm", "type": "width", "min_value": 1400, "max_value": 1800, "category": "chassis"},
+      "ground_clearance": {"name": "离地间隙", "value": 150, "unit": "mm", "type": "distance", "min_value": 100, "max_value": 300, "category": "chassis"}
+    },
+    "车身部件": {
+      "hood_length": {"name": "发动机盖长度", "value": 1300, "unit": "mm", "type": "length", "min_value": 1000, "max_value": 1600, "category": "exterior"},
+      "hood_width": {"name": "发动机盖宽度", "value": 1500, "unit": "mm", "type": "width", "min_value": 1200, "max_value": 1800, "category": "exterior"},
+      "hood_height": {"name": "发动机盖高度", "value": 120, "unit": "mm", "type": "height", "min_value": 80, "max_value": 200, "category": "exterior"},
+      "windshield_width": {"name": "前风挡宽度", "value": 1200, "unit": "mm", "type": "width", "min_value": 1000, "max_value": 1400, "category": "exterior"},
+      "windshield_height": {"name": "前风挡高度", "value": 800, "unit": "mm", "type": "height", "min_value": 600, "max_value": 1000, "category": "exterior"},
+      "roof_length": {"name": "车顶长度", "value": 1500, "unit": "mm", "type": "length", "min_value": 1200, "max_value": 2000, "category": "exterior"},
+      "roof_width": {"name": "车顶宽度", "value": 1600, "unit": "mm", "type": "width", "min_value": 1400, "max_value": 1800, "category": "exterior"},
+      "roof_height": {"name": "车顶高度", "value": 50, "unit": "mm", "type": "height", "min_value": 30, "max_value": 100, "category": "exterior"},
+      "rear_window_width": {"name": "后风挡宽度", "value": 1100, "unit": "mm", "type": "width", "min_value": 900, "max_value": 1300, "category": "exterior"},
+      "rear_window_height": {"name": "后风挡高度", "value": 600, "unit": "mm", "type": "height", "min_value": 400, "max_value": 800, "category": "exterior"},
+      "trunk_length": {"name": "行李箱长度", "value": 1000, "unit": "mm", "type": "length", "min_value": 700, "max_value": 1300, "category": "exterior"},
+      "trunk_width": {"name": "行李箱宽度", "value": 1400, "unit": "mm", "type": "width", "min_value": 1200, "max_value": 1600, "category": "exterior"},
+      "door_front_length": {"name": "前门长度", "value": 1200, "unit": "mm", "type": "length", "min_value": 1000, "max_value": 1400, "category": "exterior"},
+      "door_front_height": {"name": "前门高度", "value": 900, "unit": "mm", "type": "height", "min_value": 700, "max_value": 1100, "category": "exterior"},
+      "door_rear_length": {"name": "后门长度", "value": 1100, "unit": "mm", "type": "length", "min_value": 900, "max_value": 1300, "category": "exterior"},
+      "door_rear_height": {"name": "后门高度", "value": 850, "unit": "mm", "type": "height", "min_value": 650, "max_value": 1000, "category": "exterior"},
+      "door_seam_width": {"name": "车门分缝宽度", "value": 8, "unit": "mm", "type": "width", "min_value": 5, "max_value": 15, "category": "exterior"},
+      "headlight_width": {"name": "前大灯宽度", "value": 400, "unit": "mm", "type": "width", "min_value": 300, "max_value": 550, "category": "exterior"},
+      "headlight_height": {"name": "前大灯高度", "value": 120, "unit": "mm", "type": "height", "min_value": 80, "max_value": 180, "category": "exterior"},
+      "taillight_width": {"name": "后尾灯宽度", "value": 350, "unit": "mm", "type": "width", "min_value": 250, "max_value": 500, "category": "exterior"},
+      "taillight_height": {"name": "后尾灯高度", "value": 150, "unit": "mm", "type": "height", "min_value": 100, "max_value": 200, "category": "exterior"},
+      "grille_width": {"name": "进气格栅宽度", "value": 1000, "unit": "mm", "type": "width", "min_value": 800, "max_value": 1200, "category": "exterior"},
+      "grille_height": {"name": "进气格栅高度", "value": 350, "unit": "mm", "type": "height", "min_value": 250, "max_value": 500, "category": "exterior"},
+      "wheel_arch_radius": {"name": "轮拱半径", "value": 350, "unit": "mm", "type": "radius", "min_value": 280, "max_value": 420, "category": "exterior"},
+      "wheel_diameter": {"name": "轮毂直径", "value": 450, "unit": "mm", "type": "diameter", "min_value": 350, "max_value": 600, "category": "chassis"},
+      "wheel_width": {"name": "轮毂宽度", "value": 225, "unit": "mm", "type": "width", "min_value": 185, "max_value": 355, "category": "chassis"},
+      "mirror_width": {"name": "后视镜宽度", "value": 200, "unit": "mm", "type": "width", "min_value": 150, "max_value": 280, "category": "exterior"},
+      "mirror_height": {"name": "后视镜高度", "value": 150, "unit": "mm", "type": "height", "min_value": 100, "max_value": 200, "category": "exterior"},
+      "mirror_depth": {"name": "后视镜深度", "value": 120, "unit": "mm", "type": "distance", "min_value": 80, "max_value": 180, "category": "exterior"},
+      "glass_thickness": {"name": "玻璃厚度", "value": 5, "unit": "mm", "type": "distance", "min_value": 3, "max_value": 10, "category": "interior"}
+    },
+    "造型角度": {
+      "hood_angle": {"name": "发动机盖角度", "value": 15, "unit": "deg", "type": "angle", "min_value": 5, "max_value": 35, "category": "exterior"},
+      "windshield_angle": {"name": "前风挡角度", "value": 65, "unit": "deg", "type": "angle", "min_value": 55, "max_value": 75, "category": "exterior"},
+      "rear_window_angle": {"name": "后风挡角度", "value": 25, "unit": "deg", "type": "angle", "min_value": 15, "max_value": 40, "category": "exterior"},
+      "a_pillar_angle": {"name": "A柱角度", "value": 10, "unit": "deg", "type": "angle", "min_value": 5, "max_value": 20, "category": "exterior"},
+      "c_pillar_angle": {"name": "C柱角度", "value": 30, "unit": "deg", "type": "angle", "min_value": 20, "max_value": 45, "category": "exterior"}
+    },
+    "A级曲面参数": {
+      "curvature_tolerance": {"name": "曲率公差", "value": 0.01, "unit": "1/mm", "type": "tolerance", "category": "quality"},
+      "continuity_g0": {"name": "G0连续性容差", "value": 0.1, "unit": "mm", "type": "tolerance", "category": "quality"},
+      "continuity_g1": {"name": "G1连续性容差", "value": 0.5, "unit": "deg", "type": "tolerance", "category": "quality"},
+      "continuity_g2": {"name": "G2连续性容差", "value": 0.01, "unit": "1/mm", "type": "tolerance", "category": "quality"}
+    },
+    "比例参数": {
+      "length_to_width_ratio": {"name": "长宽比", "value": 2.59, "unit": "", "type": "scale", "category": "proportion"},
+      "wheelbase_to_length_ratio": {"name": "轴距占比", "value": 0.58, "unit": "", "type": "scale", "category": "proportion"},
+      "overhang_front": {"name": "前悬长度", "value": 900, "unit": "mm", "type": "length", "category": "body"},
+      "overhang_rear": {"name": "后悬长度", "value": 1100, "unit": "mm", "type": "length", "category": "body"}
+    }
+  },
+  "car_body_components": {
+    "front_end": {
+      "name": "前端总成",
+      "components": [
+        {"name": "前保险杠", "type": "bumper", "position": {"x": 0, "y": 0, "z": 0}},
+        {"name": "进气格栅", "type": "grille", "position": {"x": 200, "y": 300, "z": 0}},
+        {"name": "前大灯左", "type": "headlight", "position": {"x": 150, "y": 400, "z": 400}},
+        {"name": "前大灯右", "type": "headlight", "position": {"x": 150, "y": 400, "z": -400}},
+        {"name": "发动机盖", "type": "hood", "position": {"x": 650, "y": 500, "z": 0}}
+      ]
+    },
+    "cabin": {
+      "name": "乘员舱",
+      "components": [
+        {"name": "前风挡玻璃", "type": "windshield", "position": {"x": 1900, "y": 900, "z": 0}},
+        {"name": "左前门", "type": "door", "position": {"x": 2400, "y": 600, "z": 450}},
+        {"name": "右前门", "type": "door", "position": {"x": 2400, "y": 600, "z": -450}},
+        {"name": "左后门", "type": "door", "position": {"x": 3500, "y": 550, "z": 450}},
+        {"name": "右后门", "type": "door", "position": {"x": 3500, "y": 550, "z": -450}},
+        {"name": "车顶", "type": "roof", "position": {"x": 3200, "y": 1250, "z": 0}},
+        {"name": "左后视镜", "type": "mirror", "position": {"x": 2600, "y": 850, "z": 470}},
+        {"name": "右后视镜", "type": "mirror", "position": {"x": 2600, "y": 850, "z": -470}},
+        {"name": "A柱左", "type": "pillar", "position": {"x": 1700, "y": 1000, "z": 430}},
+        {"name": "A柱右", "type": "pillar", "position": {"x": 1700, "y": 1000, "z": -430}},
+        {"name": "B柱左", "type": "pillar", "position": {"x": 3000, "y": 900, "z": 430}},
+        {"name": "B柱右", "type": "pillar", "position": {"x": 3000, "y": 900, "z": -430}},
+        {"name": "C柱左", "type": "pillar", "position": {"x": 4000, "y": 800, "z": 420}},
+        {"name": "C柱右", "type": "pillar", "position": {"x": 4000, "y": 800, "z": -420}}
+      ]
+    },
+    "rear_end": {
+      "name": "后端总成",
+      "components": [
+        {"name": "后风挡玻璃", "type": "rear_window", "position": {"x": 4200, "y": 700, "z": 0}},
+        {"name": "行李箱盖", "type": "trunk", "position": {"x": 4500, "y": 500, "z": 0}},
+        {"name": "后尾灯左", "type": "taillight", "position": {"x": 4400, "y": 550, "z": 420}},
+        {"name": "后尾灯右", "type": "taillight", "position": {"x": 4400, "y": 550, "z": -420}},
+        {"name": "后保险杠", "type": "bumper", "position": {"x": 4750, "y": 250, "z": 0}}
+      ]
+    },
+    "chassis": {
+      "name": "底盘",
+      "components": [
+        {"name": "前轮左", "type": "wheel", "position": {"x": 900, "y": 150, "z": 420}},
+        {"name": "前轮右", "type": "wheel", "position": {"x": 900, "y": 150, "z": -420}},
+        {"name": "后轮左", "type": "wheel", "position": {"x": 3700, "y": 150, "z": 420}},
+        {"name": "后轮右", "type": "wheel", "position": {"x": 3700, "y": 150, "z": -420}},
+        {"name": "左前翼子板", "type": "fender", "position": {"x": 800, "y": 400, "z": 440}},
+        {"name": "右前翼子板", "type": "fender", "position": {"x": 800, "y": 400, "z": -440}},
+        {"name": "左后轮拱", "type": "wheel_arch", "position": {"x": 3600, "y": 300, "z": 440}},
+        {"name": "右后轮拱", "type": "wheel_arch", "position": {"x": 3600, "y": 300, "z": -440}}
+      ]
+    }
+  },
+  "nurbs_surface_templates": {
+    "hood": {"degree_u": 5, "degree_v": 3, "num_u": 12, "num_v": 8, "length_u": 1300, "length_v": 1500, "style": "double_curve"},
+    "windshield": {"degree_u": 3, "degree_v": 3, "num_u": 8, "num_v": 6, "length_u": 1200, "length_v": 800, "style": "single_curve"},
+    "roof": {"degree_u": 5, "degree_v": 3, "num_u": 10, "num_v": 8, "length_u": 1500, "length_v": 1600, "style": "arch"},
+    "rear_window": {"degree_u": 3, "degree_v": 3, "num_u": 8, "num_v": 6, "length_u": 1100, "length_v": 600, "style": "single_curve"},
+    "trunk": {"degree_u": 3, "degree_v": 3, "num_u": 8, "num_v": 6, "length_u": 1000, "length_v": 1400, "style": "flat"},
+    "door_front": {"degree_u": 3, "degree_v": 3, "num_u": 6, "num_v": 8, "length_u": 1200, "length_v": 900, "style": "single_curve"},
+    "door_rear": {"degree_u": 3, "degree_v": 3, "num_u": 6, "num_v": 8, "length_u": 1100, "length_v": 850, "style": "single_curve"},
+    "bumper_front": {"degree_u": 5, "degree_v": 3, "num_u": 10, "num_v": 6, "length_u": 1850, "length_v": 300, "style": "round"},
+    "bumper_rear": {"degree_u": 5, "degree_v": 3, "num_u": 10, "num_v": 6, "length_u": 1850, "length_v": 300, "style": "round"},
+    "fender_front": {"degree_u": 3, "degree_v": 3, "num_u": 6, "num_v": 6, "length_u": 500, "length_v": 500, "style": "arch"},
+    "fender_rear": {"degree_u": 3, "degree_v": 3, "num_u": 6, "num_v": 6, "length_u": 500, "length_v": 500, "style": "arch"}
+  }
+}

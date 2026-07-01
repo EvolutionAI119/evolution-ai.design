@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>EVOLUTION AI — PDF文档库</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif;padding:20px}
+h1{color:#58a6ff;font-size:20px;margin-bottom:4px}
+.sub{color:#8b949e;font-size:12px;margin-bottom:16px;border-bottom:1px solid #30363d;padding-bottom:10px}
+.actions{display:flex;gap:8px;margin-bottom:20px}
+.btn{padding:8px 16px;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;transition:all .15s}
+.btn-primary{background:#238636;color:#fff}.btn-primary:hover{background:#2ea043}
+.btn-secondary{background:#1f6feb;color:#fff}.btn-secondary:hover{background:#388bfd}
+.doc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.doc-item{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px;transition:border-color .15s}
+.doc-item:hover{border-color:#58a6ff}
+.doc-name{font-size:13px;font-weight:700;color:#e6edf3;margin-bottom:4px}
+.doc-title{font-size:10px;color:#8b949e;margin-bottom:8px}
+.doc-actions{display:flex;gap:6px;flex-wrap:wrap}
+.dbtn{font-size:9px;padding:5px 10px;border:none;border-radius:4px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
+.dbtn-print{background:rgba(35,134,54,.15);color:#3fb950}
+.dbtn-print:hover{background:rgba(35,134,54,.25)}
+.dbtn-view{background:rgba(88,166,255,.12);color:#58a6ff}
+.dbtn-view:hover{background:rgba(88,166,255,.22)}
+.status{display:inline-block;font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(63,185,80,.12);color:#3fb950}
+.footer{text-align:center;color:#484f58;font-size:11px;margin-top:24px;padding-top:16px;border-top:1px solid #21262d}
+</style></head><body>
+
+<h1 style="display:flex;align-items:center;gap:10px">
+<span style="font-size:24px">&#128202;</span> EVOLUTION AI v3.2 技术文档库
+</h1>
+<p class="sub">A3 Landscape | Palantir Ontology | 硬点驱动参数化建模系统</p>
+
+<div class="actions">
+<button class="btn btn-primary" onclick="printAll()">&#128424; 一键批量打印全部PDF</button>
+<button class="btn btn-secondary" onclick="window.open('/docs/')">&#127760; 返回文档目录</button>
+</div>
+
+<div id="docList" class="doc-list">
+
+<div class="doc-item" data-src="workflow_frontend_CN">
+  <div class="doc-name">01 前端架构总览 (中文)</div>
+  <div class="doc-title">workflow_frontend_CN.html</div>
+  <div class="doc-actions">
+    <button class="dbtn dbtn-print" onclick="openPrint('workflow_frontend_CN')">&#128424; 打印为PDF</button>
+    <a class="dbtn dbtn-view" href="workflow_frontend_CN.html" target="_blank">&#128065; 预览</a>
+    <span class="status">A3 Landscape</span>
+  </div>
+</div>
+
+<div class="doc-item" data-src="workflow_frontend_EN">
+  <div class="doc-name">02 Frontend Architecture (EN)</div>
+  <div class="doc-title">workflow_frontend_EN.html</div>
+  <div class="doc-actions">
+    <button class="dbtn dbtn-print" onclick="openPrint('workflow_frontend_EN')">&#128424; 打印为PDF</button>
+    <a class="dbtn dbtn-view" href="workflow_frontend_EN.html" target="_blank">&#128065; 预览</a>
+    <span class="status">A3 Landscape</span>
+  </div>
+</div>
+
+<div class="doc-item" data-src="workflow_backend_CN">
+  <div class="doc-name">03 后端算法引擎 (中文)</div>
+  <div class="doc-title">workflow_backend_CN.html</div>
+  <div class="doc-actions">
+    <button class="dbtn dbtn-print" onclick="openPrint('workflow_backend_CN')">&#128424; 打印为PDF</button>
+    <a class="dbtn dbtn-view" href="workflow_backend_CN.html" target="_blank">&#128065; 预览</a>
+    <span class="status">A3 Landscape</span>
+  </div>
+</div>
+
+<div class="doc-item" data-src="workflow_backend_EN">
+  <div class="doc-name">04 Backend Algorithm Engine (EN)</div>
+  <div class="doc-title">workflow_backend_EN.html</div>
+  <div class="doc-actions">
+    <button class="dbtn dbtn-print" onclick="openPrint('workflow_backend_EN')">&#128424; 打印为PDF</button>
+    <a class="dbtn dbtn-view" href="workflow_backend_EN.html" target="_blank">&#128065; 预览</a>
+    <span class="status">A3 Landscape</span>
+  </div>
+</div>
+
+<div class="doc-item" data-src="workflow_knowledge_graph_A3">
+  <div class="doc-name">05 工作流·算法逻辑·能力知识图谱</div>
+  <div class="doc-title">workflow_knowledge_graph_A3.html</div>
+  <div class="doc-actions">
+    <button class="dbtn dbtn-print" onclick="openPrint('workflow_knowledge_graph_A3')">&#128424; 打印为PDF</button>
+    <a class="dbtn dbtn-view" href="workflow_knowledge_graph_A3.html" target="_blank">&#128065; 预览</a>
+    <span class="status">A3 Landscape</span>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+EVOLUTION AI v3.2 &mdash; Generated 2026-06-27 | All documents are A3 Landscape format<br>
+Print tip: Ctrl+P &rarr; Save as PDF &rarr; Paper: A3 Landscape
+</div>
+
+<script>
+function openPrint(name){
+    window.open(name+'_print.html','_blank','width=1587,height=1122');
+}
+function printAll(){
+    var docs=document.querySelectorAll('.doc-item');
+    var idx=0;
+    function next(){
+        if(idx>=docs.length){alert('所有5份文档已打开！\n请在每个窗口中按 Ctrl+P 保存为PDF\n纸张选择 A3 Landscape');return;}
+        var name=docs[idx].dataset.src;
+        window.open(name+'_print.html','print_'+idx,'width=1587,height=1122');
+        idx++;
+        setTimeout(next,1200);
+    }
+    next();
+}
+</script>
+</body></html>

@@ -1,0 +1,88 @@
+<fcpxml version="1.13">
+    <resources>
+        <asset id="r11" name="v03167g10066d8q13ciljht84ts3hkdg.mp4" uid="1F7BECD6-1C8E-607F-DF7A-7447EACA9276" start="0s" hasVideo="1" videoSources="1" duration="122122/24000s">
+            <media-rep kind="original-media" sig="1F7BECD6-1C8E-607F-DF7A-7447EACA9276" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v03167g10066d8q13ciljht84ts3hkdg.mp4"></media-rep>
+        </asset>
+        <asset id="r12" name="BGM" uid="DF802123-A0CD-92A2-BB66-915EA157F75E" start="0s" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000" duration="1080079/24000s">
+            <media-rep kind="original-media" sig="DF802123-A0CD-92A2-BB66-915EA157F75E" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v02167g10066d4tp7tiljht7s5u7k5d0.mp3"></media-rep>
+        </asset>
+        <asset id="r13" name="BGM" uid="14EAA62A-7EFD-FDC4-F716-0853ADAA495E" start="0s" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000" duration="1099098/24000s">
+            <media-rep kind="original-media" sig="14EAA62A-7EFD-FDC4-F716-0853ADAA495E" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v0d167g10066d4tp882ljhta32hm2050.mp3"></media-rep>
+        </asset>
+        <asset id="r14" name="v0d167g10066d8q13ciljht1lamdb400.mp4" uid="885B80D3-B104-0CA0-B8A8-20E138D1AF81" start="0s" hasVideo="1" videoSources="1" duration="218218/24000s">
+            <media-rep kind="original-media" sig="885B80D3-B104-0CA0-B8A8-20E138D1AF81" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v0d167g10066d8q13ciljht1lamdb400.mp4"></media-rep>
+        </asset>
+        <asset id="r15" name="v02167g10066d8q13ciljhtcdbc2do10.mp4" uid="CBFD6C11-E17B-180A-D80E-D011A35CE866" start="0s" hasVideo="1" videoSources="1" duration="218218/24000s">
+            <media-rep kind="original-media" sig="CBFD6C11-E17B-180A-D80E-D011A35CE866" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v02167g10066d8q13ciljhtcdbc2do10.mp4"></media-rep>
+        </asset>
+        <asset id="r16" name="v03167g10066d8q13ciljht5h3aokdlg.mp4" uid="5AB5E009-4E43-34F1-424D-04CD5366C734" start="0s" hasVideo="1" videoSources="1" duration="218218/24000s">
+            <media-rep kind="original-media" sig="5AB5E009-4E43-34F1-424D-04CD5366C734" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v03167g10066d8q13ciljht5h3aokdlg.mp4"></media-rep>
+        </asset>
+        <asset id="r3" name="v02167g10066d8q13ciljht17ovtiic0.mp4" uid="5DB3E34D-85D8-C9C8-8600-368AAE7035B9" start="0s" hasVideo="1" videoSources="1" duration="194194/24000s">
+            <media-rep kind="original-media" sig="5DB3E34D-85D8-C9C8-8600-368AAE7035B9" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v02167g10066d8q13ciljht17ovtiic0.mp4"></media-rep>
+        </asset>
+        <asset id="r4" name="v0d167g10066d8q13ciljhtd5q4uoc9g.mp4" uid="7F82E873-AB2F-4C63-C5B6-D585AAD881D6" start="0s" hasVideo="1" videoSources="1" duration="170170/24000s">
+            <media-rep kind="original-media" sig="7F82E873-AB2F-4C63-C5B6-D585AAD881D6" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v0d167g10066d8q13ciljhtd5q4uoc9g.mp4"></media-rep>
+        </asset>
+        <asset id="r5" name="v02167g10066d8q13ciljht6m4eofrh0.mp4" uid="AF127B45-8B41-1104-2663-C1A8F1160775" start="0s" hasVideo="1" videoSources="1" duration="170170/24000s">
+            <media-rep kind="original-media" sig="AF127B45-8B41-1104-2663-C1A8F1160775" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v02167g10066d8q13ciljht6m4eofrh0.mp4"></media-rep>
+        </asset>
+        <asset id="r6" name="BGM" uid="C91333DA-014A-3730-FD5A-0D2B6BC2246C" start="0s" hasAudio="1" audioSources="1" audioChannels="2" audioRate="48000" duration="24024/24000s">
+            <media-rep kind="original-media" sig="C91333DA-014A-3730-FD5A-0D2B6BC2246C" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v03167g10066d4tp88iljht6tjd9jo90.mp3"></media-rep>
+        </asset>
+        <asset id="r7" name="v03167g10066d8q13ciljht9rnl49m6g.mp4" uid="9CAF51D2-4C2D-DEB5-AA9D-EBEFCDFA69E1" start="0s" hasVideo="1" videoSources="1" duration="194194/24000s">
+            <media-rep kind="original-media" sig="9CAF51D2-4C2D-DEB5-AA9D-EBEFCDFA69E1" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v03167g10066d8q13ciljht9rnl49m6g.mp4"></media-rep>
+        </asset>
+        <asset id="r8" name="v0d167g10066d8q13ciljht5t182rokg.mp4" uid="93449017-E999-2E45-D077-D59A58D7694F" start="0s" hasVideo="1" videoSources="1" duration="289289/24000s">
+            <media-rep kind="original-media" sig="93449017-E999-2E45-D077-D59A58D7694F" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v0d167g10066d8q13ciljht5t182rokg.mp4"></media-rep>
+        </asset>
+        <asset id="r9" name="v03167g10066d8q13ciljht56tv12hc0.mp4" uid="A16ACC31-D290-C35D-0F7A-F8D8CA0BF129" start="0s" hasVideo="1" videoSources="1" duration="194194/24000s">
+            <media-rep kind="original-media" sig="A16ACC31-D290-C35D-0F7A-F8D8CA0BF129" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v03167g10066d8q13ciljht56tv12hc0.mp4"></media-rep>
+        </asset>
+        <asset id="r10" name="v0d167g10066d8q13ciljht1lamdb40g.mp4" uid="8C4C3E36-74D0-2833-92CB-1E57A1A3D716" start="0s" hasVideo="1" videoSources="1" duration="194194/24000s">
+            <media-rep kind="original-media" sig="8C4C3E36-74D0-2833-92CB-1E57A1A3D716" src="file://__PLACEHOLDER__/EVOLUTION AI 汽车造型AI实时建模与优化DEMO/assets/v0d167g10066d8q13ciljht1lamdb40g.mp4"></media-rep>
+        </asset>
+        <format id="r1" name="FFVideoFormat720p2398" frameDuration="1001/24000s" width="1280" height="720" colorSpace="1-1-1 (Rec. 709)"></format>
+        <effect id="r2" name="文本与副标题" uid=".../Titles.localized/Basic Text.localized/Text &amp; Subhead.localized/Text &amp; Subhead.moti"></effect>
+    </resources>
+    <library location="file:///Users/aa/Movies/Untitled.fcpbundle/">
+        <event name="6-13-25" uid="78463397-97FD-443D-B4E2-07C581674AFC">
+            <project name="wiki" uid="DEA19981-DED5-4851-8435-14515931C68A" modDate="2025-06-13 11:46:22 -0700">
+                <sequence format="r1" duration="2180178/24000s" tcStart="0s" tcFormat="NDF" audioLayout="stereo" audioRate="48k">
+                    <spine>
+                        <asset-clip ref="r7" offset="0/24000s" name="v03167g10066d8q13ciljht9rnl49m6g.mp4" duration="194194/24000s"></asset-clip>
+                        <asset-clip ref="r12" offset="0/24000s" name="BGM" duration="1080079/24000s"></asset-clip>
+                        <asset-clip ref="r8" offset="194194/24000s" name="v0d167g10066d8q13ciljht5t182rokg.mp4" duration="289289/24000s"></asset-clip>
+                        <asset-clip ref="r14" offset="483483/24000s" name="v0d167g10066d8q13ciljht1lamdb400.mp4" duration="218218/24000s"></asset-clip>
+                        <asset-clip ref="r15" offset="701701/24000s" name="v02167g10066d8q13ciljhtcdbc2do10.mp4" duration="218218/24000s"></asset-clip>
+                        <asset-clip ref="r16" offset="918918/24000s" name="v03167g10066d8q13ciljht5h3aokdlg.mp4" duration="218218/24000s"></asset-clip>
+                        <asset-clip ref="r13" offset="1080079/24000s" name="BGM" duration="1099098/24000s"></asset-clip>
+                        <asset-clip ref="r3" offset="1137136/24000s" name="v02167g10066d8q13ciljht17ovtiic0.mp4" duration="194194/24000s"></asset-clip>
+                        <asset-clip ref="r9" offset="1330329/24000s" name="v03167g10066d8q13ciljht56tv12hc0.mp4" duration="194194/24000s"></asset-clip>
+                        <asset-clip ref="r4" offset="1524523/24000s" name="v0d167g10066d8q13ciljhtd5q4uoc9g.mp4" duration="170170/24000s"></asset-clip>
+                        <asset-clip ref="r10" offset="1694693/24000s" name="v0d167g10066d8q13ciljht1lamdb40g.mp4" duration="194194/24000s"></asset-clip>
+                        <asset-clip ref="r5" offset="1887886/24000s" name="v02167g10066d8q13ciljht6m4eofrh0.mp4" duration="170170/24000s"></asset-clip>
+                        <asset-clip ref="r11" offset="2058056/24000s" name="v03167g10066d8q13ciljht84ts3hkdg.mp4" duration="122122/24000s"></asset-clip>
+                        <asset-clip ref="r6" offset="2155153/24000s" name="BGM" duration="24024/24000s"></asset-clip>
+                    </spine>
+                </sequence>
+            </project>
+        </event>
+        <smart-collection name="Projects" match="all">
+            <match-clip rule="is" type="project"></match-clip>
+        </smart-collection>
+        <smart-collection name="All Video" match="any">
+            <match-media rule="is" type="videoOnly"></match-media>
+            <match-media rule="is" type="videoWithAudio"></match-media>
+        </smart-collection>
+        <smart-collection name="Audio Only" match="all">
+            <match-media rule="is" type="audioOnly"></match-media>
+        </smart-collection>
+        <smart-collection name="Stills" match="all">
+            <match-media rule="is" type="stills"></match-media>
+        </smart-collection>
+        <smart-collection name="Favorites" match="all">
+            <match-ratings value="favorites"></match-ratings>
+        </smart-collection>
+    </library>
+</fcpxml>
