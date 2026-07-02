@@ -2,85 +2,89 @@
   <div class="parameters-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>参数管理</h2>
-        <p>管理整车级参数化建模参数</p>
+        <h2>{{ $t('parameters.title') }}</h2>
+        <p>{{ $t('parameters.subtitle') }}</p>
       </div>
       <el-button type="primary" @click="validateParams">
-        <el-icon><CheckCircle /></el-icon>
-        验证参数
+        <el-icon><CircleCheck /></el-icon>
+        {{ $t('parameters.validate') }}
       </el-button>
     </div>
 
     <div class="param-tree">
       <el-tabs v-model="activeLevel">
-        <el-tab-pane label="整车级" name="整车级">
-          <el-table :data="paramsByLevel['整车级'] || []" style="width: 100%" stripe>
-            <el-table-column prop="name" label="参数名称" />
-            <el-table-column prop="value" label="值">
+        <el-tab-pane :label="$t('parameters.vehicleLevel')" name="vehicle">
+          <el-table :data="paramsByLevel['vehicle'] || []" style="width: 100%" stripe>
+            <el-table-column prop="name" :label="$t('parameters.paramName')" />
+            <el-table-column prop="value" :label="$t('parameters.value')">
               <template #default="{ row }">
                 <el-input-number
                   v-model="row.value"
                   :min="row.min_value"
                   :max="row.max_value"
+                  style="width: 120px"
                   @change="updateParam(row)"
                 />
                 <span class="unit">{{ row.unit }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="description" label="描述" />
-            <el-table-column prop="min_value" label="最小值" />
-            <el-table-column prop="max_value" label="最大值" />
+            <el-table-column prop="description" :label="$t('parameters.description')" />
+            <el-table-column prop="min_value" :label="$t('parameters.minValue')" />
+            <el-table-column prop="max_value" :label="$t('parameters.maxValue')" />
           </el-table>
         </el-tab-pane>
-        <el-tab-pane label="子系统级" name="子系统级">
-          <el-table :data="paramsByLevel['子系统级'] || []" style="width: 100%" stripe>
-            <el-table-column prop="name" label="参数名称" />
-            <el-table-column prop="value" label="值">
+        <el-tab-pane :label="$t('parameters.subsystemLevel')" name="subsystem">
+          <el-table :data="paramsByLevel['subsystem'] || []" style="width: 100%" stripe>
+            <el-table-column prop="name" :label="$t('parameters.paramName')" />
+            <el-table-column prop="value" :label="$t('parameters.value')">
               <template #default="{ row }">
                 <el-input-number
                   v-model="row.value"
                   :min="row.min_value"
                   :max="row.max_value"
+                  style="width: 120px"
                   @change="updateParam(row)"
                 />
                 <span class="unit">{{ row.unit }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="description" label="描述" />
+            <el-table-column prop="description" :label="$t('parameters.description')" />
           </el-table>
         </el-tab-pane>
-        <el-tab-pane label="部件级" name="部件级">
-          <el-table :data="paramsByLevel['部件级'] || []" style="width: 100%" stripe>
-            <el-table-column prop="name" label="参数名称" />
-            <el-table-column prop="value" label="值">
+        <el-tab-pane :label="$t('parameters.componentLevel')" name="component">
+          <el-table :data="paramsByLevel['component'] || []" style="width: 100%" stripe>
+            <el-table-column prop="name" :label="$t('parameters.paramName')" />
+            <el-table-column prop="value" :label="$t('parameters.value')">
               <template #default="{ row }">
                 <el-input-number
                   v-model="row.value"
                   :min="row.min_value"
                   :max="row.max_value"
+                  style="width: 120px"
                   @change="updateParam(row)"
                 />
                 <span class="unit">{{ row.unit }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="description" label="描述" />
+            <el-table-column prop="description" :label="$t('parameters.description')" />
           </el-table>
         </el-tab-pane>
-        <el-tab-pane label="细节级" name="细节级">
-          <el-table :data="paramsByLevel['细节级'] || []" style="width: 100%" stripe>
-            <el-table-column prop="name" label="参数名称" />
-            <el-table-column prop="value" label="值">
+        <el-tab-pane :label="$t('parameters.detailLevel')" name="detail">
+          <el-table :data="paramsByLevel['detail'] || []" style="width: 100%" stripe>
+            <el-table-column prop="name" :label="$t('parameters.paramName')" />
+            <el-table-column prop="value" :label="$t('parameters.value')">
               <template #default="{ row }">
                 <el-input-number
                   v-model="row.value"
                   :min="row.min_value"
                   :max="row.max_value"
+                  style="width: 120px"
                   @change="updateParam(row)"
                 />
                 <span class="unit">{{ row.unit }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="description" label="描述" />
+            <el-table-column prop="description" :label="$t('parameters.description')" />
           </el-table>
         </el-tab-pane>
       </el-tabs>
@@ -89,32 +93,32 @@
     <div class="param-validation" v-if="validationResult">
       <el-card>
         <template #header>
-          <span>参数验证结果</span>
+          <span>{{ $t('parameters.validationResult') }}</span>
         </template>
         <div class="validation-summary">
           <div class="validation-item">
-            <span class="label">参数总数:</span>
+            <span class="label">{{ $t('parameters.totalParams') }}:</span>
             <span class="value">{{ validationResult.total_parameters }}</span>
           </div>
           <div class="validation-item">
-            <span class="label">有效参数:</span>
+            <span class="label">{{ $t('parameters.validParams') }}:</span>
             <span class="value valid">{{ validationResult.valid_parameters }}</span>
           </div>
           <div class="validation-item">
-            <span class="label">验证结果:</span>
+            <span class="label">{{ $t('parameters.validationStatus') }}:</span>
             <span :class="validationResult.valid ? 'value valid' : 'value invalid'">
-              {{ validationResult.valid ? '✓ 通过' : '✗ 未通过' }}
+              {{ validationResult.valid ? $t('parameters.pass') : $t('parameters.fail') }}
             </span>
           </div>
         </div>
         <div v-if="validationResult.issues.length > 0" class="validation-issues">
-          <h4>问题列表:</h4>
+          <h4>{{ $t('parameters.issues') }}:</h4>
           <el-table :data="validationResult.issues" style="width: 100%">
-            <el-table-column prop="parameter" label="参数" />
-            <el-table-column prop="issue" label="问题" />
-            <el-table-column prop="severity" label="严重程度">
+            <el-table-column prop="parameter" :label="$t('parameters.parameter')" />
+            <el-table-column prop="issue" :label="$t('parameters.issue')" />
+            <el-table-column prop="severity" :label="$t('parameters.severity')">
               <template #default="{ row }">
-                <el-tag :type="row.severity === '高' ? 'danger' : 'warning'">
+                <el-tag :type="row.severity === $t('parameters.high') ? 'danger' : 'warning'">
                   {{ row.severity }}
                 </el-tag>
               </template>
@@ -128,17 +132,28 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { CheckCircle } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
+import { CircleCheck } from '@element-plus/icons-vue'
 import { parameterAPI } from '../services/api'
 
+const { t } = useI18n()
+
 const parameters = ref({})
-const activeLevel = ref('整车级')
+const activeLevel = ref('vehicle')
 const validationResult = ref(null)
+
+const levelKeyMap = {
+  vehicle: '整车级',
+  subsystem: '子系统级',
+  component: '部件级',
+  detail: '细节级'
+}
 
 const paramsByLevel = computed(() => {
   const result = {}
-  for (const level of ['整车级', '子系统级', '部件级', '细节级']) {
-    result[level] = parameters.value[level] || []
+  const levels = ['vehicle', 'subsystem', 'component', 'detail']
+  for (const level of levels) {
+    result[level] = parameters.value[levelKeyMap[level]] || []
   }
   return result
 })
@@ -173,7 +188,7 @@ const validateParams = async () => {
 loadParameters()
 </script>
 
-<style>
+<style scoped>
 .parameters-page { padding: 20px; }
 
 .page-header {
@@ -192,6 +207,7 @@ loadParameters()
 
 .validation-summary {
   display: flex;
+  flex-wrap: wrap;
   gap: 30px;
   margin-bottom: 20px;
 }

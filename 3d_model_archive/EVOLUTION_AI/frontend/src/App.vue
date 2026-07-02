@@ -1,71 +1,79 @@
 <template>
   <div class="app-container">
     <el-container>
-      <el-aside width="200px" class="sidebar">
+      <el-aside width="230px" class="sidebar">
         <div class="logo">
           <h2>EVOLUTION AI</h2>
-          <p>A级曲面开发平台</p>
+          <p>{{ $t('app.subtitle') }}</p>
         </div>
-        <el-menu :default-active="activeMenu" class="sidebar-menu">
+        <el-menu :default-active="activeMenu" router class="sidebar-menu" background-color="transparent" text-color="rgba(255,255,255,0.8)" active-text-color="#00d9ff">
           <el-menu-item index="/">
             <el-icon><HomeFilled /></el-icon>
-            <span>仪表盘</span>
+            <span>{{ $t('app.dashboard') }}</span>
           </el-menu-item>
           <el-menu-item index="/designer">
-            <el-icon><Palette /></el-icon>
-            <span>模型生成</span>
+            <el-icon><Brush /></el-icon>
+            <span>{{ $t('app.designer') }}</span>
           </el-menu-item>
           <el-menu-item index="/projects">
             <el-icon><FolderOpened /></el-icon>
-            <span>项目管理</span>
+            <span>{{ $t('app.projects') }}</span>
           </el-menu-item>
           <el-menu-item index="/models">
             <el-icon><Picture /></el-icon>
-            <span>模型管理</span>
+            <span>{{ $t('app.models') }}</span>
           </el-menu-item>
           <el-menu-item index="/export">
             <el-icon><Download /></el-icon>
-            <span>模型导出</span>
+            <span>{{ $t('app.export') }}</span>
           </el-menu-item>
           <el-menu-item index="/variants">
-            <el-icon><GitBranch /></el-icon>
-            <span>模型变体</span>
+            <el-icon><RefreshRight /></el-icon>
+            <span>{{ $t('app.variants') }}</span>
           </el-menu-item>
           <el-menu-item index="/workflow">
             <el-icon><List /></el-icon>
-            <span>工作流</span>
+            <span>{{ $t('app.workflow') }}</span>
           </el-menu-item>
           <el-menu-item index="/quality">
-            <el-icon><CheckCircle /></el-icon>
-            <span>质量检查</span>
+            <el-icon><CircleCheck /></el-icon>
+            <span>{{ $t('app.quality') }}</span>
           </el-menu-item>
           <el-menu-item index="/parameters">
             <el-icon><Setting /></el-icon>
-            <span>参数管理</span>
+            <span>{{ $t('app.parameters') }}</span>
           </el-menu-item>
           <el-menu-item index="/reports">
             <el-icon><Document /></el-icon>
-            <span>报告中心</span>
+            <span>{{ $t('app.reports') }}</span>
           </el-menu-item>
           <el-menu-item index="/handover">
             <el-icon><Upload /></el-icon>
-            <span>数据交接</span>
+            <span>{{ $t('app.handover') }}</span>
           </el-menu-item>
           <el-menu-item index="/modify">
             <el-icon><Edit /></el-icon>
-            <span>模型修改</span>
+            <span>{{ $t('app.modify') }}</span>
           </el-menu-item>
           <el-menu-item index="/demo">
             <el-icon><VideoPlay /></el-icon>
-            <span>DEMO演示</span>
+            <span>{{ $t('app.demo') }}</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
-      <el-container>
+      <el-container class="main-container">
         <el-header class="header">
           <div class="header-content">
             <span class="title">{{ currentTitle }}</span>
             <div class="header-right">
+              <el-select
+                v-model="currentLang"
+                class="lang-select"
+                @change="switchLang"
+              >
+                <el-option label="中文" value="zh" />
+                <el-option label="English" value="en" />
+              </el-select>
               <el-badge :value="notificationCount" class="notification">
                 <el-icon class="avatar"><Bell /></el-icon>
               </el-badge>
@@ -83,49 +91,64 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   HomeFilled,
   FolderOpened,
   Picture,
   List,
-  CheckCircle,
+  CircleCheck,
   Setting,
   Document,
   Upload,
   Bell,
   Edit,
   VideoPlay,
-  Palette,
+  Brush,
   Download,
-  GitBranch
+  RefreshRight
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 
 const notificationCount = ref(3)
+const currentLang = ref(localStorage.getItem('language') || locale.value)
 
 const activeMenu = computed(() => {
   return router.currentRoute.value.path
 })
 
+const isDemoPage = computed(() => {
+  return router.currentRoute.value.path === '/demo'
+})
+
 const currentTitle = computed(() => {
   const titles = {
-    '/': '仪表盘',
-    '/designer': '模型生成',
-    '/projects': '项目管理',
-    '/models': '模型管理',
-    '/export': '模型导出',
-    '/variants': '模型变体',
-    '/workflow': '工作流',
-    '/quality': '质量检查',
-    '/parameters': '参数管理',
-    '/reports': '报告中心',
-    '/handover': '数据交接',
-    '/modify': '模型修改',
-    '/demo': 'DEMO演示'
+    '/': 'app.dashboard',
+    '/designer': 'app.designer',
+    '/projects': 'app.projects',
+    '/models': 'app.models',
+    '/export': 'app.export',
+    '/variants': 'app.variants',
+    '/workflow': 'app.workflow',
+    '/quality': 'app.quality',
+    '/parameters': 'app.parameters',
+    '/reports': 'app.reports',
+    '/handover': 'app.handover',
+    '/modify': 'app.modify',
+    '/demo': 'app.demo'
   }
-  return titles[router.currentRoute.value.path] || 'EVOLUTION AI'
+  const key = titles[router.currentRoute.value.path]
+  return key ? t(key) : 'EVOLUTION AI'
 })
+
+const switchLang = (lang) => {
+  locale.value = lang
+  currentLang.value = lang
+  localStorage.setItem('language', lang)
+  window.location.reload()
+}
 </script>
 
 <style>
@@ -137,6 +160,8 @@ const currentTitle = computed(() => {
 .sidebar {
   background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
   color: white;
+  overflow-y: auto;
+  height: 100vh;
 }
 
 .logo {
@@ -162,10 +187,14 @@ const currentTitle = computed(() => {
 
 .sidebar-menu {
   border-right: none;
+  background: transparent !important;
 }
 
 .sidebar-menu :deep(.el-menu-item) {
   color: rgba(255, 255, 255, 0.8);
+  overflow: visible;
+  white-space: nowrap;
+  text-overflow: unset;
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
@@ -216,5 +245,12 @@ const currentTitle = computed(() => {
 .main-content {
   background: #f5f7fa;
   padding: 20px;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.main-container.demo-fullscreen {
+  flex: 1;
 }
 </style>

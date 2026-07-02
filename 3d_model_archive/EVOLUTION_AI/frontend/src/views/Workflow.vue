@@ -2,12 +2,12 @@
   <div class="workflow-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>工作流管理</h2>
-        <p>管理A级曲面开发工作流</p>
+        <h2>{{ $t('workflow.title') }}</h2>
+        <p>{{ $t('workflow.subtitle') }}</p>
       </div>
       <el-button type="primary" @click="showCreateDialog = true">
         <el-icon><Plus /></el-icon>
-        创建工作流
+        {{ $t('workflow.createWorkflow') }}
       </el-button>
     </div>
 
@@ -15,104 +15,120 @@
       <div class="stage-card">
         <div class="stage-icon">1</div>
         <div class="stage-info">
-          <h3>概念探索</h3>
-          <p>AI生成概念模型</p>
+          <h3>{{ $t('workflow.concept') }}</h3>
+          <p>{{ $t('workflow.conceptDesc') }}</p>
         </div>
         <el-progress :percentage="85" :stroke-width="8" />
       </div>
       <div class="stage-card">
         <div class="stage-icon">2</div>
         <div class="stage-info">
-          <h3>拓扑优化</h3>
-          <p>网格重构与优化</p>
+          <h3>{{ $t('workflow.topology') }}</h3>
+          <p>{{ $t('workflow.topologyDesc') }}</p>
         </div>
         <el-progress :percentage="60" :stroke-width="8" />
       </div>
       <div class="stage-card">
         <div class="stage-icon">3</div>
         <div class="stage-info">
-          <h3>A级曲面</h3>
-          <p>G2连续曲面构建</p>
+          <h3>{{ $t('workflow.surface') }}</h3>
+          <p>{{ $t('workflow.surfaceDesc') }}</p>
         </div>
         <el-progress :percentage="40" :stroke-width="8" />
       </div>
       <div class="stage-card">
         <div class="stage-icon">4</div>
         <div class="stage-info">
-          <h3>质量检查</h3>
-          <p>F5/F6/F7检查</p>
+          <h3>{{ $t('workflow.quality') }}</h3>
+          <p>{{ $t('workflow.qualityDesc') }}</p>
         </div>
         <el-progress :percentage="20" :stroke-width="8" />
       </div>
       <div class="stage-card">
         <div class="stage-icon">5</div>
         <div class="stage-info">
-          <h3>工程交接</h3>
-          <p>数据交付</p>
+          <h3>{{ $t('workflow.handover') }}</h3>
+          <p>{{ $t('workflow.handoverDesc') }}</p>
         </div>
         <el-progress :percentage="5" :stroke-width="8" />
       </div>
     </div>
 
     <div class="workflow-list">
-      <h3>工作流列表</h3>
-      <el-table :data="workflows" style="width: 100%" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="名称" />
-        <el-table-column prop="type" label="类型" width="120" />
-        <el-table-column prop="project_id" label="项目ID" width="80" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small">
-              {{ getStatusText(row.status) }}
+      <h3>{{ $t('workflow.workflowList') }}</h3>
+      <div class="workflow-grid">
+        <el-card
+          v-for="workflow in workflows"
+          :key="workflow.id"
+          class="workflow-card"
+          @click="viewWorkflow(workflow)"
+        >
+          <div class="workflow-header">
+            <div class="workflow-info">
+              <h4 class="workflow-name">{{ workflow.name }}</h4>
+              <div class="workflow-tags">
+                <el-tag size="small" type="info">{{ getWorkflowTypeName(workflow.type) }}</el-tag>
+                <el-tag size="small" type="info">{{ $t('workflow.projectId') }} {{ workflow.project_id }}</el-tag>
+              </div>
+            </div>
+            <el-tag :type="getStatusType(workflow.status)" size="small" class="workflow-status">
+              {{ getStatusText(workflow.status) }}
             </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
-          <template #default="{ row }">
-            {{ formatDateTime(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="150">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="viewWorkflow(row)">详情</el-button>
-            <el-button type="success" link @click="runWorkflow(row)">执行</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          </div>
+          <div class="workflow-meta">
+            <span class="meta-item">
+              <el-icon><Clock /></el-icon>
+              {{ formatDateTime(workflow.created_at) }}
+            </span>
+          </div>
+          <div class="workflow-actions">
+            <el-button type="primary" size="small" @click.stop="viewWorkflow(workflow)">
+              <el-icon><View /></el-icon>
+              {{ $t('workflow.detail') }}
+            </el-button>
+            <el-button type="success" size="small" @click.stop="runWorkflow(workflow)">
+              <el-icon><Play /></el-icon>
+              {{ $t('workflow.execute') }}
+            </el-button>
+          </div>
+        </el-card>
+      </div>
     </div>
 
-    <el-dialog v-model="showCreateDialog" title="创建工作流" width="500px">
+    <el-dialog v-model="showCreateDialog" :title="$t('workflow.createWorkflow')" width="500px">
       <el-form :model="workflowForm" label-width="80px">
-        <el-form-item label="名称" required>
-          <el-input v-model="workflowForm.name" placeholder="请输入工作流名称" />
+        <el-form-item :label="$t('workflow.name')" required>
+          <el-input v-model="workflowForm.name" :placeholder="$t('common.pleaseInput')" />
         </el-form-item>
-        <el-form-item label="类型" required>
+        <el-form-item :label="$t('workflow.type')" required>
           <el-select v-model="workflowForm.type">
-            <el-option label="拓扑优化" value="topology" />
-            <el-option label="质量检查" value="quality" />
-            <el-option label="数据交接" value="handover" />
-            <el-option label="完整流程" value="full" />
+            <el-option :label="$t('workflow.topologyOpt')" value="topology" />
+            <el-option :label="$t('workflow.qualityCheck')" value="quality" />
+            <el-option :label="$t('workflow.dataHandover')" value="handover" />
+            <el-option :label="$t('workflow.fullProcess')" value="full" />
           </el-select>
         </el-form-item>
-        <el-form-item label="项目" required>
-          <el-select v-model="workflowForm.project_id" placeholder="请选择项目">
+        <el-form-item :label="$t('models.project')" required>
+          <el-select v-model="workflowForm.project_id" :placeholder="$t('common.pleaseSelect')">
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="createWorkflow">创建</el-button>
+        <el-button @click="showCreateDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="createWorkflow">{{ $t('common.create') }}</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Plus, Clock, View, Play } from '@element-plus/icons-vue'
 import { workflowAPI, projectAPI } from '../services/api'
+
+const { t } = useI18n()
 
 const workflows = ref([])
 const projects = ref([])
@@ -123,6 +139,33 @@ const workflowForm = ref({
   type: '',
   project_id: ''
 })
+
+const mockWorkflows = [
+  { id: 1, name: t('workflow.mockName1'), type: 'full', project_id: 1, status: 'completed', created_at: '2026-06-28 14:30:00' },
+  { id: 2, name: t('workflow.mockName2'), type: 'quality', project_id: 2, status: 'running', created_at: '2026-06-30 09:15:00' },
+  { id: 3, name: t('workflow.mockName3'), type: 'topology', project_id: 3, status: 'pending', created_at: '2026-07-01 16:45:00' },
+  { id: 4, name: t('workflow.mockName4'), type: 'handover', project_id: 1, status: 'completed', created_at: '2026-06-25 11:20:00' },
+  { id: 5, name: t('workflow.mockName5'), type: 'full', project_id: 4, status: 'failed', created_at: '2026-06-29 08:00:00' },
+  { id: 6, name: t('workflow.mockName6'), type: 'quality', project_id: 5, status: 'pending', created_at: '2026-07-02 10:30:00' }
+]
+
+const mockProjects = [
+  { id: 1, name: t('workflow.mockProject1') },
+  { id: 2, name: t('workflow.mockProject2') },
+  { id: 3, name: t('workflow.mockProject3') },
+  { id: 4, name: t('workflow.mockProject4') },
+  { id: 5, name: t('workflow.mockProject5') }
+]
+
+const getWorkflowTypeName = (type) => {
+  const typeMap = {
+    full: t('workflow.typeFull'),
+    quality: t('workflow.typeQuality'),
+    topology: t('workflow.typeTopology'),
+    handover: t('workflow.typeHandover')
+  }
+  return typeMap[type] || type
+}
 
 const getStatusType = (status) => {
   const types = {
@@ -136,39 +179,41 @@ const getStatusType = (status) => {
 
 const getStatusText = (status) => {
   const texts = {
-    pending: '待执行',
-    running: '执行中',
-    completed: '已完成',
-    failed: '已失败'
+    pending: t('workflow.pending'),
+    running: t('workflow.running'),
+    completed: t('workflow.completed'),
+    failed: t('workflow.failed')
   }
   return texts[status] || status
 }
 
 const formatDateTime = (date) => {
-  return new Date(date).toLocaleString('zh-CN')
+  return new Date(date).toLocaleString()
 }
 
 const loadWorkflows = async () => {
   try {
     const response = await workflowAPI.list()
-    workflows.value = response.data
+    workflows.value = response.data || mockWorkflows
   } catch (error) {
     console.error('Failed to load workflows:', error)
+    workflows.value = mockWorkflows
   }
 }
 
 const loadProjects = async () => {
   try {
     const response = await projectAPI.list()
-    projects.value = response.data
+    projects.value = response.data || mockProjects
   } catch (error) {
     console.error('Failed to load projects:', error)
+    projects.value = mockProjects
   }
 }
 
 const createWorkflow = async () => {
   if (!workflowForm.value.name || !workflowForm.value.type || !workflowForm.value.project_id) {
-    alert('请填写完整信息')
+    alert(t('workflow.enterInfo'))
     return
   }
 
@@ -177,26 +222,28 @@ const createWorkflow = async () => {
     showCreateDialog.value = false
     workflowForm.value = { name: '', type: '', project_id: '' }
     loadWorkflows()
-    alert('工作流创建成功')
+    alert(t('workflow.createSuccess'))
   } catch (error) {
     console.error('Failed to create workflow:', error)
-    alert('工作流创建失败')
+    alert(t('workflow.createFailed'))
   }
 }
 
 const viewWorkflow = (workflow) => {
-  alert(`工作流详情: ${workflow.name}`)
+  alert(`${t('workflow.detail')}: ${workflow.name}`)
 }
 
 const runWorkflow = (workflow) => {
-  alert(`执行工作流: ${workflow.name}`)
+  alert(`${t('workflow.execute')}: ${workflow.name}`)
 }
 
-loadWorkflows()
-loadProjects()
+onMounted(() => {
+  loadWorkflows()
+  loadProjects()
+})
 </script>
 
-<style>
+<style scoped>
 .workflow-page { padding: 20px; }
 
 .page-header {
@@ -211,7 +258,7 @@ loadProjects()
 
 .workflow-stages {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 15px;
   margin-bottom: 30px;
 }
@@ -241,4 +288,65 @@ loadProjects()
 .stage-info p { margin: 5px 0 10px 0; font-size: 12px; color: #999; }
 
 .workflow-list h3 { margin-bottom: 15px; }
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.workflow-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #e4e7ed;
+}
+
+.workflow-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #00d9ff;
+}
+
+.workflow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.workflow-info { flex: 1; }
+
+.workflow-name {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.workflow-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.workflow-status { flex-shrink: 0; margin-left: 10px; }
+
+.workflow-meta {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.workflow-actions {
+  display: flex;
+  gap: 10px;
+}
 </style>

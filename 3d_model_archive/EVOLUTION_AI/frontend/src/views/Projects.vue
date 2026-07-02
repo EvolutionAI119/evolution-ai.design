@@ -2,61 +2,73 @@
   <div class="projects-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>项目管理</h2>
-        <p>管理您的A级曲面开发项目</p>
+        <h2>{{ $t('projects.title') }}</h2>
+        <p>{{ $t('projects.subtitle') }}</p>
       </div>
       <el-button type="primary" @click="showCreateDialog = true">
         <el-icon><Plus /></el-icon>
-        新建项目
+        {{ $t('projects.newProject') }}
       </el-button>
     </div>
 
     <div class="filter-bar">
-      <el-select v-model="filterStatus" placeholder="状态筛选" style="width: 150px">
-        <el-option label="全部" value="" />
-        <el-option label="进行中" value="active" />
-        <el-option label="待处理" value="pending" />
-        <el-option label="已完成" value="completed" />
-        <el-option label="已失败" value="failed" />
+      <el-select v-model="filterStatus" :placeholder="$t('projects.statusFilter')">
+        <el-option :label="$t('projects.all')" value="" />
+        <el-option :label="$t('projects.active')" value="active" />
+        <el-option :label="$t('projects.pending')" value="pending" />
+        <el-option :label="$t('projects.completed')" value="completed" />
+        <el-option :label="$t('projects.failed')" value="failed" />
       </el-select>
       <el-input
         v-model="searchQuery"
-        placeholder="搜索项目..."
-        style="width: 250px"
+        :placeholder="$t('projects.search')"
         clearable
         prefix-icon="Search"
       />
     </div>
 
-    <el-table :data="filteredProjects" style="width: 100%" stripe>
-      <el-table-column prop="id" label="ID" width="60" />
-      <el-table-column prop="name" label="项目名称" />
-      <el-table-column prop="description" label="描述" show-overflow-tooltip />
-      <el-table-column prop="status" label="状态" width="120">
-        <template #default="{ row }">
-          <el-tag :type="getStatusType(row.status)" size="small">
-            {{ getStatusText(row.status) }}
+    <div class="projects-grid">
+      <el-card
+        v-for="project in filteredProjects"
+        :key="project.id"
+        class="project-card"
+        @click="$router.push(`/projects/${project.id}`)"
+      >
+        <div class="project-header">
+          <div class="project-info">
+            <h3 class="project-name">{{ project.name }}</h3>
+            <p class="project-desc">{{ project.description || $t('projects.noDesc') }}</p>
+          </div>
+          <el-tag :type="getStatusType(project.status)" size="small" class="project-status">
+            {{ getStatusText(project.status) }}
           </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="created_at" label="创建时间" width="180">
-        <template #default="{ row }">
-          {{ formatDateTime(row.created_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="updated_at" label="更新时间" width="180">
-        <template #default="{ row }">
-          {{ formatDateTime(row.updated_at) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
-        <template #default="{ row }">
-          <el-button type="primary" link @click="$router.push(`/projects/${row.id}`)">详情</el-button>
-          <el-button type="success" link @click="editProject(row)">编辑</el-button>
-          <el-button type="danger" link @click="deleteProject(row.id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+        </div>
+        <div class="project-meta">
+          <span class="meta-item">
+            <el-icon><Clock /></el-icon>
+            {{ formatDateTime(project.created_at) }}
+          </span>
+          <span class="meta-item">
+            <el-icon><EditPen /></el-icon>
+            {{ formatDateTime(project.updated_at) }}
+          </span>
+        </div>
+        <div class="project-actions">
+          <el-button type="primary" size="small" @click.stop="$router.push(`/projects/${project.id}`)">
+            <el-icon><View /></el-icon>
+            {{ $t('projects.detail') }}
+          </el-button>
+          <el-button type="success" size="small" @click.stop="editProject(project)">
+            <el-icon><Edit /></el-icon>
+            {{ $t('projects.edit') }}
+          </el-button>
+          <el-button type="danger" size="small" @click.stop="deleteProject(project.id)">
+            <el-icon><Delete /></el-icon>
+            {{ $t('projects.delete') }}
+          </el-button>
+        </div>
+      </el-card>
+    </div>
 
     <el-pagination
       v-model:current-page="currentPage"
@@ -66,18 +78,18 @@
       :page-sizes="[10, 20, 50]"
     />
 
-    <el-dialog v-model="showCreateDialog" title="新建项目" width="500px">
+    <el-dialog v-model="showCreateDialog" :title="$t('projects.newProject')" width="500px">
       <el-form :model="projectForm" label-width="80px">
-        <el-form-item label="项目名称" required>
-          <el-input v-model="projectForm.name" placeholder="请输入项目名称" />
+        <el-form-item :label="$t('projects.projectNameLabel')" required>
+          <el-input v-model="projectForm.name" :placeholder="$t('projects.enterName')" />
         </el-form-item>
-        <el-form-item label="项目描述">
-          <el-input v-model="projectForm.description" type="textarea" placeholder="请输入项目描述" />
+        <el-form-item :label="$t('projects.projectDescLabel')">
+          <el-input v-model="projectForm.description" type="textarea" :placeholder="$t('common.pleaseInput')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="createProject">确定</el-button>
+        <el-button @click="showCreateDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="createProject">{{ $t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -85,8 +97,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
+import { Plus, Search, Clock, EditPen, View, Edit, Delete } from '@element-plus/icons-vue'
 import { projectAPI } from '../services/api'
+
+const { t } = useI18n()
 
 const projects = ref([])
 const filterStatus = ref('')
@@ -122,16 +137,16 @@ const getStatusType = (status) => {
 
 const getStatusText = (status) => {
   const texts = {
-    active: '进行中',
-    pending: '待处理',
-    completed: '已完成',
-    failed: '已失败'
+    active: t('projects.active'),
+    pending: t('projects.pending'),
+    completed: t('projects.completed'),
+    failed: t('projects.failed')
   }
   return texts[status] || status
 }
 
 const formatDateTime = (date) => {
-  return new Date(date).toLocaleString('zh-CN')
+  return new Date(date).toLocaleString()
 }
 
 const loadProjects = async () => {
@@ -145,7 +160,7 @@ const loadProjects = async () => {
 
 const createProject = async () => {
   if (!projectForm.value.name) {
-    alert('请输入项目名称')
+    alert(t('projects.enterName'))
     return
   }
 
@@ -154,10 +169,10 @@ const createProject = async () => {
     showCreateDialog.value = false
     projectForm.value = { name: '', description: '' }
     await loadProjects()
-    alert('项目创建成功')
+    alert(t('projects.createSuccess'))
   } catch (error) {
     console.error('Failed to create project:', error)
-    alert('项目创建失败')
+    alert(t('projects.createFailed'))
   }
 }
 
@@ -167,22 +182,22 @@ const editProject = (project) => {
 }
 
 const deleteProject = async (id) => {
-  if (!confirm('确定要删除这个项目吗？')) return
+  if (!confirm(t('projects.confirmDelete'))) return
 
   try {
     await projectAPI.delete(id)
     await loadProjects()
-    alert('项目删除成功')
+    alert(t('projects.deleteSuccess'))
   } catch (error) {
     console.error('Failed to delete project:', error)
-    alert('项目删除失败')
+    alert(t('projects.deleteFailed'))
   }
 }
 
 loadProjects()
 </script>
 
-<style>
+<style scoped>
 .projects-page { padding: 20px; }
 
 .page-header {
@@ -197,7 +212,82 @@ loadProjects()
 
 .filter-bar {
   display: flex;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 20px;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.project-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid #e4e7ed;
+}
+
+.project-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #00d9ff;
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.project-info { flex: 1; }
+
+.project-name {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.project-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #909399;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.project-status { flex-shrink: 0; margin-left: 15px; }
+
+.project-meta {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.project-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.el-pagination {
+  display: flex;
+  justify-content: center;
 }
 </style>

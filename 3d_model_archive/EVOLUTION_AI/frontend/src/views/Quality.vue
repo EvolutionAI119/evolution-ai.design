@@ -2,12 +2,12 @@
   <div class="quality-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>质量检查</h2>
-        <p>执行A级曲面质量检查（F5/F6/F7）</p>
+        <h2>{{ $t('quality.title') }}</h2>
+        <p>{{ $t('quality.subtitle') }}</p>
       </div>
       <el-button type="primary" @click="showCheckDialog = true">
-        <el-icon><CheckCircle /></el-icon>
-        开始检查
+        <el-icon><CircleCheck /></el-icon>
+        {{ $t('quality.startCheck') }}
       </el-button>
     </div>
 
@@ -15,99 +15,99 @@
       <div class="check-card zebra">
         <div class="check-icon">F5</div>
         <div class="check-info">
-          <h3>斑马纹检查</h3>
-          <p>检查曲面连续性，识别斑马纹断裂区域</p>
+          <h3>{{ $t('quality.zebra') }}</h3>
+          <p>{{ $t('quality.zebraDesc') }}</p>
         </div>
       </div>
       <div class="check-card highlight">
         <div class="check-icon">F6</div>
         <div class="check-info">
-          <h3>高光线检查</h3>
-          <p>检查曲面光顺度，评估高光质量</p>
+          <h3>{{ $t('quality.highlight') }}</h3>
+          <p>{{ $t('quality.highlightDesc') }}</p>
         </div>
       </div>
       <div class="check-card curvature">
         <div class="check-icon">F7</div>
         <div class="check-info">
-          <h3>曲率梳检查</h3>
-          <p>检查曲率变化，定位曲率突变点</p>
+          <h3>{{ $t('quality.curvature') }}</h3>
+          <p>{{ $t('quality.curvatureDesc') }}</p>
         </div>
       </div>
     </div>
 
     <div class="recent-reports">
-      <h3>最近检查报告</h3>
+      <h3>{{ $t('quality.recentReports') }}</h3>
       <el-table :data="recentReports" style="width: 100%" stripe>
-        <el-table-column prop="id" label="报告ID" width="80" />
-        <el-table-column prop="model_id" label="模型ID" width="80" />
-        <el-table-column prop="overall_score" label="评分" width="100">
+        <el-table-column prop="id" :label="$t('quality.reportId')" min-width="80" />
+        <el-table-column prop="model_id" :label="$t('quality.modelId')" min-width="80" />
+        <el-table-column prop="overall_score" :label="$t('quality.score')" min-width="100">
           <template #default="{ row }">
             <span :class="row.overall_score >= 80 ? 'score-pass' : 'score-fail'">
               {{ row.overall_score }}/100
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="passed" label="结果" width="80">
+        <el-table-column prop="passed" :label="$t('quality.result')" min-width="80">
           <template #default="{ row }">
             <el-tag :type="row.passed ? 'success' : 'danger'">
-              {{ row.passed ? '通过' : '未通过' }}
+              {{ row.passed ? $t('quality.passed') : $t('quality.failed') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="检查时间" width="180">
+        <el-table-column prop="created_at" :label="$t('quality.checkTime')" min-width="160">
           <template #default="{ row }">
             {{ formatDateTime(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column :label="$t('common.actions')" min-width="100">
           <template #default="{ row }">
-            <el-button type="primary" link @click="viewReport(row)">查看</el-button>
+            <el-button type="primary" link @click="viewReport(row)">{{ $t('quality.view') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
 
-    <el-dialog v-model="showCheckDialog" title="执行质量检查" width="500px">
+    <el-dialog v-model="showCheckDialog" :title="$t('quality.startCheck')" width="500px">
       <el-form :model="checkForm" label-width="80px">
-        <el-form-item label="选择模型" required>
-          <el-select v-model="checkForm.model_id" placeholder="请选择模型">
+        <el-form-item :label="$t('quality.selectModel')" required>
+          <el-select v-model="checkForm.model_id" :placeholder="$t('common.pleaseSelect')">
             <el-option v-for="m in models" :key="m.id" :label="m.filename" :value="m.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="生成报告">
-          <el-checkbox v-model="checkForm.generate_html">生成HTML报告</el-checkbox>
-          <el-checkbox v-model="checkForm.generate_json">生成JSON报告</el-checkbox>
+        <el-form-item :label="$t('quality.generateReport')">
+          <el-checkbox v-model="checkForm.generate_html">{{ $t('quality.generateHtml') }}</el-checkbox>
+          <el-checkbox v-model="checkForm.generate_json">{{ $t('quality.generateJson') }}</el-checkbox>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCheckDialog = false">取消</el-button>
-        <el-button type="primary" @click="runCheck">开始检查</el-button>
+        <el-button @click="showCheckDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="runCheck">{{ $t('quality.startCheck') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showReportDialog" title="质量检查报告" width="800px">
+    <el-dialog v-model="showReportDialog" :title="$t('quality.checkResult')" width="800px">
       <div v-if="currentReport" class="report-content">
         <div class="report-header">
           <div class="score-display" :class="currentReport.passed ? 'passed' : 'failed'">
             {{ currentReport.overall_score }}/100
           </div>
-          <div class="result-text">{{ currentReport.passed ? '✓ 检查通过' : '✗ 检查未通过' }}</div>
+          <div class="result-text">{{ currentReport.passed ? $t('quality.passText') : $t('quality.failText') }}</div>
         </div>
         <el-divider />
-        <h4>检查项详情</h4>
+        <h4>{{ $t('quality.checkDetails') }}</h4>
         <el-table :data="reportDetails" style="width: 100%">
-          <el-table-column prop="check_type" label="检查类型" />
-          <el-table-column prop="score" label="评分" />
-          <el-table-column prop="passed" label="结果">
+          <el-table-column prop="check_type" :label="$t('quality.checkType')" />
+          <el-table-column prop="score" :label="$t('quality.score')" />
+          <el-table-column prop="passed" :label="$t('quality.result')">
             <template #default="{ row }">
               <el-tag :type="row.passed ? 'success' : 'danger'">
-                {{ row.passed ? '通过' : '未通过' }}
+                {{ row.passed ? $t('quality.passed') : $t('quality.failed') }}
               </el-tag>
             </template>
           </el-table-column>
         </el-table>
         <div v-if="currentReport.report_path" class="report-links">
-          <el-button type="success" @click="downloadReport(currentReport.report_path)">下载报告</el-button>
+          <el-button type="success" @click="downloadReport(currentReport.report_path)">{{ $t('quality.downloadReport') }}</el-button>
         </div>
       </div>
     </el-dialog>
@@ -116,8 +116,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { CheckCircle, Search } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
+import { CircleCheck, Search } from '@element-plus/icons-vue'
 import { qualityAPI, modelAPI } from '../services/api'
+
+const { t } = useI18n()
 
 const models = ref([])
 const recentReports = ref([])
@@ -132,7 +135,7 @@ const checkForm = ref({
 })
 
 const formatDateTime = (date) => {
-  return new Date(date).toLocaleString('zh-CN')
+  return new Date(date).toLocaleString()
 }
 
 const reportDetails = ref([])
@@ -157,7 +160,7 @@ const loadReports = async () => {
 
 const runCheck = async () => {
   if (!checkForm.value.model_id) {
-    alert('请选择模型')
+    alert(t('quality.selectModelFirst'))
     return
   }
 
@@ -170,7 +173,7 @@ const runCheck = async () => {
     loadReports()
   } catch (error) {
     console.error('Quality check failed:', error)
-    alert('质量检查失败')
+    alert(t('quality.checkFailed'))
   }
 }
 
@@ -193,7 +196,7 @@ loadModels()
 loadReports()
 </script>
 
-<style>
+<style scoped>
 .quality-page { padding: 20px; }
 
 .page-header {
@@ -208,7 +211,7 @@ loadReports()
 
 .check-types {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
 }

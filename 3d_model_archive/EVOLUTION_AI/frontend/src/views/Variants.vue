@@ -2,12 +2,12 @@
   <div class="variant-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>模型变体</h2>
-        <p>管理模型变体、版本对比与回滚</p>
+        <h2>{{ $t('variants.title') }}</h2>
+        <p>{{ $t('variants.subtitle') }}</p>
       </div>
       <el-button type="primary" @click="showCreateDialog = true">
         <el-icon><Plus /></el-icon>
-        创建变体
+        {{ $t('variants.createVariant') }}
       </el-button>
     </div>
 
@@ -15,9 +15,9 @@
       <div class="left-panel">
         <el-card class="model-select-card">
           <template #header>
-            <span>选择模型</span>
+            <span>{{ $t('variants.selectModel') }}</span>
           </template>
-          <el-select v-model="selectedModelId" placeholder="请选择模型" style="width: 100%">
+          <el-select v-model="selectedModelId" :placeholder="$t('common.pleaseSelect')" style="width: 100%">
             <el-option v-for="m in models" :key="m.id" :label="m.filename" :value="m.id" />
           </el-select>
         </el-card>
@@ -25,12 +25,12 @@
         <el-card class="variants-list-card">
           <template #header>
             <div class="list-header">
-              <span>变体列表</span>
-              <span class="count">{{ variants.length }} 个</span>
+              <span>{{ $t('variants.variantList') }}</span>
+              <span class="count">{{ variants.length }} {{ $t('variants.count') }}</span>
             </div>
           </template>
           <div v-if="variants.length === 0" class="empty-variants">
-            <p>暂无变体</p>
+            <p>{{ $t('variants.noVariants') }}</p>
           </div>
           <div v-else class="variants-list">
             <div
@@ -44,11 +44,11 @@
                 <span class="variant-name">{{ variant.name }}</span>
                 <span class="variant-date">{{ variant.created_at }}</span>
               </div>
-              <div class="variant-desc">{{ variant.description || '无描述' }}</div>
+              <div class="variant-desc">{{ variant.description || $t('variants.noDescription') }}</div>
               <div class="variant-actions">
-                <el-button type="text" size="small" @click.stop="compareVariant(variant)">对比</el-button>
-                <el-button type="text" size="small" @click.stop="rollbackVariant(variant)">回滚</el-button>
-                <el-button type="text" size="small" @click.stop="deleteVariant(variant)">删除</el-button>
+                <el-button type="text" size="small" @click.stop="compareVariant(variant)">{{ $t('variants.compare') }}</el-button>
+                <el-button type="text" size="small" @click.stop="rollbackVariant(variant)">{{ $t('variants.rollback') }}</el-button>
+                <el-button type="text" size="small" @click.stop="deleteVariant(variant)">{{ $t('variants.delete') }}</el-button>
               </div>
             </div>
           </div>
@@ -56,22 +56,22 @@
 
         <el-card class="compare-card">
           <template #header>
-            <span>变体对比</span>
+            <span>{{ $t('variants.variantCompare') }}</span>
           </template>
           <el-form :model="compareForm" label-width="80px">
-            <el-form-item label="模型A">
-              <el-select v-model="compareForm.model_a" placeholder="选择模型">
+            <el-form-item :label="$t('variants.modelA')">
+              <el-select v-model="compareForm.model_a" :placeholder="$t('common.pleaseSelect')">
                 <el-option v-for="m in models" :key="m.id" :label="m.filename" :value="m.id" />
               </el-select>
             </el-form-item>
-            <el-form-item label="模型B">
-              <el-select v-model="compareForm.model_b" placeholder="选择模型">
+            <el-form-item :label="$t('variants.modelB')">
+              <el-select v-model="compareForm.model_b" :placeholder="$t('common.pleaseSelect')">
                 <el-option v-for="m in models" :key="m.id" :label="m.filename" :value="m.id" />
               </el-select>
             </el-form-item>
             <el-button type="primary" @click="runCompare" style="width: 100%">
-              <el-icon><GitCompare /></el-icon>
-              执行对比
+              <el-icon><RefreshRight /></el-icon>
+              {{ $t('variants.runCompare') }}
             </el-button>
           </el-form>
         </el-card>
@@ -81,29 +81,29 @@
         <el-card class="detail-card" v-if="selectedVariant">
           <template #header>
             <div class="detail-header">
-              <span>变体详情</span>
-              <el-tag type="success">版本 {{ selectedVariant.id }}</el-tag>
+              <span>{{ $t('variants.variantDetail') }}</span>
+              <el-tag type="success">{{ $t('variants.version') }} {{ selectedVariant.id }}</el-tag>
             </div>
           </template>
           <div class="detail-content">
             <div class="detail-row">
-              <span class="detail-label">名称</span>
+              <span class="detail-label">{{ $t('variants.name') }}</span>
               <span class="detail-value">{{ selectedVariant.name }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">描述</span>
+              <span class="detail-label">{{ $t('variants.description') }}</span>
               <span class="detail-value">{{ selectedVariant.description || '-' }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">模型ID</span>
+              <span class="detail-label">{{ $t('variants.modelId') }}</span>
               <span class="detail-value">{{ selectedVariant.model_id }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">创建时间</span>
+              <span class="detail-label">{{ $t('variants.createdAt') }}</span>
               <span class="detail-value">{{ selectedVariant.created_at }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">参数差异</span>
+              <span class="detail-label">{{ $t('variants.paramDelta') }}</span>
               <div class="delta-list" v-if="selectedVariant.delta">
                 <div
                   v-for="(value, key) in selectedVariant.delta"
@@ -114,51 +114,51 @@
                   <span class="delta-value">{{ value }}</span>
                 </div>
               </div>
-              <span v-else class="detail-value">无参数变更</span>
+              <span v-else class="detail-value">{{ $t('variants.noDelta') }}</span>
             </div>
           </div>
         </el-card>
 
         <el-card class="compare-result-card" v-if="compareResult">
           <template #header>
-            <span>对比结果</span>
+            <span>{{ $t('variants.compareResult') }}</span>
           </template>
           <div class="compare-summary">
             <div class="compare-item">
-              <span class="compare-label">模型A</span>
+              <span class="compare-label">{{ $t('variants.modelA') }}</span>
               <span class="compare-value">{{ compareResult.model_a?.filename || '-' }}</span>
             </div>
             <div class="compare-item">
-              <span class="compare-label">模型B</span>
+              <span class="compare-label">{{ $t('variants.modelB') }}</span>
               <span class="compare-value">{{ compareResult.model_b?.filename || '-' }}</span>
             </div>
             <div class="compare-item">
-              <span class="compare-label">文件大小差异</span>
+              <span class="compare-label">{{ $t('variants.fileSizeDiff') }}</span>
               <span class="compare-value">{{ compareResult.differences?.file_size_diff ?? '-' }} bytes</span>
             </div>
             <div class="compare-item">
-              <span class="compare-label">类型匹配</span>
+              <span class="compare-label">{{ $t('variants.typeMatch') }}</span>
               <span :class="compareResult.differences?.type_match ? 'match-yes' : 'match-no'">
-                {{ compareResult.differences?.type_match ? '是' : '否' }}
+                {{ compareResult.differences?.type_match ? $t('variants.yes') : $t('variants.no') }}
               </span>
             </div>
           </div>
 
           <div class="compare-details" v-if="compareResult.param_differences">
-            <h4>参数差异 ({{ Object.keys(compareResult.param_differences).length }} 项)</h4>
+            <h4>{{ $t('variants.paramDifferences') }} ({{ Object.keys(compareResult.param_differences).length }} {{ $t('variants.items') }})</h4>
             <el-table :data="paramDiffList" style="width: 100%" stripe size="small">
-              <el-table-column prop="name" label="参数名称" />
-              <el-table-column prop="value_a" label="模型A">
+              <el-table-column prop="name" :label="$t('variants.paramName')" />
+              <el-table-column prop="value_a" :label="$t('variants.valueA')">
                 <template #default="{ row }">
                   {{ row.value_a ?? '-' }}
                 </template>
               </el-table-column>
-              <el-table-column prop="value_b" label="模型B">
+              <el-table-column prop="value_b" :label="$t('variants.valueB')">
                 <template #default="{ row }">
                   {{ row.value_b ?? '-' }}
                 </template>
               </el-table-column>
-              <el-table-column prop="delta" label="差异">
+              <el-table-column prop="delta" :label="$t('variants.difference')">
                 <template #default="{ row }">
                   <span v-if="row.delta !== null" :class="row.delta > 0 ? 'delta-positive' : 'delta-negative'">
                     {{ row.delta > 0 ? '+' : '' }}{{ row.delta }}
@@ -169,16 +169,16 @@
             </el-table>
           </div>
           <div v-else class="no-diff">
-            <p>两模型无参数差异记录</p>
+            <p>{{ $t('variants.noDiff') }}</p>
           </div>
         </el-card>
 
         <el-card class="history-card">
           <template #header>
-            <span>版本历史</span>
+            <span>{{ $t('variants.versionHistory') }}</span>
           </template>
           <div v-if="versionHistory.length === 0" class="empty-history">
-            <p>暂无版本历史</p>
+            <p>{{ $t('variants.noHistory') }}</p>
           </div>
           <el-timeline v-else>
             <el-timeline-item
@@ -191,7 +191,7 @@
                 <div class="history-title">{{ item.action }}</div>
                 <div class="history-desc">{{ item.description }}</div>
                 <el-tag size="small" :type="item.type === 'create' ? 'success' : 'warning'">
-                  {{ item.type === 'create' ? '创建' : '修改' }}
+                  {{ item.type === 'create' ? $t('variants.create') : $t('variants.modify') }}
                 </el-tag>
               </el-card>
             </el-timeline-item>
@@ -200,26 +200,26 @@
       </div>
     </div>
 
-    <el-dialog v-model="showCreateDialog" title="创建变体" width="500px">
+    <el-dialog v-model="showCreateDialog" :title="$t('variants.createVariant')" width="500px">
       <el-form :model="variantForm" label-width="80px">
-        <el-form-item label="模型" required>
-          <el-select v-model="variantForm.model_id" placeholder="请选择模型">
+        <el-form-item :label="$t('variants.model')" required>
+          <el-select v-model="variantForm.model_id" :placeholder="$t('common.pleaseSelect')">
             <el-option v-for="m in models" :key="m.id" :label="m.filename" :value="m.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="变体名称" required>
-          <el-input v-model="variantForm.name" placeholder="请输入变体名称" />
+        <el-form-item :label="$t('variants.variantName')" required>
+          <el-input v-model="variantForm.name" :placeholder="$t('variants.enterName')" />
         </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="variantForm.description" type="textarea" placeholder="请输入描述" />
+        <el-form-item :label="$t('variants.description')">
+          <el-input v-model="variantForm.description" type="textarea" :placeholder="$t('common.pleaseInput')" />
         </el-form-item>
-        <el-form-item label="参数变更">
+        <el-form-item :label="$t('variants.paramChange')">
           <el-input v-model="variantForm.params_json" type="textarea" placeholder='{"param_name": value}' />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="createVariant">确定</el-button>
+        <el-button @click="showCreateDialog = false">{{ $t('variants.cancel') }}</el-button>
+        <el-button type="primary" @click="createVariant">{{ $t('variants.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -227,8 +227,11 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Plus, GitCompare } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
+import { Plus, RefreshRight } from '@element-plus/icons-vue'
 import { variantAPI, modelAPI } from '../services/api'
+
+const { t } = useI18n()
 
 const models = ref([])
 const selectedModelId = ref('')
@@ -287,7 +290,7 @@ const selectVariant = (variant) => {
 
 const createVariant = async () => {
   if (!variantForm.value.model_id || !variantForm.value.name) {
-    alert('请填写模型和名称')
+    alert(t('variants.enterModelAndName'))
     return
   }
 
@@ -304,10 +307,10 @@ const createVariant = async () => {
     showCreateDialog.value = false
     variantForm.value = { model_id: '', name: '', description: '', params_json: '' }
     await loadVariants()
-    alert('变体创建成功')
+    alert(t('variants.createSuccess'))
   } catch (error) {
     console.error('Create variant failed:', error)
-    alert('创建失败')
+    alert(t('variants.createFailed'))
   }
 }
 
@@ -325,31 +328,31 @@ const compareVariant = async (variant) => {
 }
 
 const rollbackVariant = async (variant) => {
-  if (!confirm('确定要回滚到此变体吗？')) return
+  if (!confirm(t('variants.confirmRollback'))) return
   try {
     await variantAPI.rollback(variant.model_id, variant.id)
-    alert('回滚成功')
+    alert(t('variants.rollbackSuccess'))
   } catch (error) {
     console.error('Rollback failed:', error)
-    alert('回滚失败')
+    alert(t('variants.rollbackFailed'))
   }
 }
 
 const deleteVariant = async (variant) => {
-  if (!confirm('确定要删除此变体吗？')) return
+  if (!confirm(t('variants.confirmDelete'))) return
   try {
     await variantAPI.delete(variant.model_id, variant.id)
     await loadVariants()
-    alert('删除成功')
+    alert(t('variants.deleteSuccess'))
   } catch (error) {
     console.error('Delete failed:', error)
-    alert('删除失败')
+    alert(t('variants.deleteFailed'))
   }
 }
 
 const runCompare = async () => {
   if (!compareForm.value.model_a || !compareForm.value.model_b) {
-    alert('请选择两个模型')
+    alert(t('variants.selectModels'))
     return
   }
   try {
@@ -360,7 +363,7 @@ const runCompare = async () => {
     compareResult.value = response.data
   } catch (error) {
     console.error('Compare failed:', error)
-    alert('对比失败')
+    alert(t('variants.compareFailed'))
   }
 }
 
@@ -373,8 +376,8 @@ onMounted(() => {
 })
 </script>
 
-<style>
-.variant-page { padding: 20px; }
+<style scoped>
+.variant-page { padding: 10px; }
 
 .page-header {
   display: flex;
@@ -402,7 +405,7 @@ onMounted(() => {
 
 .count { font-size: 12px; color: #999; }
 
-.variants-list-card { height: 400px; }
+.variants-list-card { min-height: 300px; max-height: 60vh; }
 
 .empty-variants {
   text-align: center;
@@ -511,4 +514,10 @@ onMounted(() => {
 
 .history-title { font-weight: bold; }
 .history-desc { font-size: 12px; color: #999; margin-top: 5px; }
+
+@media (max-width: 800px) {
+  .variant-container {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

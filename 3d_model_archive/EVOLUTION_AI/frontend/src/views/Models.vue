@@ -2,22 +2,22 @@
   <div class="models-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>模型管理</h2>
-        <p>上传和管理3D模型文件</p>
+        <h2>{{ $t('models.title') }}</h2>
+        <p>{{ $t('models.subtitle') }}</p>
       </div>
       <el-button type="primary" @click="showUploadDialog = true">
         <el-icon><Upload /></el-icon>
-        上传模型
+        {{ $t('models.uploadModel') }}
       </el-button>
     </div>
 
     <div class="filter-bar">
-      <el-select v-model="filterProject" placeholder="项目筛选" style="width: 200px">
-        <el-option label="全部" value="" />
+      <el-select v-model="filterProject" :placeholder="$t('models.projectFilter')">
+        <el-option :label="$t('projects.all')" value="" />
         <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
       </el-select>
-      <el-select v-model="filterType" placeholder="类型筛选" style="width: 150px">
-        <el-option label="全部" value="" />
+      <el-select v-model="filterType" :placeholder="$t('models.typeFilter')">
+        <el-option :label="$t('projects.all')" value="" />
         <el-option label="GLB" value="GLB" />
         <el-option label="OBJ" value="OBJ" />
         <el-option label="STL" value="STL" />
@@ -27,8 +27,7 @@
       </el-select>
       <el-input
         v-model="searchQuery"
-        placeholder="搜索模型..."
-        style="width: 250px"
+        :placeholder="$t('models.search')"
         clearable
         prefix-icon="Search"
       />
@@ -52,25 +51,25 @@
           </div>
           <div class="model-status">
             <el-tag :type="getStatusType(model.status)" size="small">
-              {{ model.status }}
+              {{ getStatusText(model.status) }}
             </el-tag>
           </div>
         </div>
         <div class="model-actions">
-          <el-button type="text" @click.stop="downloadModel(model)">下载</el-button>
-          <el-button type="text" @click.stop="deleteModel(model.id)">删除</el-button>
+          <el-button type="text" @click.stop="downloadModel(model)">{{ $t('models.download') }}</el-button>
+          <el-button type="text" @click.stop="deleteModel(model.id)">{{ $t('models.delete') }}</el-button>
         </div>
       </el-card>
     </div>
 
-    <el-dialog v-model="showUploadDialog" title="上传模型" width="500px">
+    <el-dialog v-model="showUploadDialog" :title="$t('models.uploadModel')" width="500px">
       <el-form :model="uploadForm" label-width="80px">
-        <el-form-item label="项目" required>
-          <el-select v-model="uploadForm.project_id" placeholder="请选择项目">
+        <el-form-item :label="$t('models.project')" required>
+          <el-select v-model="uploadForm.project_id" :placeholder="$t('common.pleaseSelect')">
             <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="模型文件" required>
+        <el-form-item :label="$t('models.modelFile')" required>
           <el-upload
             :action="uploadUrl"
             :data="{ project_id: uploadForm.project_id }"
@@ -81,8 +80,8 @@
             drag
           >
             <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-            <div class="el-upload__tip">支持 GLB, OBJ, STL, FBX, IGES, STEP 格式</div>
+            <div class="el-upload__text">{{ $t('models.dragUpload') }}</div>
+            <div class="el-upload__tip">{{ $t('models.uploadTip') }}</div>
           </el-upload>
         </el-form-item>
       </el-form>
@@ -92,8 +91,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Upload, Picture, Search, UploadFilled } from '@element-plus/icons-vue'
 import { modelAPI, projectAPI } from '../services/api'
+
+const { t } = useI18n()
 
 const models = ref([])
 const projects = ref([])
@@ -127,6 +129,15 @@ const getStatusType = (status) => {
   return types[status] || 'info'
 }
 
+const getStatusText = (status) => {
+  const texts = {
+    uploaded: t('models.uploaded'),
+    processing: t('models.processing'),
+    error: t('models.error')
+  }
+  return texts[status] || status
+}
+
 const formatSize = (bytes) => {
   if (!bytes) return '0 B'
   const k = 1024
@@ -157,15 +168,15 @@ const beforeUpload = (file) => {
   const extensions = ['.glb', '.gltf', '.obj', '.stl', '.fbx', '.igs', '.iges', '.step', '.stp']
   const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
   if (!extensions.includes(ext)) {
-    alert('文件格式不支持，请上传GLB, OBJ, STL, FBX, IGES, STEP格式')
+    alert(t('models.unsupportedFormat'))
     return false
   }
   if (file.size > 52428800) {
-    alert('文件大小不能超过50MB')
+    alert(t('models.fileTooLarge'))
     return false
   }
   if (!uploadForm.value.project_id) {
-    alert('请先选择项目')
+    alert(t('models.selectProject'))
     return false
   }
   return true
@@ -175,11 +186,11 @@ const handleUploadSuccess = () => {
   showUploadDialog.value = false
   uploadForm.value.project_id = ''
   loadModels()
-  alert('模型上传成功')
+  alert(t('models.uploadSuccess'))
 }
 
 const handleUploadError = () => {
-  alert('模型上传失败')
+  alert(t('models.uploadFailed'))
 }
 
 const downloadModel = (model) => {
@@ -187,15 +198,15 @@ const downloadModel = (model) => {
 }
 
 const deleteModel = async (id) => {
-  if (!confirm('确定要删除这个模型吗？')) return
+  if (!confirm(t('models.confirmDelete'))) return
 
   try {
     await modelAPI.delete(id)
     loadModels()
-    alert('模型删除成功')
+    alert(t('models.deleteSuccess'))
   } catch (error) {
     console.error('Failed to delete model:', error)
-    alert('模型删除失败')
+    alert(t('models.deleteFailed'))
   }
 }
 
@@ -203,7 +214,7 @@ loadModels()
 loadProjects()
 </script>
 
-<style>
+<style scoped>
 .models-page { padding: 20px; }
 
 .page-header {
@@ -230,31 +241,44 @@ loadProjects()
 
 .model-card {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  flex-direction: column;
+  padding: 20px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s ease;
+  border: 1px solid #e4e7ed;
 }
 
-.model-card:hover { transform: translateY(-5px); }
+.model-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #00d9ff;
+}
 
 .model-icon {
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   background: linear-gradient(135deg, #00d9ff, #0099cc);
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 28px;
+  font-size: 32px;
+  margin-bottom: 15px;
 }
 
 .model-info { flex: 1; }
-.model-name { font-weight: bold; margin-bottom: 5px; }
-.model-meta { display: flex; gap: 10px; margin-bottom: 5px; }
-.model-type { font-size: 12px; color: #00d9ff; background: rgba(0, 217, 255, 0.1); padding: 2px 8px; border-radius: 4px; }
-.model-size { font-size: 12px; color: #999; }
+.model-name { font-weight: 600; font-size: 16px; margin-bottom: 8px; color: #303133; }
+.model-meta { display: flex; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.model-type { font-size: 13px; color: #00d9ff; background: rgba(0, 217, 255, 0.1); padding: 3px 10px; border-radius: 4px; }
+.model-size { font-size: 13px; color: #909399; }
 
-.model-actions { display: flex; gap: 10px; }
+.model-status { margin-bottom: 15px; }
+
+.model-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+}
 </style>

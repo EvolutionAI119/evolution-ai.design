@@ -1,7 +1,7 @@
 <template>
   <div class="project-detail-page">
     <el-breadcrumb separator="/" style="margin-bottom: 20px">
-      <el-breadcrumb-item :to="{ path: '/projects' }">项目管理</el-breadcrumb-item>
+      <el-breadcrumb-item :to="{ path: '/projects' }">{{ $t('app.projects') }}</el-breadcrumb-item>
       <el-breadcrumb-item>{{ project.name }}</el-breadcrumb-item>
     </el-breadcrumb>
 
@@ -13,38 +13,38 @@
           <el-tag :type="getStatusType(project.status)" size="small">
             {{ getStatusText(project.status) }}
           </el-tag>
-          <span class="meta-item">创建于 {{ formatDateTime(project.created_at) }}</span>
-          <span class="meta-item">更新于 {{ formatDateTime(project.updated_at) }}</span>
+          <span class="meta-item">{{ $t('projectDetail.createdAt') }} {{ formatDateTime(project.created_at) }}</span>
+          <span class="meta-item">{{ $t('projectDetail.updatedAt') }} {{ formatDateTime(project.updated_at) }}</span>
         </div>
       </div>
       <div class="header-actions">
-        <el-button type="primary" @click="showUploadDialog = true">上传模型</el-button>
-        <el-button type="success" @click="runWorkflow">执行工作流</el-button>
+        <el-button type="primary" @click="showUploadDialog = true">{{ $t('models.uploadModel') }}</el-button>
+        <el-button type="success" @click="runWorkflow">{{ $t('projectDetail.executeWorkflow') }}</el-button>
       </div>
     </div>
 
     <div class="project-stats">
       <el-card class="stat-card">
         <div class="stat-value">{{ models.length }}</div>
-        <div class="stat-label">模型数量</div>
+        <div class="stat-label">{{ $t('projectDetail.modelCount') }}</div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-value">{{ reports.length }}</div>
-        <div class="stat-label">检查报告</div>
+        <div class="stat-label">{{ $t('projectDetail.checkReports') }}</div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-value">{{ workflows.length }}</div>
-        <div class="stat-label">工作流</div>
+        <div class="stat-label">{{ $t('projectDetail.workflows') }}</div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-value">{{ qualityRate }}%</div>
-        <div class="stat-label">合格率</div>
+        <div class="stat-label">{{ $t('projectDetail.qualityRate') }}</div>
       </el-card>
     </div>
 
     <div class="project-content">
       <div class="content-section">
-        <h3>模型文件</h3>
+        <h3>{{ $t('projectDetail.modelFiles') }}</h3>
         <div class="models-list">
           <div
             v-for="model in models"
@@ -62,57 +62,57 @@
               </div>
             </div>
             <div class="model-actions">
-              <el-button type="text" @click="runTopology(model.id)">拓扑优化</el-button>
-              <el-button type="text" @click="runQuality(model.id)">质量检查</el-button>
-              <el-button type="text" @click="runHandover(model.id)">数据交接</el-button>
+              <el-button type="text" @click="runTopology(model.id)">{{ $t('projectDetail.topologyOpt') }}</el-button>
+              <el-button type="text" @click="runQuality(model.id)">{{ $t('projectDetail.qualityCheck') }}</el-button>
+              <el-button type="text" @click="runHandover(model.id)">{{ $t('projectDetail.dataHandover') }}</el-button>
             </div>
           </div>
         </div>
         <div v-if="models.length === 0" class="empty-state">
           <el-icon><Picture /></el-icon>
-          <p>暂无模型文件</p>
+          <p>{{ $t('projectDetail.noModels') }}</p>
         </div>
       </div>
 
       <div class="content-section">
-        <h3>质量报告</h3>
+        <h3>{{ $t('projectDetail.qualityReports') }}</h3>
         <el-table :data="reports" style="width: 100%" stripe>
           <el-table-column prop="id" label="ID" width="60" />
-          <el-table-column prop="overall_score" label="评分" width="100">
+          <el-table-column prop="overall_score" :label="$t('quality.score')" width="100">
             <template #default="{ row }">
               <span :class="row.overall_score >= 80 ? 'score-pass' : 'score-fail'">
                 {{ row.overall_score }}/100
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="passed" label="结果" width="80">
+          <el-table-column prop="passed" :label="$t('quality.result')" width="80">
             <template #default="{ row }">
               <el-tag :type="row.passed ? 'success' : 'danger'">
-                {{ row.passed ? '通过' : '未通过' }}
+                {{ row.passed ? $t('quality.passed') : $t('quality.failed') }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="created_at" label="时间" width="180">
+          <el-table-column prop="created_at" :label="$t('workflow.createdAt')" width="180">
             <template #default="{ row }">
               {{ formatDateTime(row.created_at) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="80">
+          <el-table-column :label="$t('workflow.actions')" width="80">
             <template #default="{ row }">
-              <el-button type="primary" link @click="viewReport(row)">查看</el-button>
+              <el-button type="primary" link @click="viewReport(row)">{{ $t('projectDetail.view') }}</el-button>
             </template>
           </el-table-column>
         </el-table>
         <div v-if="reports.length === 0" class="empty-state">
           <el-icon><Document /></el-icon>
-          <p>暂无质量报告</p>
+          <p>{{ $t('projectDetail.noReports') }}</p>
         </div>
       </div>
     </div>
 
-    <el-dialog v-model="showUploadDialog" title="上传模型" width="500px">
+    <el-dialog v-model="showUploadDialog" :title="$t('models.uploadModel')" width="500px">
       <el-form :model="uploadForm" label-width="80px">
-        <el-form-item label="模型文件" required>
+        <el-form-item :label="$t('models.modelFile')" required>
           <el-upload
             :action="uploadUrl"
             :data="{ project_id: projectId }"
@@ -123,8 +123,8 @@
             drag
           >
             <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-            <div class="el-upload__tip">支持 GLB, OBJ, STL, FBX, IGES, STEP 格式</div>
+            <div class="el-upload__text">{{ $t('models.dragUpload') }}</div>
+            <div class="el-upload__tip">{{ $t('models.uploadTip') }}</div>
           </el-upload>
         </el-form-item>
       </el-form>
@@ -135,9 +135,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Picture, Document, UploadFilled } from '@element-plus/icons-vue'
 import { projectAPI, modelAPI, qualityAPI, workflowAPI, topologyAPI } from '../services/api'
 
+const { t } = useI18n()
 const route = useRoute()
 const projectId = computed(() => parseInt(route.params.id))
 
@@ -175,16 +177,16 @@ const getStatusType = (status) => {
 
 const getStatusText = (status) => {
   const texts = {
-    active: '进行中',
-    pending: '待处理',
-    completed: '已完成',
-    failed: '已失败'
+    active: t('projectDetail.active'),
+    pending: t('projectDetail.pending'),
+    completed: t('projectDetail.completed'),
+    failed: t('projectDetail.failed')
   }
   return texts[status] || status
 }
 
 const formatDateTime = (date) => {
-  return new Date(date).toLocaleString('zh-CN')
+  return new Date(date).toLocaleString()
 }
 
 const formatSize = (bytes) => {
@@ -235,11 +237,11 @@ const beforeUpload = (file) => {
   const extensions = ['.glb', '.gltf', '.obj', '.stl', '.fbx', '.igs', '.iges', '.step', '.stp']
   const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
   if (!extensions.includes(ext)) {
-    alert('文件格式不支持')
+    alert(t('models.unsupportedFormat'))
     return false
   }
   if (file.size > 52428800) {
-    alert('文件大小不能超过50MB')
+    alert(t('models.fileTooLarge'))
     return false
   }
   return true
@@ -248,20 +250,20 @@ const beforeUpload = (file) => {
 const handleUploadSuccess = () => {
   showUploadDialog.value = false
   loadModels()
-  alert('模型上传成功')
+  alert(t('models.uploadSuccess'))
 }
 
 const handleUploadError = () => {
-  alert('模型上传失败')
+  alert(t('models.uploadFailed'))
 }
 
 const runTopology = async (modelId) => {
   try {
     await topologyAPI.optimize({ model_id: modelId })
-    alert('拓扑优化已启动')
+    alert(t('projectDetail.topologyStarted'))
   } catch (error) {
     console.error('Topology optimization failed:', error)
-    alert('拓扑优化失败')
+    alert(t('projectDetail.topologyFailed'))
   }
 }
 
@@ -269,23 +271,23 @@ const runQuality = async (modelId) => {
   try {
     await qualityAPI.check({ model_id: modelId })
     loadReports()
-    alert('质量检查已启动')
+    alert(t('projectDetail.qualityStarted'))
   } catch (error) {
     console.error('Quality check failed:', error)
-    alert('质量检查失败')
+    alert(t('projectDetail.qualityFailed'))
   }
 }
 
 const runHandover = (modelId) => {
-  alert(`准备数据交接，模型ID: ${modelId}`)
+  alert(t('projectDetail.handoverPreparing', { id: modelId }))
 }
 
 const viewReport = async (report) => {
-  alert(`查看报告 #${report.id}`)
+  alert(t('projectDetail.viewReport', { id: report.id }))
 }
 
 const runWorkflow = () => {
-  alert('执行工作流')
+  alert(t('projectDetail.executeWorkflow'))
 }
 
 onMounted(() => {

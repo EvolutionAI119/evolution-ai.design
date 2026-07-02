@@ -30,9 +30,16 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    DEFAULT_LANGUAGE: str = "zh"
+    SUPPORTED_LANGUAGES: str = "zh,en"
+
     @property
     def allowed_extensions_list(self):
         return [ext.strip() for ext in self.ALLOWED_EXTENSIONS.split(",")]
+
+    @property
+    def supported_languages_list(self):
+        return [lang.strip() for lang in self.SUPPORTED_LANGUAGES.split(",")]
 
     @property
     def data_path(self):

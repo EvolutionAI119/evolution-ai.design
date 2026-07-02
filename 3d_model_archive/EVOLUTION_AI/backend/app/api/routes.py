@@ -335,3 +335,12 @@ def get_export_file(export_path: str):
 @router.get("/health")
 def health_check():
     return {"status": "healthy", "service": "EVOLUTION AI"}
+
+
+@router.get("/i18n/config")
+def get_i18n_config():
+    return {
+        "default_language": settings.DEFAULT_LANGUAGE,
+        "supported_languages": settings.supported_languages_list,
+        "current_language": settings.DEFAULT_LANGUAGE
+    }

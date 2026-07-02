@@ -2,100 +2,97 @@
   <div class="modify-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>模型修改</h2>
-        <p>局部/整体模型持续修改与参数化调整</p>
+        <h2>{{ $t('modify.title') }}</h2>
+        <p>{{ $t('modify.subtitle') }}</p>
       </div>
       <div class="header-actions">
-        <el-button @click="undoChange">撤销</el-button>
-        <el-button @click="exportState">导出状态</el-button>
+        <el-button @click="undoChange">{{ $t('modify.undo') }}</el-button>
+        <el-button @click="exportState">{{ $t('modify.exportState') }}</el-button>
       </div>
     </div>
 
     <el-tabs v-model="activeTab" class="modify-tabs">
-      <!-- NURBS曲面修改 -->
-      <el-tab-pane label="NURBS曲面" name="surface">
+      <el-tab-pane :label="$t('modify.surfaceModify')" name="surface">
         <div class="tab-content">
           <div class="toolbar">
-            <el-button type="primary" @click="createSurface">创建曲面</el-button>
-            <el-button @click="loadSurfaces">刷新</el-button>
+            <el-button type="primary" @click="createSurface">{{ $t('modify.createSurface') }}</el-button>
+            <el-button @click="loadSurfaces">{{ $t('modify.refresh') }}</el-button>
           </div>
 
           <div class="surface-list">
             <el-card v-for="surface in surfaces" :key="surface.surface_id" class="surface-card">
               <template #header>
                 <span>{{ surface.surface_id }}</span>
-                <el-button type="danger" link @click="deleteSurface(surface.surface_id)">删除</el-button>
+                <el-button type="danger" link @click="deleteSurface(surface.surface_id)">{{ $t('modify.delete') }}</el-button>
               </template>
               <div class="surface-info">
-                <div>阶数: {{ surface.surface_data.degree_u }} x {{ surface.surface_data.degree_v }}</div>
-                <div>控制点: {{ surface.surface_data.control_points.length }} x {{ surface.surface_data.control_points[0]?.length || 0 }}</div>
+                <div>{{ $t('modify.degree') }}: {{ surface.surface_data.degree_u }} x {{ surface.surface_data.degree_v }}</div>
+                <div>{{ $t('modify.controlPoints') }}: {{ surface.surface_data.control_points.length }} x {{ surface.surface_data.control_points[0]?.length || 0 }}</div>
               </div>
               <div class="surface-actions">
-                <el-button type="primary" size="small" @click="showModifyDialog(surface, 'surface')">修改</el-button>
-                <el-button type="success" size="small" @click="showEvaluateDialog(surface)">评估点</el-button>
+                <el-button type="primary" size="small" @click="showModifyDialog(surface, 'surface')">{{ $t('modify.modify') }}</el-button>
+                <el-button type="success" size="small" @click="showEvaluateDialog(surface)">{{ $t('modify.evaluate') }}</el-button>
               </div>
             </el-card>
           </div>
         </div>
       </el-tab-pane>
 
-      <!-- 草图编辑 -->
-      <el-tab-pane label="草图编辑" name="sketch">
+      <el-tab-pane :label="$t('modify.sketchEdit')" name="sketch">
         <div class="tab-content">
           <div class="toolbar">
-            <el-button type="primary" @click="createSketch">创建草图</el-button>
-            <el-button type="success" @click="showAddEntityDialog = true">添加实体</el-button>
-            <el-button type="warning" @click="showAddConstraintDialog = true">添加约束</el-button>
+            <el-button type="primary" @click="createSketch">{{ $t('modify.createSketch') }}</el-button>
+            <el-button type="success" @click="showAddEntityDialog = true">{{ $t('modify.addEntity') }}</el-button>
+            <el-button type="warning" @click="showAddConstraintDialog = true">{{ $t('modify.addConstraint') }}</el-button>
           </div>
 
           <div class="sketch-list">
             <el-card v-for="sketch in sketches" :key="sketch.sketch_id" class="sketch-card">
               <template #header>
                 <span>{{ sketch.sketch_data.name }}</span>
-                <el-tag size="small">{{ sketch.sketch_data.entities.length }} 实体</el-tag>
+                <el-tag size="small">{{ sketch.sketch_data.entities.length }} {{ $t('modify.entities') }}</el-tag>
               </template>
               <div class="entities-preview">
                 <div v-for="entity in sketch.sketch_data.entities" :key="entity.id" class="entity-item">
                   <el-tag :type="getEntityTypeColor(entity.entity_type)" size="small">
-                    {{ entity.entity_type }}
+                    {{ $t('modify.' + entity.entity_type) }}
                   </el-tag>
                   <span v-if="entity.entity_type === 'line'">
                     ({{ entity.data.start.x.toFixed(1) }}, {{ entity.data.start.y.toFixed(1) }}) -
                     ({{ entity.data.end.x.toFixed(1) }}, {{ entity.data.end.y.toFixed(1) }})
                   </span>
                   <span v-else-if="entity.entity_type === 'circle'">
-                    圆心: ({{ entity.data.center.x.toFixed(1) }}, {{ entity.data.center.y.toFixed(1) }})
-                    半径: {{ entity.data.radius.toFixed(1) }}
+                    {{ $t('modify.center') }}: ({{ entity.data.center.x.toFixed(1) }}, {{ entity.data.center.y.toFixed(1) }})
+                    {{ $t('modify.radius') }}: {{ entity.data.radius.toFixed(1) }}
                   </span>
                   <span v-else-if="entity.entity_type === 'arc'">
-                    半径: {{ entity.data.radius.toFixed(1) }}
+                    {{ $t('modify.radius') }}: {{ entity.data.radius.toFixed(1) }}
                     {{ entity.data.start_angle.toFixed(0) }}° - {{ entity.data.end_angle.toFixed(0) }}°
                   </span>
                 </div>
               </div>
               <div class="constraints-list" v-if="sketch.sketch_data.constraints.length > 0">
-                <div class="constraints-title">约束:</div>
+                <div class="constraints-title">{{ $t('modify.constraints') }}:</div>
                 <el-tag v-for="c in sketch.sketch_data.constraints" :key="c.id" size="small" class="constraint-tag">
                   {{ c.type }}
                 </el-tag>
               </div>
               <div class="sketch-actions">
-                <el-button type="primary" size="small" @click="modifySketch(sketch)">修改</el-button>
+                <el-button type="primary" size="small" @click="modifySketch(sketch)">{{ $t('modify.modify') }}</el-button>
               </div>
             </el-card>
           </div>
         </div>
       </el-tab-pane>
 
-      <!-- 汽车参数 -->
-      <el-tab-pane label="汽车参数" name="automotive">
+      <el-tab-pane :label="$t('modify.automotiveParams')" name="automotive">
         <div class="tab-content">
           <div class="toolbar">
-            <el-button @click="loadAutomotiveParameters">刷新参数</el-button>
+            <el-button @click="loadAutomotiveParameters">{{ $t('modify.refreshParams') }}</el-button>
           </div>
 
           <el-collapse v-model="activeCategory">
-            <el-collapse-item title="整车尺寸" name="body">
+            <el-collapse-item :title="$t('modify.bodyDimensions')" name="body">
               <div class="param-grid">
                 <div v-for="param in getParamsByCategory('body')" :key="param.name" class="param-item">
                   <div class="param-label">{{ param.name }}</div>
@@ -110,7 +107,7 @@
                 </div>
               </div>
             </el-collapse-item>
-            <el-collapse-item title="底盘参数" name="chassis">
+            <el-collapse-item :title="$t('modify.chassisParams')" name="chassis">
               <div class="param-grid">
                 <div v-for="param in getParamsByCategory('chassis')" :key="param.name" class="param-item">
                   <div class="param-label">{{ param.name }}</div>
@@ -125,7 +122,7 @@
                 </div>
               </div>
             </el-collapse-item>
-            <el-collapse-item title="外观造型" name="exterior">
+            <el-collapse-item :title="$t('modify.exteriorStyling')" name="exterior">
               <div class="param-grid">
                 <div v-for="param in getParamsByCategory('exterior')" :key="param.name" class="param-item">
                   <div class="param-label">{{ param.name }}</div>
@@ -144,27 +141,26 @@
         </div>
       </el-tab-pane>
 
-      <!-- 测量工具 -->
-      <el-tab-pane label="测量工具" name="measurement">
+      <el-tab-pane :label="$t('modify.measurementTools')" name="measurement">
         <div class="tab-content">
           <div class="measurement-tools">
             <el-card class="tool-card">
-              <template #header>距离测量</template>
+              <template #header>{{ $t('modify.distanceMeasure') }}</template>
               <el-form :model="distanceForm" label-width="80px">
-                <el-form-item label="起点">
+                <el-form-item :label="$t('modify.startPoint')">
                   <el-input v-model.number="distanceForm.point1.x" placeholder="X" />
                   <el-input v-model.number="distanceForm.point1.y" placeholder="Y" />
                   <el-input v-model.number="distanceForm.point1.z" placeholder="Z" />
                 </el-form-item>
-                <el-form-item label="终点">
+                <el-form-item :label="$t('modify.endPoint')">
                   <el-input v-model.number="distanceForm.point2.x" placeholder="X" />
                   <el-input v-model.number="distanceForm.point2.y" placeholder="Y" />
                   <el-input v-model.number="distanceForm.point2.z" placeholder="Z" />
                 </el-form-item>
-                <el-form-item label="标签">
-                  <el-input v-model="distanceForm.label" placeholder="测量标签" />
+                <el-form-item :label="$t('modify.label')">
+                  <el-input v-model="distanceForm.label" :placeholder="$t('modify.label')" />
                 </el-form-item>
-                <el-button type="primary" @click="measureDistance">测量</el-button>
+                <el-button type="primary" @click="measureDistance">{{ $t('modify.measure') }}</el-button>
               </el-form>
               <div v-if="distanceResult" class="measurement-result">
                 <div class="result-value">{{ distanceResult.value.toFixed(3) }} {{ distanceResult.unit }}</div>
@@ -172,24 +168,24 @@
             </el-card>
 
             <el-card class="tool-card">
-              <template #header>角度测量</template>
+              <template #header>{{ $t('modify.angleMeasure') }}</template>
               <el-form :model="angleForm" label-width="80px">
-                <el-form-item label="顶点">
+                <el-form-item :label="$t('modify.vertex')">
                   <el-input v-model.number="angleForm.vertex.x" placeholder="X" />
                   <el-input v-model.number="angleForm.vertex.y" placeholder="Y" />
                   <el-input v-model.number="angleForm.vertex.z" placeholder="Z" />
                 </el-form-item>
-                <el-form-item label="点1">
+                <el-form-item :label="$t('modify.point1')">
                   <el-input v-model.number="angleForm.point1.x" placeholder="X" />
                   <el-input v-model.number="angleForm.point1.y" placeholder="Y" />
                   <el-input v-model.number="angleForm.point1.z" placeholder="Z" />
                 </el-form-item>
-                <el-form-item label="点2">
+                <el-form-item :label="$t('modify.point2')">
                   <el-input v-model.number="angleForm.point2.x" placeholder="X" />
                   <el-input v-model.number="angleForm.point2.y" placeholder="Y" />
                   <el-input v-model.number="angleForm.point2.z" placeholder="Z" />
                 </el-form-item>
-                <el-button type="primary" @click="measureAngle">测量</el-button>
+                <el-button type="primary" @click="measureAngle">{{ $t('modify.measure') }}</el-button>
               </el-form>
               <div v-if="angleResult" class="measurement-result">
                 <div class="result-value">{{ angleResult.value.toFixed(3) }} {{ angleResult.unit }}</div>
@@ -197,26 +193,26 @@
             </el-card>
 
             <el-card class="tool-card">
-              <template #header>曲率测量</template>
+              <template #header>{{ $t('modify.curvatureMeasure') }}</template>
               <el-form :model="curvatureForm" label-width="80px">
-                <el-form-item label="曲面">
-                  <el-select v-model="curvatureForm.surface_id" placeholder="选择曲面">
+                <el-form-item :label="$t('modify.surface')">
+                  <el-select v-model="curvatureForm.surface_id" :placeholder="$t('modify.surface')">
                     <el-option v-for="s in surfaces" :key="s.surface_id" :label="s.surface_id" :value="s.surface_id" />
                   </el-select>
                 </el-form-item>
-                <el-form-item label="U参数">
+                <el-form-item :label="$t('modify.uParam')">
                   <el-slider v-model="curvatureForm.u" :min="0" :max="1" :step="0.01" show-input />
                 </el-form-item>
-                <el-form-item label="V参数">
+                <el-form-item :label="$t('modify.vParam')">
                   <el-slider v-model="curvatureForm.v" :min="0" :max="1" :step="0.01" show-input />
                 </el-form-item>
-                <el-button type="primary" @click="measureCurvature">测量</el-button>
+                <el-button type="primary" @click="measureCurvature">{{ $t('modify.measure') }}</el-button>
               </el-form>
               <div v-if="curvatureResult" class="curvature-result">
-                <div class="curv-item">高斯曲率: {{ curvatureResult.gaussian_curvature?.toFixed(6) }}</div>
-                <div class="curv-item">平均曲率: {{ curvatureResult.mean_curvature?.toFixed(6) }}</div>
-                <div class="curv-item">曲率半径1: {{ curvatureResult.curvature_radius_1?.toFixed(2) }}</div>
-                <div class="curv-item">曲率半径2: {{ curvatureResult.curvature_radius_2?.toFixed(2) }}</div>
+                <div class="curv-item">{{ $t('modify.gaussianCurvature') }}: {{ curvatureResult.gaussian_curvature?.toFixed(6) }}</div>
+                <div class="curv-item">{{ $t('modify.meanCurvature') }}: {{ curvatureResult.mean_curvature?.toFixed(6) }}</div>
+                <div class="curv-item">{{ $t('modify.curvatureRadius1') }}: {{ curvatureResult.curvature_radius_1?.toFixed(2) }}</div>
+                <div class="curv-item">{{ $t('modify.curvatureRadius2') }}: {{ curvatureResult.curvature_radius_2?.toFixed(2) }}</div>
               </div>
             </el-card>
           </div>
@@ -224,202 +220,197 @@
       </el-tab-pane>
     </el-tabs>
 
-    <!-- 创建曲面对话框 -->
-    <el-dialog v-model="showCreateSurfaceDialog" title="创建NURBS曲面" width="600px">
+    <el-dialog v-model="showCreateSurfaceDialog" :title="$t('modify.createNurbsSurface')" width="600px">
       <el-form :model="surfaceForm" label-width="100px">
-        <el-form-item label="U方向阶数">
+        <el-form-item :label="$t('modify.degreeU')">
           <el-input-number v-model="surfaceForm.degree_u" :min="1" :max="10" />
         </el-form-item>
-        <el-form-item label="V方向阶数">
+        <el-form-item :label="$t('modify.degreeV')">
           <el-input-number v-model="surfaceForm.degree_v" :min="1" :max="10" />
         </el-form-item>
-        <el-form-item label="控制点数(U)">
+        <el-form-item :label="$t('modify.numControlU')">
           <el-input-number v-model="surfaceForm.num_u" :min="surfaceForm.degree_u + 1" :max="20" />
         </el-form-item>
-        <el-form-item label="控制点数(V)">
+        <el-form-item :label="$t('modify.numControlV')">
           <el-input-number v-model="surfaceForm.num_v" :min="surfaceForm.degree_v + 1" :max="20" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateSurfaceDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitCreateSurface">创建</el-button>
+        <el-button @click="showCreateSurfaceDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitCreateSurface">{{ $t('common.create') }}</el-button>
       </template>
     </el-dialog>
 
-    <!-- 修改对话框 -->
-    <el-dialog v-model="showModifyDialogFlag" title="修改" width="500px">
+    <el-dialog v-model="showModifyDialogFlag" :title="$t('modify.modify')" width="500px">
       <el-form :model="modifyForm" label-width="100px">
-        <el-form-item label="操作类型">
+        <el-form-item :label="$t('modify.operationType')">
           <el-select v-model="modifyForm.operation_type">
-            <el-option label="平移" value="translate" />
-            <el-option label="缩放" value="scale" />
-            <el-option label="旋转" value="rotate" />
-            <el-option label="偏移" value="offset" />
+            <el-option :label="$t('modify.translate')" value="translate" />
+            <el-option :label="$t('modify.scale')" value="scale" />
+            <el-option :label="$t('modify.rotate')" value="rotate" />
+            <el-option :label="$t('modify.offset')" value="offset" />
           </el-select>
         </el-form-item>
         <template v-if="modifyForm.operation_type === 'translate'">
-          <el-form-item label="X偏移">
+          <el-form-item :label="$t('modify.xOffset')">
             <el-input-number v-model="modifyForm.dx" :step="1" />
           </el-form-item>
-          <el-form-item label="Y偏移">
+          <el-form-item :label="$t('modify.yOffset')">
             <el-input-number v-model="modifyForm.dy" :step="1" />
           </el-form-item>
-          <el-form-item label="Z偏移">
+          <el-form-item :label="$t('modify.zOffset')">
             <el-input-number v-model="modifyForm.dz" :step="1" />
           </el-form-item>
         </template>
         <template v-else-if="modifyForm.operation_type === 'scale'">
-          <el-form-item label="X比例">
+          <el-form-item :label="$t('modify.xScale')">
             <el-input-number v-model="modifyForm.sx" :min="0.1" :max="10" :step="0.1" />
           </el-form-item>
-          <el-form-item label="Y比例">
+          <el-form-item :label="$t('modify.yScale')">
             <el-input-number v-model="modifyForm.sy" :min="0.1" :max="10" :step="0.1" />
           </el-form-item>
-          <el-form-item label="Z比例">
+          <el-form-item :label="$t('modify.zScale')">
             <el-input-number v-model="modifyForm.sz" :min="0.1" :max="10" :step="0.1" />
           </el-form-item>
         </template>
         <template v-else-if="modifyForm.operation_type === 'rotate'">
-          <el-form-item label="角度">
+          <el-form-item :label="$t('modify.angle')">
             <el-input-number v-model="modifyForm.angle" :min="-360" :max="360" />
           </el-form-item>
-          <el-form-item label="轴">
+          <el-form-item :label="$t('modify.axis')">
             <el-select v-model="modifyForm.axis">
-              <el-option label="X轴" value="x" />
-              <el-option label="Y轴" value="y" />
-              <el-option label="Z轴" value="z" />
+              <el-option :label="$t('modify.xAxis')" value="x" />
+              <el-option :label="$t('modify.yAxis')" value="y" />
+              <el-option :label="$t('modify.zAxis')" value="z" />
             </el-select>
           </el-form-item>
         </template>
         <template v-else-if="modifyForm.operation_type === 'offset'">
-          <el-form-item label="偏移距离">
+          <el-form-item :label="$t('modify.offsetDistance')">
             <el-input-number v-model="modifyForm.distance" :step="0.1" />
           </el-form-item>
         </template>
       </el-form>
       <template #footer>
-        <el-button @click="showModifyDialogFlag = false">取消</el-button>
-        <el-button type="primary" @click="submitModify">应用</el-button>
+        <el-button @click="showModifyDialogFlag = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitModify">{{ $t('modify.apply') }}</el-button>
       </template>
     </el-dialog>
 
-    <!-- 评估点对话框 -->
-    <el-dialog v-model="showEvaluateDialogFlag" title="曲面评估" width="500px">
+    <el-dialog v-model="showEvaluateDialogFlag" :title="$t('modify.surfaceEvaluation')" width="500px">
       <el-form :model="evaluateForm" label-width="80px">
-        <el-form-item label="U参数">
+        <el-form-item :label="$t('modify.uParam')">
           <el-slider v-model="evaluateForm.u" :min="0" :max="1" :step="0.01" show-input />
         </el-form-item>
-        <el-form-item label="V参数">
+        <el-form-item :label="$t('modify.vParam')">
           <el-slider v-model="evaluateForm.v" :min="0" :max="1" :step="0.01" show-input />
         </el-form-item>
-        <el-button type="primary" @click="evaluatePoint">评估</el-button>
+        <el-button type="primary" @click="evaluatePoint">{{ $t('modify.evaluatePoint') }}</el-button>
       </el-form>
       <div v-if="evaluateResult" class="evaluate-result">
         <div class="result-section">
-          <h4>点坐标</h4>
+          <h4>{{ $t('modify.pointCoord') }}</h4>
           <div>X: {{ evaluateResult.point?.[0]?.toFixed(4) }}</div>
           <div>Y: {{ evaluateResult.point?.[1]?.toFixed(4) }}</div>
           <div>Z: {{ evaluateResult.point?.[2]?.toFixed(4) }}</div>
         </div>
         <div class="result-section">
-          <h4>法向量</h4>
+          <h4>{{ $t('modify.normalVector') }}</h4>
           <div>X: {{ evaluateResult.normal?.[0]?.toFixed(4) }}</div>
           <div>Y: {{ evaluateResult.normal?.[1]?.toFixed(4) }}</div>
           <div>Z: {{ evaluateResult.normal?.[2]?.toFixed(4) }}</div>
         </div>
         <div class="result-section">
-          <h4>曲率</h4>
-          <div>高斯: {{ evaluateResult.curvature?.gaussian_curvature?.toFixed(6) }}</div>
-          <div>平均: {{ evaluateResult.curvature?.mean_curvature?.toFixed(6) }}</div>
+          <h4>{{ $t('modify.curvature') }}</h4>
+          <div>{{ $t('modify.gaussian') }}: {{ evaluateResult.curvature?.gaussian_curvature?.toFixed(6) }}</div>
+          <div>{{ $t('modify.mean') }}: {{ evaluateResult.curvature?.mean_curvature?.toFixed(6) }}</div>
         </div>
       </div>
     </el-dialog>
 
-    <!-- 添加实体对话框 -->
-    <el-dialog v-model="showAddEntityDialog" title="添加草图实体" width="500px">
+    <el-dialog v-model="showAddEntityDialog" :title="$t('modify.addSketchEntity')" width="500px">
       <el-form :model="entityForm" label-width="80px">
-        <el-form-item label="实体类型">
+        <el-form-item :label="$t('modify.entityType')">
           <el-select v-model="entityForm.entity_type">
-            <el-option label="直线" value="line" />
-            <el-option label="圆" value="circle" />
-            <el-option label="圆弧" value="arc" />
+            <el-option :label="$t('modify.line')" value="line" />
+            <el-option :label="$t('modify.circle')" value="circle" />
+            <el-option :label="$t('modify.arc')" value="arc" />
           </el-select>
         </el-form-item>
-        <el-form-item label="草图">
-          <el-select v-model="entityForm.sketch_id" placeholder="选择草图">
+        <el-form-item :label="$t('modify.sketch')">
+          <el-select v-model="entityForm.sketch_id" :placeholder="$t('modify.sketch')">
             <el-option v-for="s in sketches" :key="s.sketch_id" :label="s.sketch_data.name" :value="s.sketch_id" />
           </el-select>
         </el-form-item>
         <template v-if="entityForm.entity_type === 'line'">
-          <el-form-item label="起点">
+          <el-form-item :label="$t('modify.startPoint')">
             <el-input v-model.number="entityForm.start_x" placeholder="X" />
             <el-input v-model.number="entityForm.start_y" placeholder="Y" />
           </el-form-item>
-          <el-form-item label="终点">
+          <el-form-item :label="$t('modify.endPoint')">
             <el-input v-model.number="entityForm.end_x" placeholder="X" />
             <el-input v-model.number="entityForm.end_y" placeholder="Y" />
           </el-form-item>
         </template>
         <template v-else-if="entityForm.entity_type === 'circle'">
-          <el-form-item label="圆心">
+          <el-form-item :label="$t('modify.center')">
             <el-input v-model.number="entityForm.center_x" placeholder="X" />
             <el-input v-model.number="entityForm.center_y" placeholder="Y" />
           </el-form-item>
-          <el-form-item label="半径">
+          <el-form-item :label="$t('modify.radius')">
             <el-input-number v-model="entityForm.radius" :min="0.1" />
           </el-form-item>
         </template>
         <template v-else-if="entityForm.entity_type === 'arc'">
-          <el-form-item label="圆心">
+          <el-form-item :label="$t('modify.center')">
             <el-input v-model.number="entityForm.center_x" placeholder="X" />
             <el-input v-model.number="entityForm.center_y" placeholder="Y" />
           </el-form-item>
-          <el-form-item label="半径">
+          <el-form-item :label="$t('modify.radius')">
             <el-input-number v-model="entityForm.radius" :min="0.1" />
           </el-form-item>
-          <el-form-item label="起始角">
+          <el-form-item :label="$t('modify.startAngle')">
             <el-input-number v-model="entityForm.start_angle" :min="0" :max="360" />
           </el-form-item>
-          <el-form-item label="终止角">
+          <el-form-item :label="$t('modify.endAngle')">
             <el-input-number v-model="entityForm.end_angle" :min="0" :max="360" />
           </el-form-item>
         </template>
       </el-form>
       <template #footer>
-        <el-button @click="showAddEntityDialog = false">取消</el-button>
-        <el-button type="primary" @click="addEntity">添加</el-button>
+        <el-button @click="showAddEntityDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="addEntity">{{ $t('common.create') }}</el-button>
       </template>
     </el-dialog>
 
-    <!-- 添加约束对话框 -->
-    <el-dialog v-model="showAddConstraintDialog" title="添加约束" width="500px">
+    <el-dialog v-model="showAddConstraintDialog" :title="$t('modify.addConstraint')" width="500px">
       <el-form :model="constraintForm" label-width="80px">
-        <el-form-item label="约束类型">
+        <el-form-item :label="$t('modify.constraintType')">
           <el-select v-model="constraintForm.constraint_type">
-            <el-option label="重合" value="coincident" />
-            <el-option label="水平" value="horizontal" />
-            <el-option label="垂直" value="vertical" />
-            <el-option label="平行" value="parallel" />
-            <el-option label="垂直" value="perpendicular" />
-            <el-option label="相切" value="tangent" />
-            <el-option label="等长" value="equal_length" />
-            <el-option label="等半径" value="equal_radius" />
+            <el-option label="Coincident" value="coincident" />
+            <el-option label="Horizontal" value="horizontal" />
+            <el-option label="Vertical" value="vertical" />
+            <el-option label="Parallel" value="parallel" />
+            <el-option label="Perpendicular" value="perpendicular" />
+            <el-option label="Tangent" value="tangent" />
+            <el-option label="Equal Length" value="equal_length" />
+            <el-option label="Equal Radius" value="equal_radius" />
           </el-select>
         </el-form-item>
-        <el-form-item label="草图">
-          <el-select v-model="constraintForm.sketch_id" placeholder="选择草图">
+        <el-form-item :label="$t('modify.sketch')">
+          <el-select v-model="constraintForm.sketch_id" :placeholder="$t('modify.sketch')">
             <el-option v-for="s in sketches" :key="s.sketch_id" :label="s.sketch_data.name" :value="s.sketch_id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="实体ID">
-          <el-select v-model="constraintForm.entity_ids" multiple placeholder="选择实体">
+        <el-form-item label="Entity IDs">
+          <el-select v-model="constraintForm.entity_ids" multiple placeholder="Select entities">
             <el-option v-for="e in getSketchEntities()" :key="e.id" :label="`${e.entity_type} #${e.id}`" :value="e.id" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showAddConstraintDialog = false">取消</el-button>
-        <el-button type="primary" @click="addConstraint">添加</el-button>
+        <el-button @click="showAddConstraintDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="addConstraint">{{ $t('common.create') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -428,7 +419,10 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { modifyAPI } from '../services/api'
+
+const { t } = useI18n()
 
 const activeTab = ref('surface')
 const activeCategory = ref('body')
@@ -529,16 +523,15 @@ const submitCreateSurface = async () => {
     })
     surfaces.value.push(response.data)
     showCreateSurfaceDialog.value = false
-    ElMessage.success('曲面创建成功')
+    ElMessage.success(t('modify.createSurfaceSuccess'))
   } catch (error) {
-    ElMessage.error('曲面创建失败')
+    ElMessage.error(t('modify.createSurfaceFailed'))
   }
 }
 
 const loadSurfaces = async () => {
-  // 暂时从本地加载
   if (surfaces.value.length === 0) {
-    ElMessage.info('暂无曲面，请先创建')
+    ElMessage.info(t('modify.noSurfaces'))
   }
 }
 
@@ -546,9 +539,9 @@ const deleteSurface = async (surfaceId) => {
   try {
     await modifyAPI.deleteSurface(surfaceId)
     surfaces.value = surfaces.value.filter(s => s.surface_id !== surfaceId)
-    ElMessage.success('曲面已删除')
+    ElMessage.success(t('modify.deleteSurfaceSuccess'))
   } catch (error) {
-    ElMessage.error('删除失败')
+    ElMessage.error(t('modify.deleteSurfaceFailed'))
   }
 }
 
@@ -584,10 +577,10 @@ const submitModify = async () => {
       parameters
     })
     showModifyDialogFlag.value = false
-    ElMessage.success('修改已应用')
+    ElMessage.success(t('modify.modifyApplied'))
     loadSurfaces()
   } catch (error) {
-    ElMessage.error('修改失败')
+    ElMessage.error(t('modify.modifyFailed'))
   }
 }
 
@@ -608,23 +601,23 @@ const evaluatePoint = async () => {
     )
     evaluateResult.value = response.data
   } catch (error) {
-    ElMessage.error('评估失败')
+    ElMessage.error(t('modify.evaluateFailed'))
   }
 }
 
 const createSketch = async () => {
   try {
-    const response = await modifyAPI.createSketch({ name: '新草图' })
+    const response = await modifyAPI.createSketch({ name: t('modify.newSketch') })
     sketches.value.push(response.data)
-    ElMessage.success('草图创建成功')
+    ElMessage.success(t('modify.createSketchSuccess'))
   } catch (error) {
-    ElMessage.error('草图创建失败')
+    ElMessage.error(t('modify.createSketchFailed'))
   }
 }
 
 const loadSketches = async () => {
   if (sketches.value.length === 0) {
-    ElMessage.info('暂无草图，请先创建')
+    ElMessage.info(t('modify.noSketches'))
   }
 }
 
@@ -641,7 +634,7 @@ const getSketchEntities = () => {
 
 const addEntity = async () => {
   if (!entityForm.sketch_id) {
-    ElMessage.warning('请选择草图')
+    ElMessage.warning(t('modify.selectSketch'))
     return
   }
 
@@ -671,16 +664,16 @@ const addEntity = async () => {
       data
     })
     showAddEntityDialog.value = false
-    ElMessage.success('实体添加成功')
+    ElMessage.success(t('modify.addEntitySuccess'))
     loadSketches()
   } catch (error) {
-    ElMessage.error('实体添加失败')
+    ElMessage.error(t('modify.addEntityFailed'))
   }
 }
 
 const addConstraint = async () => {
   if (!constraintForm.sketch_id || constraintForm.entity_ids.length === 0) {
-    ElMessage.warning('请选择草图和实体')
+    ElMessage.warning(t('modify.selectSketchAndEntities'))
     return
   }
 
@@ -690,10 +683,10 @@ const addConstraint = async () => {
       entity_ids: constraintForm.entity_ids
     })
     showAddConstraintDialog.value = false
-    ElMessage.success('约束添加成功')
+    ElMessage.success(t('modify.addConstraintSuccess'))
     loadSketches()
   } catch (error) {
-    ElMessage.error('约束添加失败')
+    ElMessage.error(t('modify.addConstraintFailed'))
   }
 }
 
@@ -710,7 +703,7 @@ const loadAutomotiveParameters = async () => {
       ...value
     }))
   } catch (error) {
-    ElMessage.error('参数加载失败')
+    ElMessage.error(t('modify.loadParamsFailed'))
   }
 }
 
@@ -735,7 +728,7 @@ const measureDistance = async () => {
     })
     distanceResult.value = response.data.measurement
   } catch (error) {
-    ElMessage.error('距离测量失败')
+    ElMessage.error(t('modify.distanceMeasureFailed'))
   }
 }
 
@@ -748,13 +741,13 @@ const measureAngle = async () => {
     })
     angleResult.value = response.data.measurement
   } catch (error) {
-    ElMessage.error('角度测量失败')
+    ElMessage.error(t('modify.angleMeasureFailed'))
   }
 }
 
 const measureCurvature = async () => {
   if (!curvatureForm.surface_id) {
-    ElMessage.warning('请选择曲面')
+    ElMessage.warning(t('modify.selectSurface'))
     return
   }
 
@@ -766,17 +759,17 @@ const measureCurvature = async () => {
     })
     curvatureResult.value = response.data.curvature
   } catch (error) {
-    ElMessage.error('曲率测量失败')
+    ElMessage.error(t('modify.measureCurvatureFailed'))
   }
 }
 
 const undoChange = async () => {
   try {
     await modifyAPI.undo()
-    ElMessage.success('已撤销')
+    ElMessage.success(t('modify.undoSuccess'))
     loadSurfaces()
   } catch (error) {
-    ElMessage.error('撤销失败')
+    ElMessage.error(t('modify.undoFailed'))
   }
 }
 
@@ -784,9 +777,9 @@ const exportState = async () => {
   try {
     const response = await modifyAPI.exportState()
     console.log('状态导出:', response.data)
-    ElMessage.success('状态已导出到控制台')
+    ElMessage.success(t('modify.exportStateSuccess'))
   } catch (error) {
-    ElMessage.error('导出失败')
+    ElMessage.error(t('modify.exportStateFailed'))
   }
 }
 

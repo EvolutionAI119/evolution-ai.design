@@ -2,25 +2,24 @@
   <div class="reports-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>报告中心</h2>
-        <p>查看和管理质量检查报告</p>
+        <h2>{{ $t('reports.title') }}</h2>
+        <p>{{ $t('reports.subtitle') }}</p>
       </div>
     </div>
 
     <div class="filter-bar">
-      <el-select v-model="filterProject" placeholder="项目筛选" style="width: 200px">
-        <el-option label="全部" value="" />
+      <el-select v-model="filterProject" :placeholder="$t('reports.projectFilter')">
+        <el-option :label="$t('projects.all')" value="" />
         <el-option v-for="p in projects" :key="p.id" :label="p.name" :value="p.id" />
       </el-select>
-      <el-select v-model="filterStatus" placeholder="结果筛选" style="width: 150px">
-        <el-option label="全部" value="" />
-        <el-option label="通过" :value="true" />
-        <el-option label="未通过" :value="false" />
+      <el-select v-model="filterStatus" :placeholder="$t('reports.resultFilter')">
+        <el-option :label="$t('projects.all')" value="" />
+        <el-option :label="$t('reports.passed')" :value="true" />
+        <el-option :label="$t('reports.failed')" :value="false" />
       </el-select>
       <el-input
         v-model="searchQuery"
-        placeholder="搜索报告..."
-        style="width: 250px"
+        :placeholder="$t('reports.search')"
         clearable
         prefix-icon="Search"
       />
@@ -34,9 +33,9 @@
         :class="report.passed ? 'passed' : 'failed'"
       >
         <div class="report-header">
-          <div class="report-id">报告 #{{ report.id }}</div>
+          <div class="report-id">{{ $t('reports.report') }} #{{ report.id }}</div>
           <el-tag :type="report.passed ? 'success' : 'danger'">
-            {{ report.passed ? '通过' : '未通过' }}
+            {{ report.passed ? $t('reports.passed') : $t('reports.failed') }}
           </el-tag>
         </div>
         <div class="report-score">
@@ -45,26 +44,26 @@
         </div>
         <div class="report-info">
           <div class="info-item">
-            <span class="label">模型ID:</span>
+            <span class="label">{{ $t('reports.modelId') }}:</span>
             <span class="value">{{ report.model_id }}</span>
           </div>
           <div class="info-item">
-            <span class="label">项目ID:</span>
+            <span class="label">{{ $t('reports.projectId') }}:</span>
             <span class="value">{{ report.project_id }}</span>
           </div>
           <div class="info-item">
-            <span class="label">检查时间:</span>
+            <span class="label">{{ $t('reports.checkTime') }}:</span>
             <span class="value">{{ formatDateTime(report.created_at) }}</span>
           </div>
         </div>
         <div class="report-actions">
-          <el-button type="primary" @click="viewReport(report)">查看详情</el-button>
-          <el-button @click="downloadReport(report)">下载报告</el-button>
+          <el-button type="primary" @click="viewReport(report)">{{ $t('reports.viewDetail') }}</el-button>
+          <el-button @click="downloadReport(report)">{{ $t('reports.downloadReport') }}</el-button>
         </div>
       </el-card>
     </div>
 
-    <el-dialog v-model="showReportDialog" title="质量检查报告详情" width="900px">
+    <el-dialog v-model="showReportDialog" :title="$t('reports.reportDetail')" width="900px">
       <div v-if="currentReport" class="report-detail">
         <div class="detail-header">
           <div class="detail-score" :class="currentReport.passed ? 'passed' : 'failed'">
@@ -72,32 +71,32 @@
           </div>
           <div class="detail-badge">
             <el-tag :type="currentReport.passed ? 'success' : 'danger'" size="large">
-              {{ currentReport.passed ? '✓ 检查通过' : '✗ 检查未通过' }}
+              {{ currentReport.passed ? $t('reports.passText') : $t('reports.failText') }}
             </el-tag>
           </div>
         </div>
         <el-divider />
         <div class="detail-content">
-          <h4>检查摘要</h4>
+          <h4>{{ $t('reports.checkSummary') }}</h4>
           <div class="summary-grid">
             <div class="summary-card">
               <div class="summary-value">{{ getTotalChecks() }}</div>
-              <div class="summary-label">总检查项</div>
+              <div class="summary-label">{{ $t('reports.totalChecks') }}</div>
             </div>
             <div class="summary-card">
               <div class="summary-value">{{ getPassedChecks() }}</div>
-              <div class="summary-label">通过</div>
+              <div class="summary-label">{{ $t('reports.passedChecks') }}</div>
             </div>
             <div class="summary-card">
               <div class="summary-value">{{ getFailedChecks() }}</div>
-              <div class="summary-label">失败</div>
+              <div class="summary-label">{{ $t('reports.failedChecks') }}</div>
             </div>
             <div class="summary-card">
               <div class="summary-value">{{ getTotalIssues() }}</div>
-              <div class="summary-label">问题数</div>
+              <div class="summary-label">{{ $t('reports.totalIssues') }}</div>
             </div>
           </div>
-          <h4>详细检查结果</h4>
+          <h4>{{ $t('reports.detailedResults') }}</h4>
           <div class="check-results">
             <div
               v-for="(result, index) in getCheckResults()"
@@ -110,18 +109,18 @@
                 <span class="result-score">{{ result.score }}/100</span>
               </div>
               <div v-if="result.issues && result.issues.length > 0" class="result-issues">
-                <h5>发现问题:</h5>
+                <h5>{{ $t('reports.foundIssues') }}:</h5>
                 <el-table :data="result.issues" style="width: 100%">
-                  <el-table-column prop="location" label="位置" />
-                  <el-table-column prop="issue_type" label="问题类型" />
-                  <el-table-column prop="severity" label="严重程度">
+                  <el-table-column prop="location" :label="$t('reports.location')" />
+                  <el-table-column prop="issue_type" :label="$t('reports.issueType')" />
+                  <el-table-column prop="severity" :label="$t('reports.severity')">
                     <template #default="{ row }">
                       <el-tag :type="getSeverityType(row.severity)" size="small">
-                        {{ row.severity }}
+                        {{ $t(`reports.${row.severity}`) }}
                       </el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="suggestion" label="建议" show-overflow-tooltip />
+                  <el-table-column prop="suggestion" :label="$t('reports.suggestion')" show-overflow-tooltip />
                 </el-table>
               </div>
             </div>
@@ -134,8 +133,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Search } from '@element-plus/icons-vue'
 import { qualityAPI, projectAPI } from '../services/api'
+
+const { t } = useI18n()
 
 const reports = ref([])
 const projects = ref([])
@@ -154,15 +156,15 @@ const filteredReports = computed(() => {
 })
 
 const formatDateTime = (date) => {
-  return new Date(date).toLocaleString('zh-CN')
+  return new Date(date).toLocaleString()
 }
 
 const getSeverityType = (severity) => {
   const types = {
-    '严重': 'danger',
-    '高': 'warning',
-    '中': 'info',
-    '低': 'success'
+    critical: 'danger',
+    high: 'warning',
+    medium: 'info',
+    low: 'success'
   }
   return types[severity] || 'info'
 }
@@ -322,7 +324,7 @@ loadProjects()
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 15px;
   margin-bottom: 20px;
 }
