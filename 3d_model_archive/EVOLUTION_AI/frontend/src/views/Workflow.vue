@@ -86,9 +86,13 @@
               <el-icon><View /></el-icon>
               {{ $t('workflow.detail') }}
             </el-button>
-            <el-button type="success" size="small" @click.stop="runWorkflow(workflow)">
-              <el-icon><Play /></el-icon>
+            <el-button type="success" size="small" @click.stop="runWorkflow(workflow)" :disabled="workflow.status === 'running'">
+              <el-icon><VideoPlay /></el-icon>
               {{ $t('workflow.execute') }}
+            </el-button>
+            <el-button type="danger" size="small" @click.stop="deleteWorkflow(workflow)" :disabled="workflow.status === 'running'">
+              <el-icon><DeleteIcon /></el-icon>
+              {{ $t('common.delete') }}
             </el-button>
           </div>
         </el-card>
@@ -119,20 +123,81 @@
         <el-button type="primary" @click="createWorkflow">{{ $t('common.create') }}</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="showDetailDialog" :title="$t('workflow.detail')" width="700px">
+      <div v-if="currentWorkflow" class="workflow-detail">
+        <div class="detail-row">
+          <label>{{ $t('workflow.name') }}</label>
+          <span>{{ currentWorkflow.name }}</span>
+        </div>
+        <div class="detail-row">
+          <label>{{ $t('workflow.type') }}</label>
+          <el-tag size="small" type="info">{{ getWorkflowTypeName(currentWorkflow.type) }}</el-tag>
+        </div>
+        <div class="detail-row">
+          <label>{{ $t('workflow.projectId') }}</label>
+          <span>{{ currentWorkflow.project_id }}</span>
+        </div>
+        <div class="detail-row">
+          <label>{{ $t('workflow.status') }}</label>
+          <el-tag :type="getStatusType(currentWorkflow.status)" size="small">
+            {{ getStatusText(currentWorkflow.status) }}
+          </el-tag>
+        </div>
+        <div class="detail-row">
+          <label>{{ $t('workflow.createdAt') }}</label>
+          <span>{{ formatDateTime(currentWorkflow.created_at) }}</span>
+        </div>
+        <div v-if="currentWorkflow.completed_at" class="detail-row">
+          <label>{{ $t('workflow.completedAt') }}</label>
+          <span>{{ formatDateTime(currentWorkflow.completed_at) }}</span>
+        </div>
+
+        <div class="steps-section">
+          <h4>{{ $t('workflow.steps') }}</h4>
+          <div v-if="workflowSteps.length === 0" class="empty-steps">
+            {{ $t('workflow.noSteps') }}
+          </div>
+          <div v-else class="steps-list">
+            <div v-for="step in workflowSteps" :key="step.id" class="step-item">
+              <div class="step-header">
+                <span class="step-name">{{ step.step_name }}</span>
+                <el-tag :type="getStatusType(step.status)" size="small">{{ getStatusText(step.status) }}</el-tag>
+              </div>
+              <el-progress :percentage="Math.round(step.progress)" :stroke-width="6" />
+              <div class="step-meta">
+                <span v-if="step.started_at">{{ $t('workflow.startedAt') }}: {{ formatDateTime(step.started_at) }}</span>
+                <span v-if="step.completed_at">{{ $t('workflow.completedAt') }}: {{ formatDateTime(step.completed_at) }}</span>
+              </div>
+              <div v-if="step.error_message" class="step-error">
+                <el-alert type="error" :title="$t('common.error')" :description="step.error_message" :closable="false" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showDetailDialog = false">{{ $t('common.close') }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Plus, Clock, View, Play } from '@element-plus/icons-vue'
+import { Plus, Clock, View, VideoPlay, Delete as DeleteIcon } from '@element-plus/icons-vue'
 import { workflowAPI, projectAPI } from '../services/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const { t } = useI18n()
 
 const workflows = ref([])
 const projects = ref([])
 const showCreateDialog = ref(false)
+const showDetailDialog = ref(false)
+const currentWorkflow = ref(null)
+const workflowSteps = ref([])
 
 const workflowForm = ref({
   name: '',
@@ -213,7 +278,7 @@ const loadProjects = async () => {
 
 const createWorkflow = async () => {
   if (!workflowForm.value.name || !workflowForm.value.type || !workflowForm.value.project_id) {
-    alert(t('workflow.enterInfo'))
+    ElMessage.warning(t('workflow.enterInfo'))
     return
   }
 
@@ -222,19 +287,63 @@ const createWorkflow = async () => {
     showCreateDialog.value = false
     workflowForm.value = { name: '', type: '', project_id: '' }
     loadWorkflows()
-    alert(t('workflow.createSuccess'))
+    ElMessage.success(t('workflow.createSuccess'))
   } catch (error) {
     console.error('Failed to create workflow:', error)
-    alert(t('workflow.createFailed'))
+    ElMessage.error(t('workflow.createFailed'))
   }
 }
 
-const viewWorkflow = (workflow) => {
-  alert(`${t('workflow.detail')}: ${workflow.name}`)
+const viewWorkflow = async (workflow) => {
+  currentWorkflow.value = workflow
+  showDetailDialog.value = true
+  workflowSteps.value = []
+
+  try {
+    const response = await workflowAPI.steps(workflow.id)
+    workflowSteps.value = response.data || []
+  } catch (error) {
+    console.error('Failed to load workflow steps:', error)
+    workflowSteps.value = []
+  }
 }
 
-const runWorkflow = (workflow) => {
-  alert(`${t('workflow.execute')}: ${workflow.name}`)
+const runWorkflow = async (workflow) => {
+  if (workflow.status === 'running') {
+    ElMessage.warning(t('workflow.alreadyRunning'))
+    return
+  }
+
+  try {
+    ElMessage.info(t('workflow.executing'))
+    const response = await workflowAPI.execute(workflow.id)
+    ElMessage.success(response.data.message || t('workflow.executeSuccess'))
+    loadWorkflows()
+  } catch (error) {
+    console.error('Failed to execute workflow:', error)
+    const message = error.response?.data?.detail || error.response?.data?.message || t('workflow.executeFailed')
+    ElMessage.error(message)
+    loadWorkflows()
+  }
+}
+
+const deleteWorkflow = async (workflow) => {
+  try {
+    await ElMessageBox.confirm(
+      t('workflow.confirmDelete').replace('{name}', workflow.name),
+      t('common.confirm'),
+      { type: 'warning' }
+    )
+
+    await workflowAPI.delete(workflow.id)
+    ElMessage.success(t('workflow.deleteSuccess'))
+    loadWorkflows()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Failed to delete workflow:', error)
+      ElMessage.error(t('workflow.deleteFailed'))
+    }
+  }
 }
 
 onMounted(() => {
@@ -348,5 +457,83 @@ onMounted(() => {
 .workflow-actions {
   display: flex;
   gap: 10px;
+}
+
+.workflow-detail {
+  padding: 10px 0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detail-row label {
+  font-weight: 600;
+  color: #606266;
+  min-width: 100px;
+}
+
+.detail-row span {
+  flex: 1;
+  text-align: right;
+  color: #303133;
+}
+
+.steps-section {
+  margin-top: 20px;
+}
+
+.steps-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.empty-steps {
+  text-align: center;
+  padding: 30px;
+  color: #909399;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.step-item {
+  padding: 15px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.step-name {
+  font-weight: 600;
+  color: #303133;
+}
+
+.step-meta {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.step-error {
+  margin-top: 10px;
 }
 </style>

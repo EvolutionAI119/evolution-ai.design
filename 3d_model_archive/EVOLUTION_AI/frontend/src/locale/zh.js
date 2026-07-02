@@ -337,7 +337,18 @@ export default {
     typeFull: '完整流程',
     typeQuality: '质量检查',
     typeTopology: '拓扑优化',
-    typeHandover: '数据交接'
+    typeHandover: '数据交接',
+    alreadyRunning: '工作流正在运行中',
+    executing: '正在执行工作流...',
+    executeSuccess: '工作流执行成功',
+    executeFailed: '工作流执行失败',
+    confirmDelete: '确认删除工作流 "{name}"？',
+    deleteSuccess: '工作流删除成功',
+    deleteFailed: '工作流删除失败',
+    completedAt: '完成时间',
+    steps: '工作流步骤',
+    noSteps: '该工作流暂无步骤',
+    startedAt: '开始时间'
   },
   quality: {
     title: '质量检查',

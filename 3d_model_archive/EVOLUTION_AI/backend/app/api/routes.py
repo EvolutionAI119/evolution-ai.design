@@ -11,6 +11,7 @@ from app.schemas.base import (
     ProjectCreate, ProjectUpdate, ProjectResponse,
     ModelFileCreate, ModelFileResponse,
     WorkflowCreate, WorkflowUpdate, WorkflowResponse,
+    WorkflowStepResponse,
     TopologyOptimizationRequest,
     QualityCheckRequest,
     DataHandoverRequest,
@@ -314,6 +315,186 @@ def get_workflow(workflow_id: int, db: Session = Depends(get_db)):
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
     return workflow
+
+
+@router.post("/workflows/{workflow_id}/execute")
+def execute_workflow(workflow_id: int, db: Session = Depends(get_db)):
+    workflow = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if workflow.status == "running":
+        raise HTTPException(status_code=400, detail="Workflow is already running")
+
+    workflow.status = "running"
+    db.commit()
+
+    steps_config = {
+        "full": [
+            {"name": "拓扑优化", "type": "topology"},
+            {"name": "质量检查", "type": "quality"},
+            {"name": "工程数据交接", "type": "handover"}
+        ],
+        "topology": [
+            {"name": "拓扑优化", "type": "topology"}
+        ],
+        "quality": [
+            {"name": "质量检查", "type": "quality"}
+        ],
+        "handover": [
+            {"name": "工程数据交接", "type": "handover"}
+        ]
+    }
+
+    steps = steps_config.get(workflow.type, [])
+    project_models = db.query(ModelFile).filter(ModelFile.project_id == workflow.project_id).all()
+    model_id = project_models[0].id if project_models else None
+
+    for idx, step_config in enumerate(steps):
+        step = WorkflowStep(
+            workflow_id=workflow.id,
+            model_id=model_id,
+            step_name=step_config["name"],
+            step_type=step_config["type"],
+            status="pending",
+            progress=0.0
+        )
+        db.add(step)
+
+    db.commit()
+
+    for step in workflow.steps:
+        step.status = "running"
+        step.started_at = datetime.now()
+        step.progress = 30.0
+        db.commit()
+
+        if step.step_type == "topology":
+            step.progress = 60.0
+            db.commit()
+            try:
+                if model_id:
+                    config = {'target_faces': 30000, 'min_quad_ratio': 0.75, 'fix_normals': True, 'merge_vertices': True}
+                    optimizer = TopologyOptimizer(config)
+                    model = db.query(ModelFile).filter(ModelFile.id == model_id).first()
+                    if model and model.filepath:
+                        result = optimizer.process(model.filepath)
+                        step.output_data = str(result)
+                    else:
+                        step.output_data = '{"status": "skipped", "reason": "no model file"}'
+                else:
+                    step.output_data = '{"status": "skipped", "reason": "no model in project"}'
+            except Exception as e:
+                step.error_message = str(e)
+                step.status = "failed"
+                workflow.status = "failed"
+                step.completed_at = datetime.now()
+                db.commit()
+                return {"message": f"Workflow failed at step {step.step_name}", "error": str(e)}
+
+        elif step.step_type == "quality":
+            step.progress = 60.0
+            db.commit()
+            try:
+                if model_id:
+                    config = {'output': {'generate_html': True, 'generate_json': True}}
+                    model = db.query(ModelFile).filter(ModelFile.id == model_id).first()
+                    if model and model.filepath:
+                        checker = QualityChecker(model.filepath, config)
+                        result = checker.run_all_checks()
+                        step.output_data = str(result)
+                    else:
+                        step.output_data = '{"status": "skipped", "reason": "no model file"}'
+                else:
+                    step.output_data = '{"status": "skipped", "reason": "no model in project"}'
+            except Exception as e:
+                step.error_message = str(e)
+                step.status = "failed"
+                workflow.status = "failed"
+                step.completed_at = datetime.now()
+                db.commit()
+                return {"message": f"Workflow failed at step {step.step_name}", "error": str(e)}
+
+        elif step.step_type == "handover":
+            step.progress = 60.0
+            db.commit()
+            try:
+                if model_id:
+                    output_dir = settings.exports_path / f"handover_{workflow.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    config = {'formats': ["IGES", "STEP"], 'include_renders': True, 'include_documentation': True}
+                    model = db.query(ModelFile).filter(ModelFile.id == model_id).first()
+                    if model and model.filepath:
+                        handover = DataHandover(model.filepath, str(output_dir), config)
+                        result = handover.prepare_handover()
+                        step.output_data = str(result)
+                    else:
+                        step.output_data = '{"status": "skipped", "reason": "no model file"}'
+                else:
+                    step.output_data = '{"status": "skipped", "reason": "no model in project"}'
+            except Exception as e:
+                step.error_message = str(e)
+                step.status = "failed"
+                workflow.status = "failed"
+                step.completed_at = datetime.now()
+                db.commit()
+                return {"message": f"Workflow failed at step {step.step_name}", "error": str(e)}
+
+        step.progress = 100.0
+        step.status = "completed"
+        step.completed_at = datetime.now()
+        db.commit()
+
+    workflow.status = "completed"
+    workflow.completed_at = datetime.now()
+    db.commit()
+
+    logger.info(f"Workflow {workflow.name} executed successfully")
+    return {"message": "Workflow executed successfully", "workflow_id": workflow_id}
+
+
+@router.get("/workflows/{workflow_id}/steps")
+def get_workflow_steps(workflow_id: int, db: Session = Depends(get_db)):
+    workflow = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    
+    result = []
+    for step in workflow.steps:
+        step_dict = step.__dict__.copy()
+        step_dict.pop('_sa_instance_state', None)
+        if step_dict.get('output_data') and isinstance(step_dict['output_data'], str):
+            try:
+                step_dict['output_data'] = eval(step_dict['output_data'])
+            except:
+                step_dict['output_data'] = None
+        result.append(step_dict)
+    
+    return result
+
+
+@router.put("/workflows/{workflow_id}")
+def update_workflow(workflow_id: int, workflow_update: WorkflowUpdate, db: Session = Depends(get_db)):
+    workflow = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if workflow_update.status:
+        workflow.status = workflow_update.status
+
+    db.commit()
+    db.refresh(workflow)
+    return workflow
+
+
+@router.delete("/workflows/{workflow_id}")
+def delete_workflow(workflow_id: int, db: Session = Depends(get_db)):
+    workflow = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    db.delete(workflow)
+    db.commit()
+    return {"message": "Workflow deleted successfully"}
 
 
 @router.get("/reports/{report_path:path}")

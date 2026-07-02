@@ -59,3 +59,22 @@ coverage.xml
 
 # Embedded Python
 .python312/
+
+# Runtime data exports (generated, not source)
+3d_model_archive/EVOLUTION_AI/data/exports/model_*/
+
+# Old build artifacts
+3d_model_archive/EVOLUTION_AI/evo_build_dist_v6/
+
+# Demo output frames (generated)
+3d_model_archive/EVOLUTION_AI/output/
+
+# Script generated outputs
+3d_model_archive/EVOLUTION_AI/scripts/output/
+
+# Old demo builds
+3d_model_archive/EVOLUTION_AI/EVOLUTION_AI_DEMO/evolution_ai_demo_local/
+
+# NURBS sample files (large binary)
+*.igs
+*.stp

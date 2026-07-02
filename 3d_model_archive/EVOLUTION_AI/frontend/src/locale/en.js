@@ -337,7 +337,18 @@ export default {
     typeFull: 'Full Process',
     typeQuality: 'Quality Check',
     typeTopology: 'Topology Optimization',
-    typeHandover: 'Data Handover'
+    typeHandover: 'Data Handover',
+    alreadyRunning: 'Workflow is already running',
+    executing: 'Executing workflow...',
+    executeSuccess: 'Workflow executed successfully',
+    executeFailed: 'Workflow execution failed',
+    confirmDelete: 'Confirm delete workflow "{name}"?',
+    deleteSuccess: 'Workflow deleted successfully',
+    deleteFailed: 'Workflow deletion failed',
+    completedAt: 'Completed At',
+    steps: 'Workflow Steps',
+    noSteps: 'No steps found for this workflow',
+    startedAt: 'Started At'
   },
   quality: {
     title: 'Quality Check',

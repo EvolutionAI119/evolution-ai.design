@@ -111,6 +111,15 @@ export const workflowAPI = {
   },
   get(id) {
     return api.get(`/workflows/${id}`)
+  },
+  execute(id) {
+    return api.post(`/workflows/${id}/execute`)
+  },
+  steps(id) {
+    return api.get(`/workflows/${id}/steps`)
+  },
+  delete(id) {
+    return api.delete(`/workflows/${id}`)
   }
 }
 

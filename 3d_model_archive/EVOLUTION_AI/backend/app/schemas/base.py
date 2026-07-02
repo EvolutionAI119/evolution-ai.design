@@ -87,7 +87,7 @@ class WorkflowStepCreate(WorkflowStepBase):
 class WorkflowStepResponse(WorkflowStepBase):
     id: int
     workflow_id: int
-    model_id: int
+    model_id: Optional[int] = None
     status: str
     progress: float
     output_data: Optional[Dict] = None
