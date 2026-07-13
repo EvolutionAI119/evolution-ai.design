@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>GC极端值压力测试</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh}
+.topbar{height:48px;background:#161b22;border-bottom:1px solid #30363d;display:flex;align-items:center;padding:0 16px;gap:12px}
+.topbar h1{font-size:14px;color:#58a6ff;font-weight:600}
+.topbar .badge{font-size:11px;padding:2px 8px;border-radius:10px;background:#1f6feb33;color:#58a6ff}
+.main{display:flex;height:calc(100vh - 48px)}
+.viewport{flex:1;position:relative;background:#0a0e14}
+.viewport canvas{width:100%!important;height:100%!important}
+.panel{width:320px;background:#161b22;border-left:1px solid #30363d;overflow-y:auto;padding:12px}
+.sec{margin-bottom:16px}
+.sec-title{font-size:12px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #21262d}
+.row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.row label{font-size:12px;color:#8b949e;min-width:70px}
+.row input[type=range]{flex:1;accent-color:#58a6ff}
+.row .val{font-size:12px;color:#58a6ff;min-width:70px;text-align:right;font-family:monospace}
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.preset-btn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:8px 4px;border-radius:6px;cursor:pointer;font-size:11px;text-align:center;transition:all .15s}
+.preset-btn:hover{background:#30363d;border-color:#58a6ff}
+.preset-btn.active{background:#1f6feb33;border-color:#58a6ff;color:#58a6ff}
+.diag{background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:8px;font-size:11px;font-family:monospace;margin-bottom:8px}
+.diag .ok{color:#3fb950}
+.diag .warn{color:#d29922}
+.diag .err{color:#f85149}
+.snapshot-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.snap-card{background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:6px;text-align:center}
+.snap-card canvas{width:100%;aspect-ratio:16/10;border-radius:4px;background:#0a0e14}
+.snap-card .snap-label{font-size:10px;color:#8b949e;margin-top:4px}
+.run-btn{width:100%;background:#238636;border:none;color:#fff;padding:10px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:12px}
+.run-btn:hover{background:#2ea043}
+.log{background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:8px;max-height:200px;overflow-y:auto;font-size:11px;font-family:monospace;line-height:1.6}
+.log .t{color:#484f58}
+.log .ok{color:#3fb950}
+.log .warn{color:#d29922}
+.log .err{color:#f85149}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>GC 离地间隙极端值压力测试</h1>
+  <span class="badge">v1.0</span>
+  <span class="badge" id="fpsBadge">FPS: --</span>
+</div>
+<div class="main">
+  <div class="viewport" id="vp"></div>
+  <div class="panel">
+    <div class="sec">
+      <div class="sec-title">快速预设</div>
+      <div class="presets">
+        <button class="preset-btn" onclick="setGC(0.05)">超低 50mm<br>跑车风格</button>
+        <button class="preset-btn" onclick="setGC(0.10)">低 100mm<br>运动轿车</button>
+        <button class="preset-btn active" onclick="setGC(0.14)">标准 140mm<br>轿车基准</button>
+        <button class="preset-btn" onclick="setGC(0.20)">高 200mm<br>SUV</button>
+        <button class="preset-btn" onclick="setGC(0.28)">极高 280mm<br>越野</button>
+        <button class="preset-btn" onclick="setGC(0.35)">极限 350mm<br>压力测试</button>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">参数调节</div>
+      <div class="row"><label>离地间隙</label><input type="range" id="rGC" min="0.02" max="0.40" step="0.01" value="0.14"><span class="val" id="vGC">140mm</span></div>
+      <div class="row"><label>轮径</label><input type="range" id="rWR" min="0.24" max="0.50" step="0.01" value="0.335"><span class="val" id="vWR">335mm</span></div>
+      <div class="row"><label>车高</label><input type="range" id="rH" min="1.0" max="2.2" step="0.02" value="1.45"><span class="val" id="vH">1450mm</span></div>
+      <div class="row"><label>腰线高</label><input type="range" id="rWL" min="0.45" max="1.2" step="0.02" value="0.76"><span class="val" id="vWL">760mm</span></div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">实时诊断</div>
+      <div class="diag" id="diagBox">等待渲染...</div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">颠簸模拟</div>
+      <div class="row"><label>模式</label>
+        <select id="bumpMode" style="flex:1;background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 6px;border-radius:4px;font-size:12px">
+          <option value="smooth">平滑起伏</option>
+          <option value="bump">碎石路</option>
+          <option value="offroad">越野颠簸</option>
+          <option value="sine">正弦波</option>
+          <option value="step">阶梯跳变</option>
+        </select>
+      </div>
+      <div class="row"><label>振幅</label><input type="range" id="rBumpAmp" min="0.01" max="0.15" step="0.005" value="0.04"><span class="val" id="vBumpAmp">40mm</span></div>
+      <div class="row"><label>频率</label><input type="range" id="rBumpFreq" min="0.5" max="8" step="0.5" value="2"><span class="val" id="vBumpFreq">2.0Hz</span></div>
+      <div class="row"><label>基准GC</label><input type="range" id="rBumpBase" min="0.08" max="0.28" step="0.01" value="0.14"><span class="val" id="vBumpBase">140mm</span></div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="run-btn" id="btnBump" style="background:#1f6feb" onclick="toggleBump()">启动颠簸</button>
+      </div>
+      <div class="diag" id="bumpDiag" style="margin-top:6px;font-size:10px">未启动</div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">极端值快照</div>
+      <button class="run-btn" onclick="runSnapshotTest()">运行5级GC快照测试</button>
+      <div class="snapshot-grid" id="snapGrid"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">测试日志</div>
+      <div class="log" id="logBox"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+// === 参数 ===
+var P={L:4.84,W:1.83,H:1.45,WB:2.96,FO:0.92,RO:0.96,GC:0.14,WR:0.335,TW:1.59,AA:27,RA:38,CA:42,WL:0.76,shoulderW:0.86,archBulge:0.10};
+var GB={maxL:5.3,maxW:2.55,maxH:4.0,minGC:0.13};
+
+// === Three.js ===
+var vp=document.getElementById('vp');
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0a0e14);
+scene.fog=new THREE.Fog(0x0a0e14,30,60);
+var cam=new THREE.PerspectiveCamera(45,1,0.1,200);
+var ren=new THREE.WebGLRenderer({antialias:true});
+ren.shadowMap.enabled=true;
+vp.appendChild(ren.domElement);
+
+var cDist=10,cTh=-Math.PI/4,cPh=Math.PI/5;
+var car=null;
+
+// === 硬点推导 ===
+function deriveHP(){
+  var p=P;
+  var fwx=p.FO,rwx=p.L-p.RO;
+  var wcy=p.WR; // 车轮贴地：轮心在WR高度
+  var fwz=p.TW/2+p.WR*0.30;
+  var noseTipY=p.GC+p.H*0.42;
+  var hoodY=p.GC+p.H*0.48;
+  var waistY=p.GC+p.WL;
+  if(hoodY>=waistY) hoodY=waistY-p.H*0.04;
+  var aBaseX=fwx+p.WR*0.45;
+  var aTopY=p.H*0.94;
+  var aTopX=aBaseX+(aTopY-waistY)/Math.tan(p.AA*Math.PI/180);
+  var roofY=p.H;
+  var cBaseX=rwx-p.WR*1.20;
+  var cTopY=aTopY-p.H*0.02;
+  var diff=Math.max(p.H*0.08,cTopY-waistY);
+  var cTopX=cBaseX-diff/Math.tan(p.RA*Math.PI/180);
+  var roofPeakX=(aTopX+cTopX)/2;
+  var cBaseY=waistY+p.H*0.015;
+  var trunkY=waistY-p.H*0.05;
+  var bumperRY=p.GC+p.H*0.45;
+  return{fwx:fwx,rwx:rwx,wcy:wcy,fwz:fwz,noseTipY:noseTipY,hoodY:hoodY,waistY:waistY,
+    aBaseX:aBaseX,aTopY:aTopY,aTopX:aTopX,roofY:roofY,cBaseX:cBaseX,cTopY:cTopY,
+    cTopX:cTopX,roofPeakX:roofPeakX,cBaseY:cBaseY,trunkY:trunkY,bumperRY:bumperRY};
+}
+
+// === 辅助 ===
+function smoothstep(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+// === 侧面轮廓 ===
+function sideProfile(){
+  var p=P,h=deriveHP();
+  return[
+    [0,p.GC+0.03],[p.FO*0.15,p.GC+p.H*0.44],[p.FO*0.35,p.GC+p.H*0.46],
+    [h.aBaseX,h.hoodY],[h.aTopX,h.waistY],[h.roofPeakX,h.roofY],
+    [h.cTopX,h.cTopY],[h.cBaseX,h.cBaseY],[p.L-p.RO*0.6,h.trunkY],
+    [p.L-p.RO*0.3,p.GC+p.H*0.46],[p.L-p.RO*0.03,p.GC+p.H*0.44],[p.L,p.GC+p.H*0.45]
+  ];
+}
+function lerpProfile(kp,x){
+  if(x<=kp[0][0])return kp[0][1];
+  if(x>=kp[kp.length-1][0])return kp[kp.length-1][1];
+  for(var i=0;i<kp.length-1;i++){
+    if(x>=kp[i][0]&&x<=kp[i+1][0]){
+      var t=(x-kp[i][0])/(kp[i+1][0]-kp[i][0]+1e-6);
+      return lerp(kp[i][1],kp[i+1][1],t);
+    }
+  }
+  return kp[0][1];
+}
+function topWidthProfile(){
+  var p=P,h=deriveHP();
+  return[
+    [0,p.W*0.30],[p.FO*0.3,p.W*0.42],[h.aBaseX,p.W*0.48],
+    [h.aTopX,p.W*0.44],[h.roofPeakX,p.W*0.42],[h.cTopX,p.W*0.44],
+    [h.cBaseX,p.W*0.46],[p.L-p.RO*0.4,p.W*0.44],[p.L,p.W*0.35]
+  ];
+}
+
+// === 车身 ===
+function createBody(){
+  var p=P,h=deriveHP();
+  var nS=60,nC=40;
+  var verts=[],idx=[];
+  var sup=sideProfile(),twp=topWidthProfile();
+  for(var i=0;i<=nS;i++){
+    var t=i/nS;
+    var x=t*p.L;
+    var topY=lerpProfile(sup,x);
+    var hw=lerpProfile(twp,x)/2;
+    var botY=p.GC+0.03;
+    var sillY=p.GC+0.12;
+    var waistY=h.waistY;
+    var noseF=1-smoothstep(x/0.3);
+    var tailF=smoothstep((x-p.L+0.3)/0.3);
+    var cabinF=smoothstep((x-h.aTopX+0.15)/0.3)*(1-smoothstep((x-h.cTopX-0.15)/0.3));
+    var botHW=hw*(1-(noseF+tailF)*0.25)*0.58;
+    var sillHW=hw*0.88;var waistHW=hw;var shldHW=hw*0.96;var roofHW=hw*0.42;
+    if(cabinF>0.3){botHW=hw*0.50;sillHW=hw*0.80;waistHW=hw;shldHW=hw*0.72;roofHW=hw*0.40;}
+    for(var j=0;j<=nC;j++){
+      var s=j/nC;
+      var y=botY;
+      var z=-hw;
+      if(s<0.08){y=botY+(sillY-botY)*(s/0.08);z=-sillHW+(sillHW-botHW)*(s/0.08);}
+      else if(s<0.20){y=sillY+(waistY-sillY)*((s-0.08)/0.12);z=-sillHW+(waistHW-sillHW)*((s-0.08)/0.12);}
+      else if(s<0.35){y=waistY+(topY-(topY-waistY)*0.3-waistY)*((s-0.20)/0.15);z=-waistHW+(shldHW-waistHW)*((s-0.20)/0.15);}
+      else if(s<0.50){y=topY-(topY-waistY)*0.3+(topY-(topY-(topY-waistY)*0.3))*((s-0.35)/0.15);z=-shldHW+(roofHW-shldHW)*((s-0.35)/0.15);}
+      else if(s<0.65){var ms=(s-0.50)/0.15;y=topY-(topY-waistY)*0.3*(1-ms*0.5);z=-roofHW+(shldHW-roofHW)*ms;}
+      else if(s<0.80){y=waistY+(sillY-waistY)*((s-0.65)/0.15);z=-shldHW+(sillHW-shldHW)*((s-0.65)/0.15);}
+      else if(s<0.92){y=sillY+(botY-sillY)*((s-0.80)/0.12);z=-sillHW+(botHW-sillHW)*((s-0.80)/0.12);}
+      else{y=botY;z=-botHW+(hw-botHW)*((s-0.92)/0.08);}
+      // 轮拱
+      var nearFW=Math.abs(x-h.fwx),nearRW=Math.abs(x-h.rwx);
+      var isArch=(nearFW<p.WR*1.5)||(nearRW<p.WR*1.5);
+      if(isArch){
+        var archCX=nearFW<p.WR*1.5?h.fwx:h.rwx;
+        var archR=p.WR*1.2;
+        var archDist=Math.abs(x-archCX);
+        var archFade=1-smoothstep(archDist/archR);
+        var archTopY=h.wcy+p.WR*0.85;
+        var archBotY=p.GC+0.02;
+        var archInnerZ=p.TW/2-p.WR*0.1;
+        if(Math.abs(z)>archInnerZ&&y<archTopY&&y>archBotY){
+          var sideFade=smoothstep((Math.abs(z)-archInnerZ)/(hw*0.95-archInnerZ+0.01));
+          var depth=archFade*sideFade;
+          if(depth>0.005){
+            var relDist=archDist/archR;
+            var archCircleY=archBotY+Math.sqrt(Math.max(0,1-relDist*relDist))*(archTopY-archBotY);
+            if(y<archCircleY) y=y+(archCircleY-y)*depth*0.85;
+          }
+        }
+      }
+      if(y<=botY+0.005&&Math.abs(z)<hw*0.95) y=botY;
+      y=Math.max(p.GC+0.01,y);
+      verts.push(x,y,z);
+    }
+  }
+  for(var i=0;i<nS;i++){for(var j=0;j<nC;j++){var a=i*(nC+1)+j,b=a+1,c=a+nC+1,d=c+1;idx.push(a,c,b,b,c,d);}}
+  for(var vi=0;vi<verts.length;vi++){if(!isFinite(verts[vi]))verts[vi]=0;}
+  var geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.setIndex(idx);geo.computeVertexNormals();
+  return geo;
+}
+
+// === 车轮 ===
+function makeWheel(x,z){
+  var p=P,r=p.WR;
+  var g=new THREE.Group();
+  var spin=new THREE.Group();
+  var tMat=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.95});
+  var rMat=new THREE.MeshPhysicalMaterial({color:0xd0d0d0,metalness:0.85,roughness:0.15});
+  var tire=new THREE.Mesh(new THREE.TorusGeometry(r*0.97,r*0.28,24,48),tMat);
+  tire.rotation.y=Math.PI/2;spin.add(tire);
+  var rimR=r*0.65;
+  var rim=new THREE.Mesh(new THREE.CylinderGeometry(rimR,rimR,0.06,36),rMat);
+  rim.rotation.x=Math.PI/2;spin.add(rim);
+  g.add(spin);
+  // 车轮贴地：轮心在Y=r处，轮底在Y=0
+  g.position.set(x,r,z);
+  return g;
+}
+
+// === 地面 ===
+function createGround(){
+  var g=new THREE.Group();
+  var geo=new THREE.PlaneGeometry(60,60);
+  var mat=new THREE.MeshStandardMaterial({color:0x1a1a2e,roughness:0.6});
+  var mesh=new THREE.Mesh(geo,mat);
+  mesh.rotation.x=-Math.PI/2;mesh.position.y=-0.01;mesh.receiveShadow=true;g.add(mesh);
+  g.add(new THREE.GridHelper(60,60,0x333355,0x222244));
+  // Y=0参考线（红色）
+  var lineGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-10,0,0),new THREE.Vector3(10,0,0)]);
+  var lineMat=new THREE.LineBasicMaterial({color:0xf85149,linewidth:2});
+  g.add(new THREE.Line(lineGeo,lineMat));
+  // GC参考线（黄色，显示当前GC高度）
+  return g;
+}
+
+function createGCLine(){
+  var p=P;
+  var pts=[new THREE.Vector3(-8,p.GC,0),new THREE.Vector3(8,p.GC,0)];
+  var geo=new THREE.BufferGeometry().setFromPoints(pts);
+  var mat=new THREE.LineBasicMaterial({color:0xd29922});
+  return new THREE.Line(geo,mat);
+}
+
+// === 灯光 ===
+function createLights(){
+  var g=new THREE.Group();
+  var amb=new THREE.AmbientLight(0x404060,0.5);g.add(amb);
+  var sun=new THREE.DirectionalLight(0xffffff,1.0);
+  sun.position.set(5,10,5);sun.castShadow=true;g.add(sun);
+  return g;
+}
+
+// === 构建整车 ===
+function buildCar(){
+  var g=new THREE.Group();
+  var bodyMat=new THREE.MeshPhysicalMaterial({color:0x3a7bd5,metalness:0.6,roughness:0.3,clearcoat:0.8});
+  var body=new THREE.Mesh(createBody(),bodyMat);
+  body.castShadow=true;body.receiveShadow=true;g.add(body);
+  var h=deriveHP();
+  g.add(makeWheel(h.fwx,h.fwz));
+  g.add(makeWheel(h.fwx,-h.fwz));
+  g.add(makeWheel(h.rwx,h.fwz));
+  g.add(makeWheel(h.rwx,-h.fwz));
+  g.add(createLights());
+  g.position.set(-P.L/2,0,0);
+  return g;
+}
+
+// === 相机 ===
+function updateCam(){
+  var cx=car?car.position.x+P.L/2:P.L/2;
+  var cy=P.GC+P.H/2;
+  cam.position.set(cDist*Math.sin(cPh)*Math.cos(cTh)+cx,cy+cDist*Math.cos(cPh),cDist*Math.sin(cPh)*Math.sin(cTh));
+  cam.lookAt(cx,cy,0);
+}
+
+// === 重建 ===
+var gcLine=null;
+function rebuild(){
+  if(car)scene.remove(car);
+  if(gcLine)scene.remove(gcLine);
+  car=buildCar();scene.add(car);
+  gcLine=createGCLine();scene.add(gcLine);
+  updateCam();
+  updateDiag();
+}
+
+// === 诊断 ===
+function updateDiag(){
+  var p=P,h=deriveHP();
+  var botY=p.GC+0.03;
+  var wheelTop=p.WR*2;
+  var archTopY=h.wcy+p.WR*0.85;
+  var archBotY=p.GC+0.02;
+  var bodyAboveWheel=botY>wheelTop;
+  var archCoversWheel=archTopY>=wheelTop;
+  var gcBelowMin=p.GC<GB.minGC;
+  var bodyInWheel=botY<p.WR; // 车身底部低于轮心
+
+  var html='';
+  html+='<div>车身底面 Y = <span class="'+(bodyInWheel?'err':'ok')+'">'+(botY*1000).toFixed(0)+'mm</span></div>';
+  html+='<div>轮心高度 Y = <span class="ok">'+(p.WR*1000).toFixed(0)+'mm</span></div>';
+  html+='<div>轮顶高度 Y = <span class="ok">'+(wheelTop*1000).toFixed(0)+'mm</span></div>';
+  html+='<div>轮拱顶 Y = <span class="'+(archCoversWheel?'ok':'warn')+'">'+(archTopY*1000).toFixed(0)+'mm</span></div>';
+  html+='<div>轮拱底 Y = <span class="ok">'+(archBotY*1000).toFixed(0)+'mm</span></div>';
+  html+='<div style="margin-top:6px;padding-top:6px;border-top:1px solid #21262d">';
+  html+='<div>GC = <span class="'+(gcBelowMin?'err':'ok')+'">'+(p.GC*1000).toFixed(0)+'mm</span> '+(gcBelowMin?'(低于国标130mm!)':'')+'</div>';
+  html+='<div>车身-轮心 = <span class="'+(bodyInWheel?'err':'ok')+'">'+((botY-p.WR)*1000).toFixed(0)+'mm</span> '+(bodyInWheel?'(车身侵入轮区!)':'')+'</div>';
+  html+='<div>轮拱-轮顶 = <span class="'+(archCoversWheel?'ok':'warn')+'">'+((archTopY-wheelTop)*1000).toFixed(0)+'mm</span> '+(archCoversWheel?'':'(轮拱未覆盖轮顶)')+'</div>';
+  html+='</div>';
+  document.getElementById('diagBox').innerHTML=html;
+}
+
+// === 日志 ===
+function addLog(msg,type){
+  var box=document.getElementById('logBox');
+  var now=new Date();
+  var ts=now.toLocaleTimeString();
+  box.innerHTML+='<div><span class="t">['+ts+']</span> <span class="'+type+'">'+msg+'</span></div>';
+  box.scrollTop=box.scrollHeight;
+}
+
+// === UI绑定 ===
+function setupUI(){
+  var sliders=[
+    ['rGC','GC','mm',1000],['rWR','WR','mm',1000],['rH','H','mm',1000],['rWL','WL','mm',1000]
+  ];
+  sliders.forEach(function(s){
+    var el=document.getElementById(s[0]);
+    el.addEventListener('input',function(){
+      P[s[1]]=parseFloat(this.value);
+      document.getElementById('v'+s[1]).textContent=(P[s[1]]*s[3]).toFixed(0)+s[2];
+      rebuild();
+    });
+  });
+}
+
+function setGC(v){
+  P.GC=v;
+  document.getElementById('rGC').value=v;
+  document.getElementById('vGC').textContent=(v*1000).toFixed(0)+'mm';
+  // 更新预设按钮状态
+  document.querySelectorAll('.preset-btn').forEach(function(b){b.classList.remove('active');});
+  rebuild();
+  addLog('GC设置为 '+(v*1000).toFixed(0)+'mm','ok');
+}
+
+// === 快照测试 ===
+function runSnapshotTest(){
+  var grid=document.getElementById('snapGrid');
+  grid.innerHTML='';
+  var testValues=[0.05,0.10,0.14,0.20,0.28,0.35];
+  addLog('开始快照测试：'+testValues.map(function(v){return v*1000+'mm';}).join(', '),'ok');
+
+  var oldGC=P.GC;
+  testValues.forEach(function(gc,idx){
+    P.GC=gc;
+    if(car)scene.remove(car);
+    if(gcLine)scene.remove(gcLine);
+    car=buildCar();scene.add(car);
+    gcLine=createGCLine();scene.add(gcLine);
+    updateCam();
+
+    // 渲染快照
+    ren.render(scene,cam);
+    var dataURL=ren.domElement.toDataURL('image/png');
+
+    // 创建快照卡片
+    var card=document.createElement('div');
+    card.className='snap-card';
+    var img=document.createElement('img');
+    img.src=dataURL;
+    img.style.cssText='width:100%;border-radius:4px;background:#0a0e14';
+    var label=document.createElement('div');
+    label.className='snap-label';
+    var h=deriveHP();
+    var botY=P.GC+0.03;
+    var status=botY<P.WR?'ERR:车身侵入轮区':P.GC<GB.minGC?'WARN:低于国标':'OK';
+    var statusClass=botY<P.WR?'err':P.GC<GB.minGC?'warn':'ok';
+    label.innerHTML='GC='+(gc*1000).toFixed(0)+'mm <span class="'+statusClass+'">'+status+'</span>';
+    card.appendChild(img);
+    card.appendChild(label);
+    grid.appendChild(card);
+
+    addLog('GC='+(gc*1000).toFixed(0)+'mm → 车身底='+(botY*1000).toFixed(0)+'mm, 轮心='+(P.WR*1000).toFixed(0)+'mm, '+status,statusClass==='ok'?'ok':statusClass==='warn'?'warn':'err');
+  });
+
+  // 恢复原始GC
+  P.GC=oldGC;
+  if(car)scene.remove(car);
+  if(gcLine)scene.remove(gcLine);
+  car=buildCar();scene.add(car);
+  gcLine=createGCLine();scene.add(gcLine);
+  updateCam();
+  addLog('快照测试完成，已恢复GC='+(oldGC*1000).toFixed(0)+'mm','ok');
+}
+
+// === 颠簸模拟 ===
+var bumpActive=false,bumpStart=0,bumpPrevGC=0;
+var bumpHistory=[]; // GC历史记录，用于绘制波形
+
+function toggleBump(){
+  bumpActive=!bumpActive;
+  var btn=document.getElementById('btnBump');
+  if(bumpActive){
+    bumpStart=performance.now();
+    bumpPrevGC=P.GC;
+    bumpHistory=[];
+    btn.textContent='停止颠簸';
+    btn.style.background='#da3633';
+    addLog('颠簸模拟启动 ['+document.getElementById('bumpMode').value+']','ok');
+  }else{
+    // 恢复基准GC
+    var base=parseFloat(document.getElementById('rBumpBase').value);
+    P.GC=base;
+    if(car) car.position.y=0;
+    document.getElementById('rGC').value=base;
+    document.getElementById('vGC').textContent=(base*1000).toFixed(0)+'mm';
+    rebuild();
+    btn.textContent='启动颠簸';
+    btn.style.background='#1f6feb';
+    document.getElementById('bumpDiag').innerHTML='已停止';
+    addLog('颠簸模拟停止，GC恢复='+(base*1000).toFixed(0)+'mm','warn');
+  }
+}
+
+// 颠簸波形生成器
+function bumpWave(t,mode,freq,amp){
+  var phase=t*freq*Math.PI*2;
+  switch(mode){
+    case 'smooth':
+      // 低频正弦 + 微量二次谐波
+      return amp*(Math.sin(phase)+0.2*Math.sin(phase*2.01+0.5));
+    case 'bump':
+      // 碎石路：多频叠加 + 随机扰动
+      return amp*(0.5*Math.sin(phase)+0.3*Math.sin(phase*3.7+1.2)+0.2*Math.sin(phase*7.3+2.8)+0.15*(Math.sin(phase*13.1)*Math.cos(phase*5.3)));
+    case 'offroad':
+      // 越野：大幅低频 + 冲击脉冲
+      var base=amp*0.6*Math.sin(phase*0.7);
+      var pulse=Math.sin(phase*2.3)>0.85?amp*1.2*Math.sign(Math.sin(phase*4.1)):0;
+      var rock=amp*0.25*Math.sin(phase*5.7+0.8);
+      return base+pulse+rock;
+    case 'sine':
+      // 纯正弦
+      return amp*Math.sin(phase);
+    case 'step':
+      // 阶梯跳变
+      var cycle=t*freq;
+      var frac=cycle%1;
+      if(frac<0.25) return amp;
+      if(frac<0.5) return 0;
+      if(frac<0.75) return -amp;
+      return 0;
+    default:
+      return amp*Math.sin(phase);
+  }
+}
+
+function updateBump(){
+  if(!bumpActive)return;
+  var now=performance.now();
+  var t=(now-bumpStart)/1000; // 秒
+  var mode=document.getElementById('bumpMode').value;
+  var amp=parseFloat(document.getElementById('rBumpAmp').value);
+  var freq=parseFloat(document.getElementById('rBumpFreq').value);
+  var base=parseFloat(document.getElementById('rBumpBase').value);
+
+  var offset=bumpWave(t,mode,freq,amp);
+  var newGC=Math.max(0.02,Math.min(0.40,base+offset));
+
+  // 轻量更新：只移动车身Y偏移，不重建几何体
+  P.GC=newGC;
+  if(car){
+    // 车身组Y偏移 = GC偏移量（相对于基准）
+    // 几何体中已包含base GC，这里只补偿偏移
+    car.position.y=offset;
+  }
+  if(gcLine){
+    scene.remove(gcLine);
+    gcLine=createGCLine();
+    scene.add(gcLine);
+  }
+  updateCam();
+
+  document.getElementById('rGC').value=newGC;
+  document.getElementById('vGC').textContent=(newGC*1000).toFixed(0)+'mm';
+
+  // 记录历史
+  bumpHistory.push({t:t,gc:newGC,offset:offset});
+  if(bumpHistory.length>300) bumpHistory.shift();
+
+  // 更新诊断（降频：每5帧更新一次）
+  if(frameCount%5===0){
+    var diag=document.getElementById('bumpDiag');
+    var minGC=base-amp,maxGC=base+amp;
+    var dir=offset>0?'↑上升':offset<0?'↓下降':'—水平';
+    var dirClass=offset>0?'ok':offset<0?'err':'warn';
+    diag.innerHTML=
+      '<div>时间: '+t.toFixed(1)+'s</div>'+
+      '<div>偏移: <span class="'+dirClass+'">'+(offset*1000).toFixed(0)+'mm '+dir+'</span></div>'+
+      '<div>当前GC: '+(newGC*1000).toFixed(0)+'mm</div>'+
+      '<div>范围: '+(minGC*1000).toFixed(0)+'~'+(maxGC*1000).toFixed(0)+'mm</div>'+
+      '<div style="margin-top:4px">'+drawMiniWave()+'</div>';
+  }
+}
+
+// 迷你波形图（ASCII art风格用div实现）
+function drawMiniWave(){
+  if(bumpHistory.length<2)return '';
+  var W=60,H=5;
+  var chars='█▇▆▅▄▃▂▁ ';
+  var rows=[];
+  var recent=bumpHistory.slice(-W);
+  var minV=Infinity,maxV=-Infinity;
+  recent.forEach(function(d){
+    if(d.offset<minV)minV=d.offset;
+    if(d.offset>maxV)maxV=d.offset;
+  });
+  var range=Math.max(maxV-minV,0.001);
+  for(var r=0;r<H;r++){
+    var line='';
+    var threshold=1-r/(H-1);
+    for(var c=0;c<recent.length;c++){
+      var norm=(recent[c].offset-minV)/range;
+      line+=norm>=threshold-0.15&&norm<=threshold+0.15?'█':'░';
+    }
+    rows.push(line);
+  }
+  return '<pre style="margin:0;font-size:8px;line-height:1;color:#58a6ff">'+rows.join('\n')+'</pre>';
+}
+
+// 颠簸滑块绑定
+document.getElementById('rBumpAmp').addEventListener('input',function(){
+  document.getElementById('vBumpAmp').textContent=(parseFloat(this.value)*1000).toFixed(0)+'mm';
+});
+document.getElementById('rBumpFreq').addEventListener('input',function(){
+  document.getElementById('vBumpFreq').textContent=parseFloat(this.value).toFixed(1)+'Hz';
+});
+document.getElementById('rBumpBase').addEventListener('input',function(){
+  document.getElementById('vBumpBase').textContent=(parseFloat(this.value)*1000).toFixed(0)+'mm';
+});
+
+// === 鼠标控制 ===
+var mDown=false,mPrev={x:0,y:0};
+vp.addEventListener('mousedown',function(e){mDown=true;mPrev={x:e.clientX,y:e.clientY};});
+window.addEventListener('mouseup',function(){mDown=false;});
+vp.addEventListener('mousemove',function(e){
+  if(!mDown)return;
+  cTh-=(e.clientX-mPrev.x)*0.005;
+  cPh-=(e.clientY-mPrev.y)*0.005;
+  cPh=Math.max(0.15,Math.min(Math.PI-0.15,cPh));
+  mPrev={x:e.clientX,y:e.clientY};
+  updateCam();
+});
+vp.addEventListener('wheel',function(e){
+  cDist-=e.deltaY*0.01;
+  cDist=Math.max(3,Math.min(25,cDist));
+  updateCam();
+});
+
+// === 初始化 ===
+function init(){
+  var w=vp.clientWidth||800,h=vp.clientHeight||600;
+  cam.aspect=w/h;cam.updateProjectionMatrix();
+  ren.setSize(w,h);ren.setPixelRatio(window.devicePixelRatio);
+  scene.add(createGround());
+  rebuild();
+  setupUI();
+  addLog('系统初始化完成','ok');
+  addLog('GC范围: 20mm~400mm (滑块), 国标最低130mm','ok');
+  addLog('红色线=地面(Y=0), 黄色线=当前GC高度','ok');
+  animate();
+}
+
+window.addEventListener('resize',function(){
+  var w=vp.clientWidth||800,h=vp.clientHeight||600;
+  cam.aspect=w/h;cam.updateProjectionMatrix();
+  ren.setSize(w,h);
+});
+
+var frameCount=0,lastFpsTime=Date.now();
+function animate(){
+  requestAnimationFrame(animate);
+  updateBump();
+  ren.render(scene,cam);
+  frameCount++;
+  var now=Date.now();
+  if(now-lastFpsTime>=1000){
+    document.getElementById('fpsBadge').textContent='FPS: '+frameCount;
+    frameCount=0;lastFpsTime=now;
+  }
+}
+
+requestAnimationFrame(function(){requestAnimationFrame(function(){init();});});
+</script>
+</body>
+</html>
