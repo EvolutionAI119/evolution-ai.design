@@ -1,457 +1,650 @@
 <template>
   <div ref="containerRef" class="car-3d-container">
-    <div class="controls-overlay">
-      <div class="control-btn" @click="resetView" title="重置视角">
-        <el-icon><RefreshRight /></el-icon>
-      </div>
-      <div class="control-btn" @click="toggleAutoRotate" :class="{ active: autoRotate }" title="自动旋转">
-        <el-icon><Refresh /></el-icon>
-      </div>
-      <div class="control-btn" @click="showWireframe = !showWireframe" :class="{ active: showWireframe }" title="显示网格">
-        <el-icon><Grid /></el-icon>
+    <div class="view-controls">
+      <div
+        v-for="view in viewAngles"
+        :key="view.key"
+        class="view-btn"
+        :class="{ active: currentView === view.key }"
+        @click="setViewAngle(view.key)"
+        :title="view.label"
+      >
+        {{ view.icon }}
       </div>
     </div>
-    <div class="info-overlay">
-      <span>拖拽旋转 | 滚轮缩放 | 右键平移</span>
+    <div class="control-buttons">
+      <div class="ctrl-btn" @click="resetView" title="重置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+          <path d="M3 3v5h5"/>
+        </svg>
+      </div>
+      <div class="ctrl-btn" @click="toggleWireframe" :class="{ active: wireframeMode }" title="线框">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 3v18M3 15h18M15 3v18"/>
+        </svg>
+      </div>
+      <div class="ctrl-btn" @click="toggleAutoRotate" :class="{ active: autoRotate }" title="自动旋转">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+        </svg>
+      </div>
+      <div class="ctrl-btn" @click="toggleFullscreen" title="全屏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span class="view-label">{{ currentViewLabel }}</span>
+      <span class="status-item">DAYLIGHT</span>
+      <span class="status-item">PERSPECTIVE</span>
     </div>
   </div>
 </template>
 
-<script setup>import { ref, onMounted, onUnmounted, watch } from 'vue';
-import * as THREE from 'three';
-import { RefreshRight, Refresh, Grid } from '@element-plus/icons-vue';
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import * as THREE from 'three'
+
 const props = defineProps({
- carParams: { type: Object, required: true },
- componentParams: { type: Object, required: true },
- angleParams: { type: Object, required: true },
- carType: { type: String, default: 'sedan' },
- carColor: { type: String, default: '#00d9ff' }
-});
-const containerRef = ref(null);
-const showWireframe = ref(false);
-const autoRotate = ref(true);
-let scene, camera, renderer, carGroup;
-let animationId = null;
-let isDragging = false;
-let previousMousePosition = { x: 0, y: 0 };
-let targetRotation = { x: 0.5, y: 1.0 };
-let currentRotation = { x: 0.5, y: 1.0 };
-let targetDistance = 9;
-let currentDistance = 9;
-let targetPosition = { x: 0, y: 0 };
-let currentPosition = { x: 0, y: 0 };
-const colors = {
- sedan: '#00d9ff',
- suv: '#8b5cf6',
- coupe: '#ff6b6b',
- mpv: '#00ff88',
- sport: '#ffc107',
- pickup: '#e6a800'
-};
-const createCarGeometry = () => {
- const L = props.carParams.overall_length / 1000;
- const W = props.carParams.overall_width / 1000;
- const H = props.carParams.overall_height / 1000;
- const WB = props.carParams.wheel_base / 1000;
- const track = props.carParams.track_width / 1000;
- const hoodLen = props.componentParams.hood_length / 1000;
- const roofH = props.componentParams.roof_height / 1000;
- const wheelD = props.componentParams.wheel_diameter / 1000;
- const gc = props.componentParams.ground_clearance / 1000;
- const wAngle = props.angleParams.windshield_angle;
- const rAngle = props.angleParams.rear_window_angle;
- const carGroup = new THREE.Group();
- const bodyColor = new THREE.Color(colors[props.carType] || props.carColor);
- const metallicMaterial = new THREE.MeshStandardMaterial({
- color: bodyColor,
- metalness: 0.3,
- roughness: 0.2,
- envMapIntensity: 1.0
- });
- const glassMaterial = new THREE.MeshStandardMaterial({
- color: 0x64c8ff,
- metalness: 0.1,
- roughness: 0.1,
- transparent: true,
- opacity: 0.3
- });
- const wheelMaterial = new THREE.MeshStandardMaterial({
- color: 0x1a1a2e,
- metalness: 0.8,
- roughness: 0.4
- });
- const rimMaterial = new THREE.MeshStandardMaterial({
- color: 0x888888,
- metalness: 0.9,
- roughness: 0.3
- });
- const lightMaterial = new THREE.MeshStandardMaterial({
- color: 0xffffff,
- emissive: 0xffff00,
- emissiveIntensity: 1.5,
- metalness: 0.1,
- roughness: 0.1
- });
- const redLightMaterial = new THREE.MeshStandardMaterial({
- color: 0xff0000,
- emissive: 0xff0000,
- emissiveIntensity: 1.0,
- metalness: 0.1,
- roughness: 0.1
- });
- const frontWheelX = -WB / 2;
- const rearWheelX = WB / 2;
- const halfTrack = track / 2;
- // 车身基础形状
- let bodyGeometry;
- if (props.carType === 'sedan') {
- bodyGeometry = new THREE.CapsuleGeometry(W / 2 - 0.05, L - 0.4, 4, 16);
- bodyGeometry.rotateZ(Math.PI / 2);
- }
- else if (props.carType === 'suv') {
- bodyGeometry = new THREE.CapsuleGeometry(W / 2 - 0.08, L - 0.5, 4, 16);
- bodyGeometry.rotateZ(Math.PI / 2);
- }
- else if (props.carType === 'coupe') {
- const shape = new THREE.Shape();
- const roofCurve = 0.3;
- shape.moveTo(-L / 2, -W / 2 + 0.1);
- shape.bezierCurveTo(-L / 2, -W / 2 + 0.1, -L / 4, -W / 2 + 0.1, 0, -W / 2 + roofCurve);
- shape.bezierCurveTo(L / 4, -W / 2 + roofCurve, L / 2, -W / 2 + 0.2, L / 2, -W / 2 + 0.2);
- shape.lineTo(L / 2, W / 2 - 0.1);
- shape.lineTo(-L / 2, W / 2 - 0.1);
- shape.closePath();
- const extrudeSettings = { depth: H * 0.6, bevelEnabled: true, bevelSegments: 3, steps: 2, bevelSize: 0.05, bevelThickness: 0.05 };
- bodyGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
- }
- else if (props.carType === 'mpv') {
- bodyGeometry = new THREE.BoxGeometry(L - 0.3, W - 0.15, H * 0.7);
- }
- else if (props.carType === 'sport') {
- const shape = new THREE.Shape();
- shape.moveTo(-L / 2, -W / 2 + 0.05);
- shape.bezierCurveTo(-L / 2 + 0.2, -W / 2 + 0.05, -L / 4, -W / 2 + 0.4, 0, -W / 2 + 0.35);
- shape.bezierCurveTo(L / 4, -W / 2 + 0.35, L / 2 - 0.2, -W / 2 + 0.1, L / 2, -W / 2 + 0.1);
- shape.lineTo(L / 2, W / 2 - 0.05);
- shape.lineTo(-L / 2, W / 2 - 0.05);
- shape.closePath();
- const extrudeSettings = { depth: H * 0.5, bevelEnabled: true, bevelSegments: 3, steps: 2, bevelSize: 0.05, bevelThickness: 0.05 };
- bodyGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
- }
- else {
- bodyGeometry = new THREE.BoxGeometry(L - 0.4, W - 0.15, H * 0.6);
- }
- const body = new THREE.Mesh(bodyGeometry, metallicMaterial);
- body.position.y = gc + H * 0.35;
- carGroup.add(body);
- // 车顶
- let roofHeight = props.carType === 'suv' ? H * 0.25 : props.carType === 'mpv' ? H * 0.3 : H * 0.18;
- let roofWidth = props.carType === 'mpv' ? W - 0.18 : W - 0.1;
- let roofLength = props.carType === 'pickup' ? WB / 2 - 0.3 : L * 0.45;
- const roofGeometry = new THREE.BoxGeometry(roofLength, roofWidth, roofHeight);
- const roof = new THREE.Mesh(roofGeometry, metallicMaterial);
- roof.position.set(0, gc + H * 0.55, 0);
- carGroup.add(roof);
- // 发动机盖
- const hoodGeometry = new THREE.CapsuleGeometry(W / 2 - 0.15, hoodLen * 0.8, 2, 8);
- hoodGeometry.rotateZ(Math.PI / 2);
- const hood = new THREE.Mesh(hoodGeometry, metallicMaterial);
- hood.position.set(-L / 2 + hoodLen * 0.45, gc + H * 0.4, 0);
- hood.rotation.x = -wAngle * Math.PI / 180 * 0.3;
- carGroup.add(hood);
- // 挡风玻璃
- const windShieldGeometry = new THREE.BoxGeometry(0.03, W - 0.12, H * 0.25);
- const windShield = new THREE.Mesh(windShieldGeometry, glassMaterial);
- const windAngleRad = wAngle * Math.PI / 180;
- windShield.position.set(-hoodLen * 0.5 + 0.1, gc + H * 0.5, 0);
- windShield.rotation.x = -Math.PI / 2 + windAngleRad;
- carGroup.add(windShield);
- // 后窗
- const rearWindowGeometry = new THREE.BoxGeometry(0.03, W - 0.12, H * 0.2);
- const rearWindow = new THREE.Mesh(rearWindowGeometry, glassMaterial);
- const rearAngleRad = rAngle * Math.PI / 180;
- rearWindow.position.set(L / 2 - 0.6, gc + H * 0.5, 0);
- rearWindow.rotation.x = Math.PI / 2 - rearAngleRad;
- carGroup.add(rearWindow);
- // 车门
- const doorHeight = props.carType === 'suv' ? H * 0.45 : props.carType === 'mpv' ? H * 0.45 : H * 0.35;
- const doorWidth = W - 0.08;
- const doorFront = new THREE.Mesh(new THREE.BoxGeometry(hoodLen * 0.5, doorWidth, doorHeight), metallicMaterial);
- doorFront.position.set(-WB / 4, gc + H * 0.35, W / 2 - 0.04);
- carGroup.add(doorFront);
- const doorFrontInner = new THREE.Mesh(new THREE.BoxGeometry(hoodLen * 0.5, doorWidth, doorHeight), glassMaterial);
- doorFrontInner.position.set(-WB / 4, gc + H * 0.45, W / 2 - 0.035);
- carGroup.add(doorFrontInner);
- const doorRear = new THREE.Mesh(new THREE.BoxGeometry(hoodLen * 0.45, doorWidth, doorHeight), metallicMaterial);
- doorRear.position.set(WB / 4, gc + H * 0.35, W / 2 - 0.04);
- carGroup.add(doorRear);
- const doorRearInner = new THREE.Mesh(new THREE.BoxGeometry(hoodLen * 0.45, doorWidth, doorHeight), glassMaterial);
- doorRearInner.position.set(WB / 4, gc + H * 0.45, W / 2 - 0.035);
- carGroup.add(doorRearInner);
- // 左侧车门镜像
- const doorFrontL = doorFront.clone();
- doorFrontL.position.z = -W / 2 + 0.04;
- carGroup.add(doorFrontL);
- const doorFrontInnerL = doorFrontInner.clone();
- doorFrontInnerL.position.z = -W / 2 + 0.035;
- carGroup.add(doorFrontInnerL);
- const doorRearL = doorRear.clone();
- doorRearL.position.z = -W / 2 + 0.04;
- carGroup.add(doorRearL);
- const doorRearInnerL = doorRearInner.clone();
- doorRearInnerL.position.z = -W / 2 + 0.035;
- carGroup.add(doorRearInnerL);
- // 车轮
- const createWheel = (x, z) => {
- const wheelGroup = new THREE.Group();
- const tireGeometry = new THREE.CylinderGeometry(wheelD / 2 - 0.03, wheelD / 2 - 0.03, 0.35, 32);
- tireGeometry.rotateX(Math.PI / 2);
- const tire = new THREE.Mesh(tireGeometry, wheelMaterial);
- wheelGroup.add(tire);
- const rimGeometry = new THREE.CylinderGeometry(wheelD / 4, wheelD / 4, 0.3, 12);
- rimGeometry.rotateX(Math.PI / 2);
- const rim = new THREE.Mesh(rimGeometry, rimMaterial);
- wheelGroup.add(rim);
- const spokeGeometry = new THREE.BoxGeometry(wheelD / 2 - 0.05, 0.02, 0.32);
- for (let i = 0; i < 5; i++) {
- const spoke = new THREE.Mesh(spokeGeometry, rimMaterial);
- spoke.rotation.y = (i * Math.PI * 2) / 5;
- wheelGroup.add(spoke);
- }
- wheelGroup.position.set(x, gc + wheelD / 2 - 0.05, z);
- return wheelGroup;
- };
- carGroup.add(createWheel(frontWheelX, halfTrack));
- carGroup.add(createWheel(frontWheelX, -halfTrack));
- carGroup.add(createWheel(rearWheelX, halfTrack));
- carGroup.add(createWheel(rearWheelX, -halfTrack));
- // 前灯
- const headlightGeometry = new THREE.BoxGeometry(0.3, 0.1, 0.08);
- const headlightL = new THREE.Mesh(headlightGeometry, lightMaterial);
- headlightL.position.set(-L / 2 + 0.15, gc + H * 0.55, W / 2 - 0.08);
- carGroup.add(headlightL);
- const headlightR = headlightL.clone();
- headlightR.position.z = -W / 2 + 0.08;
- carGroup.add(headlightR);
- // 尾灯
- const taillightGeometry = new THREE.BoxGeometry(0.25, 0.12, 0.06);
- const taillightL = new THREE.Mesh(taillightGeometry, redLightMaterial);
- taillightL.position.set(L / 2 - 0.15, gc + H * 0.5, W / 2 - 0.08);
- carGroup.add(taillightL);
- const taillightR = taillightL.clone();
- taillightR.position.z = -W / 2 + 0.08;
- carGroup.add(taillightR);
- // 保险杠
- const bumperGeometry = new THREE.BoxGeometry(L * 0.95, 0.15, 0.08);
- const frontBumper = new THREE.Mesh(bumperGeometry, metallicMaterial);
- frontBumper.position.set(-L / 2 + 0.3, gc + H * 0.15, 0);
- carGroup.add(frontBumper);
- const rearBumper = new THREE.Mesh(bumperGeometry, metallicMaterial);
- rearBumper.position.set(L / 2 - 0.3, gc + H * 0.15, 0);
- carGroup.add(rearBumper);
- // 后视镜
- const mirrorGeometry = new THREE.SphereGeometry(0.08, 16, 16);
- const mirrorL = new THREE.Mesh(mirrorGeometry, metallicMaterial);
- mirrorL.position.set(-WB / 4, gc + H * 0.55, W / 2 + 0.08);
- carGroup.add(mirrorL);
- const mirrorR = mirrorL.clone();
- mirrorR.position.z = -W / 2 - 0.08;
- carGroup.add(mirrorR);
- // 皮卡货斗
- if (props.carType === 'pickup') {
- const bedGeometry = new THREE.BoxGeometry(L * 0.35, W - 0.2, H * 0.35);
- const bed = new THREE.Mesh(bedGeometry, metallicMaterial);
- bed.position.set(L / 2 - 0.5, gc + H * 0.25, 0);
- carGroup.add(bed);
- }
- // 跑车尾翼
- if (props.carType === 'sport') {
- const wingGeometry = new THREE.BoxGeometry(0.6, W - 0.2, 0.05);
- const wing = new THREE.Mesh(wingGeometry, metallicMaterial);
- wing.position.set(L / 2 - 0.4, gc + H * 0.65, 0);
- carGroup.add(wing);
- }
- return carGroup;
-};
+  carParams: {
+    type: Object,
+    required: true
+  },
+  carType: {
+    type: String,
+    default: 'sedan'
+  },
+  carColor: {
+    type: String,
+    default: '#4ade80'
+  },
+  viewAngle: {
+    type: String,
+    default: 'perspective'
+  },
+  wireframe: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['update:viewAngle', 'update:wireframe'])
+
+const containerRef = ref(null)
+const wireframeMode = ref(props.wireframe)
+const autoRotate = ref(true)
+const currentView = ref(props.viewAngle)
+
+const viewAngles = [
+  { key: 'front', label: 'Front', icon: 'F' },
+  { key: 'rear', label: 'Rear', icon: 'R' },
+  { key: 'left', label: 'Left', icon: 'L' },
+  { key: 'right', label: 'Right', icon: 'R' },
+  { key: 'top', label: 'Top', icon: 'T' },
+  { key: 'bottom', label: 'Bottom', icon: 'B' },
+  { key: 'isometric', label: 'Isometric', icon: 'I' },
+  { key: 'perspective', label: 'Perspective', icon: 'P' }
+]
+
+const currentViewLabel = computed(() => {
+  const v = viewAngles.find(v => v.key === currentView.value)
+  return v ? v.label.toUpperCase() : 'PERSPECTIVE'
+})
+
+let scene, camera, renderer, carGroup
+let animationId = null
+let isDragging = false
+let previousMousePosition = { x: 0, y: 0 }
+let targetRotation = { x: 0.4, y: 0.8 }
+let currentRotation = { x: 0.4, y: 0.8 }
+let targetDistance = 8
+let currentDistance = 8
+let targetPan = { x: 0, y: 0 }
+let currentPan = { x: 0, y: 0 }
+let isOrthoCamera = false
+let orthoCamera
+
+const viewPresets = {
+  front: { x: 0, y: 0, dist: 8, ortho: true },
+  rear: { x: 0, y: Math.PI, dist: 8, ortho: true },
+  left: { x: 0, y: -Math.PI / 2, dist: 8, ortho: true },
+  right: { x: 0, y: Math.PI / 2, dist: 8, ortho: true },
+  top: { x: Math.PI / 2, y: 0, dist: 10, ortho: true },
+  bottom: { x: -Math.PI / 2, y: 0, dist: 10, ortho: true },
+  isometric: { x: Math.PI / 4, y: Math.PI / 4, dist: 10, ortho: false },
+  perspective: { x: 0.4, y: 0.8, dist: 8, ortho: false }
+}
+
+const createCar = () => {
+  const group = new THREE.Group()
+  
+  const L = props.carParams.overall_length / 1000
+  const W = props.carParams.overall_width / 1000
+  const H = props.carParams.overall_height / 1000
+  const WB = props.carParams.wheel_base / 1000
+  const track = props.carParams.track_width / 1000
+  const gc = props.carParams.ground_clearance / 1000
+  const hoodLen = props.carParams.hood_length / 1000
+  const wheelR = props.carParams.wheel_diameter / 2000
+  const roofH = props.carParams.roof_height / 1000
+  const wAngle = props.carParams.windshield_angle * Math.PI / 180
+  const rAngle = props.carParams.rear_window_angle * Math.PI / 180
+
+  const bodyColor = new THREE.Color(props.carColor)
+
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: bodyColor,
+    metalness: 0.6,
+    roughness: 0.25,
+    wireframe: wireframeMode.value
+  })
+
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x88ccff,
+    metalness: 0.1,
+    roughness: 0.05,
+    transparent: true,
+    opacity: 0.35,
+    wireframe: wireframeMode.value
+  })
+
+  const wheelMat = new THREE.MeshStandardMaterial({
+    color: 0x1a1a1f,
+    metalness: 0.3,
+    roughness: 0.8,
+    wireframe: wireframeMode.value
+  })
+
+  const rimMat = new THREE.MeshStandardMaterial({
+    color: 0xaaaaaa,
+    metalness: 0.9,
+    roughness: 0.2,
+    wireframe: wireframeMode.value
+  })
+
+  const chromeMat = new THREE.MeshStandardMaterial({
+    color: 0xcccccc,
+    metalness: 1.0,
+    roughness: 0.1,
+    wireframe: wireframeMode.value
+  })
+
+  const frontWheelZ = WB / 2
+  const rearWheelZ = -WB / 2
+  const halfTrack = track / 2
+
+  const bodyShape = new THREE.Shape()
+  const frontZ = L / 2
+  const rearZ = -L / 2
+  const hoodEndZ = frontZ - hoodLen
+  const trunkStartZ = rearZ + hoodLen * 0.6
+
+  const windshieldHeight = roofH * 0.7
+  const windshieldTopZ = hoodEndZ - windshieldHeight / Math.tan(wAngle)
+  
+  const rearWindowHeight = roofH * 0.65
+  const rearWindowTopZ = trunkStartZ + rearWindowHeight / Math.tan(rAngle)
+
+  const bodyBottomY = gc
+  const bodyTopY = gc + H * 0.4
+  const roofTopY = gc + H * 0.4 + roofH
+  const beltLineY = gc + H * 0.55
+
+  bodyShape.moveTo(frontZ, bodyBottomY)
+  bodyShape.quadraticCurveTo(frontZ + 0.05, bodyTopY - 0.1, frontZ, bodyTopY)
+  bodyShape.quadraticCurveTo(hoodEndZ - 0.1, beltLineY - 0.05, hoodEndZ, beltLineY)
+  bodyShape.lineTo(windshieldTopZ, roofTopY)
+  bodyShape.lineTo(rearWindowTopZ, roofTopY)
+  bodyShape.quadraticCurveTo(trunkStartZ + 0.1, beltLineY + 0.05, trunkStartZ, beltLineY)
+  bodyShape.quadraticCurveTo(rearZ + 0.05, bodyTopY - 0.15, rearZ, bodyBottomY + 0.05)
+  bodyShape.lineTo(rearZ, bodyBottomY)
+  bodyShape.closePath()
+
+  const extrudeSettings = {
+    depth: W,
+    bevelEnabled: true,
+    bevelThickness: 0.04,
+    bevelSize: 0.04,
+    bevelSegments: 3,
+    curveSegments: 16
+  }
+
+  const bodyGeom = new THREE.ExtrudeGeometry(bodyShape, extrudeSettings)
+  bodyGeom.translate(0, 0, -W / 2)
+  bodyGeom.rotateY(0)
+  bodyGeom.rotateZ(0)
+  
+  const tempGroup = new THREE.Group()
+  const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat)
+  bodyMesh.rotation.y = Math.PI / 2
+  bodyMesh.rotation.x = 0
+  tempGroup.add(bodyMesh)
+  group.add(tempGroup)
+
+  const roofLen = Math.abs(rearWindowTopZ - windshieldTopZ)
+  const roofShape = new THREE.Shape()
+  roofShape.moveTo(-roofLen / 2, 0)
+  roofShape.quadraticCurveTo(0, -0.03, roofLen / 2, 0)
+  roofShape.lineTo(roofLen / 2, 0.02)
+  roofShape.lineTo(-roofLen / 2, 0.02)
+  roofShape.closePath()
+
+  const roofGeom = new THREE.ExtrudeGeometry(roofShape, {
+    depth: W - 0.1,
+    bevelEnabled: true,
+    bevelThickness: 0.02,
+    bevelSize: 0.02,
+    bevelSegments: 2
+  })
+  const roofMesh = new THREE.Mesh(roofGeom, bodyMat)
+  roofMesh.rotation.y = Math.PI / 2
+  roofMesh.rotation.x = 0
+  roofMesh.position.set(0, roofTopY + 0.01, (windshieldTopZ + rearWindowTopZ) / 2)
+  group.add(roofMesh)
+
+  const windowShape = new THREE.Shape()
+  windowShape.moveTo(hoodEndZ, beltLineY)
+  windowShape.lineTo(windshieldTopZ, roofTopY - 0.02)
+  windowShape.lineTo(rearWindowTopZ, roofTopY - 0.02)
+  windowShape.lineTo(trunkStartZ, beltLineY)
+  windowShape.closePath()
+
+  const windowGeom = new THREE.ExtrudeGeometry(windowShape, {
+    depth: W - 0.15,
+    bevelEnabled: false
+  })
+  const windowMesh = new THREE.Mesh(windowGeom, glassMat)
+  windowMesh.rotation.y = Math.PI / 2
+  windowMesh.position.set(0, 0, 0)
+  group.add(windowMesh)
+
+  const createWheel = (z, x) => {
+    const wheelGroup = new THREE.Group()
+    
+    const tireGeom = new THREE.CylinderGeometry(wheelR, wheelR, 0.28, 24)
+    tireGeom.rotateX(Math.PI / 2)
+    const tire = new THREE.Mesh(tireGeom, wheelMat)
+    wheelGroup.add(tire)
+
+    const rimGeom = new THREE.CylinderGeometry(wheelR * 0.6, wheelR * 0.6, 0.25, 12)
+    rimGeom.rotateX(Math.PI / 2)
+    const rim = new THREE.Mesh(rimGeom, rimMat)
+    wheelGroup.add(rim)
+
+    const hubGeom = new THREE.CylinderGeometry(wheelR * 0.2, wheelR * 0.2, 0.26, 8)
+    hubGeom.rotateX(Math.PI / 2)
+    const hub = new THREE.Mesh(hubGeom, chromeMat)
+    wheelGroup.add(hub)
+
+    for (let i = 0; i < 5; i++) {
+      const spokeGeom = new THREE.BoxGeometry(wheelR * 0.5, 0.04, 0.06)
+      const spoke = new THREE.Mesh(spokeGeom, rimMat)
+      spoke.rotation.y = (i * Math.PI * 2) / 5
+      wheelGroup.add(spoke)
+    }
+
+    wheelGroup.position.set(x, gc + wheelR, z)
+    return wheelGroup
+  }
+
+  group.add(createWheel(frontWheelZ, halfTrack))
+  group.add(createWheel(frontWheelZ, -halfTrack))
+  group.add(createWheel(rearWheelZ, halfTrack))
+  group.add(createWheel(rearWheelZ, -halfTrack))
+
+  const bumperGeom = new THREE.BoxGeometry(W - 0.1, 0.1, 0.08)
+  const frontBumper = new THREE.Mesh(bumperGeom, chromeMat)
+  frontBumper.position.set(0, gc + 0.15, L / 2 - 0.05)
+  group.add(frontBumper)
+
+  const rearBumper = new THREE.Mesh(bumperGeom, chromeMat)
+  rearBumper.position.set(0, gc + 0.15, -L / 2 + 0.05)
+  group.add(rearBumper)
+
+  const headlightMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0xffffcc,
+    emissiveIntensity: 0.5,
+    wireframe: wireframeMode.value
+  })
+  const headlightGeom = new THREE.BoxGeometry(0.15, 0.08, 0.06)
+  const hl1 = new THREE.Mesh(headlightGeom, headlightMat)
+  hl1.position.set(W / 2 - 0.15, gc + H * 0.35, L / 2 - 0.02)
+  group.add(hl1)
+  const hl2 = new THREE.Mesh(headlightGeom, headlightMat)
+  hl2.position.set(-W / 2 + 0.15, gc + H * 0.35, L / 2 - 0.02)
+  group.add(hl2)
+
+  const taillightMat = new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    emissive: 0xff0000,
+    emissiveIntensity: 0.4,
+    wireframe: wireframeMode.value
+  })
+  const taillightGeom = new THREE.BoxGeometry(0.12, 0.1, 0.05)
+  const tl1 = new THREE.Mesh(taillightGeom, taillightMat)
+  tl1.position.set(W / 2 - 0.15, gc + H * 0.4, -L / 2 + 0.02)
+  group.add(tl1)
+  const tl2 = new THREE.Mesh(taillightGeom, taillightMat)
+  tl2.position.set(-W / 2 + 0.15, gc + H * 0.4, -L / 2 + 0.02)
+  group.add(tl2)
+
+  const mirrorGeom = new THREE.BoxGeometry(0.12, 0.08, 0.15)
+  const mirror1 = new THREE.Mesh(mirrorGeom, bodyMat)
+  mirror1.position.set(W / 2 + 0.05, beltLineY + 0.1, hoodEndZ - 0.1)
+  group.add(mirror1)
+  const mirror2 = new THREE.Mesh(mirrorGeom, bodyMat)
+  mirror2.position.set(-W / 2 - 0.05, beltLineY + 0.1, hoodEndZ - 0.1)
+  group.add(mirror2)
+
+  if (props.carType === 'sport') {
+    const wingGeom = new THREE.BoxGeometry(W * 0.8, 0.04, 0.25)
+    const wing = new THREE.Mesh(wingGeom, bodyMat)
+    wing.position.set(0, roofTopY + 0.15, rearWindowTopZ + 0.1)
+    group.add(wing)
+    
+    const wingSupportGeom = new THREE.BoxGeometry(0.03, 0.15, 0.03)
+    const ws1 = new THREE.Mesh(wingSupportGeom, chromeMat)
+    ws1.position.set(W * 0.25, roofTopY + 0.07, rearWindowTopZ + 0.1)
+    group.add(ws1)
+    const ws2 = new THREE.Mesh(wingSupportGeom, chromeMat)
+    ws2.position.set(-W * 0.25, roofTopY + 0.07, rearWindowTopZ + 0.1)
+    group.add(ws2)
+  }
+
+  if (props.carType === 'suv' || props.carType === 'mpv') {
+    const railGeom = new THREE.BoxGeometry(0.04, 0.03, roofLen * 0.8)
+    const rail1 = new THREE.Mesh(railGeom, chromeMat)
+    rail1.position.set(W / 2 - 0.1, roofTopY + 0.02, (windshieldTopZ + rearWindowTopZ) / 2)
+    group.add(rail1)
+    const rail2 = new THREE.Mesh(railGeom, chromeMat)
+    rail2.position.set(-W / 2 + 0.1, roofTopY + 0.02, (windshieldTopZ + rearWindowTopZ) / 2)
+    group.add(rail2)
+  }
+
+  return group
+}
+
 const initScene = () => {
- const container = containerRef.value;
- if (!container)
- return;
- const width = container.clientWidth;
- const height = container.clientHeight;
- scene = new THREE.Scene();
- scene.background = new THREE.Color(0x0a0a1a);
- camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
- camera.position.set(6, 3, 6);
- camera.lookAt(0, 1, 0);
- renderer = new THREE.WebGLRenderer({ antialias: true });
- renderer.setSize(width, height);
- renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
- renderer.shadowMap.enabled = true;
- renderer.shadowMap.type = THREE.PCFShadowMap;
- container.appendChild(renderer.domElement);
- // 环境光
- const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
- scene.add(ambientLight);
- // 主方向光（模拟太阳）
- const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
- directionalLight.position.set(10, 15, 10);
- directionalLight.castShadow = true;
- directionalLight.shadow.mapSize.width = 2048;
- directionalLight.shadow.mapSize.height = 2048;
- directionalLight.shadow.camera.near = 0.5;
- directionalLight.shadow.camera.far = 50;
- directionalLight.shadow.camera.left = -10;
- directionalLight.shadow.camera.right = 10;
- directionalLight.shadow.camera.top = 10;
- directionalLight.shadow.camera.bottom = -10;
- scene.add(directionalLight);
- // 补光
- const fillLight = new THREE.DirectionalLight(0x88ccff, 0.3);
- fillLight.position.set(-5, 5, -5);
- scene.add(fillLight);
- // 底部反射光
- const bottomLight = new THREE.DirectionalLight(0xffffff, 0.2);
- bottomLight.position.set(0, -5, 0);
- scene.add(bottomLight);
- // 点光源（模拟环境反射）
- const pointLight1 = new THREE.PointLight(0x00d9ff, 0.5, 20);
- pointLight1.position.set(5, 3, 5);
- scene.add(pointLight1);
- const pointLight2 = new THREE.PointLight(0xff6b6b, 0.3, 20);
- pointLight2.position.set(-5, 2, -5);
- scene.add(pointLight2);
- // 地面
- const groundGeometry = new THREE.PlaneGeometry(30, 30);
- const groundMaterial = new THREE.MeshStandardMaterial({
- color: 0x1a1a2e,
- metalness: 0.1,
- roughness: 0.8
- });
- const ground = new THREE.Mesh(groundGeometry, groundMaterial);
- ground.rotation.x = -Math.PI / 2;
- ground.position.y = 0;
- ground.receiveShadow = true;
- scene.add(ground);
- // 网格辅助线
- const gridHelper = new THREE.GridHelper(30, 30, 0x333333, 0x222222);
- gridHelper.position.y = 0.01;
- scene.add(gridHelper);
- // 创建汽车
- carGroup = createCarGeometry();
- scene.add(carGroup);
- // 添加事件监听
- container.addEventListener('mousedown', onMouseDown);
- container.addEventListener('mousemove', onMouseMove);
- container.addEventListener('mouseup', onMouseUp);
- container.addEventListener('mouseleave', onMouseUp);
- container.addEventListener('wheel', onWheel);
- window.addEventListener('resize', onWindowResize);
- // 开始动画
- animate();
-};
-const onMouseDown = (event) => {
- isDragging = true;
- previousMousePosition = {
- x: event.clientX,
- y: event.clientY
- };
-};
-const onMouseMove = (event) => {
- if (!isDragging)
- return;
- const deltaX = event.clientX - previousMousePosition.x;
- const deltaY = event.clientY - previousMousePosition.y;
- previousMousePosition = {
- x: event.clientX,
- y: event.clientY
- };
- if (event.button === 2) {
- targetPosition.x += deltaX * 0.01;
- targetPosition.y -= deltaY * 0.01;
- targetPosition.x = Math.max(-5, Math.min(5, targetPosition.x));
- targetPosition.y = Math.max(-3, Math.min(3, targetPosition.y));
- }
- else {
- targetRotation.y += deltaX * 0.01;
- targetRotation.x += deltaY * 0.005;
- targetRotation.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, targetRotation.x));
- }
-};
-const onMouseUp = () => {
- isDragging = false;
-};
-const onWheel = (event) => {
- event.preventDefault();
- targetDistance += event.deltaY * 0.01;
- targetDistance = Math.max(4, Math.min(15, targetDistance));
-};
+  const container = containerRef.value
+  if (!container) return
+  
+  const width = container.clientWidth
+  const height = container.clientHeight
+
+  scene = new THREE.Scene()
+  scene.background = new THREE.Color(0x0a0a0f)
+
+  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100)
+  camera.position.set(6, 3, 6)
+  camera.lookAt(0, 1, 0)
+
+  const aspect = width / height
+  const d = 5
+  orthoCamera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 0.1, 100)
+  orthoCamera.position.set(6, 3, 6)
+  orthoCamera.lookAt(0, 1, 0)
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+  renderer.setSize(width, height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  renderer.shadowMap.enabled = true
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.0
+  container.appendChild(renderer.domElement)
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.35)
+  scene.add(ambientLight)
+
+  const mainLight = new THREE.DirectionalLight(0xffffff, 1.0)
+  mainLight.position.set(8, 12, 8)
+  mainLight.castShadow = true
+  mainLight.shadow.mapSize.width = 2048
+  mainLight.shadow.mapSize.height = 2048
+  mainLight.shadow.camera.near = 0.5
+  mainLight.shadow.camera.far = 50
+  mainLight.shadow.camera.left = -10
+  mainLight.shadow.camera.right = 10
+  mainLight.shadow.camera.top = 10
+  mainLight.shadow.camera.bottom = -10
+  scene.add(mainLight)
+
+  const fillLight = new THREE.DirectionalLight(0x88aaff, 0.3)
+  fillLight.position.set(-6, 4, -6)
+  scene.add(fillLight)
+
+  const rimLight = new THREE.DirectionalLight(0xffddaa, 0.25)
+  rimLight.position.set(0, 6, -10)
+  scene.add(rimLight)
+
+  const groundMat = new THREE.MeshStandardMaterial({
+    color: 0x0f0f18,
+    metalness: 0.1,
+    roughness: 0.9
+  })
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), groundMat)
+  ground.rotation.x = -Math.PI / 2
+  ground.receiveShadow = true
+  scene.add(ground)
+
+  const gridHelper = new THREE.GridHelper(20, 20, 0x1e1e2e, 0x15151f)
+  gridHelper.position.y = 0.01
+  scene.add(gridHelper)
+
+  carGroup = createCar()
+  carGroup.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true
+      child.receiveShadow = true
+    }
+  })
+  scene.add(carGroup)
+
+  container.addEventListener('mousedown', onMouseDown)
+  container.addEventListener('mousemove', onMouseMove)
+  container.addEventListener('mouseup', onMouseUp)
+  container.addEventListener('mouseleave', onMouseUp)
+  container.addEventListener('wheel', onWheel)
+  container.addEventListener('contextmenu', (e) => e.preventDefault())
+  window.addEventListener('resize', onWindowResize)
+
+  animate()
+}
+
+const onMouseDown = (e) => {
+  isDragging = true
+  previousMousePosition = { x: e.clientX, y: e.clientY }
+}
+
+const onMouseMove = (e) => {
+  if (!isDragging) return
+  const dx = e.clientX - previousMousePosition.x
+  const dy = e.clientY - previousMousePosition.y
+  previousMousePosition = { x: e.clientX, y: e.clientY }
+
+  if (e.button === 2) {
+    targetPan.x -= dx * 0.01
+    targetPan.y += dy * 0.01
+    targetPan.x = Math.max(-3, Math.min(3, targetPan.x))
+    targetPan.y = Math.max(-2, Math.min(2, targetPan.y))
+  } else if (e.button === 0) {
+    targetRotation.y += dx * 0.01
+    targetRotation.x += dy * 0.008
+    targetRotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, targetRotation.x))
+  }
+}
+
+const onMouseUp = () => { isDragging = false }
+
+const onWheel = (e) => {
+  e.preventDefault()
+  targetDistance += e.deltaY * 0.008
+  targetDistance = Math.max(3, Math.min(20, targetDistance))
+}
+
 const onWindowResize = () => {
- const container = containerRef.value;
- if (!container)
- return;
- const width = container.clientWidth;
- const height = container.clientHeight;
- camera.aspect = width / height;
- camera.updateProjectionMatrix();
- renderer.setSize(width, height);
-};
+  const container = containerRef.value
+  if (!container || !renderer) return
+  const w = container.clientWidth
+  const h = container.clientHeight
+  
+  camera.aspect = w / h
+  camera.updateProjectionMatrix()
+  
+  const aspect = w / h
+  const d = 5
+  orthoCamera.left = -d * aspect
+  orthoCamera.right = d * aspect
+  orthoCamera.top = d
+  orthoCamera.bottom = -d
+  orthoCamera.updateProjectionMatrix()
+  
+  renderer.setSize(w, h)
+}
+
 const animate = () => {
- animationId = requestAnimationFrame(animate);
- if (autoRotate.value && !isDragging) {
- targetRotation.y += 0.005;
- }
- currentRotation.x += (targetRotation.x - currentRotation.x) * 0.05;
- currentRotation.y += (targetRotation.y - currentRotation.y) * 0.05;
- currentDistance += (targetDistance - currentDistance) * 0.05;
- currentPosition.x += (targetPosition.x - currentPosition.x) * 0.05;
- currentPosition.y += (targetPosition.y - currentPosition.y) * 0.05;
- if (carGroup) {
- carGroup.rotation.x = currentRotation.x;
- carGroup.rotation.y = currentRotation.y;
- }
- camera.position.x = currentPosition.x + Math.sin(currentRotation.y) * currentDistance;
- camera.position.z = Math.cos(currentRotation.y) * currentDistance;
- camera.position.y = currentPosition.y + 3;
- camera.lookAt(currentPosition.x, 1, currentPosition.y);
- renderer.render(scene, camera);
-};
+  animationId = requestAnimationFrame(animate)
+
+  if (autoRotate.value && !isDragging && currentView.value === 'perspective') {
+    targetRotation.y += 0.004
+  }
+
+  currentRotation.x += (targetRotation.x - currentRotation.x) * 0.08
+  currentRotation.y += (targetRotation.y - currentRotation.y) * 0.08
+  currentDistance += (targetDistance - currentDistance) * 0.08
+  currentPan.x += (targetPan.x - targetPan.x) * 0.08
+  currentPan.y += (targetPan.y - currentPan.y) * 0.08
+
+  const activeCamera = isOrthoCamera ? orthoCamera : camera
+
+  activeCamera.position.x = currentPan.x + Math.sin(currentRotation.y) * Math.cos(currentRotation.x) * currentDistance
+  activeCamera.position.y = currentPan.y + Math.sin(currentRotation.x) * currentDistance + 1
+  activeCamera.position.z = Math.cos(currentRotation.y) * Math.cos(currentRotation.x) * currentDistance
+  activeCamera.lookAt(currentPan.x, 1, currentPan.y)
+
+  renderer.render(scene, activeCamera)
+}
+
+const setViewAngle = (view) => {
+  currentView.value = view
+  emit('update:viewAngle', view)
+  
+  const preset = viewPresets[view]
+  if (preset) {
+    targetRotation.x = preset.x
+    targetRotation.y = preset.y
+    targetDistance = preset.dist
+    isOrthoCamera = preset.ortho
+    
+    if (preset.ortho) {
+      const container = containerRef.value
+      if (container) {
+        const w = container.clientWidth
+        const h = container.clientHeight
+        const aspect = w / h
+        const d = preset.dist * 0.6
+        orthoCamera.left = -d * aspect
+        orthoCamera.right = d * aspect
+        orthoCamera.top = d
+        orthoCamera.bottom = -d
+        orthoCamera.updateProjectionMatrix()
+      }
+    }
+  }
+}
+
 const resetView = () => {
- targetRotation = { x: 0.3, y: 0 };
- targetDistance = 8;
- targetPosition = { x: 0, y: 0 };
-};
+  targetRotation = { x: 0.4, y: 0.8 }
+  targetDistance = 8
+  targetPan = { x: 0, y: 0 }
+  currentView.value = 'perspective'
+  isOrthoCamera = false
+  emit('update:viewAngle', 'perspective')
+}
+
+const toggleWireframe = () => {
+  wireframeMode.value = !wireframeMode.value
+  emit('update:wireframe', wireframeMode.value)
+  updateCar()
+}
+
 const toggleAutoRotate = () => {
- autoRotate.value = !autoRotate.value;
-};
+  autoRotate.value = !autoRotate.value
+}
+
+const toggleFullscreen = () => {
+  const container = containerRef.value
+  if (!container) return
+  if (!document.fullscreenElement) {
+    container.requestFullscreen()
+  } else {
+    document.exitFullscreen()
+  }
+}
+
 const updateCar = () => {
- if (!scene || !carGroup)
- return;
- scene.remove(carGroup);
- carGroup = createCarGeometry();
- scene.add(carGroup);
-};
-watch([() => props.carParams, () => props.componentParams, () => props.angleParams, () => props.carType], () => {
- updateCar();
-}, { deep: true });
+  if (!scene || !carGroup) return
+  scene.remove(carGroup)
+  carGroup = createCar()
+  carGroup.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true
+      child.receiveShadow = true
+    }
+  })
+  scene.add(carGroup)
+}
+
+watch(
+  () => [props.carParams, props.carType, props.carColor],
+  () => updateCar(),
+  { deep: true }
+)
+
+watch(
+  () => props.viewAngle,
+  (val) => {
+    if (val !== currentView.value) {
+      setViewAngle(val)
+    }
+  }
+)
+
+watch(
+  () => props.wireframe,
+  (val) => {
+    if (val !== wireframeMode.value) {
+      wireframeMode.value = val
+      updateCar()
+    }
+  }
+)
+
 onMounted(() => {
- initScene();
-});
+  initScene()
+  if (props.viewAngle !== 'perspective') {
+    setViewAngle(props.viewAngle)
+  }
+})
+
 onUnmounted(() => {
- if (animationId) {
- cancelAnimationFrame(animationId);
- }
- const container = containerRef.value;
- if (container && renderer) {
- container.removeEventListener('mousedown', onMouseDown);
- container.removeEventListener('mousemove', onMouseMove);
- container.removeEventListener('mouseup', onMouseUp);
- container.removeEventListener('mouseleave', onMouseUp);
- container.removeEventListener('wheel', onWheel);
- window.removeEventListener('resize', onWindowResize);
- renderer.dispose();
- }
-});
+  if (animationId) cancelAnimationFrame(animationId)
+  const container = containerRef.value
+  if (container && renderer) {
+    container.removeEventListener('mousedown', onMouseDown)
+    container.removeEventListener('mousemove', onMouseMove)
+    container.removeEventListener('mouseup', onMouseUp)
+    container.removeEventListener('mouseleave', onMouseUp)
+    container.removeEventListener('wheel', onWheel)
+    window.removeEventListener('resize', onWindowResize)
+    renderer.dispose()
+  }
+})
 </script>
 
 <style scoped>
@@ -460,52 +653,119 @@ onUnmounted(() => {
   height: 100%;
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
-}
-
-.controls-overlay {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 10;
-}
-
-.control-btn {
-  width: 40px;
-  height: 40px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: #0a0a0f;
+}
+
+.view-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  z-index: 10;
+  background: rgba(22, 22, 31, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.view-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s ease;
+  font-family: Inter, sans-serif;
 }
 
-.control-btn:hover {
-  background: rgba(0, 217, 255, 0.3);
-  color: #00d9ff;
+.view-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
 }
 
-.control-btn.active {
-  background: rgba(0, 217, 255, 0.5);
-  color: #fff;
+.view-btn.active {
+  background: rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
 }
 
-.info-overlay {
+.control-buttons {
   position: absolute;
-  bottom: 15px;
-  left: 15px;
-  padding: 8px 15px;
-  border-radius: 20px;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+
+.ctrl-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(22, 22, 31, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ctrl-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ctrl-btn:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.ctrl-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.status-bar {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+}
+
+.view-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4ade80;
+  font-family: Inter, sans-serif;
+  background: rgba(22, 22, 31, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.status-item {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: Inter, sans-serif;
+  letter-spacing: 0.5px;
 }
 </style>

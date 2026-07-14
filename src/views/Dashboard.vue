@@ -1,285 +1,270 @@
 <template>
   <div class="dashboard">
     <div class="stats-grid">
-      <el-card class="stat-card">
-        <div class="stat-icon projects">
-          <el-icon><FolderOpened /></el-icon>
+      <el-card class="stat-card" v-for="stat in statCards" :key="stat.key">
+        <div class="stat-icon" :class="stat.key">
+          <el-icon :size="24"><component :is="stat.icon" /></el-icon>
         </div>
         <div class="stat-info">
-          <div class="stat-value">{{ stats.projects }}</div>
-          <div class="stat-label">{{ $t('dashboard.projects') }}</div>
-        </div>
-      </el-card>
-      <el-card class="stat-card">
-        <div class="stat-icon models">
-          <el-icon><Picture /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.models }}</div>
-          <div class="stat-label">{{ $t('dashboard.models') }}</div>
-        </div>
-      </el-card>
-      <el-card class="stat-card">
-        <div class="stat-icon reports">
-          <el-icon><Document /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.reports }}</div>
-          <div class="stat-label">{{ $t('dashboard.reports') }}</div>
-        </div>
-      </el-card>
-      <el-card class="stat-card">
-        <div class="stat-icon quality">
-          <el-icon><CircleCheck /></el-icon>
-        </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ stats.qualityRate }}%</div>
-          <div class="stat-label">{{ $t('dashboard.qualityRate') }}</div>
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-label">{{ stat.label }}</div>
         </div>
       </el-card>
     </div>
 
-    <div class="charts-grid">
-      <el-card class="chart-card">
+    <div class="content-grid">
+      <el-card class="content-card">
         <template #header>
-          <span>{{ $t('dashboard.projectStatus') }}</span>
+          <div class="card-header">
+            <span class="card-title">Recent Projects</span>
+            <el-button type="primary" text @click="$router.push('/projects')">View All</el-button>
+          </div>
         </template>
-        <div ref="statusChart" class="chart"></div>
-      </el-card>
-      <el-card class="chart-card">
-        <template #header>
-          <span>{{ $t('dashboard.qualityTrend') }}</span>
-        </template>
-        <div ref="scoreChart" class="chart"></div>
-      </el-card>
-    </div>
-
-    <div class="bottom-grid">
-      <el-card class="list-card">
-        <template #header>
-          <span>{{ $t('dashboard.recentProjects') }}</span>
-          <el-button type="text" @click="$router.push('/projects')">{{ $t('dashboard.viewAll') }}</el-button>
-        </template>
-        <el-table :data="recentProjects" style="width: 100%">
-          <el-table-column prop="name" :label="$t('dashboard.projectName')" />
-          <el-table-column prop="status" :label="$t('dashboard.status')">
+        <el-table :data="recentProjects" style="width: 100%" :row-style="{ background: 'transparent' }">
+          <el-table-column prop="name" label="Project Name" />
+          <el-table-column prop="status" label="Status" width="120">
             <template #default="{ row }">
-              <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+              <el-tag :type="getStatusType(row.status)" effect="dark" size="small">{{ row.status }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="created_at" :label="$t('dashboard.createdAt')">
-            <template #default="{ row }">
-              {{ formatDate(row.created_at) }}
-            </template>
-          </el-table-column>
+          <el-table-column prop="createdAt" label="Created" width="160" />
         </el-table>
       </el-card>
-      <el-card class="list-card">
+
+      <el-card class="content-card">
         <template #header>
-          <span>{{ $t('dashboard.pendingTasks') }}</span>
+          <span class="card-title">Workflow Status</span>
         </template>
-        <el-timeline>
-          <el-timeline-item
-            v-for="task in pendingTasks"
-            :key="task.id"
-            :timestamp="task.time"
-            placement="top"
-          >
-            <el-card size="small">
-              <div class="task-title">{{ $t(task.title) }}</div>
-              <div class="task-desc">{{ $t(task.description) }}</div>
-              <el-progress :percentage="task.progress" :stroke-width="6" />
-            </el-card>
-          </el-timeline-item>
-        </el-timeline>
+        <div class="workflow-list">
+          <div class="workflow-item" v-for="item in workflowItems" :key="item.id">
+            <div class="workflow-header">
+              <span class="workflow-name">{{ item.name }}</span>
+              <span class="workflow-percent">{{ item.progress }}%</span>
+            </div>
+            <el-progress :percentage="item.progress" :stroke-width="8" :show-text="false" :color="'#4ade80'" />
+            <div class="workflow-status">
+              <span class="status-dot" :class="item.status"></span>
+              <span class="status-text">{{ item.statusText }}</span>
+            </div>
+          </div>
+        </div>
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { FolderOpened, Picture, Document, CircleCheck } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
-import { projectAPI, modelAPI, qualityAPI } from '../services/api'
+import { FolderOpened, Picture, CircleCheck, Download } from '@element-plus/icons-vue'
 
-const { t } = useI18n()
+const statCards = [
+  { key: 'projects', icon: FolderOpened, value: '24', label: 'Projects' },
+  { key: 'models', icon: Picture, value: '156', label: 'Models' },
+  { key: 'quality', icon: CircleCheck, value: '94.2%', label: 'Quality Score' },
+  { key: 'exported', icon: Download, value: '89', label: 'Exported Files' }
+]
 
-const stats = ref({
-  projects: 0,
-  models: 0,
-  reports: 0,
-  qualityRate: 0
-})
+const recentProjects = [
+  { id: 1, name: 'EV-Sedan Concept', status: 'Active', createdAt: '2026-07-10' },
+  { id: 2, name: 'SUV-A Platform', status: 'Completed', createdAt: '2026-07-08' },
+  { id: 3, name: 'Sports Coupe V2', status: 'Active', createdAt: '2026-07-05' },
+  { id: 4, name: 'Hatchback Design', status: 'Draft', createdAt: '2026-07-02' },
+  { id: 5, name: 'Crossover Study', status: 'Completed', createdAt: '2026-06-28' }
+]
 
-const recentProjects = ref([])
-const pendingTasks = ref([
-  { id: 1, title: 'dashboard.topology', description: 'dashboard.topologyDesc', progress: 65, time: '10分钟前' },
-  { id: 2, title: 'dashboard.quality', description: 'dashboard.qualityDesc', progress: 40, time: '30分钟前' },
-  { id: 3, title: 'dashboard.handover', description: 'dashboard.handoverDesc', progress: 20, time: '1小时前' }
-])
-
-const statusChart = ref(null)
-const scoreChart = ref(null)
+const workflowItems = [
+  { id: 1, name: 'EV-Sedan Surface Generation', progress: 75, status: 'running', statusText: 'In Progress' },
+  { id: 2, name: 'SUV-A Quality Check', progress: 100, status: 'completed', statusText: 'Completed' },
+  { id: 3, name: 'Sports Coupe Optimization', progress: 45, status: 'running', statusText: 'In Progress' },
+  { id: 4, name: 'Hatchback Export', progress: 0, status: 'pending', statusText: 'Pending' }
+]
 
 const getStatusType = (status) => {
-  const types = {
-    active: 'success',
-    pending: 'warning',
-    completed: 'info',
-    failed: 'danger'
-  }
+  const types = { Active: 'success', Completed: 'info', Draft: 'warning' }
   return types[status] || 'info'
 }
-
-const getStatusText = (status) => {
-  const texts = {
-    active: t('dashboard.inProgress'),
-    pending: t('dashboard.pending'),
-    completed: t('dashboard.completed'),
-    failed: t('dashboard.failed')
-  }
-  return texts[status] || status
-}
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString(t('common.chinese') === '中文' ? 'zh-CN' : 'en-US')
-}
-
-const initCharts = () => {
-  if (statusChart.value) {
-    const chart = echarts.init(statusChart.value)
-    chart.setOption({
-      tooltip: { trigger: 'item' },
-      legend: { bottom: 0 },
-      series: [{
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 10 },
-        data: [
-          { value: 12, name: t('dashboard.inProgress'), itemStyle: { color: '#00d9ff' } },
-          { value: 8, name: t('dashboard.pending'), itemStyle: { color: '#ffc107' } },
-          { value: 15, name: t('dashboard.completed'), itemStyle: { color: '#00ff88' } },
-          { value: 3, name: t('dashboard.failed'), itemStyle: { color: '#ff4757' } }
-        ]
-      }]
-    })
-  }
-
-  if (scoreChart.value) {
-    const chart = echarts.init(scoreChart.value)
-    chart.setOption({
-      tooltip: { trigger: 'axis' },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: { type: 'category', data: [t('dashboard.monday'), t('dashboard.tuesday'), t('dashboard.wednesday'), t('dashboard.thursday'), t('dashboard.friday'), t('dashboard.saturday'), t('dashboard.sunday')] },
-      yAxis: { type: 'value', max: 100 },
-      series: [{
-        name: t('dashboard.qualityScore'),
-        type: 'line',
-        smooth: true,
-        data: [85, 88, 92, 89, 95, 91, 93],
-        lineStyle: { color: '#00d9ff', width: 3 },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(0, 217, 255, 0.3)' },
-            { offset: 1, color: 'rgba(0, 217, 255, 0.05)' }
-          ])
-        }
-      }]
-    })
-  }
-}
-
-const loadData = async () => {
-  try {
-    const [projects, models, reports] = await Promise.all([
-      projectAPI.list(),
-      modelAPI.list(),
-      qualityAPI.list()
-    ])
-
-    stats.value.projects = projects.data.length
-    stats.value.models = models.data.length
-    stats.value.reports = reports.data.length
-    stats.value.qualityRate = reports.data.length > 0
-      ? Math.round(reports.data.filter(r => r.passed).length / reports.data.length * 100)
-      : 0
-
-    recentProjects.value = projects.data.slice(0, 5)
-  } catch (error) {
-    console.error('Failed to load dashboard data:', error)
-  }
-}
-
-onMounted(() => {
-  loadData()
-  initCharts()
-
-  window.addEventListener('resize', () => {
-    if (statusChart.value) echarts.init(statusChart.value).resize()
-    if (scoreChart.value) echarts.init(scoreChart.value).resize()
-  })
-})
 </script>
 
 <style scoped>
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
 .stat-card {
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.stat-card :deep(.el-card__body) {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
   padding: 20px;
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
 }
 
-.stat-icon.projects { background: linear-gradient(135deg, #00d9ff, #0099cc); color: white; }
-.stat-icon.models { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white; }
-.stat-icon.reports { background: linear-gradient(135deg, #ffd93d, #f0c419); color: white; }
-.stat-icon.quality { background: linear-gradient(135deg, #6bcb77, #4daf50); color: white; }
+.stat-icon.projects {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
 
-.stat-info { flex: 1; }
-.stat-value { font-size: 32px; font-weight: bold; color: #333; }
-.stat-label { font-size: 14px; color: #999; margin-top: 5px; }
+.stat-icon.models {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+}
 
-.charts-grid {
+.stat-icon.quality {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
+
+.stat-icon.exported {
+  background: rgba(244, 114, 182, 0.15);
+  color: #f472b6;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+}
+
+.content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.content-card {
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.content-card :deep(.el-card__header) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px 20px;
+}
+
+.content-card :deep(.el-card__body) {
+  padding: 16px 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.content-card :deep(.el-table) {
+  --el-table-border-color: transparent;
+  --el-table-header-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-row-hover-bg-color: rgba(255, 255, 255, 0.03);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.content-card :deep(.el-table th) {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.content-card :deep(.el-table td) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.workflow-list {
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
-.chart-card { min-height: 280px; height: 300px; }
-.chart { height: calc(100% - 50px); }
-
-.bottom-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
+.workflow-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.list-card { flex: 1; }
+.workflow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-.task-title { font-weight: bold; margin-bottom: 5px; }
-.task-desc { font-size: 12px; color: #999; margin-bottom: 10px; }
+.workflow-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.workflow-percent {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.workflow-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-dot.running {
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+}
+
+.status-dot.completed {
+  background: #60a5fa;
+}
+
+.status-dot.pending {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.status-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
 </style>

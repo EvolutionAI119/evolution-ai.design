@@ -1,27 +1,19 @@
+"""FastAPI应用入口：CORS配置、路由注册、启动初始化"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 
-from app.api.routes import router
-from app.api.modify_routes import router as modify_router
-from app.api.learning_routes import router as learning_router
-from app.api.car_routes import router as car_router
-from app.api.build_routes import router as build_router
-from app.api.export_routes import router as export_router
-from app.api.variant_routes import router as variant_router
-from app.config.settings import settings
-from app.models.database import init_db
-from app.utils.logger import logger
+from .config import settings
+from .database import init_db
+from .routes import (car, project, model, build, export, variant, quality, workflow, modify)
 
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="EVOLUTION AI - 汽车A级曲面开发平台",
-        description="基于AI的汽车A级曲面开发全流程解决方案",
+        description="基于NURBS引擎的汽车A级曲面开发全流程解决方案",
         version="1.0.0",
         docs_url="/docs",
-        redoc_url="/redoc"
+        redoc_url="/redoc",
     )
 
     app.add_middleware(
@@ -29,16 +21,19 @@ def create_app() -> FastAPI:
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
-        allow_headers=["*"]
+        allow_headers=["*"],
     )
 
-    app.include_router(router, prefix="/api/v1")
-    app.include_router(modify_router)
-    app.include_router(learning_router, prefix="/api/v1/learning")
-    app.include_router(car_router)
-    app.include_router(build_router)
-    app.include_router(export_router)
-    app.include_router(variant_router)
+    # 注册路由
+    app.include_router(project.router, prefix="/api/v1", tags=["项目管理"])
+    app.include_router(model.router, prefix="/api/v1", tags=["模型管理"])
+    app.include_router(workflow.router, prefix="/api/v1", tags=["工作流"])
+    app.include_router(quality.router, prefix="/api/v1", tags=["质量检查"])
+    app.include_router(car.router, tags=["车身生成"])
+    app.include_router(build.router, tags=["模型构建"])
+    app.include_router(export.router, tags=["模型导出"])
+    app.include_router(variant.router, tags=["模型变体"])
+    app.include_router(modify.router, tags=["模型修改"])
 
     @app.on_event("startup")
     def startup():
@@ -46,11 +41,18 @@ def create_app() -> FastAPI:
         settings.models_path.mkdir(parents=True, exist_ok=True)
         settings.reports_path.mkdir(parents=True, exist_ok=True)
         settings.exports_path.mkdir(parents=True, exist_ok=True)
-        logger.info("EVOLUTION AI service started")
 
-    @app.on_event("shutdown")
-    def shutdown():
-        logger.info("EVOLUTION AI service stopped")
+    @app.get("/api/v1/health")
+    def health_check():
+        return {"status": "healthy", "service": "EVOLUTION AI"}
+
+    @app.get("/api/v1/i18n/config")
+    def get_i18n_config():
+        return {
+            "default_language": settings.DEFAULT_LANGUAGE,
+            "supported_languages": settings.supported_languages_list,
+            "current_language": settings.DEFAULT_LANGUAGE,
+        }
 
     return app
 

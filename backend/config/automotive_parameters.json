@@ -108,9 +108,7 @@
         {"name": "后轮左", "type": "wheel", "position": {"x": 3700, "y": 150, "z": 420}},
         {"name": "后轮右", "type": "wheel", "position": {"x": 3700, "y": 150, "z": -420}},
         {"name": "左前翼子板", "type": "fender", "position": {"x": 800, "y": 400, "z": 440}},
-        {"name": "右前翼子板", "type": "fender", "position": {"x": 800, "y": 400, "z": -440}},
-        {"name": "左后轮拱", "type": "wheel_arch", "position": {"x": 3600, "y": 300, "z": 440}},
-        {"name": "右后轮拱", "type": "wheel_arch", "position": {"x": 3600, "y": 300, "z": -440}}
+        {"name": "右前翼子板", "type": "fender", "position": {"x": 800, "y": 400, "z": -440}}
       ]
     }
   },

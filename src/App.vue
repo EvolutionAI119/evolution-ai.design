@@ -1,83 +1,42 @@
 <template>
   <div class="app-container">
     <el-container>
-      <el-aside width="230px" class="sidebar">
+      <el-aside width="200px" class="sidebar">
         <div class="logo">
           <h2>EVOLUTION AI</h2>
-          <p>{{ $t('app.subtitle') }}</p>
+          <p>Class A Surface Development Platform</p>
         </div>
-        <el-menu :default-active="activeMenu" router class="sidebar-menu" background-color="transparent" text-color="rgba(255,255,255,0.8)" active-text-color="#00d9ff">
-          <el-menu-item index="/">
-            <el-icon><HomeFilled /></el-icon>
-            <span>{{ $t('app.dashboard') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/designer">
-            <el-icon><Brush /></el-icon>
-            <span>{{ $t('app.designer') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/projects">
-            <el-icon><FolderOpened /></el-icon>
-            <span>{{ $t('app.projects') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/models">
-            <el-icon><Picture /></el-icon>
-            <span>{{ $t('app.models') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/export">
-            <el-icon><Download /></el-icon>
-            <span>{{ $t('app.export') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/variants">
-            <el-icon><RefreshRight /></el-icon>
-            <span>{{ $t('app.variants') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/workflow">
-            <el-icon><List /></el-icon>
-            <span>{{ $t('app.workflow') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/quality">
-            <el-icon><CircleCheck /></el-icon>
-            <span>{{ $t('app.quality') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/parameters">
-            <el-icon><Setting /></el-icon>
-            <span>{{ $t('app.parameters') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/reports">
-            <el-icon><Document /></el-icon>
-            <span>{{ $t('app.reports') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/handover">
-            <el-icon><Upload /></el-icon>
-            <span>{{ $t('app.handover') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/modify">
-            <el-icon><Edit /></el-icon>
-            <span>{{ $t('app.modify') }}</span>
-          </el-menu-item>
-          <el-menu-item index="/demo">
-            <el-icon><VideoPlay /></el-icon>
-            <span>{{ $t('app.demo') }}</span>
-          </el-menu-item>
+        <el-menu
+          :default-active="activeMenu"
+          router
+          class="sidebar-menu"
+          background-color="transparent"
+          text-color="rgba(255,255,255,0.7)"
+          active-text-color="#4ade80"
+        >
+          <template v-for="group in menuGroups" :key="group.label">
+            <div v-if="group.label" class="menu-group-label">{{ group.label }}</div>
+            <el-menu-item
+              v-for="item in group.items"
+              :key="item.path"
+              :index="item.path"
+            >
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.name }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </el-aside>
       <el-container class="main-container">
         <el-header class="header">
-          <div class="header-content">
-            <span class="title">{{ currentTitle }}</span>
-            <div class="header-right">
-              <el-select
-                v-model="currentLang"
-                class="lang-select"
-                @change="switchLang"
-              >
-                <el-option label="中文" value="zh" />
-                <el-option label="English" value="en" />
-              </el-select>
-              <el-badge :value="notificationCount" class="notification">
-                <el-icon class="avatar"><Bell /></el-icon>
-              </el-badge>
-            </div>
+          <div class="header-left">
+            <span class="breadcrumb">EVOLUTION AI</span>
+            <span class="sep">/</span>
+            <span class="current-page">{{ currentPageName }}</span>
+          </div>
+          <div class="header-right">
+            <el-icon class="header-icon"><Bell /></el-icon>
+            <el-icon class="header-icon"><Setting /></el-icon>
           </div>
         </el-header>
         <el-main class="main-content">
@@ -91,166 +50,178 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import {
-  HomeFilled,
-  FolderOpened,
-  Picture,
-  List,
-  CircleCheck,
-  Setting,
-  Document,
-  Upload,
-  Bell,
-  Edit,
-  VideoPlay,
-  Brush,
-  Download,
-  RefreshRight
+  Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay, Bell, Setting
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
-const { t, locale } = useI18n()
 
-const notificationCount = ref(3)
-const currentLang = ref(localStorage.getItem('language') || locale.value)
-
-const activeMenu = computed(() => {
-  return router.currentRoute.value.path
-})
-
-const isDemoPage = computed(() => {
-  return router.currentRoute.value.path === '/demo'
-})
-
-const currentTitle = computed(() => {
-  const titles = {
-    '/': 'app.dashboard',
-    '/designer': 'app.designer',
-    '/projects': 'app.projects',
-    '/models': 'app.models',
-    '/export': 'app.export',
-    '/variants': 'app.variants',
-    '/workflow': 'app.workflow',
-    '/quality': 'app.quality',
-    '/parameters': 'app.parameters',
-    '/reports': 'app.reports',
-    '/handover': 'app.handover',
-    '/modify': 'app.modify',
-    '/demo': 'app.demo'
+const menuGroups = [
+  {
+    label: '',
+    items: [
+      { path: '/', name: 'Dashboard', icon: Odometer },
+      { path: '/designer', name: 'AI Designer', icon: Brush }
+    ]
+  },
+  {
+    label: 'Design',
+    items: [
+      { path: '/projects', name: 'Projects', icon: Folder },
+      { path: '/deep-learning', name: 'Deep Learning Designer', icon: MagicStick }
+    ]
+  },
+  {
+    label: 'Workflow',
+    items: [
+      { path: '/quality', name: 'Quality', icon: CircleCheck },
+      { path: '/deliver', name: 'Deliver', icon: Upload }
+    ]
+  },
+  {
+    label: '',
+    items: [
+      { path: '/demo', name: 'DEMO', icon: VideoPlay }
+    ]
   }
-  const key = titles[router.currentRoute.value.path]
-  return key ? t(key) : 'EVOLUTION AI'
-})
+]
 
-const switchLang = (lang) => {
-  locale.value = lang
-  currentLang.value = lang
-  localStorage.setItem('language', lang)
-  window.location.reload()
-}
+const allMenuItems = menuGroups.flatMap(g => g.items)
+
+const activeMenu = computed(() => router.currentRoute.value.path)
+
+const currentPageName = computed(() => {
+  const item = allMenuItems.find(m => m.path === router.currentRoute.value.path)
+  return item ? item.name : 'AI Designer'
+})
 </script>
 
 <style>
-.app-container {
-  height: 100vh;
-  width: 100%;
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a0f;
+  color: #fff;
 }
 
+#app { height: 100vh; width: 100%; }
+
+.app-container { height: 100vh; width: 100%; }
+
 .sidebar {
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-  color: white;
+  background: #12121a;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   overflow-y: auto;
   height: 100vh;
 }
 
 .logo {
-  padding: 20px;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .logo h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: bold;
-  background: linear-gradient(90deg, #00d9ff, #00ff88);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
 }
 
 .logo p {
-  margin: 5px 0 0 0;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  margin: 4px 0 0 0;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3px;
 }
 
-.sidebar-menu {
-  border-right: none;
-  background: transparent !important;
+.menu-group-label {
+  padding: 16px 20px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 }
+
+.sidebar-menu { border-right: none; background: transparent !important; }
 
 .sidebar-menu :deep(.el-menu-item) {
-  color: rgba(255, 255, 255, 0.8);
-  overflow: visible;
-  white-space: nowrap;
-  text-overflow: unset;
+  height: 40px;
+  line-height: 40px;
+  margin: 2px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
-  background: rgba(0, 217, 255, 0.1);
-  color: #00d9ff;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  background: linear-gradient(90deg, rgba(0, 217, 255, 0.2), transparent);
-  color: #00d9ff;
-  border-left: 3px solid #00d9ff;
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}
+
+.sidebar-menu :deep(.el-menu-item .el-icon) {
+  font-size: 16px;
+  margin-right: 10px;
 }
 
 .header {
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: #12121a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0 20px;
+  height: 52px !important;
 }
 
-.header-content {
+.header :deep(.el-header) { height: 52px !important; }
+
+.header-left {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  height: 100%;
+  gap: 8px;
 }
 
-.title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
+.breadcrumb {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.sep {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.current-page {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
 }
 
-.notification {
+.header-icon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
+  transition: color 0.2s;
 }
 
-.avatar {
-  font-size: 24px;
-  color: #666;
-}
+.header-icon:hover { color: #fff; }
 
 .main-content {
-  background: #f5f7fa;
-  padding: 20px;
+  background: #0a0a0f;
+  padding: 16px;
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-.main-container.demo-fullscreen {
-  flex: 1;
 }
 </style>

@@ -2,637 +2,980 @@
   <div class="designer-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>{{ $t('designer.title') }}</h2>
-        <p>{{ $t('designer.subtitle') }}</p>
+        <h1 class="page-title">AI Automotive Designer</h1>
+        <div class="header-subrow">
+          <p class="page-subtitle">Parametric A-Class Surface Generation</p>
+          <div class="header-tabs">
+            <div class="header-tab active">
+              <span class="tab-dot"></span>
+              NURBS A-Class
+            </div>
+            <div class="header-tab">
+              Parametric
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="header-actions">
-        <el-button type="success" @click="generateCar" :loading="generating">
-          <el-icon><VideoPlay /></el-icon>
-          {{ $t('designer.generateCar') }}
-        </el-button>
-      </div>
+      <button class="generate-btn" @click="generateCar" :disabled="generating">
+        <svg v-if="!generating" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+        <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+        </svg>
+        <span>{{ generating ? 'Generating...' : 'Generate Complete Car' }}</span>
+      </button>
     </div>
 
-    <div class="main-content">
+    <div class="main-layout">
+      <!-- Left Panel -->
       <div class="left-panel">
-        <el-card class="panel-card">
-          <template #header>
-            <span>{{ $t('designer.carType') }}</span>
-          </template>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">CAR TYPE</span>
+          </div>
           <div class="car-type-grid">
             <div
               v-for="ct in carTypes"
               :key="ct.key"
-              class="car-type-item"
+              class="car-type-card"
               :class="{ active: selectedCarType === ct.key }"
               @click="selectCarType(ct.key)"
             >
-              <svg viewBox="0 0 120 60" class="car-type-svg" v-html="ct.svgPath"></svg>
+              <div class="car-type-icon">
+                <svg viewBox="0 0 120 60" class="car-type-svg">
+                  <path :d="getCarTypeSvg(ct.key)" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+              </div>
               <div class="car-type-name">{{ ct.name }}</div>
-              <div class="car-type-desc">{{ ct.desc }}</div>
             </div>
           </div>
-        </el-card>
+        </div>
 
-        <el-card class="panel-card">
-          <template #header>
-            <span>{{ $t('designer.bodyColor') }}</span>
-          </template>
-          <div class="color-picker">
+        <div class="card card-brand">
+          <div class="card-header">
+            <span class="card-title">A-CLASS CERTIFIED PRESETS</span>
+            <span class="card-badge">PRO</span>
+          </div>
+          <div class="brand-section">
+            <div class="brand-list">
+              <div
+                v-for="brand in brands"
+                :key="brand.key"
+                class="brand-item"
+                :class="{ active: selectedBrand === brand.key }"
+                @click="selectedBrand = brand.key"
+              >
+                <span class="brand-dot" :style="{ background: brand.color }"></span>
+                <span class="brand-name">{{ brand.name }}</span>
+              </div>
+            </div>
+            <div class="model-list">
+              <div
+                v-for="model in currentBrandModels"
+                :key="model.key"
+                class="model-card"
+                :class="{ active: selectedModel === model.key }"
+                @click="selectModel(model)"
+              >
+                <div class="model-image">
+                  <img :src="model.image" :alt="model.name" />
+                </div>
+                <div class="model-info">
+                  <div class="model-name">{{ model.name }}</div>
+                  <div class="model-spec">{{ model.params.overall_length }}mm</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Panel -->
+      <div class="center-panel">
+        <div class="viewport-row">
+          <!-- Left Viewport - Base Model -->
+          <div class="card viewport-card">
+            <div class="viewport-header">
+              <div class="viewport-tabs">
+                <div class="viewport-tab" :class="{ active: baseModelTab === 'parametric' }" @click="baseModelTab = 'parametric'">
+                  Parametric
+                </div>
+                <div class="viewport-tab active-green active" :class="{ active: baseModelTab === 'nurbs' }" @click="baseModelTab = 'nurbs'">
+                  NURBS A-Class
+                </div>
+              </div>
+            </div>
+            <div class="viewport-container">
+              <Car3D
+                :car-params="carParams"
+                :car-type="selectedCarType"
+                car-color="#3b82f6"
+                :view-angle="baseViewAngle"
+                :wireframe="true"
+                @update:view-angle="baseViewAngle = $event"
+              />
+            </div>
+          </div>
+
+          <!-- Right Viewport - Live Preview -->
+          <div class="card viewport-card">
+            <div class="viewport-header">
+              <div class="viewport-tabs">
+                <div class="viewport-tab blue active" :class="{ active: previewTab === '3d' }" @click="previewTab = '3d'">
+                  3D视图
+                </div>
+                <div class="viewport-tab blue" :class="{ active: previewTab === '2d' }" @click="previewTab = '2d'">
+                  2D视图
+                </div>
+              </div>
+            </div>
+            <div class="viewport-container">
+              <Car3D
+                v-if="previewTab === '3d'"
+                :car-params="carParams"
+                :car-type="selectedCarType"
+                :car-color="selectedColor"
+                :view-angle="previewViewAngle"
+                :wireframe="false"
+                @update:view-angle="previewViewAngle = $event"
+              />
+              <div v-else class="viewport-2d">
+                <Car2D :car-params="carParams" :car-type="selectedCarType" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <div class="card reference-card">
+            <div class="card-header">
+              <span class="card-title">REFERENCE</span>
+              <div class="ref-tabs">
+                <span class="ref-tab active">横向</span>
+                <span class="ref-tab">正面</span>
+                <span class="ref-tab">俯视</span>
+              </div>
+            </div>
+            <div class="reference-image-container">
+              <img v-if="currentModel" :src="currentModel.image" :alt="currentModel.name" class="reference-img" />
+              <div v-else class="reference-placeholder">
+                <span>Select a model to view reference</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card wireframe-card">
+            <div class="card-header">
+              <span class="card-title">2D RENDER</span>
+            </div>
+            <div class="wireframe-container">
+              <Car2D :car-params="carParams" :car-type="selectedCarType" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <div class="right-panel">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">BODY COLOR</span>
+          </div>
+          <div class="color-grid">
             <div
               v-for="color in bodyColors"
               :key="color.value"
-              class="color-item"
+              class="color-swatch"
               :class="{ active: selectedColor === color.value }"
               :style="{ background: color.value }"
               @click="selectedColor = color.value"
+              :title="color.name"
             >
-              <div class="color-check" v-if="selectedColor === color.value">
-                <el-icon><CircleCheck /></el-icon>
+              <div v-if="selectedColor === color.value" class="color-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
               </div>
             </div>
           </div>
-          <div class="custom-color">
-            <el-input v-model="customColor" type="text" placeholder="#000000" size="small" />
-            <el-button size="small" @click="applyCustomColor">应用</el-button>
+          <div class="color-input-row">
+            <input type="text" v-model="customColor" class="color-input" placeholder="#000000" />
+            <button class="apply-btn" @click="applyCustomColor">Apply</button>
           </div>
-        </el-card>
+        </div>
 
-        <el-card class="panel-card">
-          <template #header>
-            <span>{{ $t('designer.paramConfig') }}</span>
-          </template>
-          <el-tabs v-model="paramTab" type="border-card">
-            <el-tab-pane :label="$t('designer.dimensions')" name="dimensions">
-              <el-form :model="carParams" label-width="100px" size="small">
-                <el-form-item :label="$t('designer.overallLength')">
-                  <el-slider v-model="carParams.overall_length" :min="3000" :max="6000" :step="50" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.overallWidth')">
-                  <el-slider v-model="carParams.overall_width" :min="1500" :max="2200" :step="10" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.overallHeight')">
-                  <el-slider v-model="carParams.overall_height" :min="1200" :max="2000" :step="10" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.wheelBase')">
-                  <el-slider v-model="carParams.wheel_base" :min="2300" :max="4000" :step="50" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.trackWidth')">
-                  <el-slider v-model="carParams.track_width" :min="1400" :max="1800" :step="10" show-input />
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
-            <el-tab-pane :label="$t('designer.components')" name="components">
-              <el-form :model="componentParams" label-width="100px" size="small">
-                <el-form-item :label="$t('designer.hoodLength')">
-                  <el-slider v-model="componentParams.hood_length" :min="500" :max="2000" :step="50" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.roofHeight')">
-                  <el-slider v-model="componentParams.roof_height" :min="200" :max="800" :step="10" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.wheelDiameter')">
-                  <el-slider v-model="componentParams.wheel_diameter" :min="500" :max="800" :step="10" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.doorFrontLength')">
-                  <el-slider v-model="componentParams.door_front_length" :min="600" :max="1400" :step="50" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.groundClearance')">
-                  <el-slider v-model="componentParams.ground_clearance" :min="100" :max="300" :step="5" show-input />
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
-            <el-tab-pane :label="$t('designer.angles')" name="angles">
-              <el-form :model="angleParams" label-width="100px" size="small">
-                <el-form-item :label="$t('designer.hoodAngle')">
-                  <el-slider v-model="angleParams.hood_angle" :min="0" :max="45" :step="1" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.windshieldAngle')">
-                  <el-slider v-model="angleParams.windshield_angle" :min="20" :max="70" :step="1" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.rearWindowAngle')">
-                  <el-slider v-model="angleParams.rear_window_angle" :min="10" :max="55" :step="1" show-input />
-                </el-form-item>
-                <el-form-item :label="$t('designer.rearSlantAngle')">
-                  <el-slider v-model="angleParams.rear_slant_angle" :min="10" :max="60" :step="1" show-input />
-                </el-form-item>
-              </el-form>
-            </el-tab-pane>
-          </el-tabs>
-        </el-card>
-      </div>
-
-      <div class="right-panel">
-        <el-card class="preview-card-3d">
-          <template #header>
-            <div class="preview-header">
-              <span>{{ $t('designer.realtimePreview') }}</span>
-              <div class="preview-controls">
-                <el-radio-group v-model="viewMode" size="small">
-                  <el-radio-button label="3d">3D视图</el-radio-button>
-                  <el-radio-button label="2d">2D视图</el-radio-button>
-                </el-radio-group>
+        <div class="card param-card">
+          <div class="card-header">
+            <span class="card-title">PARAMETER CONFIGURATION</span>
+          </div>
+          <div class="param-tabs">
+            <div class="param-tab active" :class="{ active: paramTab === 'dimensions' }" @click="paramTab = 'dimensions'">
+              Dimension Parameters
+            </div>
+            <div class="param-tab" :class="{ active: paramTab === 'styling' }" @click="paramTab = 'styling'">
+              Styling Parameters
+            </div>
+          </div>
+          <div class="param-list">
+            <div v-if="paramTab === 'dimensions'" class="param-items">
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Overall Length</span>
+                  <span class="param-value">{{ carParams.overall_length }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.overall_length"
+                  min="3500"
+                  max="6000"
+                  step="10"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Overall Width</span>
+                  <span class="param-value">{{ carParams.overall_width }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.overall_width"
+                  min="1600"
+                  max="2200"
+                  step="10"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Overall Height</span>
+                  <span class="param-value">{{ carParams.overall_height }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.overall_height"
+                  min="1100"
+                  max="2000"
+                  step="10"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">WheelBase</span>
+                  <span class="param-value">{{ carParams.wheel_base }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.wheel_base"
+                  min="2400"
+                  max="4000"
+                  step="10"
+                  class="param-slider"
+                />
               </div>
             </div>
-          </template>
-          <div class="preview-canvas-3d" v-if="viewMode === '3d'">
-            <Car3D
-              :car-params="carParams"
-              :component-params="componentParams"
-              :angle-params="angleParams"
-              :car-type="selectedCarType"
-              :car-color="selectedColor"
-            />
-          </div>
-          <div class="preview-canvas" v-else>
-            <el-radio-group v-model="viewAngle" size="small" class="view-tabs">
-              <el-radio-button label="side">侧面</el-radio-button>
-              <el-radio-button label="front">正面</el-radio-button>
-              <el-radio-button label="top">俯视</el-radio-button>
-            </el-radio-group>
-            <svg viewBox="0 0 800 200" class="car-preview-svg" v-if="viewAngle === 'side'" v-html="sideViewSvg"></svg>
-            <svg viewBox="0 0 400 300" class="car-preview-svg" v-if="viewAngle === 'front'" v-html="frontViewSvg"></svg>
-            <svg viewBox="0 0 800 200" class="car-preview-svg" v-if="viewAngle === 'top'" v-html="topViewSvg"></svg>
-          </div>
-        </el-card>
-
-        <el-card class="result-card" v-if="carResult">
-          <template #header>
-            <div class="result-header">
-              <span>{{ $t('designer.result') }}</span>
-              <div>
-                <el-button type="primary" size="small" @click="regenerateCar">{{ $t('designer.regenerate') }}</el-button>
-                <el-button type="success" size="small" @click="exportCarData">{{ $t('designer.exportData') }}</el-button>
-                <el-button size="small" @click="clearResult">{{ $t('designer.clear') }}</el-button>
+            <div v-else class="param-items">
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Hood Length</span>
+                  <span class="param-value">{{ carParams.hood_length }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.hood_length"
+                  min="700"
+                  max="1800"
+                  step="10"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Roof Height</span>
+                  <span class="param-value">{{ carParams.roof_height }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.roof_height"
+                  min="250"
+                  max="1200"
+                  step="10"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Wheel Diameter</span>
+                  <span class="param-value">{{ carParams.wheel_diameter }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.wheel_diameter"
+                  min="550"
+                  max="850"
+                  step="10"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Windshield Angle</span>
+                  <span class="param-value">{{ carParams.windshield_angle }}°</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.windshield_angle"
+                  min="20"
+                  max="60"
+                  step="1"
+                  class="param-slider"
+                />
               </div>
             </div>
-          </template>
-          <div class="result-stats">
-            <div class="stat-item">
-              <span class="stat-value">{{ carResult.total_surfaces }}</span>
-              <span class="stat-label">{{ $t('designer.componentCount') }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ carResult.parameters?.length || 0 }}</span>
-              <span class="stat-label">{{ $t('designer.paramCount') }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-value">{{ selectedCarTypeName }}</span>
-              <span class="stat-label">{{ $t('designer.carType') }}</span>
-            </div>
           </div>
-          <el-table :data="carResult.components" style="width: 100%" stripe size="small">
-            <el-table-column prop="name" :label="$t('designer.componentName')" />
-            <el-table-column prop="type" :label="$t('designer.type')" width="100">
-              <template #default="{ row }">
-                <el-tag size="small">{{ row.type }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="color" :label="$t('designer.color')" width="100">
-              <template #default="{ row }">
-                <span class="color-dot" :style="{ background: row.color }"></span>
-                {{ row.color }}
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { VideoPlay, CircleCheck } from '@element-plus/icons-vue'
-import { carAPI, projectAPI } from '../services/api'
+import { ref, computed } from 'vue'
 import Car3D from '../components/Car3D.vue'
+import Car2D from '../components/Car2D.vue'
+import { carTypes, carTypeParams, brands, bodyColors, defaultCarParams } from '../config/carPresets'
 
-const { t } = useI18n()
-
-const paramTab = ref('dimensions')
-const viewAngle = ref('side')
-const viewMode = ref('3d')
 const generating = ref(false)
 const selectedCarType = ref('sedan')
-const selectedColor = ref('#00d9ff')
+const selectedBrand = ref('rolls-royce')
+const selectedModel = ref(null)
+const selectedColor = ref('#4ade80')
 const customColor = ref('')
+const baseModelTab = ref('nurbs')
+const previewTab = ref('3d')
+const paramTab = ref('dimensions')
+const baseViewAngle = ref('perspective')
+const previewViewAngle = ref('perspective')
 
-const bodyColors = computed(() => [
-  { value: '#00d9ff', name: t('designer.colorTechBlue') },
-  { value: '#8b5cf6', name: t('designer.colorAuroraPurple') },
-  { value: '#ff6b6b', name: t('designer.colorFlameRed') },
-  { value: '#00ff88', name: t('designer.colorEmeraldGreen') },
-  { value: '#ffc107', name: t('designer.colorAmberGold') },
-  { value: '#e6a800', name: t('designer.colorChampagneGold') },
-  { value: '#ffffff', name: t('designer.colorPearlWhite') },
-  { value: '#1a1a1a', name: t('designer.colorObsidianBlack') },
-  { value: '#6366f1', name: t('designer.colorIndigoBlue') },
-  { value: '#f43f5e', name: t('designer.colorRosePink') },
-  { value: '#14b8a6', name: t('designer.colorDeepSeaGreen') },
-  { value: '#f97316', name: t('designer.colorLavaOrange') }
-])
+const carParams = ref({ ...defaultCarParams, ...carTypeParams.sedan })
 
-const carTypes = computed(() => [
-  {
-    key: 'sedan', name: t('designer.carSedan'), desc: t('designer.carSedanDesc'),
-    svgPath: '<path d="M10,42 L15,42 Q10,30 20,25 L45,18 Q50,15 60,15 L85,15 Q95,15 100,22 L108,30 Q112,32 112,42 Z" fill="none" stroke="#00d9ff" stroke-width="1.5"/><circle cx="30" cy="45" r="7" fill="none" stroke="#00d9ff" stroke-width="1.5"/><circle cx="92" cy="45" r="7" fill="none" stroke="#00d9ff" stroke-width="1.5"/>'
-  },
-  {
-    key: 'suv', name: t('designer.carSuv'), desc: t('designer.carSuvDesc'),
-    svgPath: '<path d="M10,40 L10,22 Q10,12 25,10 L90,10 Q105,12 108,22 L112,30 Q115,32 115,40 Z" fill="none" stroke="#8b5cf6" stroke-width="1.5"/><circle cx="30" cy="45" r="8" fill="none" stroke="#8b5cf6" stroke-width="1.5"/><circle cx="92" cy="45" r="8" fill="none" stroke="#8b5cf6" stroke-width="1.5"/>'
-  },
-  {
-    key: 'coupe', name: t('designer.carCoupe'), desc: t('designer.carCoupeDesc'),
-    svgPath: '<path d="M10,42 Q10,30 20,26 L40,20 Q50,10 70,10 L95,15 Q108,18 112,30 L115,42 Z" fill="none" stroke="#ff6b6b" stroke-width="1.5"/><circle cx="28" cy="45" r="7" fill="none" stroke="#ff6b6b" stroke-width="1.5"/><circle cx="95" cy="45" r="7" fill="none" stroke="#ff6b6b" stroke-width="1.5"/>'
-  },
-  {
-    key: 'mpv', name: t('designer.carMpv'), desc: t('designer.carMpvDesc'),
-    svgPath: '<path d="M10,40 L10,15 Q10,8 30,8 L100,8 Q110,8 112,15 L115,30 Q115,38 115,40 Z" fill="none" stroke="#00ff88" stroke-width="1.5"/><circle cx="30" cy="45" r="7" fill="none" stroke="#00ff88" stroke-width="1.5"/><circle cx="95" cy="45" r="7" fill="none" stroke="#00ff88" stroke-width="1.5"/>'
-  },
-  {
-    key: 'sport', name: t('designer.carSport'), desc: t('designer.carSportDesc'),
-    svgPath: '<path d="M8,44 Q8,36 15,32 L30,28 Q40,18 55,16 L90,18 Q105,20 112,32 L116,40 Q116,44 116,44 Z" fill="none" stroke="#ffc107" stroke-width="1.5"/><circle cx="28" cy="46" r="6" fill="none" stroke="#ffc107" stroke-width="1.5"/><circle cx="98" cy="46" r="6" fill="none" stroke="#ffc107" stroke-width="1.5"/>'
-  },
-  {
-    key: 'pickup', name: t('designer.carPickup'), desc: t('designer.carPickupDesc'),
-    svgPath: '<path d="M10,42 L10,22 Q10,14 25,12 L60,12 Q65,12 68,14 L68,42 Z M72,42 L72,18 Q72,12 78,10 L108,10 Q115,10 116,18 L118,42 Z" fill="none" stroke="#e6a800" stroke-width="1.5"/><circle cx="30" cy="45" r="7" fill="none" stroke="#e6a800" stroke-width="1.5"/><circle cx="100" cy="45" r="7" fill="none" stroke="#e6a800" stroke-width="1.5"/>'
-  }
-])
-
-const carParams = ref({ overall_length: 4800, overall_width: 1850, overall_height: 1450, wheel_base: 2800, track_width: 1580 })
-const componentParams = ref({ hood_length: 1200, roof_height: 450, wheel_diameter: 640, door_front_length: 1000, ground_clearance: 150 })
-const angleParams = ref({ hood_angle: 20, windshield_angle: 50, rear_window_angle: 30, rear_slant_angle: 25 })
-
-const carResult = ref(null)
-const projects = ref([])
-const selectedProject = ref('')
-
-const selectedCarTypeName = computed(() => {
-  const ct = carTypes.value.find(c => c.key === selectedCarType.value)
-  return ct ? ct.name : ''
+const currentBrandModels = computed(() => {
+  const brand = brands.find(b => b.key === selectedBrand.value)
+  return brand ? brand.models : []
 })
+
+const currentModel = computed(() => {
+  if (!selectedModel.value) return null
+  return currentBrandModels.value.find(m => m.key === selectedModel.value)
+})
+
+const getCarTypeSvg = (type) => {
+  const paths = {
+    sedan: 'M10,42 L15,42 Q10,30 20,25 L45,18 Q50,15 60,15 L85,15 Q95,15 100,22 L108,30 Q112,32 112,42 Z M30,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 M92,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0',
+    suv: 'M10,40 L10,22 Q10,12 25,10 L90,10 Q105,12 108,22 L112,30 Q115,32 115,40 Z M30,45 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 M92,45 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0',
+    coupe: 'M10,42 Q10,30 20,26 L40,20 Q50,10 70,10 L95,15 Q108,18 112,30 L115,42 Z M28,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 M95,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0',
+    sport: 'M8,44 Q8,36 15,32 L30,28 Q40,18 55,16 L90,18 Q105,20 112,32 L116,40 Q116,44 116,44 Z M28,46 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 M98,46 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0',
+    mpv: 'M10,40 L10,15 Q10,8 30,8 L100,8 Q110,8 112,15 L115,30 Q115,38 115,40 Z M30,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 M95,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0',
+    pickup: 'M10,42 L10,22 Q10,14 25,12 L60,12 Q65,12 68,14 L68,42 M72,42 L72,18 Q72,12 78,10 L108,10 Q115,10 116,18 L118,42 M30,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0 M100,45 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0'
+  }
+  return paths[type] || paths.sedan
+}
+
+const selectCarType = (type) => {
+  selectedCarType.value = type
+  if (carTypeParams[type]) {
+    carParams.value = { ...defaultCarParams, ...carTypeParams[type] }
+  }
+  selectedModel.value = null
+}
+
+const selectModel = (model) => {
+  selectedModel.value = model.key
+  if (model.params) {
+    carParams.value = { ...defaultCarParams, ...model.params }
+  }
+}
 
 const applyCustomColor = () => {
   if (customColor.value && /^#[0-9A-Fa-f]{6}$/.test(customColor.value)) {
     selectedColor.value = customColor.value
-  } else {
-    alert(t('designer.invalidColor'))
-  }
-}
-
-const sideViewSvg = computed(() => {
-  const L = carParams.value.overall_length
-  const H = carParams.value.overall_height
-  const WB = carParams.value.wheel_base
-  const hoodLen = componentParams.value.hood_length
-  const roofH = componentParams.value.roof_height
-  const wheelR = componentParams.value.wheel_diameter / 2
-  const gc = componentParams.value.ground_clearance
-  const wAngle = angleParams.value.windshield_angle
-  const rAngle = angleParams.value.rear_window_angle
-
-  const svgW = 800, svgH = 200
-  const scale = (svgW - 60) / L
-  const ox = 30, oy = svgH - 30
-
-  const bodyBottom = oy - gc * scale
-  const bodyTop = oy - (gc + H * 0.35) * scale
-  const hoodTop = oy - (gc + H * 0.3) * scale
-  const roofTop = oy - (gc + H * 0.3 + roofH * scale * 0.5) * scale
-
-  const frontX = ox
-  const hoodEndX = ox + hoodLen * scale
-  const frontWheelX = ox + (L / 2 - WB / 2) * scale
-  const rearWheelX = ox + (L / 2 + WB / 2) * scale
-  const rearX = ox + L * scale
-  const windshieldTopX = hoodEndX + roofH * scale * Math.cos(wAngle * Math.PI / 180)
-  const rearWindowTopX = rearX - hoodLen * 0.4 * scale
-
-  let bodyPath = ''
-  if (selectedCarType.value === 'sedan') {
-    bodyPath = `M${frontX},${hoodTop}
-      Q${frontX + 20},${hoodTop - 10} ${hoodEndX},${roofTop + 10}
-      L${windshieldTopX},${roofTop}
-      L${rearWindowTopX},${roofTop}
-      Q${rearX - 30},${roofTop + 10} ${rearX},${bodyTop + 20}
-      L${rearX},${bodyBottom}
-      L${frontX},${bodyBottom} Z`
-  } else if (selectedCarType.value === 'suv') {
-    bodyPath = `M${frontX},${hoodTop}
-      Q${frontX + 20},${hoodTop - 15} ${hoodEndX},${roofTop + 5}
-      L${windshieldTopX},${roofTop - 15}
-      L${rearX - 50},${roofTop - 15}
-      Q${rearX - 10},${roofTop - 10} ${rearX},${bodyTop + 15}
-      L${rearX},${bodyBottom}
-      L${frontX},${bodyBottom} Z`
-  } else if (selectedCarType.value === 'coupe') {
-    bodyPath = `M${frontX},${hoodTop + 5}
-      Q${frontX + 20},${hoodTop - 5} ${hoodEndX},${roofTop + 20}
-      Q${hoodEndX + 40},${roofTop + 5} ${windshieldTopX + 20},${roofTop + 15}
-      Q${rearX - 80},${roofTop + 20} ${rearX},${bodyTop + 25}
-      L${rearX},${bodyBottom}
-      L${frontX},${bodyBottom} Z`
-  } else if (selectedCarType.value === 'mpv') {
-    bodyPath = `M${frontX},${hoodTop - 5}
-      Q${frontX + 15},${hoodTop - 20} ${hoodEndX},${roofTop - 10}
-      L${windshieldTopX},${roofTop - 25}
-      L${rearX - 40},${roofTop - 25}
-      Q${rearX - 5},${roofTop - 20} ${rearX},${bodyTop + 10}
-      L${rearX},${bodyBottom}
-      L${frontX},${bodyBottom} Z`
-  } else if (selectedCarType.value === 'sport') {
-    bodyPath = `M${frontX},${hoodTop + 10}
-      Q${frontX + 30},${hoodTop - 5} ${hoodEndX + 20},${roofTop + 25}
-      Q${hoodEndX + 60},${roofTop + 10} ${windshieldTopX + 30},${roofTop + 20}
-      Q${rearX - 60},${roofTop + 25} ${rearX},${bodyTop + 30}
-      L${rearX},${bodyBottom}
-      L${frontX},${bodyBottom} Z`
-  } else if (selectedCarType.value === 'pickup') {
-    bodyPath = `M${frontX},${hoodTop - 5}
-      Q${frontX + 15},${hoodTop - 15} ${hoodEndX},${roofTop - 5}
-      L${windshieldTopX},${roofTop - 15}
-      L${rearWheelX - 20},${roofTop - 15}
-      L${rearWheelX - 20},${bodyBottom}
-      L${frontX},${bodyBottom} Z`
-  }
-
-  const winPath = `M${hoodEndX},${roofTop + 12}
-    L${windshieldTopX + 5},${roofTop - 5}
-    L${rearWindowTopX - 5},${roofTop - 5}
-    Q${rearX - 35},${roofTop} ${rearX - 15},${bodyTop + 25} Z`
-
-  return `
-    <defs>
-      <linearGradient id="carBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:${selectedColor.value};stop-opacity:0.8" />
-        <stop offset="100%" style="stop-color:${selectedColor.value};stop-opacity:0.4" />
-      </linearGradient>
-      <linearGradient id="winGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" style="stop-color:rgba(100,180,255,0.4);stop-opacity:1" />
-        <stop offset="100%" style="stop-color:rgba(60,120,200,0.2);stop-opacity:1" />
-      </linearGradient>
-      <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <line x1="0" y1="${oy}" x2="${svgW}" y2="${oy}" stroke="#555" stroke-width="1"/>
-    <path d="${bodyPath}" fill="url(#carBodyGrad)" stroke="${selectedColor.value}" stroke-width="1.5" filter="url(#glow)"/>
-    <path d="${winPath}" fill="url(#winGrad)" stroke="rgba(100,200,255,0.5)" stroke-width="1"/>
-    <circle cx="${frontWheelX}" cy="${oy - wheelR * scale * 0.5}" r="${wheelR * scale * 0.4}" fill="#1a1a2e" stroke="#555" stroke-width="2"/>
-    <circle cx="${frontWheelX}" cy="${oy - wheelR * scale * 0.5}" r="${wheelR * scale * 0.2}" fill="#333" stroke="${selectedColor.value}" stroke-width="1.5"/>
-    <circle cx="${rearWheelX}" cy="${oy - wheelR * scale * 0.5}" r="${wheelR * scale * 0.4}" fill="#1a1a2e" stroke="#555" stroke-width="2"/>
-    <circle cx="${rearWheelX}" cy="${oy - wheelR * scale * 0.5}" r="${wheelR * scale * 0.2}" fill="#333" stroke="${selectedColor.value}" stroke-width="1.5"/>
-    <ellipse cx="${frontX + 5}" cy="${(hoodTop + bodyBottom) / 2}" rx="6" ry="4" fill="#ffd700" filter="url(#glow)"/>
-    <ellipse cx="${rearX - 5}" cy="${(bodyTop + bodyBottom) / 2}" rx="5" ry="4" fill="#ff4444" filter="url(#glow)"/>
-    <line x1="${frontWheelX}" y1="${oy + 15}" x2="${rearWheelX}" y2="${oy + 15}" stroke="#888" stroke-width="0.5" stroke-dasharray="3,3"/>
-    <text x="${(frontWheelX + rearWheelX) / 2}" y="${oy + 25}" text-anchor="middle" fill="#888" font-size="10">WB: ${WB}mm</text>
-  `
-})
-
-const frontViewSvg = computed(() => {
-  const W = carParams.value.overall_width
-  const H = carParams.value.overall_height
-  const track = carParams.value.track_width
-  const wheelR = componentParams.value.wheel_diameter / 2
-
-  const svgW = 400, svgH = 300
-  const scale = Math.min((svgW - 60) / W, (svgH - 60) / H)
-  const cx = svgW / 2, oy = svgH - 30
-
-  const halfW = W * scale / 2
-  const bodyH = H * scale
-  const halfTrack = track * scale / 2
-
-  return `
-    <defs>
-      <linearGradient id="frontGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:${selectedColor.value};stop-opacity:0.6" />
-        <stop offset="100%" style="stop-color:${selectedColor.value};stop-opacity:0.3" />
-      </linearGradient>
-    </defs>
-    <line x1="0" y1="${oy}" x2="${svgW}" y2="${oy}" stroke="#555" stroke-width="1"/>
-    <rect x="${cx - halfW}" y="${oy - bodyH * 0.65}" width="${halfW * 2}" height="${bodyH * 0.55}" rx="15" fill="url(#frontGrad)" stroke="${selectedColor.value}" stroke-width="1.5"/>
-    <rect x="${cx - halfW * 0.7}" y="${oy - bodyH * 0.75}" width="${halfW * 1.4}" height="${bodyH * 0.15}" rx="8" fill="rgba(100,180,255,0.3)" stroke="rgba(100,200,255,0.5)" stroke-width="1"/>
-    <ellipse cx="${cx - halfW + 20}" cy="${oy - bodyH * 0.45}" rx="12" ry="8" fill="#ffd700" opacity="0.8"/>
-    <ellipse cx="${cx + halfW - 20}" cy="${oy - bodyH * 0.45}" rx="12" ry="8" fill="#ffd700" opacity="0.8"/>
-    <rect x="${cx - halfTrack - 12}" y="${oy - wheelR * scale * 0.5}" width="24" height="${wheelR * scale}" rx="4" fill="#1a1a2e" stroke="#555" stroke-width="1.5"/>
-    <rect x="${cx + halfTrack - 12}" y="${oy - wheelR * scale * 0.5}" width="24" height="${wheelR * scale}" rx="4" fill="#1a1a2e" stroke="#555" stroke-width="1.5"/>
-    <line x1="${cx - halfW}" y1="${oy + 15}" x2="${cx + halfW}" y2="${oy + 15}" stroke="#888" stroke-width="0.5" stroke-dasharray="3,3"/>
-    <text x="${cx}" y="${oy + 25}" text-anchor="middle" fill="#888" font-size="10">${W}mm</text>
-  `
-})
-
-const topViewSvg = computed(() => {
-  const L = carParams.value.overall_length
-  const W = carParams.value.overall_width
-  const WB = carParams.value.wheel_base
-  const track = carParams.value.track_width
-
-  const svgW = 800, svgH = 200
-  const scale = (svgW - 60) / L
-  const ox = 30, cy = svgH / 2
-
-  const halfW = W * scale / 2
-  const frontX = ox
-  const rearX = ox + L * scale
-  const frontWheelX = ox + (L / 2 - WB / 2) * scale
-  const rearWheelX = ox + (L / 2 + WB / 2) * scale
-  const halfTrack = track * scale / 2
-
-  return `
-    <defs>
-      <linearGradient id="topGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:${selectedColor.value};stop-opacity:0.5" />
-        <stop offset="100%" style="stop-color:${selectedColor.value};stop-opacity:0.2" />
-      </linearGradient>
-    </defs>
-    <rect x="${frontX}" y="${cy - halfW}" width="${L * scale}" height="${halfW * 2}" rx="30" fill="url(#topGrad)" stroke="${selectedColor.value}" stroke-width="1.5"/>
-    <rect x="${frontX + L * scale * 0.3}" y="${cy - halfW * 0.7}" width="${L * scale * 0.4}" height="${halfW * 1.4}" rx="15" fill="rgba(100,180,255,0.3)" stroke="rgba(100,200,255,0.5)" stroke-width="1"/>
-    <rect x="${frontWheelX - 15}" y="${cy - halfTrack - 10}" width="30" height="20" rx="5" fill="#333" stroke="#555" stroke-width="1"/>
-    <rect x="${frontWheelX - 15}" y="${cy + halfTrack - 10}" width="30" height="20" rx="5" fill="#333" stroke="#555" stroke-width="1"/>
-    <rect x="${rearWheelX - 15}" y="${cy - halfTrack - 10}" width="30" height="20" rx="5" fill="#333" stroke="#555" stroke-width="1"/>
-    <rect x="${rearWheelX - 15}" y="${cy + halfTrack - 10}" width="30" height="20" rx="5" fill="#333" stroke="#555" stroke-width="1"/>
-    <line x1="${frontX}" y1="${cy + halfW + 20}" x2="${rearX}" y2="${cy + halfW + 20}" stroke="#888" stroke-width="0.5" stroke-dasharray="3,3"/>
-    <text x="${(frontX + rearX) / 2}" y="${cy + halfW + 32}" text-anchor="middle" fill="#888" font-size="10">${L}mm</text>
-  `
-})
-
-const selectCarType = (key) => {
-  selectedCarType.value = key
-  const defaults = {
-    sedan: { overall_length: 4800, overall_width: 1850, overall_height: 1450, wheel_base: 2800, track_width: 1580, hood_length: 1200, roof_height: 450, wheel_diameter: 640, door_front_length: 1000, ground_clearance: 150, hood_angle: 20, windshield_angle: 50, rear_window_angle: 30, rear_slant_angle: 25 },
-    suv: { overall_length: 4900, overall_width: 1950, overall_height: 1750, wheel_base: 2850, track_width: 1650, hood_length: 1300, roof_height: 700, wheel_diameter: 720, door_front_length: 1100, ground_clearance: 200, hood_angle: 15, windshield_angle: 45, rear_window_angle: 25, rear_slant_angle: 20 },
-    coupe: { overall_length: 4700, overall_width: 1850, overall_height: 1350, wheel_base: 2700, track_width: 1580, hood_length: 1400, roof_height: 350, wheel_diameter: 640, door_front_length: 900, ground_clearance: 130, hood_angle: 10, windshield_angle: 55, rear_window_angle: 40, rear_slant_angle: 45 },
-    mpv: { overall_length: 5100, overall_width: 1900, overall_height: 1800, wheel_base: 3000, track_width: 1620, hood_length: 900, roof_height: 800, wheel_diameter: 680, door_front_length: 1200, ground_clearance: 160, hood_angle: 25, windshield_angle: 40, rear_window_angle: 20, rear_slant_angle: 15 },
-    sport: { overall_length: 4500, overall_width: 1950, overall_height: 1250, wheel_base: 2650, track_width: 1680, hood_length: 1500, roof_height: 300, wheel_diameter: 660, door_front_length: 800, ground_clearance: 110, hood_angle: 8, windshield_angle: 60, rear_window_angle: 35, rear_slant_angle: 50 },
-    pickup: { overall_length: 5500, overall_width: 1950, overall_height: 1850, wheel_base: 3400, track_width: 1650, hood_length: 1400, roof_height: 650, wheel_diameter: 750, door_front_length: 1100, ground_clearance: 220, hood_angle: 18, windshield_angle: 45, rear_window_angle: 20, rear_slant_angle: 18 }
-  }
-  const d = defaults[key]
-  if (d) {
-    Object.assign(carParams.value, { overall_length: d.overall_length, overall_width: d.overall_width, overall_height: d.overall_height, wheel_base: d.wheel_base, track_width: d.track_width })
-    Object.assign(componentParams.value, { hood_length: d.hood_length, roof_height: d.roof_height, wheel_diameter: d.wheel_diameter, door_front_length: d.door_front_length, ground_clearance: d.ground_clearance })
-    Object.assign(angleParams.value, { hood_angle: d.hood_angle, windshield_angle: d.windshield_angle, rear_window_angle: d.rear_window_angle, rear_slant_angle: d.rear_slant_angle })
-  }
-}
-
-const loadProjects = async () => {
-  try {
-    const response = await projectAPI.list()
-    projects.value = response.data
-    if (projects.value.length > 0) selectedProject.value = projects.value[0].id
-  } catch (error) {
-    console.error('Failed to load projects:', error)
   }
 }
 
 const generateCar = async () => {
   generating.value = true
-  try {
-    const params = { ...carParams.value, ...componentParams.value, ...angleParams.value, car_type: selectedCarType.value }
-    const response = await carAPI.generate({ params_override: params })
-    carResult.value = response.data
-  } catch (error) {
-    console.error('Failed to generate car:', error)
-    carResult.value = {
-      total_surfaces: 8,
-      parameters: Object.keys({ ...carParams.value, ...componentParams.value, ...angleParams.value }),
-      components: [
-        { name: t('designer.compHood'), type: 'NURBS', color: selectedColor.value },
-        { name: t('designer.compRoof'), type: 'NURBS', color: '#8b5cf6' },
-        { name: t('designer.compDoor'), type: 'NURBS', color: '#00ff88' },
-        { name: t('designer.compFender'), type: 'NURBS', color: '#ffc107' },
-        { name: t('designer.compTrunk'), type: 'NURBS', color: '#ff6b6b' },
-        { name: t('designer.compWindshield'), type: 'NURBS', color: '#64c8ff' },
-        { name: t('designer.compBumper'), type: 'NURBS', color: '#e6a800' },
-        { name: t('designer.compWheelCover'), type: 'NURBS', color: '#4d96ff' }
-      ]
-    }
-  } finally {
+  setTimeout(() => {
     generating.value = false
-  }
+  }, 2000)
 }
-
-const regenerateCar = async () => { await generateCar() }
-
-const exportCarData = async () => {
-  try {
-    await carAPI.export({})
-    alert(t('designer.exportSuccess'))
-  } catch (error) {
-    console.error('Export failed:', error)
-    alert(t('designer.exportFailed'))
-  }
-}
-
-const clearResult = () => { carResult.value = null }
-
-onMounted(() => { loadProjects() })
 </script>
 
 <style scoped>
-.designer-page { padding: 10px; }
+.designer-page {
+  width: 100%;
+  min-width: 1200px;
+  min-height: calc(100vh - 52px - 32px);
+  height: calc(100vh - 52px - 32px);
+  background: #0a0a0f;
+  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #16161f;
+  flex-shrink: 0;
 }
 
-.header-left h2 { margin: 0; font-size: 22px; }
-.header-left p { margin: 3px 0 0 0; color: #999; font-size: 13px; }
-
-.main-content {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 20px;
-  width: 100%;
-}
-
-.left-panel {
-  min-width: 0;
-  overflow-y: auto;
-}
-
-.right-panel {
-  min-width: 0;
+.header-left {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  text-align: left;
 }
 
-.panel-card { margin-bottom: 20px; }
+.header-subrow {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3px;
+}
+
+.header-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.header-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.header-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.header-tab.active {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+}
+
+.generate-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: #4ade80;
+  color: #0a0a0f;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: #22c55e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+}
+
+.generate-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.generate-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.main-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 280px minmax(300px, 1fr) 300px;
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.left-panel,
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.viewport-row {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+
+.viewport-row .viewport-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  flex-shrink: 0;
+  height: 240px;
+}
+
+.card {
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.card-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
 
 .car-type-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 8px;
 }
 
-.car-type-item {
+.car-type-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 15px 8px;
-  border: 2px solid #e4e7ed;
-  border-radius: 10px;
+  padding: 10px 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
+  transition: all 0.2s ease;
 }
 
-.car-type-item:hover {
-  border-color: #c0c4cc;
-  background: #fafafa;
+.car-type-card:hover {
+  border-color: rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.05);
 }
 
-.car-type-item.active {
-  border-color: #00d9ff;
-  background: rgba(0, 217, 255, 0.05);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 217, 255, 0.2);
+.car-type-card.active {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.car-type-icon {
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 6px;
+}
+
+.car-type-card.active .car-type-icon {
+  color: #4ade80;
 }
 
 .car-type-svg {
   width: 80px;
-  height: 50px;
-  margin-bottom: 8px;
+  height: 36px;
 }
 
 .car-type-name {
-  font-weight: 600;
-  font-size: 13px;
-  color: #303133;
-  margin-bottom: 4px;
-}
-
-.car-type-desc {
   font-size: 11px;
-  color: #909399;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.color-picker {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+.car-type-card.active .car-type-name {
+  color: #4ade80;
+}
+
+.brand-section {
+  display: flex;
   gap: 10px;
-  margin-bottom: 15px;
 }
 
-.color-item {
-  width: 100%;
-  height: 40px;
-  border-radius: 8px;
+.brand-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 70px;
+}
+
+.brand-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.brand-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.brand-item.active {
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+}
+
+.brand-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.model-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 300px;
+  padding-right: 2px;
+}
+
+.model-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.model-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.model-card {
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.model-card:hover {
+  border-color: rgba(74, 222, 128, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.model-card.active {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.model-image {
+  width: 60px;
+  height: 36px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #0a0a0f;
+  border-radius: 3px;
+}
+
+.model-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.model-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.model-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.model-spec {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 2px;
+}
+
+.model-card.active .model-name {
+  color: #4ade80;
+}
+
+.viewport-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.viewport-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.viewport-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.viewport-tab {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewport-tab:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.viewport-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.viewport-tab.active-green.active {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.viewport-tab.blue.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.viewport-container {
+  flex: 1;
   position: relative;
-  border: 3px solid transparent;
+  min-height: 0;
 }
 
-.color-item:hover {
-  transform: scale(1.1);
-  border-color: rgba(0, 0, 0, 0.2);
+.viewport-2d {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0f;
 }
 
-.color-item.active {
-  border-color: #00d9ff;
-  box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
+.ref-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.ref-tab {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ref-tab:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ref-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.viewport-container {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.viewport-2d {
+  width: 100%;
+  height: 100%;
+}
+
+.reference-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.reference-card .card-header {
+  padding: 10px 14px;
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.reference-image-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0f;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.reference-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.reference-placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+}
+
+.wireframe-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.wireframe-card .card-header {
+  padding: 10px 14px;
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.wireframe-container {
+  flex: 1;
+  padding: 12px;
+  min-height: 0;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.color-swatch {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.color-swatch:hover {
+  transform: scale(1.05);
+}
+
+.color-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5);
 }
 
 .color-check {
@@ -640,98 +983,174 @@ onMounted(() => { loadProjects() })
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
-.custom-color {
+.color-check svg {
+  width: 100%;
+  height: 100%;
+}
+
+.color-input-row {
   display: flex;
-  gap: 10px;
-  align-items: center;
+  gap: 8px;
 }
 
-.custom-color .el-input {
+.color-input {
   flex: 1;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease;
 }
 
-.preview-card-3d { margin-bottom: 20px; }
+.color-input:focus {
+  border-color: rgba(74, 222, 128, 0.4);
+}
 
-.preview-header {
+.color-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.apply-btn {
+  padding: 6px 14px;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 6px;
+  color: #4ade80;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.apply-btn:hover {
+  background: rgba(74, 222, 128, 0.25);
+}
+
+.param-tabs {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
 }
 
-.preview-canvas-3d {
-  background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
-  border-radius: 12px;
-  padding: 15px;
-  min-height: 450px;
-  height: 50vh;
-  flex-shrink: 0;
+.param-tab {
+  flex: 1;
+  font-size: 10px;
+  padding: 6px 4px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.preview-canvas {
-  background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
-  border-radius: 12px;
-  padding: 15px;
+.param-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.param-tab.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #3b82f6;
+}
+
+.param-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.param-items {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  min-height: 280px;
+  gap: 14px;
 }
 
-.view-tabs {
-  margin-bottom: 15px;
+.param-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.car-preview-svg {
-  width: 100%;
-  max-height: 260px;
-}
-
-.result-header {
+.param-label-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.result-stats {
-  display: flex;
-  gap: 40px;
-  margin-bottom: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #f0f0f0;
+.param-name {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.stat-item { text-align: center; }
-
-.stat-value {
-  display: block;
-  font-size: 24px;
+.param-value {
+  font-size: 11px;
   font-weight: 600;
-  color: #00d9ff;
+  color: #4ade80;
+  font-family: 'Inter', monospace;
 }
 
-.stat-label {
-  font-size: 12px;
-  color: #909399;
+.param-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  cursor: pointer;
 }
 
-.color-dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
+.param-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  margin-right: 8px;
+  background: #4ade80;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(74, 222, 128, 0.4);
+  transition: transform 0.15s ease;
 }
 
-@media (max-width: 900px) {
-  .main-content {
-    grid-template-columns: 1fr;
-  }
-  .left-panel {
-    width: 100%;
-  }
+.param-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.param-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4ade80;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(74, 222, 128, 0.4);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 </style>

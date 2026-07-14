@@ -2,29 +2,21 @@
   <div class="projects-page">
     <div class="page-header">
       <div class="header-left">
-        <h2>{{ $t('projects.title') }}</h2>
-        <p>{{ $t('projects.subtitle') }}</p>
+        <h2 class="page-title">Projects</h2>
+        <p class="page-subtitle">Manage and organize your design projects</p>
       </div>
-      <el-button type="primary" @click="showCreateDialog = true">
+      <el-button type="primary" class="btn-primary" @click="showCreateDialog = true">
         <el-icon><Plus /></el-icon>
-        {{ $t('projects.newProject') }}
+        <span>New Project</span>
       </el-button>
     </div>
 
     <div class="filter-bar">
-      <el-select v-model="filterStatus" :placeholder="$t('projects.statusFilter')">
-        <el-option :label="$t('projects.all')" value="" />
-        <el-option :label="$t('projects.active')" value="active" />
-        <el-option :label="$t('projects.pending')" value="pending" />
-        <el-option :label="$t('projects.completed')" value="completed" />
-        <el-option :label="$t('projects.failed')" value="failed" />
-      </el-select>
-      <el-input
-        v-model="searchQuery"
-        :placeholder="$t('projects.search')"
-        clearable
-        prefix-icon="Search"
-      />
+      <el-input v-model="searchQuery" placeholder="Search projects..." class="search-input" clearable>
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
     </div>
 
     <div class="projects-grid">
@@ -32,64 +24,43 @@
         v-for="project in filteredProjects"
         :key="project.id"
         class="project-card"
-        @click="$router.push(`/projects/${project.id}`)"
+        @click="openProject(project.id)"
       >
         <div class="project-header">
-          <div class="project-info">
-            <h3 class="project-name">{{ project.name }}</h3>
-            <p class="project-desc">{{ project.description || $t('projects.noDesc') }}</p>
+          <div class="project-avatar" :class="project.status.toLowerCase()">
+            <el-icon :size="20"><FolderOpened /></el-icon>
           </div>
-          <el-tag :type="getStatusType(project.status)" size="small" class="project-status">
-            {{ getStatusText(project.status) }}
-          </el-tag>
+          <el-tag :type="getStatusType(project.status)" effect="dark" size="small">{{ project.status }}</el-tag>
         </div>
-        <div class="project-meta">
-          <span class="meta-item">
-            <el-icon><Clock /></el-icon>
-            {{ formatDateTime(project.created_at) }}
-          </span>
-          <span class="meta-item">
-            <el-icon><EditPen /></el-icon>
-            {{ formatDateTime(project.updated_at) }}
-          </span>
-        </div>
-        <div class="project-actions">
-          <el-button type="primary" size="small" @click.stop="$router.push(`/projects/${project.id}`)">
-            <el-icon><View /></el-icon>
-            {{ $t('projects.detail') }}
-          </el-button>
-          <el-button type="success" size="small" @click.stop="editProject(project)">
-            <el-icon><Edit /></el-icon>
-            {{ $t('projects.edit') }}
-          </el-button>
-          <el-button type="danger" size="small" @click.stop="deleteProject(project.id)">
-            <el-icon><Delete /></el-icon>
-            {{ $t('projects.delete') }}
-          </el-button>
+        <h3 class="project-name">{{ project.name }}</h3>
+        <p class="project-desc">{{ project.description }}</p>
+        <div class="project-footer">
+          <div class="project-meta">
+            <span class="meta-item">
+              <el-icon :size="12"><Clock /></el-icon>
+              <span>{{ project.createdAt }}</span>
+            </span>
+            <span class="meta-item">
+              <el-icon :size="12"><Picture /></el-icon>
+              <span>{{ project.modelCount }} models</span>
+            </span>
+          </div>
         </div>
       </el-card>
     </div>
 
-    <el-pagination
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :total="projects.length"
-      layout="total, prev, pager, next, jumper"
-      :page-sizes="[10, 20, 50]"
-    />
-
-    <el-dialog v-model="showCreateDialog" :title="$t('projects.newProject')" width="500px">
-      <el-form :model="projectForm" label-width="80px">
-        <el-form-item :label="$t('projects.projectNameLabel')" required>
-          <el-input v-model="projectForm.name" :placeholder="$t('projects.enterName')" />
+    <el-dialog v-model="showCreateDialog" title="Create New Project" width="480px" class="create-dialog">
+      <el-form :model="projectForm" label-position="top">
+        <el-form-item label="Project Name">
+          <el-input v-model="projectForm.name" placeholder="Enter project name" />
         </el-form-item>
-        <el-form-item :label="$t('projects.projectDescLabel')">
-          <el-input v-model="projectForm.description" type="textarea" :placeholder="$t('common.pleaseInput')" />
+        <el-form-item label="Description">
+          <el-input v-model="projectForm.description" type="textarea" :rows="3" placeholder="Brief description of the project" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="createProject">{{ $t('common.confirm') }}</el-button>
+        <el-button @click="showCreateDialog = false">Cancel</el-button>
+        <el-button type="primary" class="btn-primary" @click="createProject">Create</el-button>
       </template>
     </el-dialog>
   </div>
@@ -97,197 +68,297 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Plus, Search, Clock, EditPen, View, Edit, Delete } from '@element-plus/icons-vue'
-import { projectAPI } from '../services/api'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { Plus, Search, FolderOpened, Clock, Picture } from '@element-plus/icons-vue'
 
-const { t } = useI18n()
+const router = useRouter()
 
-const projects = ref([])
-const filterStatus = ref('')
 const searchQuery = ref('')
-const currentPage = ref(1)
-const pageSize = ref(10)
 const showCreateDialog = ref(false)
+const projectForm = ref({ name: '', description: '' })
 
-const projectForm = ref({
-  name: '',
-  description: ''
-})
+const projects = ref([
+  { id: 1, name: 'EV-Sedan Concept', description: 'Electric sedan concept design with aerodynamic optimization', status: 'Active', createdAt: '2026-07-10', modelCount: 12 },
+  { id: 2, name: 'SUV-A Platform', description: 'SUV platform design for mid-size family vehicle', status: 'Completed', createdAt: '2026-07-08', modelCount: 24 },
+  { id: 3, name: 'Sports Coupe V2', description: 'Second generation sports coupe design study', status: 'Active', createdAt: '2026-07-05', modelCount: 8 },
+  { id: 4, name: 'Hatchback Design', description: 'Compact hatchback urban vehicle concept', status: 'Draft', createdAt: '2026-07-02', modelCount: 3 },
+  { id: 5, name: 'Crossover Study', description: 'Crossover SUV coupe variant exploration', status: 'Completed', createdAt: '2026-06-28', modelCount: 18 },
+  { id: 6, name: 'Pickup Truck EV', description: 'Electric pickup truck design program', status: 'Draft', createdAt: '2026-06-25', modelCount: 1 },
+  { id: 7, name: 'Roadster Concept', description: 'Two-seater roadster sports car design', status: 'Active', createdAt: '2026-06-20', modelCount: 15 },
+  { id: 8, name: 'Minivan Design', description: 'Family-oriented minivan interior and exterior', status: 'Completed', createdAt: '2026-06-15', modelCount: 20 },
+  { id: 9, name: 'City Car EV', description: 'Ultra-compact city electric vehicle', status: 'Draft', createdAt: '2026-06-10', modelCount: 5 }
+])
 
 const filteredProjects = computed(() => {
-  return projects.value.filter(project => {
-    const matchStatus = !filterStatus.value || project.status === filterStatus.value
-    const matchSearch = !searchQuery.value ||
-      project.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      project.description?.toLowerCase().includes(searchQuery.value.toLowerCase())
-    return matchStatus && matchSearch
-  })
+  if (!searchQuery.value) return projects.value
+  const query = searchQuery.value.toLowerCase()
+  return projects.value.filter(p =>
+    p.name.toLowerCase().includes(query) ||
+    p.description.toLowerCase().includes(query)
+  )
 })
 
 const getStatusType = (status) => {
-  const types = {
-    active: 'success',
-    pending: 'warning',
-    completed: 'info',
-    failed: 'danger'
-  }
+  const types = { Active: 'success', Completed: 'info', Draft: 'warning' }
   return types[status] || 'info'
 }
 
-const getStatusText = (status) => {
-  const texts = {
-    active: t('projects.active'),
-    pending: t('projects.pending'),
-    completed: t('projects.completed'),
-    failed: t('projects.failed')
-  }
-  return texts[status] || status
+const openProject = (id) => {
+  router.push(`/projects/${id}`)
 }
 
-const formatDateTime = (date) => {
-  return new Date(date).toLocaleString()
-}
-
-const loadProjects = async () => {
-  try {
-    const response = await projectAPI.list(filterStatus.value || null)
-    projects.value = response.data
-  } catch (error) {
-    console.error('Failed to load projects:', error)
-  }
-}
-
-const createProject = async () => {
-  if (!projectForm.value.name) {
-    alert(t('projects.enterName'))
+const createProject = () => {
+  if (!projectForm.value.name.trim()) {
+    ElMessage.warning('Please enter a project name')
     return
   }
-
-  try {
-    await projectAPI.create(projectForm.value)
-    showCreateDialog.value = false
-    projectForm.value = { name: '', description: '' }
-    await loadProjects()
-    alert(t('projects.createSuccess'))
-  } catch (error) {
-    console.error('Failed to create project:', error)
-    alert(t('projects.createFailed'))
-  }
+  ElMessage.success('Project created successfully')
+  showCreateDialog.value = false
+  projectForm.value = { name: '', description: '' }
 }
-
-const editProject = (project) => {
-  projectForm.value = { name: project.name, description: project.description }
-  showCreateDialog.value = true
-}
-
-const deleteProject = async (id) => {
-  if (!confirm(t('projects.confirmDelete'))) return
-
-  try {
-    await projectAPI.delete(id)
-    await loadProjects()
-    alert(t('projects.deleteSuccess'))
-  } catch (error) {
-    console.error('Failed to delete project:', error)
-    alert(t('projects.deleteFailed'))
-  }
-}
-
-loadProjects()
 </script>
 
 <style scoped>
-.projects-page { padding: 20px; }
+.projects-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
 }
 
-.header-left h2 { margin: 0; font-size: 24px; }
-.header-left p { margin: 5px 0 0 0; color: #999; }
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.btn-primary {
+  background: #4ade80;
+  border-color: #4ade80;
+  color: #0a0a0f;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #0a0a0f;
+}
 
 .filter-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.search-input {
+  max-width: 360px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.search-input :deep(.el-input__wrapper:hover) {
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.search-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #4ade80;
+}
+
+.search-input :deep(.el-input__inner) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.search-input :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.search-input :deep(.el-input__prefix-inner),
+.search-input :deep(.el-input__suffix-inner) {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 .project-card {
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid #e4e7ed;
+  transition: all 0.2s ease;
 }
 
 .project-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  border-color: #00d9ff;
+  border-color: rgba(74, 222, 128, 0.3);
+  transform: translateY(-2px);
+}
+
+.project-card :deep(.el-card__body) {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .project-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 15px;
 }
 
-.project-info { flex: 1; }
+.project-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-avatar.active {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.project-avatar.completed {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+}
+
+.project-avatar.draft {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
 
 .project-name {
-  margin: 0 0 8px 0;
-  font-size: 18px;
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: #fff;
 }
 
 .project-desc {
   margin: 0;
-  font-size: 14px;
-  color: #909399;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.project-status { flex-shrink: 0; margin-left: 15px; }
+.project-footer {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
 
 .project-meta {
   display: flex;
-  gap: 20px;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 16px;
 }
 
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  color: #909399;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
 }
 
-.project-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
+.create-dialog :deep(.el-dialog) {
+  background: #16161f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
 }
 
-.el-pagination {
-  display: flex;
-  justify-content: center;
+.create-dialog :deep(.el-dialog__title) {
+  color: #fff;
+}
+
+.create-dialog :deep(.el-dialog__headerbtn .el-dialog__close) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.create-dialog :deep(.el-form-item__label) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.create-dialog :deep(.el-input__wrapper) {
+  background: #0a0a0f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.create-dialog :deep(.el-input__wrapper:hover) {
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.create-dialog :deep(.el-input__wrapper.is-focus) {
+  border-color: #4ade80;
+}
+
+.create-dialog :deep(.el-input__inner) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.create-dialog :deep(.el-textarea__inner) {
+  background: #0a0a0f;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.create-dialog :deep(.el-textarea__inner:hover) {
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.create-dialog :deep(.el-textarea__inner:focus) {
+  border-color: #4ade80;
+}
+
+.create-dialog :deep(.el-dialog__footer) {
+  padding-top: 0;
+}
+
+.create-dialog :deep(.el-button--default) {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+}
+
+.create-dialog :deep(.el-button--default:hover) {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 </style>

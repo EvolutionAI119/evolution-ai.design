@@ -1,16 +1,13 @@
+"""启动脚本：使用uvicorn启动FastAPI应用"""
 import uvicorn
-from app.config.settings import settings
+from app.config import settings
 
 
-def main():
+if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host=settings.API_HOST,
         port=settings.API_PORT,
         reload=settings.DEBUG,
-        log_level=settings.LOG_LEVEL.lower()
+        log_level=settings.LOG_LEVEL.lower(),
     )
-
-
-if __name__ == "__main__":
-    main()
