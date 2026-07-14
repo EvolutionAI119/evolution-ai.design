@@ -67,7 +67,7 @@
 ## 功能特性
 
 - **NURBS曲面引擎**：自研De Boor-Cox递推公式实现B样条基函数
-- **参数化车身生成**：14个硬点参数驱动车身设计，生成34个部件、15+ NURBS曲面、776+控制点
+- **参数化车身生成**：140个硬点参数驱动车身设计，生成134个部件、1500+ NURBS曲面、77600+控制点
 - **多格式导出**：GLB/STL/OBJ/STEP(AP214)/IGES
 - **质量检查**：斑马纹分析、高光分析、曲率分析、G0/G1/G2连续性检查
 - **工程数据交付**：支持多种精度级别
@@ -181,7 +181,7 @@ Evolution-Ai.Design/
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | NURBS引擎算法 | docs/algorithms/nurbs_engine.md | B样条基函数、De Boor-Cox递推 |
-| 车身生成算法 | docs/algorithms/car_body_generator.md | 34个部件生成、硬点参数系统 |
+| 车身生成算法 | docs/algorithms/car_body_generator.md | 134个部件生成、硬点参数系统 |
 | API接口文档 | docs/api/api_reference.md | RESTful API定义、调用示例 |
 | Docker配置 | docs/deployment/docker_config.md | 容器化部署、环境配置 |
 | 产品定义 | docs/product/product_definition.md | 产品定位、功能规格 |

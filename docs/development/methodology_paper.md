@@ -321,7 +321,7 @@ class NURBSCurve:
 
 **参数定义**：
 ```python
-# 14个硬点参数
+# 140个硬点参数
 params = {
     '整车尺寸': {
         'overall_length': 4800, 'overall_width': 1900,
