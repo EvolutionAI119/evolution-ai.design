@@ -1,10 +1,9 @@
 <template>
   <div class="designer-page">
-    <div class="page-header">
-      <div class="header-left">
-        <h1 class="page-title">AI Automotive Designer</h1>
-        <div class="header-subrow">
-          <p class="page-subtitle">Parametric A-Class Surface Generation</p>
+    <div class="page-title-bar">
+      <div class="title-content">
+        <div class="title-row">
+          <h1 class="page-title">AI Automotive Designer</h1>
           <div class="header-tabs">
             <div class="header-tab active">
               <span class="tab-dot"></span>
@@ -14,17 +13,18 @@
               Parametric
             </div>
           </div>
+          <button class="generate-btn" @click="generateCar" :disabled="generating">
+            <svg v-if="!generating" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+            <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+            <span>{{ generating ? 'Generating...' : 'Generate Complete Car' }}</span>
+          </button>
         </div>
+        <p class="page-subtitle">Parametric A-Class Surface Generation</p>
       </div>
-      <button class="generate-btn" @click="generateCar" :disabled="generating">
-        <svg v-if="!generating" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-        <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-        </svg>
-        <span>{{ generating ? 'Generating...' : 'Generate Complete Car' }}</span>
-      </button>
     </div>
 
     <div class="main-layout">
@@ -426,35 +426,34 @@ const generateCar = async () => {
   overflow: auto;
 }
 
-.page-header {
+.page-title-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 16px 20px;
+  padding: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: #16161f;
   flex-shrink: 0;
 }
 
-.header-left {
+.title-content {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  text-align: left;
+  align-items: center;
+  gap: 8px;
 }
 
-.header-subrow {
+.title-row {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
 .page-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  text-align: left;
 }
 
 .page-subtitle {

@@ -1,5 +1,48 @@
 <template>
   <div class="dashboard">
+    <div class="hero-section">
+      <div class="hero-video-container">
+        <video
+          ref="heroVideo"
+          class="hero-video"
+          autoplay
+          muted
+          loop
+          playsinline
+        >
+          <source src="/demo-animation.mp4" type="video/mp4" />
+        </video>
+        <div class="video-overlay"></div>
+      </div>
+      <div class="hero-content">
+        <div class="hero-badge">Class A Surface Development Platform</div>
+        <h1 class="hero-title">EVOLUTION AI</h1>
+        <p class="hero-subtitle">From Concept to Class A - Parametric Automotive Surface Generation</p>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="stat-number">22</span>
+            <span class="stat-unit">Dimensions</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-number">19</span>
+            <span class="stat-unit">Models</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-number">5</span>
+            <span class="stat-unit">Brands</span>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <el-button type="primary" size="large" @click="$router.push('/designer')">
+            Start Designing
+          </el-button>
+          <el-button size="large" @click="$router.push('/demo')">
+            View Demo
+          </el-button>
+        </div>
+      </div>
+    </div>
+
     <div class="stats-grid">
       <el-card class="stat-card" v-for="stat in statCards" :key="stat.key">
         <div class="stat-icon" :class="stat.key">
@@ -54,7 +97,16 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { FolderOpened, Picture, CircleCheck, Download } from '@element-plus/icons-vue'
+
+const heroVideo = ref(null)
+
+onMounted(() => {
+  if (heroVideo.value) {
+    heroVideo.value.play().catch(() => {})
+  }
+})
 
 const statCards = [
   { key: 'projects', icon: FolderOpened, value: '24', label: 'Projects' },
@@ -88,7 +140,123 @@ const getStatusType = (status) => {
 .dashboard {
   display: flex;
   flex-direction: column;
+  gap: 20px;
+}
+
+.hero-section {
+  position: relative;
+  height: 480px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: -16px;
+  margin-bottom: 20px;
+}
+
+.hero-video-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(10, 10, 15, 0.85) 0%, rgba(10, 10, 15, 0.6) 50%, rgba(10, 10, 15, 0.85) 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.hero-badge {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  padding: 6px 16px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.hero-title {
+  font-size: 48px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 12px 0 24px;
+  max-width: 600px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  margin-bottom: 32px;
+}
+
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.stat-unit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+.hero-actions {
+  display: flex;
   gap: 16px;
+}
+
+.hero-actions :deep(.el-button) {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.hero-actions :deep(.el-button--primary) {
+  background: #4ade80;
+  border-color: #4ade80;
+  color: #0a0a0f;
+}
+
+.hero-actions :deep(.el-button--primary:hover) {
+  background: #22c55e;
+  border-color: #22c55e;
 }
 
 .stats-grid {
