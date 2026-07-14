@@ -173,35 +173,35 @@ const createCar = () => {
     wireframe: wireframeMode.value
   })
 
-  const frontWheelZ = WB / 2
-  const rearWheelZ = -WB / 2
+  const frontWheelX = WB / 2
+  const rearWheelX = -WB / 2
   const halfTrack = track / 2
 
   const bodyShape = new THREE.Shape()
-  const frontZ = L / 2
-  const rearZ = -L / 2
-  const hoodEndZ = frontZ - hoodLen
-  const trunkStartZ = rearZ + hoodLen * 0.6
+  const frontX = L / 2
+  const rearX = -L / 2
+  const hoodEndX = frontX - hoodLen
+  const trunkStartX = rearX + hoodLen * 0.6
 
   const windshieldHeight = roofH * 0.7
-  const windshieldTopZ = hoodEndZ - windshieldHeight / Math.tan(wAngle)
+  const windshieldTopX = hoodEndX - windshieldHeight / Math.tan(wAngle)
   
   const rearWindowHeight = roofH * 0.65
-  const rearWindowTopZ = trunkStartZ + rearWindowHeight / Math.tan(rAngle)
+  const rearWindowTopX = trunkStartX + rearWindowHeight / Math.tan(rAngle)
 
   const bodyBottomY = gc
   const bodyTopY = gc + H * 0.4
   const roofTopY = gc + H * 0.4 + roofH
   const beltLineY = gc + H * 0.55
 
-  bodyShape.moveTo(frontZ, bodyBottomY)
-  bodyShape.quadraticCurveTo(frontZ + 0.05, bodyTopY - 0.1, frontZ, bodyTopY)
-  bodyShape.quadraticCurveTo(hoodEndZ - 0.1, beltLineY - 0.05, hoodEndZ, beltLineY)
-  bodyShape.lineTo(windshieldTopZ, roofTopY)
-  bodyShape.lineTo(rearWindowTopZ, roofTopY)
-  bodyShape.quadraticCurveTo(trunkStartZ + 0.1, beltLineY + 0.05, trunkStartZ, beltLineY)
-  bodyShape.quadraticCurveTo(rearZ + 0.05, bodyTopY - 0.15, rearZ, bodyBottomY + 0.05)
-  bodyShape.lineTo(rearZ, bodyBottomY)
+  bodyShape.moveTo(frontX, bodyBottomY)
+  bodyShape.quadraticCurveTo(frontX + 0.05, bodyTopY - 0.1, frontX, bodyTopY)
+  bodyShape.quadraticCurveTo(hoodEndX - 0.1, beltLineY - 0.05, hoodEndX, beltLineY)
+  bodyShape.lineTo(windshieldTopX, roofTopY)
+  bodyShape.lineTo(rearWindowTopX, roofTopY)
+  bodyShape.quadraticCurveTo(trunkStartX + 0.1, beltLineY + 0.05, trunkStartX, beltLineY)
+  bodyShape.quadraticCurveTo(rearX + 0.05, bodyTopY - 0.15, rearX, bodyBottomY + 0.05)
+  bodyShape.lineTo(rearX, bodyBottomY)
   bodyShape.closePath()
 
   const extrudeSettings = {
@@ -215,17 +215,11 @@ const createCar = () => {
 
   const bodyGeom = new THREE.ExtrudeGeometry(bodyShape, extrudeSettings)
   bodyGeom.translate(0, 0, -W / 2)
-  bodyGeom.rotateY(0)
-  bodyGeom.rotateZ(0)
   
-  const tempGroup = new THREE.Group()
   const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat)
-  bodyMesh.rotation.y = Math.PI / 2
-  bodyMesh.rotation.x = 0
-  tempGroup.add(bodyMesh)
-  group.add(tempGroup)
+  group.add(bodyMesh)
 
-  const roofLen = Math.abs(rearWindowTopZ - windshieldTopZ)
+  const roofLen = Math.abs(rearWindowTopX - windshieldTopX)
   const roofShape = new THREE.Shape()
   roofShape.moveTo(-roofLen / 2, 0)
   roofShape.quadraticCurveTo(0, -0.03, roofLen / 2, 0)
@@ -241,16 +235,14 @@ const createCar = () => {
     bevelSegments: 2
   })
   const roofMesh = new THREE.Mesh(roofGeom, bodyMat)
-  roofMesh.rotation.y = Math.PI / 2
-  roofMesh.rotation.x = 0
-  roofMesh.position.set(0, roofTopY + 0.01, (windshieldTopZ + rearWindowTopZ) / 2)
+  roofMesh.position.set((windshieldTopX + rearWindowTopX) / 2, roofTopY + 0.01, 0)
   group.add(roofMesh)
 
   const windowShape = new THREE.Shape()
-  windowShape.moveTo(hoodEndZ, beltLineY)
-  windowShape.lineTo(windshieldTopZ, roofTopY - 0.02)
-  windowShape.lineTo(rearWindowTopZ, roofTopY - 0.02)
-  windowShape.lineTo(trunkStartZ, beltLineY)
+  windowShape.moveTo(hoodEndX, beltLineY)
+  windowShape.lineTo(windshieldTopX, roofTopY - 0.02)
+  windowShape.lineTo(rearWindowTopX, roofTopY - 0.02)
+  windowShape.lineTo(trunkStartX, beltLineY)
   windowShape.closePath()
 
   const windowGeom = new THREE.ExtrudeGeometry(windowShape, {
@@ -258,11 +250,10 @@ const createCar = () => {
     bevelEnabled: false
   })
   const windowMesh = new THREE.Mesh(windowGeom, glassMat)
-  windowMesh.rotation.y = Math.PI / 2
   windowMesh.position.set(0, 0, 0)
   group.add(windowMesh)
 
-  const createWheel = (z, x) => {
+  const createWheel = (x, z) => {
     const wheelGroup = new THREE.Group()
     
     const tireGeom = new THREE.CylinderGeometry(wheelR, wheelR, 0.28, 24)
@@ -283,7 +274,7 @@ const createCar = () => {
     for (let i = 0; i < 5; i++) {
       const spokeGeom = new THREE.BoxGeometry(wheelR * 0.5, 0.04, 0.06)
       const spoke = new THREE.Mesh(spokeGeom, rimMat)
-      spoke.rotation.y = (i * Math.PI * 2) / 5
+      spoke.rotation.x = (i * Math.PI * 2) / 5
       wheelGroup.add(spoke)
     }
 
@@ -291,18 +282,45 @@ const createCar = () => {
     return wheelGroup
   }
 
-  group.add(createWheel(frontWheelZ, halfTrack))
-  group.add(createWheel(frontWheelZ, -halfTrack))
-  group.add(createWheel(rearWheelZ, halfTrack))
-  group.add(createWheel(rearWheelZ, -halfTrack))
+  group.add(createWheel(frontWheelX, halfTrack))
+  group.add(createWheel(frontWheelX, -halfTrack))
+  group.add(createWheel(rearWheelX, halfTrack))
+  group.add(createWheel(rearWheelX, -halfTrack))
+
+  const steeringWheelGroup = new THREE.Group()
+  const swRadius = 0.15
+  const swGeom = new THREE.TorusGeometry(swRadius, 0.012, 16, 32)
+  const swMesh = new THREE.Mesh(swGeom, chromeMat)
+  swMesh.rotation.x = Math.PI / 2
+  steeringWheelGroup.add(swMesh)
+
+  const swSpoke1 = new THREE.Mesh(new THREE.BoxGeometry(0.008, swRadius * 1.8, 0.008), chromeMat)
+  steeringWheelGroup.add(swSpoke1)
+  const swSpoke2 = new THREE.Mesh(new THREE.BoxGeometry(0.008, swRadius * 1.8, 0.008), chromeMat)
+  swSpoke2.rotation.z = Math.PI / 3
+  steeringWheelGroup.add(swSpoke2)
+  const swSpoke3 = new THREE.Mesh(new THREE.BoxGeometry(0.008, swRadius * 1.8, 0.008), chromeMat)
+  swSpoke3.rotation.z = -Math.PI / 3
+  steeringWheelGroup.add(swSpoke3)
+
+  const steeringColumnGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.15, 8)
+  const steeringColumn = new THREE.Mesh(steeringColumnGeom, chromeMat)
+  steeringColumn.position.set(0, -swRadius - 0.075, 0)
+  steeringWheelGroup.add(steeringColumn)
+
+  const steeringWheelX = (windshieldTopX + hoodEndX) / 2
+  const steeringWheelY = beltLineY - 0.1
+  const steeringWheelZ = -halfTrack + 0.08
+  steeringWheelGroup.position.set(steeringWheelX, steeringWheelY, steeringWheelZ)
+  group.add(steeringWheelGroup)
 
   const bumperGeom = new THREE.BoxGeometry(W - 0.1, 0.1, 0.08)
   const frontBumper = new THREE.Mesh(bumperGeom, chromeMat)
-  frontBumper.position.set(0, gc + 0.15, L / 2 - 0.05)
+  frontBumper.position.set(L / 2 - 0.05, gc + 0.15, 0)
   group.add(frontBumper)
 
   const rearBumper = new THREE.Mesh(bumperGeom, chromeMat)
-  rearBumper.position.set(0, gc + 0.15, -L / 2 + 0.05)
+  rearBumper.position.set(-L / 2 + 0.05, gc + 0.15, 0)
   group.add(rearBumper)
 
   const headlightMat = new THREE.MeshStandardMaterial({
@@ -313,10 +331,10 @@ const createCar = () => {
   })
   const headlightGeom = new THREE.BoxGeometry(0.15, 0.08, 0.06)
   const hl1 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl1.position.set(W / 2 - 0.15, gc + H * 0.35, L / 2 - 0.02)
+  hl1.position.set(L / 2 - 0.02, gc + H * 0.35, halfTrack - 0.15)
   group.add(hl1)
   const hl2 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl2.position.set(-W / 2 + 0.15, gc + H * 0.35, L / 2 - 0.02)
+  hl2.position.set(L / 2 - 0.02, gc + H * 0.35, -halfTrack + 0.15)
   group.add(hl2)
 
   const taillightMat = new THREE.MeshStandardMaterial({
@@ -327,42 +345,42 @@ const createCar = () => {
   })
   const taillightGeom = new THREE.BoxGeometry(0.12, 0.1, 0.05)
   const tl1 = new THREE.Mesh(taillightGeom, taillightMat)
-  tl1.position.set(W / 2 - 0.15, gc + H * 0.4, -L / 2 + 0.02)
+  tl1.position.set(-L / 2 + 0.02, gc + H * 0.4, halfTrack - 0.15)
   group.add(tl1)
   const tl2 = new THREE.Mesh(taillightGeom, taillightMat)
-  tl2.position.set(-W / 2 + 0.15, gc + H * 0.4, -L / 2 + 0.02)
+  tl2.position.set(-L / 2 + 0.02, gc + H * 0.4, -halfTrack + 0.15)
   group.add(tl2)
 
   const mirrorGeom = new THREE.BoxGeometry(0.12, 0.08, 0.15)
   const mirror1 = new THREE.Mesh(mirrorGeom, bodyMat)
-  mirror1.position.set(W / 2 + 0.05, beltLineY + 0.1, hoodEndZ - 0.1)
+  mirror1.position.set(hoodEndX - 0.1, beltLineY + 0.1, halfTrack + 0.05)
   group.add(mirror1)
   const mirror2 = new THREE.Mesh(mirrorGeom, bodyMat)
-  mirror2.position.set(-W / 2 - 0.05, beltLineY + 0.1, hoodEndZ - 0.1)
+  mirror2.position.set(hoodEndX - 0.1, beltLineY + 0.1, -halfTrack - 0.05)
   group.add(mirror2)
 
   if (props.carType === 'sport') {
     const wingGeom = new THREE.BoxGeometry(W * 0.8, 0.04, 0.25)
     const wing = new THREE.Mesh(wingGeom, bodyMat)
-    wing.position.set(0, roofTopY + 0.15, rearWindowTopZ + 0.1)
+    wing.position.set(rearWindowTopX + 0.1, roofTopY + 0.15, 0)
     group.add(wing)
     
     const wingSupportGeom = new THREE.BoxGeometry(0.03, 0.15, 0.03)
     const ws1 = new THREE.Mesh(wingSupportGeom, chromeMat)
-    ws1.position.set(W * 0.25, roofTopY + 0.07, rearWindowTopZ + 0.1)
+    ws1.position.set(rearWindowTopX + 0.1, roofTopY + 0.07, W * 0.25)
     group.add(ws1)
     const ws2 = new THREE.Mesh(wingSupportGeom, chromeMat)
-    ws2.position.set(-W * 0.25, roofTopY + 0.07, rearWindowTopZ + 0.1)
+    ws2.position.set(rearWindowTopX + 0.1, roofTopY + 0.07, -W * 0.25)
     group.add(ws2)
   }
 
   if (props.carType === 'suv' || props.carType === 'mpv') {
     const railGeom = new THREE.BoxGeometry(0.04, 0.03, roofLen * 0.8)
     const rail1 = new THREE.Mesh(railGeom, chromeMat)
-    rail1.position.set(W / 2 - 0.1, roofTopY + 0.02, (windshieldTopZ + rearWindowTopZ) / 2)
+    rail1.position.set((windshieldTopX + rearWindowTopX) / 2, roofTopY + 0.02, halfTrack - 0.1)
     group.add(rail1)
     const rail2 = new THREE.Mesh(railGeom, chromeMat)
-    rail2.position.set(-W / 2 + 0.1, roofTopY + 0.02, (windshieldTopZ + rearWindowTopZ) / 2)
+    rail2.position.set((windshieldTopX + rearWindowTopX) / 2, roofTopY + 0.02, -halfTrack + 0.1)
     group.add(rail2)
   }
 
