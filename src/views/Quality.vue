@@ -69,9 +69,10 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { VideoPlay, Grid, Sunny, TrendCharts } from '@element-plus/icons-vue'
+import { qualityAPI, modelAPI } from '../api'
 
 const selectedModel = ref('')
 
@@ -82,7 +83,7 @@ const models = ref([
   { id: 4, name: 'Hatchback Design' }
 ])
 
-const checkTypes = reactive([
+const checkTypes = ref([
   {
     key: 'zebra',
     icon: Grid,
@@ -126,16 +127,36 @@ const recentReports = ref([
   { id: 'R-005', modelName: 'EV-Sedan Concept v1', checkType: 'Highlight Analysis', score: 85, passed: true, date: '2026-07-08 11:50' }
 ])
 
-const startCheck = () => {
+const startCheck = async () => {
   if (!selectedModel.value) {
     ElMessage.warning('Please select a model first')
     return
   }
-  ElMessage.success('Quality check started')
-  checkTypes[2].status = 'running'
-  checkTypes[2].statusType = 'primary'
-  checkTypes[2].statusText = 'Running'
-  checkTypes[2].progress = 0
+  try {
+    checkTypes.value[2].status = 'running'
+    checkTypes.value[2].statusType = 'primary'
+    checkTypes.value[2].statusText = 'Running'
+    checkTypes.value[2].progress = 0
+
+    const response = await qualityAPI.check({
+      model_id: selectedModel.value,
+      checks: ['zebra', 'highlight', 'curvature']
+    })
+    const result = response.data
+    
+    checkTypes.value[2].status = 'completed'
+    checkTypes.value[2].statusType = 'success'
+    checkTypes.value[2].statusText = 'Completed'
+    checkTypes.value[2].progress = 100
+    checkTypes.value[2].score = result.score || 95
+    
+    ElMessage.success('Quality check completed')
+  } catch (error) {
+    ElMessage.error('Quality check failed')
+    checkTypes.value[2].status = 'not-started'
+    checkTypes.value[2].statusType = 'info'
+    checkTypes.value[2].statusText = 'Not Started'
+  }
 }
 
 const viewReport = (row) => {

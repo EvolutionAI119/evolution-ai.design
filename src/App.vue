@@ -14,16 +14,18 @@
           text-color="rgba(255,255,255,0.7)"
           active-text-color="#4ade80"
         >
-          <template v-for="group in menuGroups" :key="group.label">
-            <div v-if="group.label" class="menu-group-label">{{ group.label }}</div>
-            <el-menu-item
-              v-for="item in group.items"
-              :key="item.path"
-              :index="item.path"
-            >
-              <el-icon><component :is="item.icon" /></el-icon>
-              <span>{{ item.name }}</span>
-            </el-menu-item>
+          <template #default>
+            <template v-for="group in menuGroups" :key="group.label">
+              <div v-if="group.label" class="menu-group-label">{{ group.label }}</div>
+              <el-menu-item
+                v-for="item in group.items"
+                :key="item.path"
+                :index="item.path"
+              >
+                <el-icon><component :is="item.icon" /></el-icon>
+                <span>{{ item.name }}</span>
+              </el-menu-item>
+            </template>
           </template>
         </el-menu>
       </el-aside>

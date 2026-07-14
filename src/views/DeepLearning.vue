@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { Brush, MagicStick, MoonNight, ArrowRight } from '@element-plus/icons-vue'
+import { Brush, MagicStick, Sunny, ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const features = [

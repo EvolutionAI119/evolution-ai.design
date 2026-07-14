@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import { Lightbulb, Star, Cpu, VideoPlay } from '@element-plus/icons-vue'
+import { MagicStick, Star, Cpu, VideoPlay } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const scenes = [

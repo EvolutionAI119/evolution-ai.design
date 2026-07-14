@@ -101,9 +101,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
+import { exportAPI, modelAPI } from '../api'
 
 const selectedModel = ref('')
 const selectedPrecision = ref('engineering')
@@ -149,12 +150,22 @@ const toggleFormat = (key) => {
   }
 }
 
-const prepareDelivery = () => {
+const prepareDelivery = async () => {
   if (!canPrepare.value) {
     ElMessage.warning('Please select a model and at least one format')
     return
   }
-  ElMessage.success('Delivery preparation started')
+  try {
+    const response = await exportAPI.exportModel({
+      model_id: selectedModel.value,
+      formats: selectedFormats.value,
+      precision: selectedPrecision.value
+    })
+    const result = response.data
+    ElMessage.success(`Delivery prepared successfully: ${result.files.length} files exported`)
+  } catch (error) {
+    ElMessage.error('Delivery preparation failed')
+  }
 }
 </script>
 

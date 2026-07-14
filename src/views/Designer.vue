@@ -343,9 +343,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import Car3D from '../components/Car3D.vue'
 import Car2D from '../components/Car2D.vue'
 import { carTypes, carTypeParams, brands, bodyColors, defaultCarParams } from '../config/carPresets'
+import { carAPI, buildAPI } from '../api'
 
 const generating = ref(false)
 const selectedCarType = ref('sedan')
@@ -406,9 +408,25 @@ const applyCustomColor = () => {
 
 const generateCar = async () => {
   generating.value = true
-  setTimeout(() => {
+  try {
+    const response = await carAPI.generate({
+      car_type: selectedCarType.value,
+      params: carParams.value,
+      color: selectedColor.value
+    })
+    const data = response.data
+    console.log('Car generated:', data)
+    if (data.components && data.components.length > 0) {
+      ElMessage.success(`Successfully generated ${data.components.length} components with ${data.total_surfaces} surfaces`)
+    } else {
+      ElMessage.success('Car generated successfully')
+    }
+  } catch (error) {
+    console.error('Failed to generate car:', error)
+    ElMessage.error('Failed to generate car. Please try again.')
+  } finally {
     generating.value = false
-  }, 2000)
+  }
 }
 </script>
 
