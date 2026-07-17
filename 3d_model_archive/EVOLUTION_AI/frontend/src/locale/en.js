@@ -102,6 +102,8 @@ export default {
     previewHint: 'Tip: Download GLB file using export function and open in 3D viewer',
     carType: 'Car Type',
     trackWidth: 'Track Width (mm)',
+    frontOverhang: 'Front Overhang (mm)',
+    rearOverhang: 'Rear Overhang (mm)',
     groundClearance: 'Ground Clearance (mm)',
     rearSlantAngle: 'Rear Slant Angle (°)',
     realtimePreview: 'Realtime Preview',

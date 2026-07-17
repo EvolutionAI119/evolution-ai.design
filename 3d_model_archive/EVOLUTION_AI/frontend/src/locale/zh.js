@@ -102,6 +102,8 @@ export default {
     previewHint: '提示：使用导出功能下载 GLB 文件后在 3D 查看器中打开',
     carType: '车型选择',
     trackWidth: '轮距 (mm)',
+    frontOverhang: '前悬 (mm)',
+    rearOverhang: '后悬 (mm)',
     groundClearance: '离地间隙 (mm)',
     rearSlantAngle: '后溜角度 (°)',
     realtimePreview: '实时预览',

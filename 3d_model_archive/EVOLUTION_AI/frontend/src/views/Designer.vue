@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="designer-page">
     <div class="page-header">
       <div class="header-left">
@@ -79,6 +79,12 @@
                 </el-form-item>
                 <el-form-item :label="$t('designer.trackWidth')">
                   <el-slider v-model="carParams.track_width" :min="1400" :max="1800" :step="10" show-input />
+                </el-form-item>
+                <el-form-item :label="$t('designer.frontOverhang')">
+                  <el-slider v-model="carParams.front_overhang" :min="500" :max="1500" :step="10" show-input />
+                </el-form-item>
+                <el-form-item :label="$t('designer.rearOverhang')">
+                  <el-slider v-model="carParams.rear_overhang" :min="500" :max="1800" :step="10" show-input />
                 </el-form-item>
               </el-form>
             </el-tab-pane>
@@ -259,7 +265,7 @@ const carTypes = computed(() => [
   }
 ])
 
-const carParams = ref({ overall_length: 4800, overall_width: 1850, overall_height: 1450, wheel_base: 2800, track_width: 1580 })
+const carParams = ref({ overall_length: 4800, overall_width: 1850, overall_height: 1450, wheel_base: 2800, track_width: 1580, front_overhang: 900, rear_overhang: 1100 })
 const componentParams = ref({ hood_length: 1200, roof_height: 450, wheel_diameter: 640, door_front_length: 1000, ground_clearance: 150 })
 const angleParams = ref({ hood_angle: 20, windshield_angle: 50, rear_window_angle: 30, rear_slant_angle: 25 })
 
@@ -284,6 +290,8 @@ const sideViewSvg = computed(() => {
   const L = carParams.value.overall_length
   const H = carParams.value.overall_height
   const WB = carParams.value.wheel_base
+  const FO = carParams.value.front_overhang
+  const RO = carParams.value.rear_overhang
   const hoodLen = componentParams.value.hood_length
   const roofH = componentParams.value.roof_height
   const wheelR = componentParams.value.wheel_diameter / 2
@@ -302,8 +310,8 @@ const sideViewSvg = computed(() => {
 
   const frontX = ox
   const hoodEndX = ox + hoodLen * scale
-  const frontWheelX = ox + (L / 2 - WB / 2) * scale
-  const rearWheelX = ox + (L / 2 + WB / 2) * scale
+  const frontWheelX = ox + FO * scale
+  const rearWheelX = ox + (FO + WB) * scale
   const rearX = ox + L * scale
   const windshieldTopX = hoodEndX + roofH * scale * Math.cos(wAngle * Math.PI / 180)
   const rearWindowTopX = rearX - hoodLen * 0.4 * scale
@@ -384,6 +392,10 @@ const sideViewSvg = computed(() => {
     <ellipse cx="${rearX - 5}" cy="${(bodyTop + bodyBottom) / 2}" rx="5" ry="4" fill="#ff4444" filter="url(#glow)"/>
     <line x1="${frontWheelX}" y1="${oy + 15}" x2="${rearWheelX}" y2="${oy + 15}" stroke="#888" stroke-width="0.5" stroke-dasharray="3,3"/>
     <text x="${(frontWheelX + rearWheelX) / 2}" y="${oy + 25}" text-anchor="middle" fill="#888" font-size="10">WB: ${WB}mm</text>
+    <line x1="${frontX}" y1="${oy + 35}" x2="${frontWheelX}" y2="${oy + 35}" stroke="#00ff88" stroke-width="1" stroke-dasharray="4,4"/>
+    <text x="${(frontX + frontWheelX) / 2}" y="${oy + 45}" text-anchor="middle" fill="#00ff88" font-size="10">FO: ${FO}mm</text>
+    <line x1="${rearWheelX}" y1="${oy + 35}" x2="${rearX}" y2="${oy + 35}" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="4,4"/>
+    <text x="${(rearWheelX + rearX) / 2}" y="${oy + 45}" text-anchor="middle" fill="#ff6b6b" font-size="10">RO: ${RO}mm</text>
   `
 })
 
@@ -424,6 +436,8 @@ const topViewSvg = computed(() => {
   const L = carParams.value.overall_length
   const W = carParams.value.overall_width
   const WB = carParams.value.wheel_base
+  const FO = carParams.value.front_overhang
+  const RO = carParams.value.rear_overhang
   const track = carParams.value.track_width
 
   const svgW = 800, svgH = 200
@@ -433,8 +447,8 @@ const topViewSvg = computed(() => {
   const halfW = W * scale / 2
   const frontX = ox
   const rearX = ox + L * scale
-  const frontWheelX = ox + (L / 2 - WB / 2) * scale
-  const rearWheelX = ox + (L / 2 + WB / 2) * scale
+  const frontWheelX = ox + FO * scale
+  const rearWheelX = ox + (FO + WB) * scale
   const halfTrack = track * scale / 2
 
   return `
@@ -458,16 +472,16 @@ const topViewSvg = computed(() => {
 const selectCarType = (key) => {
   selectedCarType.value = key
   const defaults = {
-    sedan: { overall_length: 4800, overall_width: 1850, overall_height: 1450, wheel_base: 2800, track_width: 1580, hood_length: 1200, roof_height: 450, wheel_diameter: 640, door_front_length: 1000, ground_clearance: 150, hood_angle: 20, windshield_angle: 50, rear_window_angle: 30, rear_slant_angle: 25 },
-    suv: { overall_length: 4900, overall_width: 1950, overall_height: 1750, wheel_base: 2850, track_width: 1650, hood_length: 1300, roof_height: 700, wheel_diameter: 720, door_front_length: 1100, ground_clearance: 200, hood_angle: 15, windshield_angle: 45, rear_window_angle: 25, rear_slant_angle: 20 },
-    coupe: { overall_length: 4700, overall_width: 1850, overall_height: 1350, wheel_base: 2700, track_width: 1580, hood_length: 1400, roof_height: 350, wheel_diameter: 640, door_front_length: 900, ground_clearance: 130, hood_angle: 10, windshield_angle: 55, rear_window_angle: 40, rear_slant_angle: 45 },
-    mpv: { overall_length: 5100, overall_width: 1900, overall_height: 1800, wheel_base: 3000, track_width: 1620, hood_length: 900, roof_height: 800, wheel_diameter: 680, door_front_length: 1200, ground_clearance: 160, hood_angle: 25, windshield_angle: 40, rear_window_angle: 20, rear_slant_angle: 15 },
-    sport: { overall_length: 4500, overall_width: 1950, overall_height: 1250, wheel_base: 2650, track_width: 1680, hood_length: 1500, roof_height: 300, wheel_diameter: 660, door_front_length: 800, ground_clearance: 110, hood_angle: 8, windshield_angle: 60, rear_window_angle: 35, rear_slant_angle: 50 },
-    pickup: { overall_length: 5500, overall_width: 1950, overall_height: 1850, wheel_base: 3400, track_width: 1650, hood_length: 1400, roof_height: 650, wheel_diameter: 750, door_front_length: 1100, ground_clearance: 220, hood_angle: 18, windshield_angle: 45, rear_window_angle: 20, rear_slant_angle: 18 }
+    sedan: { overall_length: 4800, overall_width: 1850, overall_height: 1450, wheel_base: 2800, track_width: 1580, front_overhang: 900, rear_overhang: 1100, hood_length: 1200, roof_height: 450, wheel_diameter: 640, door_front_length: 1000, ground_clearance: 150, hood_angle: 20, windshield_angle: 50, rear_window_angle: 30, rear_slant_angle: 25 },
+    suv: { overall_length: 4900, overall_width: 1950, overall_height: 1750, wheel_base: 2850, track_width: 1650, front_overhang: 950, rear_overhang: 1100, hood_length: 1300, roof_height: 700, wheel_diameter: 720, door_front_length: 1100, ground_clearance: 200, hood_angle: 15, windshield_angle: 45, rear_window_angle: 25, rear_slant_angle: 20 },
+    coupe: { overall_length: 4700, overall_width: 1850, overall_height: 1350, wheel_base: 2700, track_width: 1580, front_overhang: 850, rear_overhang: 1150, hood_length: 1400, roof_height: 350, wheel_diameter: 640, door_front_length: 900, ground_clearance: 130, hood_angle: 10, windshield_angle: 55, rear_window_angle: 40, rear_slant_angle: 45 },
+    mpv: { overall_length: 5100, overall_width: 1900, overall_height: 1800, wheel_base: 3000, track_width: 1620, front_overhang: 900, rear_overhang: 1200, hood_length: 900, roof_height: 800, wheel_diameter: 680, door_front_length: 1200, ground_clearance: 160, hood_angle: 25, windshield_angle: 40, rear_window_angle: 20, rear_slant_angle: 15 },
+    sport: { overall_length: 4500, overall_width: 1950, overall_height: 1250, wheel_base: 2650, track_width: 1680, front_overhang: 800, rear_overhang: 1050, hood_length: 1500, roof_height: 300, wheel_diameter: 660, door_front_length: 800, ground_clearance: 110, hood_angle: 8, windshield_angle: 60, rear_window_angle: 35, rear_slant_angle: 50 },
+    pickup: { overall_length: 5500, overall_width: 1950, overall_height: 1850, wheel_base: 3400, track_width: 1650, front_overhang: 1000, rear_overhang: 1100, hood_length: 1400, roof_height: 650, wheel_diameter: 750, door_front_length: 1100, ground_clearance: 220, hood_angle: 18, windshield_angle: 45, rear_window_angle: 20, rear_slant_angle: 18 }
   }
   const d = defaults[key]
   if (d) {
-    Object.assign(carParams.value, { overall_length: d.overall_length, overall_width: d.overall_width, overall_height: d.overall_height, wheel_base: d.wheel_base, track_width: d.track_width })
+    Object.assign(carParams.value, { overall_length: d.overall_length, overall_width: d.overall_width, overall_height: d.overall_height, wheel_base: d.wheel_base, track_width: d.track_width, front_overhang: d.front_overhang, rear_overhang: d.rear_overhang })
     Object.assign(componentParams.value, { hood_length: d.hood_length, roof_height: d.roof_height, wheel_diameter: d.wheel_diameter, door_front_length: d.door_front_length, ground_clearance: d.ground_clearance })
     Object.assign(angleParams.value, { hood_angle: d.hood_angle, windshield_angle: d.windshield_angle, rear_window_angle: d.rear_window_angle, rear_slant_angle: d.rear_slant_angle })
   }

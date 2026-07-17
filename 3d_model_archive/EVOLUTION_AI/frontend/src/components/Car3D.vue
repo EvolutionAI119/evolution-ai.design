@@ -53,7 +53,9 @@ const createCarGeometry = () => {
  const W = props.carParams.overall_width / 1000;
  const H = props.carParams.overall_height / 1000;
  const WB = props.carParams.wheel_base / 1000;
- const track = props.carParams.track_width / 1000;
+  const track = props.carParams.track_width / 1000;
+  const FO = props.carParams.front_overhang / 1000;
+  const RO = props.carParams.rear_overhang / 1000;
  const hoodLen = props.componentParams.hood_length / 1000;
  const roofH = props.componentParams.roof_height / 1000;
  const wheelD = props.componentParams.wheel_diameter / 1000;
@@ -100,46 +102,50 @@ const createCarGeometry = () => {
  roughness: 0.1
  });
  const frontWheelX = -WB / 2;
- const rearWheelX = WB / 2;
- const halfTrack = track / 2;
+  const rearWheelX = WB / 2;
+  const halfTrack = track / 2;
+  const frontX = frontWheelX - FO;
+  const rearX = rearWheelX + RO;
+  const bodyLength = rearX - frontX;
+  const midX = (frontX + rearX) / 2;
  // 车身基础形状
  let bodyGeometry;
  if (props.carType === 'sedan') {
- bodyGeometry = new THREE.CapsuleGeometry(W / 2 - 0.05, L - 0.4, 4, 16);
+ bodyGeometry = new THREE.CapsuleGeometry(W / 2 - 0.05, bodyLength - 0.4, 4, 16);
  bodyGeometry.rotateZ(Math.PI / 2);
  }
  else if (props.carType === 'suv') {
- bodyGeometry = new THREE.CapsuleGeometry(W / 2 - 0.08, L - 0.5, 4, 16);
+ bodyGeometry = new THREE.CapsuleGeometry(W / 2 - 0.08, bodyLength - 0.5, 4, 16);
  bodyGeometry.rotateZ(Math.PI / 2);
  }
  else if (props.carType === 'coupe') {
  const shape = new THREE.Shape();
  const roofCurve = 0.3;
- shape.moveTo(-L / 2, -W / 2 + 0.1);
- shape.bezierCurveTo(-L / 2, -W / 2 + 0.1, -L / 4, -W / 2 + 0.1, 0, -W / 2 + roofCurve);
- shape.bezierCurveTo(L / 4, -W / 2 + roofCurve, L / 2, -W / 2 + 0.2, L / 2, -W / 2 + 0.2);
- shape.lineTo(L / 2, W / 2 - 0.1);
- shape.lineTo(-L / 2, W / 2 - 0.1);
+ shape.moveTo(frontX, -W / 2 + 0.1);
+ shape.bezierCurveTo(frontX, -W / 2 + 0.1, midX - bodyLength / 4, -W / 2 + 0.1, midX, -W / 2 + roofCurve);
+ shape.bezierCurveTo(midX + bodyLength / 4, -W / 2 + roofCurve, rearX, -W / 2 + 0.2, rearX, -W / 2 + 0.2);
+ shape.lineTo(rearX, W / 2 - 0.1);
+ shape.lineTo(frontX, W / 2 - 0.1);
  shape.closePath();
  const extrudeSettings = { depth: H * 0.6, bevelEnabled: true, bevelSegments: 3, steps: 2, bevelSize: 0.05, bevelThickness: 0.05 };
  bodyGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
  }
  else if (props.carType === 'mpv') {
- bodyGeometry = new THREE.BoxGeometry(L - 0.3, W - 0.15, H * 0.7);
+ bodyGeometry = new THREE.BoxGeometry(bodyLength - 0.3, W - 0.15, H * 0.7);
  }
  else if (props.carType === 'sport') {
  const shape = new THREE.Shape();
- shape.moveTo(-L / 2, -W / 2 + 0.05);
- shape.bezierCurveTo(-L / 2 + 0.2, -W / 2 + 0.05, -L / 4, -W / 2 + 0.4, 0, -W / 2 + 0.35);
- shape.bezierCurveTo(L / 4, -W / 2 + 0.35, L / 2 - 0.2, -W / 2 + 0.1, L / 2, -W / 2 + 0.1);
- shape.lineTo(L / 2, W / 2 - 0.05);
- shape.lineTo(-L / 2, W / 2 - 0.05);
+ shape.moveTo(frontX, -W / 2 + 0.05);
+ shape.bezierCurveTo(frontX + 0.2, -W / 2 + 0.05, midX - bodyLength / 4, -W / 2 + 0.4, midX, -W / 2 + 0.35);
+ shape.bezierCurveTo(midX + bodyLength / 4, -W / 2 + 0.35, rearX - 0.2, -W / 2 + 0.1, rearX, -W / 2 + 0.1);
+ shape.lineTo(rearX, W / 2 - 0.05);
+ shape.lineTo(frontX, W / 2 - 0.05);
  shape.closePath();
  const extrudeSettings = { depth: H * 0.5, bevelEnabled: true, bevelSegments: 3, steps: 2, bevelSize: 0.05, bevelThickness: 0.05 };
  bodyGeometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
  }
  else {
- bodyGeometry = new THREE.BoxGeometry(L - 0.4, W - 0.15, H * 0.6);
+ bodyGeometry = new THREE.BoxGeometry(bodyLength - 0.4, W - 0.15, H * 0.6);
  }
  const body = new THREE.Mesh(bodyGeometry, metallicMaterial);
  body.position.y = gc + H * 0.35;
@@ -147,30 +153,30 @@ const createCarGeometry = () => {
  // 车顶
  let roofHeight = props.carType === 'suv' ? H * 0.25 : props.carType === 'mpv' ? H * 0.3 : H * 0.18;
  let roofWidth = props.carType === 'mpv' ? W - 0.18 : W - 0.1;
- let roofLength = props.carType === 'pickup' ? WB / 2 - 0.3 : L * 0.45;
- const roofGeometry = new THREE.BoxGeometry(roofLength, roofWidth, roofHeight);
- const roof = new THREE.Mesh(roofGeometry, metallicMaterial);
- roof.position.set(0, gc + H * 0.55, 0);
+ let roofLength = props.carType === 'pickup' ? WB / 2 - 0.3 : bodyLength * 0.45;
+  const roofGeometry = new THREE.BoxGeometry(roofLength, roofWidth, roofHeight);
+  const roof = new THREE.Mesh(roofGeometry, metallicMaterial);
+  roof.position.set(midX, gc + H * 0.55, 0);
  carGroup.add(roof);
  // 发动机盖
  const hoodGeometry = new THREE.CapsuleGeometry(W / 2 - 0.15, hoodLen * 0.8, 2, 8);
  hoodGeometry.rotateZ(Math.PI / 2);
  const hood = new THREE.Mesh(hoodGeometry, metallicMaterial);
- hood.position.set(-L / 2 + hoodLen * 0.45, gc + H * 0.4, 0);
+  hood.position.set(frontX + hoodLen * 0.45, gc + H * 0.4, 0);
  hood.rotation.x = -wAngle * Math.PI / 180 * 0.3;
  carGroup.add(hood);
  // 挡风玻璃
  const windShieldGeometry = new THREE.BoxGeometry(0.03, W - 0.12, H * 0.25);
  const windShield = new THREE.Mesh(windShieldGeometry, glassMaterial);
  const windAngleRad = wAngle * Math.PI / 180;
- windShield.position.set(-hoodLen * 0.5 + 0.1, gc + H * 0.5, 0);
+  windShield.position.set(frontX + hoodLen - 0.1, gc + H * 0.5, 0);
  windShield.rotation.x = -Math.PI / 2 + windAngleRad;
  carGroup.add(windShield);
  // 后窗
  const rearWindowGeometry = new THREE.BoxGeometry(0.03, W - 0.12, H * 0.2);
  const rearWindow = new THREE.Mesh(rearWindowGeometry, glassMaterial);
  const rearAngleRad = rAngle * Math.PI / 180;
- rearWindow.position.set(L / 2 - 0.6, gc + H * 0.5, 0);
+  rearWindow.position.set(rearX - 0.6, gc + H * 0.5, 0);
  rearWindow.rotation.x = Math.PI / 2 - rearAngleRad;
  carGroup.add(rearWindow);
  // 车门
@@ -228,7 +234,7 @@ const createCarGeometry = () => {
  // 前灯
  const headlightGeometry = new THREE.BoxGeometry(0.3, 0.1, 0.08);
  const headlightL = new THREE.Mesh(headlightGeometry, lightMaterial);
- headlightL.position.set(-L / 2 + 0.15, gc + H * 0.55, W / 2 - 0.08);
+  headlightL.position.set(frontX + 0.15, gc + H * 0.55, W / 2 - 0.08);
  carGroup.add(headlightL);
  const headlightR = headlightL.clone();
  headlightR.position.z = -W / 2 + 0.08;
@@ -236,41 +242,41 @@ const createCarGeometry = () => {
  // 尾灯
  const taillightGeometry = new THREE.BoxGeometry(0.25, 0.12, 0.06);
  const taillightL = new THREE.Mesh(taillightGeometry, redLightMaterial);
- taillightL.position.set(L / 2 - 0.15, gc + H * 0.5, W / 2 - 0.08);
+  taillightL.position.set(rearX - 0.15, gc + H * 0.5, W / 2 - 0.08);
  carGroup.add(taillightL);
  const taillightR = taillightL.clone();
  taillightR.position.z = -W / 2 + 0.08;
  carGroup.add(taillightR);
  // 保险杠
- const bumperGeometry = new THREE.BoxGeometry(L * 0.95, 0.15, 0.08);
- const frontBumper = new THREE.Mesh(bumperGeometry, metallicMaterial);
- frontBumper.position.set(-L / 2 + 0.3, gc + H * 0.15, 0);
- carGroup.add(frontBumper);
- const rearBumper = new THREE.Mesh(bumperGeometry, metallicMaterial);
- rearBumper.position.set(L / 2 - 0.3, gc + H * 0.15, 0);
+ const bumperGeometry = new THREE.BoxGeometry(bodyLength * 0.95, 0.15, 0.08);
+  const frontBumper = new THREE.Mesh(bumperGeometry, metallicMaterial);
+  frontBumper.position.set(frontX + 0.3, gc + H * 0.15, 0);
+  carGroup.add(frontBumper);
+  const rearBumper = new THREE.Mesh(bumperGeometry, metallicMaterial);
+  rearBumper.position.set(rearX - 0.3, gc + H * 0.15, 0);
  carGroup.add(rearBumper);
  // 后视镜
  const mirrorGeometry = new THREE.SphereGeometry(0.08, 16, 16);
  const mirrorL = new THREE.Mesh(mirrorGeometry, metallicMaterial);
- mirrorL.position.set(-WB / 4, gc + H * 0.55, W / 2 + 0.08);
+  mirrorL.position.set(frontWheelX + WB / 4, gc + H * 0.55, W / 2 + 0.08);
  carGroup.add(mirrorL);
  const mirrorR = mirrorL.clone();
  mirrorR.position.z = -W / 2 - 0.08;
  carGroup.add(mirrorR);
  // 皮卡货斗
  if (props.carType === 'pickup') {
- const bedGeometry = new THREE.BoxGeometry(L * 0.35, W - 0.2, H * 0.35);
- const bed = new THREE.Mesh(bedGeometry, metallicMaterial);
- bed.position.set(L / 2 - 0.5, gc + H * 0.25, 0);
- carGroup.add(bed);
- }
- // 跑车尾翼
- if (props.carType === 'sport') {
- const wingGeometry = new THREE.BoxGeometry(0.6, W - 0.2, 0.05);
- const wing = new THREE.Mesh(wingGeometry, metallicMaterial);
- wing.position.set(L / 2 - 0.4, gc + H * 0.65, 0);
- carGroup.add(wing);
- }
+    const bedGeometry = new THREE.BoxGeometry(bodyLength * 0.35, W - 0.2, H * 0.35);
+    const bed = new THREE.Mesh(bedGeometry, metallicMaterial);
+    bed.position.set(rearX - 0.5, gc + H * 0.25, 0);
+    carGroup.add(bed);
+  }
+  // 跑车尾翼
+  if (props.carType === 'sport') {
+    const wingGeometry = new THREE.BoxGeometry(0.6, W - 0.2, 0.05);
+    const wing = new THREE.Mesh(wingGeometry, metallicMaterial);
+    wing.position.set(rearX - 0.4, gc + H * 0.65, 0);
+    carGroup.add(wing);
+  }
  return carGroup;
 };
 const initScene = () => {
