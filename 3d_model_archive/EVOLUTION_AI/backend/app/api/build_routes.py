@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any, List, Optional
 
 from app.models.database import SessionLocal, ModelFile, Project, ParameterSet
-from app.modules.car_body_generator import CarBodyGenerator
+from app.modules.car_body_generator import NURBSCarBodyGenerator as CarBodyGenerator
 from app.modules.quality_checker import QualityChecker
 from app.modules.topology_optimizer import TopologyOptimizer
 from app.schemas.base import (

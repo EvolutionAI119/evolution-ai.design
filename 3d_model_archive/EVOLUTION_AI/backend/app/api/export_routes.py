@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any, List
 
 from app.models.database import SessionLocal, ModelFile
-from app.modules.car_body_generator import CarBodyGenerator
+from app.modules.car_body_generator import NURBSCarBodyGenerator as CarBodyGenerator
 from app.modules.data_handover import DataHandover
 from app.schemas.base import ModelExportRequest, ModelExportResponse
 from app.config.settings import settings

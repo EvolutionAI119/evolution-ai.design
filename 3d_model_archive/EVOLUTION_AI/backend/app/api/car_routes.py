@@ -5,7 +5,7 @@ import time
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
 
-from app.modules.car_body_generator import CarBodyGenerator
+from app.modules.car_body_generator import NURBSCarBodyGenerator as CarBodyGenerator
 from app.schemas.base import (
     CarGenerateRequest,
     CarComponentGenerateRequest,

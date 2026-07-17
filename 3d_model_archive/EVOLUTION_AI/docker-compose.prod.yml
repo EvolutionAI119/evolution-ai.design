@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf
+      - ./deploy/evolution-ai.conf:/etc/nginx/conf.d/evolution-ai.conf
+      - ./frontend/dist:/usr/share/nginx/html
+      - nginx_cache:/var/cache/nginx
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - evolution-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+    networks:
+      - evolution-ai
+    restart: unless-stopped
+    profiles:
+      - build
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=sqlite:///./data/evolution_ai.db
+      - DATA_DIR=./data
+      - MODELS_DIR=./data/models
+      - REPORTS_DIR=./data/reports
+      - EXPORTS_DIR=./data/exports
+    volumes:
+      - backend_data:/app/data
+    networks:
+      - evolution-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass evolution_ai_redis_pass --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - evolution-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "evolution_ai_redis_pass", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  evolution-ai:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  nginx_cache:
+    driver: local
+  nginx_logs:
+    driver: local
+  backend_data:
+    driver: local
+  redis_data:
+    driver: local

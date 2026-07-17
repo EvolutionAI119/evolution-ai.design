@@ -1,84 +1,85 @@
-# EVOLUTION AI 项目架构设计 v1.0
+# EVOLUTION AI 项目架构设计（重构版）
 
-> **作者**：灵感解药
-> **时间**：2026-06-19
-> **状态**：已批准，待实施
-> **版本基线**：算法模型 v1.0.0（5/5 自检通过，9.49s）
+> **作者**：EVOLUTION AI Development Team
+> **时间**：2026年7月
+> **状态**：已批准，重构完成
+> **版本基线**：8143827（release: V1.01）
 
 ---
 
 ## 0. 项目定位
 
-**EVOLUTION AI** —— 参数化 + AI 驱动的汽车造型开发平台
+**EVOLUTION AI** —— NURBS驱动的参数化汽车造型开发平台
 
 **核心闭环**：
 ```
-参数化建模 → 曲面质量评估 → AI 自动优化 → 视频脚本生成
-   (3D)        (G0/G1/G2)     (退火)        (90s分镜)
+硬点参数输入 → NURBS曲面生成 → G2连续性验证 → AI自动优化 → 多格式导出
+   (14参数)       (15+曲面)       (曲率检查)       (模拟退火)      (GLB/STEP)
 ```
 
 **目标用户**：
-- **主用户（主人/量子剑客）**：汽车系统开发从业者，技术决策 + 演示
+- **主用户**：汽车系统开发从业者，技术决策 + 演示
 - **下游用户**：造型设计师、评审委员会、对外销售演示
 
 **差异化**：
 - 不是 DEMO 玩具 —— 是可工程化部署的全栈产品
-- 算法可独立剥离（不依赖 Web）—— 算法模型包已就绪
+- NURBS曲面引擎可独立剥离（不依赖 Web）—— 算法模型包已就绪
 - 完整数据闭环（方案库 + 评估历史 + 优化曲线）
+- 支持STEP格式导出，可对接工业CAD软件
 
 ---
 
 ## 1. 全景架构图
 
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│                        EVOLUTION AI 架构                            │
-│                                                                     │
-│  ╔══════════════════════════════════════════════════════════════╗  │
-│  ║                    L1: 表现层 (Frontend)                      ║  │
-│  ╠══════════════════════════════════════════════════════════════╣  │
-│  ║  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     ║  │
-│  ║  │参数编辑器│  │3D 预览   │  │质量报告  │  │AI 优化   │     ║  │
-│  ║  │(Vue 3)   │  │(Three.js)│  │(ECharts) │  │(实时进度)│     ║  │
-│  ║  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘     ║  │
-│  ║       └─────────────┴──────┬───────┴──────────────┘           ║  │
-│  ╚═════════════════════════════╪═════════════════════════════════╝  │
-│                                ▼                                    │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  L2: API 网关层 (FastAPI + Uvicorn + Nginx)                  │   │
-│  │  ─ REST API: /api/v1/{car|quality|optimize|storyboard}      │   │
-│  │  ─ WebSocket: /ws/optimize/{task_id}  (实时进度推送)         │   │
-│  │  ─ 静态资源: /static/{glb|png|html}                         │   │
-│  └─────────────────────────────┬───────────────────────────────┘   │
-│                                ▼                                    │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  L3: 业务服务层 (Service Layer)                              │   │
-│  │  ─ 建模服务    (CarModelService)                             │   │
-│  │  ─ 评估服务    (QualityService)                              │   │
-│  │  ─ 优化服务    (OptimizeService, 异步任务)                  │   │
-│  │  ─ 脚本服务    (StoryboardService)                          │   │
-│  │  ─ 导出服务    (ExportService: GLB/STL/OBJ/PNG)            │   │
-│  │  ─ 方案服务    (ProjectService: 增删改查)                   │   │
-│  └─────────────────────────────┬───────────────────────────────┘   │
-│                                ▼                                    │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  L4: 算法核心层 (algorithm_model/) ← 已交付 ✅               │   │
-│  │  ─ car_modeling/      (参数化车身建模, 8 部件)               │   │
-│  │  ─ surface_quality/   (G0/G1/G2 评估 + AI 优化)              │   │
-│  │  ─ storyboard/        (3 套模板 + 自定义分镜)                │   │
-│  │  ─ storyboard_viewer/ (Markdown + HTML 渲染)                 │   │
-│  │  ─ api.py              (5 大统一门面 API)                    │   │
-│  └─────────────────────────────┬───────────────────────────────┘   │
-│                                ▼                                    │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  L5: 基础设施层 (Infrastructure)                             │   │
-│  │  ─ 数据: SQLite (方案库) + JSON (评估历史)                   │   │
-│  │  ─ 缓存: Redis (优化任务结果 / 会话)                         │   │
-│  │  ─ 队列: Celery (异步 AI 优化任务)                           │   │
-│  │  ─ 监控: Loguru + Prometheus  (后续 M4 引入)                │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-│                                                                     │
-└────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        EVOLUTION AI 架构（重构版）                       │
+│                                                                       │
+│  ╔══════════════════════════════════════════════════════════════════╗  │
+│  ║                    L1: 表现层 (Frontend)                        ║  │
+│  ╠══════════════════════════════════════════════════════════════════╣  │
+│  ║  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐         ║  │
+│  ║  │参数编辑器│  │3D 预览   │  │质量报告  │  │AI 优化   │         ║  │
+│  ║  │(Vue 3)   │  │(Three.js)│  │(ECharts) │  │(实时进度)│         ║  │
+│  ║  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘         ║  │
+│  ║       └─────────────┴──────┬───────┴──────────────┘               ║  │
+│  ╚═════════════════════════════╪═════════════════════════════════════╝  │
+│                                ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  L2: API 网关层 (FastAPI + Uvicorn + Nginx)                    │   │
+│  │  ─ REST API: /api/v1/{car|quality|optimize|storyboard|export}  │   │
+│  │  ─ WebSocket: /ws/optimize/{task_id}  (实时进度推送)           │   │
+│  │  ─ 静态资源: /static/{glb|step|png|html}                       │   │
+│  └─────────────────────────────┬─────────────────────────────────┘   │
+│                                ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  L3: 业务服务层 (Service Layer)                                │   │
+│  │  ─ 建模服务    (CarModelService → NURBSCarBodyGenerator)       │   │
+│  │  ─ 评估服务    (QualityService → NURBS质量评估)                │   │
+│  │  ─ 优化服务    (OptimizeService, 异步任务)                      │   │
+│  │  ─ 脚本服务    (StoryboardService)                              │   │
+│  │  ─ 导出服务    (ExportService: GLB/STL/OBJ/STEP/PNG)           │   │
+│  │  ─ 方案服务    (ProjectService: 增删改查)                       │   │
+│  └─────────────────────────────┬─────────────────────────────────┘   │
+│                                ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  L4: NURBS引擎层 (NURBS Engine) ← 重构核心 ✅                   │   │
+│  │  ─ nurbs_engine/          (ControlPoint/KnotVector/NURBSSurface)│   │
+│  │  ─ car_body_generator/    (NURBSCarBodyGenerator, 34部件)      │   │
+│  │  ─ surface_quality/       (G0/G1/G2 评估 + AI 优化)            │   │
+│  │  ─ storyboard/            (3 套模板 + 自定义分镜)              │   │
+│  │  ─ api.py                 (5 大统一门面 API)                   │   │
+│  └─────────────────────────────┬─────────────────────────────────┘   │
+│                                ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  L5: 基础设施层 (Infrastructure)                                 │   │
+│  │  ─ 数据: SQLite (方案库) + JSON (评估历史)                       │   │
+│  │  ─ 缓存: Redis (优化任务结果 / 会话)                             │   │
+│  │  ─ 队列: Celery (异步 AI 优化任务)                               │   │
+│  │  ─ 监控: Loguru + Prometheus  (后续 M4 引入)                    │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                       │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -87,106 +88,74 @@
 
 | 层级 | 选型 | 理由 | 状态 |
 |------|------|------|------|
-| **前端框架** | Vue 3 + Vite | 渐进式，TypeScript 友好，生态成熟 | 待引入 |
-| **3D 渲染** | Three.js | 业界标准，GLB/OBJ 格式原生支持 | 待引入 |
+| **前端框架** | Vue 3 + Vite | 渐进式，TypeScript 友好，生态成熟 | ✅ 完成 |
+| **3D 渲染** | Three.js | 业界标准，GLB/OBJ 格式原生支持 | ✅ 完成 |
 | **3D 高保真** | (可选) Blender + Python API | 静态图 / 视频出图 | M3 引入 |
-| **数据可视化** | ECharts | 国产开源，中文友好，曲线/雷达图强 | 待引入 |
-| **UI 组件** | Element Plus | Vue 3 官方推荐 | 待引入 |
-| **后端框架** | FastAPI | 异步原生，自动 OpenAPI 文档，Pydantic 校验 | 核心 |
-| **ASGI 服务器** | Uvicorn | 性能稳定，FastAPI 官方推荐 | 核心 |
-| **数据校验** | Pydantic v2 | FastAPI 原生 | 核心 |
-| **算法层** | algorithm_model/ | 已交付，30 文件，5/5 自检 | ✅ 就绪 |
-| **数据库** | SQLite (开发) / PostgreSQL (生产) | 轻量起步，零配置 | M2 引入 |
+| **数据可视化** | ECharts | 国产开源，中文友好，曲线/雷达图强 | ✅ 完成 |
+| **UI 组件** | Element Plus | Vue 3 官方推荐 | ✅ 完成 |
+| **后端框架** | FastAPI | 异步原生，自动 OpenAPI 文档 | ✅ 完成 |
+| **ASGI 服务器** | Uvicorn | 性能稳定，FastAPI 官方推荐 | ✅ 完成 |
+| **数据校验** | Pydantic v2 | FastAPI 原生 | ✅ 完成 |
+| **NURBS引擎** | 自研 nurbs_engine/ | 完整实现B样条基函数和曲面评估 | ✅ 完成 |
+| **车身生成** | NURBSCarBodyGenerator | 集成NURBS引擎，G2连续 | ✅ 完成 |
+| **数据库** | SQLite (开发) / PostgreSQL (生产) | 轻量起步，零配置 | ✅ 完成 |
 | **缓存** | Redis (可选) | 优化任务结果缓存 | M3 引入 |
 | **异步任务** | Celery + Redis broker | AI 优化耗时 5s+，需异步 | M2 引入 |
 | **数据迁移** | Alembic | SQLAlchemy 官方 | M2 引入 |
-| **日志** | Loguru | 比 logging 简单 10 倍 | 核心 |
-| **测试** | pytest + httpx | FastAPI 官方推荐 | 核心 |
+| **日志** | Loguru | 比 logging 简单 10 倍 | ✅ 完成 |
+| **测试** | pytest + httpx | FastAPI 官方推荐 | ✅ 完成 |
 | **容器化** | Docker + docker-compose | 一键启动 | M4 引入 |
 | **反向代理** | Nginx (生产) | 静态资源 + HTTPS | M4 引入 |
 
 ---
 
-## 3. 目录结构（目标）
+## 3. 目录结构
 
 ```
-D:\API\AI_3D_Model_Build\EVOLUTION_AI\
+D:\API\EVOLUTION_AI\3d_model_archive\EVOLUTION_AI\
 │
-├── README.md                          # 项目总览（待写）
-├── ARCHITECTURE.md                    # 本文档
-├── docker-compose.yml                 # 一键启动编排（M4）
-├── .env.example                       # 环境变量模板
-├── pyproject.toml                     # 项目元数据 + 依赖（poetry/uv）
+├── README.md                              # 项目总览
+├── ARCHITECTURE_DESIGN.md                # 本文档（重构版）
+├── docker-compose.yml                     # 一键启动编排（M4）
+├── .env.example                           # 环境变量模板
+├── pyproject.toml                         # 项目元数据 + 依赖
 │
-├── algorithm_model/                   # ★ L4 算法核心层（已就绪）
-│   ├── __init__.py                    #   __version__ = "1.0.0"
-│   ├── api.py                         #   5 大门面 API
-│   ├── main.py                        #   CLI 入口
-│   ├── test_all.py                    #   5/5 自检
-│   ├── README.md                      #   使用文档
-│   ├── requirements.txt
-│   ├── car_modeling/                  #   8 部件建模
-│   ├── surface_quality/               #   G0/G1/G2 + AI 优化
-│   ├── storyboard/                    #   3 套分镜模板
-│   ├── storyboard_viewer/             #   MD + HTML 渲染
-│   ├── examples/                      #   3 个示例
-│   └── outputs/                       #   产物输出
+├── backend/                               # ★ 后端服务（FastAPI）
+│   ├── main.py                            # FastAPI app 入口
+│   ├── config.py                          # Pydantic Settings
+│   ├── deps.py                            # 依赖注入
+│   │
+│   ├── app/
+│   │   ├── modules/
+│   │   │   ├── nurbs_engine.py            # ★ NURBS曲面引擎
+│   │   │   └── car_body_generator.py      # ★ NURBS车身生成器
+│   │   ├── api/                           # 路由层
+│   │   │   ├── v1/
+│   │   │   │   ├── car.py                 # /api/v1/car/* (建模)
+│   │   │   │   ├── quality.py             # /api/v1/quality/* (评估)
+│   │   │   │   ├── optimize.py            # /api/v1/optimize/* (优化)
+│   │   │   │   ├── storyboard.py          # /api/v1/storyboard/* (脚本)
+│   │   │   │   ├── project.py             # /api/v1/project/* (方案库)
+│   │   │   │   └── export.py              # /api/v1/export/* (导出)
+│   │   │   └── websocket/
+│   │   │       └── optimize.py            # /ws/optimize/{task_id}
+│   │   ├── services/                      # 业务服务层
+│   │   │   ├── car_model_service.py       # 封装 NURBSCarBodyGenerator
+│   │   │   ├── quality_service.py         # 封装 NURBS质量评估
+│   │   │   ├── optimize_service.py        # 封装 optimize_surface
+│   │   │   ├── storyboard_service.py      # 封装 make_storyboard
+│   │   │   ├── export_service.py          # GLB/STL/OBJ/STEP 转换
+│   │   │   └── project_service.py         # 方案库 CRUD
+│   │   ├── models/                        # Pydantic 数据模型
+│   │   ├── db/                            # 数据层
+│   │   ├── tasks/                         # 异步任务 (Celery)
+│   │   ├── utils/                         # 工具
+│   │   └── tests/                         # 后端测试
+│   │
+│   └── config/
+│       └── automotive_parameters.json     # 车辆参数配置
 │
-├── backend/                           # ★ L2-L3 FastAPI 后端（待建）
-│   ├── __init__.py
-│   ├── main.py                        #   FastAPI app 入口
-│   ├── config.py                      #   Pydantic Settings
-│   ├── deps.py                        #   依赖注入
-│   │
-│   ├── api/                           #   路由层
-│   │   ├── v1/
-│   │   │   ├── __init__.py
-│   │   │   ├── car.py                 #   /api/v1/car/* (建模)
-│   │   │   ├── quality.py             #   /api/v1/quality/* (评估)
-│   │   │   ├── optimize.py            #   /api/v1/optimize/* (优化)
-│   │   │   ├── storyboard.py          #   /api/v1/storyboard/* (脚本)
-│   │   │   ├── project.py             #   /api/v1/project/* (方案库)
-│   │   │   └── export.py              #   /api/v1/export/* (导出)
-│   │   └── websocket/
-│   │       └── optimize.py            #   /ws/optimize/{task_id}
-│   │
-│   ├── services/                      #   业务服务层
-│   │   ├── car_model_service.py       #   封装 build_car
-│   │   ├── quality_service.py         #   封装 evaluate_surface
-│   │   ├── optimize_service.py        #   封装 optimize_surface
-│   │   ├── storyboard_service.py      #   封装 make_storyboard
-│   │   ├── export_service.py          #   GLB/STL/OBJ 转换
-│   │   └── project_service.py         #   方案库 CRUD
-│   │
-│   ├── models/                        #   Pydantic 数据模型
-│   │   ├── car.py                     #   CarParams API 形态
-│   │   ├── quality.py                 #   QualityReport API 形态
-│   │   ├── optimize.py                #   OptimizationResult API 形态
-│   │   ├── storyboard.py
-│   │   └── project.py                 #   ORM 模型
-│   │
-│   ├── db/                            #   L5 数据层
-│   │   ├── __init__.py
-│   │   ├── base.py                    #   SQLAlchemy 基础
-│   │   ├── session.py                 #   session 管理
-│   │   └── migrations/                #   Alembic
-│   │
-│   ├── tasks/                         #   异步任务 (Celery)
-│   │   ├── celery_app.py
-│   │   └── optimize_task.py           #   AI 优化任务
-│   │
-│   ├── utils/                         #   工具
-│   │   ├── logger.py                  #   Loguru 配置
-│   │   ├── file_storage.py            #   文件存储抽象
-│   │   └── validators.py
-│   │
-│   └── tests/                         #   后端测试
-│       ├── test_car.py
-│       ├── test_quality.py
-│       ├── test_optimize.py
-│       └── test_storyboard.py
-│
-├── frontend/                          # ★ L1 前端（待建）
+├── frontend/                              # ★ 前端（Vue3）
 │   ├── package.json
 │   ├── vite.config.ts
 │   ├── index.html
@@ -194,54 +163,153 @@ D:\API\AI_3D_Model_Build\EVOLUTION_AI\
 │   │   ├── main.ts
 │   │   ├── App.vue
 │   │   ├── router/
-│   │   ├── stores/                    #   Pinia 状态管理
-│   │   ├── api/                       #   axios 封装
+│   │   ├── stores/                        # Pinia 状态管理
+│   │   ├── api/                           # axios 封装
 │   │   ├── components/
-│   │   │   ├── ParamEditor/           #   22 维参数编辑器
-│   │   │   ├── CarPreview/            #   Three.js 3D 预览
-│   │   │   ├── QualityReport/         #   评估报告
-│   │   │   ├── OptimizeProgress/      #   优化进度 (WebSocket)
-│   │   │   ├── StoryboardView/        #   分镜展示
-│   │   │   └── ProjectList/           #   方案库
+│   │   │   ├── CarPreview/                # Three.js 3D 预览
+│   │   │   ├── ParamEditor/               # 参数编辑器
+│   │   │   ├── QualityReport/             # 评估报告
+│   │   │   └── OptimizeProgress/          # 优化进度 (WebSocket)
 │   │   ├── views/
-│   │   │   ├── Home.vue
-│   │   │   ├── Designer.vue           #   设计师主界面
+│   │   │   ├── Designer.vue               # 设计师主界面
 │   │   │   ├── Quality.vue
 │   │   │   ├── Optimize.vue
-│   │   │   ├── Storyboard.vue
-│   │   │   └── Projects.vue
+│   │   │   └── Storyboard.vue
 │   │   └── assets/
 │   └── public/
 │
-├── outputs/                           #   产物集中目录
-│   ├── cars/                          #     GLB 模型
-│   ├── reports/                       #     评估报告
-│   ├── storyboards/                   #     分镜 (md/html/json)
-│   └── snapshots/                     #     静态图 (PNG)
+├── algorithm_model/                       # ★ 独立算法包（30文件）
+│   ├── api.py                             # 5 大统一对外 API
+│   ├── main.py                            # CLI 入口（7 个子命令）
+│   ├── test_all.py                        # 一站式自检（5/5全过）
+│   ├── car_modeling/                      # 参数化车身建模（9文件）
+│   ├── surface_quality/                   # G0/G1/G2 评估 + AI 优化
+│   ├── storyboard/                        # 3 套模板 + 自定义分镜
+│   └── storyboard_viewer/                 # MD + HTML 渲染
 │
-├── docs/                              #   文档
-│   ├── ARCHITECTURE.md                #     本文档
-│   ├── PRODUCT_SPEC.md                #     产品功能定义
-│   ├── API.md                         #     API 文档
-│   ├── DEPLOYMENT.md                  #     部署指南
-│   ├── 算法模型交付总结.md
-│   └── 视频脚本展示功能整合总结.md
+├── docs/                                  # ★ 核心文档
+│   ├── ARCHITECTURE_DESIGN.md             # 本文档
+│   ├── EVOLUTION_AI_Methodology_2.0.md    # 方法论（2.0-R）
+│   ├── algorithm_summary.md               # 算法总结（V1.01-R）
+│   ├── flowchart_five_phases.md           # 五阶段流程
+│   └── 算法模型交付总结.md                 # 交付总结（重构版）
 │
-└── scripts/                           #   运维脚本
-    ├── start_dev.sh                   #     开发启动
-    ├── start_prod.sh                  #     生产启动
-    └── seed_data.py                   #     种子数据
+├── outputs/                               # 产物集中目录
+│   ├── cars/                              # GLB 模型
+│   ├── reports/                           # 评估报告
+│   ├── storyboards/                       # 分镜 (md/html/json)
+│   └── snapshots/                         # 静态图 (PNG)
+│
+└── scripts/                               # 运维脚本
+    ├── start_dev.sh                       # 开发启动
+    ├── start_prod.sh                      # 生产启动
+    └── seed_data.py                       # 种子数据
 ```
 
 ---
 
-## 4. 数据流
+## 4. 核心引擎架构
 
-### 4.1 主流程：参数 → 3D 模型
+### 4.1 NURBS引擎层
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        NURBS引擎层                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  ControlPoint                                                      │
+│  ├─ x, y, z: 坐标                                                  │
+│  ├─ weight: 权重                                                   │
+│  ├─ to_array(): 转换为numpy数组                                    │
+│  └─ from_array(): 从numpy数组创建                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│  KnotVector                                                        │
+│  ├─ values: 节点值列表                                             │
+│  ├─ normalize(): 归一化                                            │
+│  ├─ to_json() / from_json(): JSON序列化                            │
+│  └─ _create_uniform_knot_vector(): 创建均匀节点矢量                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  NURBSCurve                                                        │
+│  ├─ degree: 曲线阶次                                               │
+│  ├─ control_points: 控制点列表                                     │
+│  ├─ knot_vector: 节点矢量                                          │
+│  ├─ evaluate_point(t): 计算曲线上的点                              │
+│  ├─ _evaluate_basis_function(): B样条基函数计算                     │
+│  └─ compute_length(): 计算曲线长度                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│  NURBSSurface                                                      │
+│  ├─ degree_u / degree_v: 曲面阶次                                  │
+│  ├─ control_points: 控制点矩阵                                      │
+│  ├─ knot_vector_u / knot_vector_v: 节点矢量                        │
+│  ├─ evaluate_point(u, v): 计算曲面上的点                            │
+│  ├─ evaluate_normal(u, v): 计算法向量                              │
+│  ├─ evaluate_curvature(u, v): 计算曲率                            │
+│  ├─ modify_control_point(): 修改控制点                              │
+│  ├─ _evaluate_basis_function(): B样条基函数计算                     │
+│  └─ _initialize_knot_vectors(): 初始化节点矢量                      │
+├─────────────────────────────────────────────────────────────────────┤
+│  SurfaceModifier                                                   │
+│  ├─ translate(): 平移                                              │
+│  ├─ scale(): 缩放                                                  │
+│  ├─ rotate(): 旋转                                                 │
+│  └─ offset(): 偏移                                                 │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 NURBS车身生成器
+
+**NURBSCarBodyGenerator** 类结构：
+
+```python
+class NURBSCarBodyGenerator:
+    # 初始化
+    __init__(config_path)           # 加载配置，初始化坐标系
+    
+    # 坐标系初始化
+    _initialize_coordinate_system() # 设置L/W/H/WB/TW/GC/FO/RO
+    
+    # NURBS工具方法
+    _create_nurbs_surface_from_points()  # 从3D点创建NURBS曲面
+    _evaluate_nurbs_surface()            # 采样NURBS曲面
+    
+    # 车身部件生成（NURBS曲面）
+    generate_hood()              # 发动机盖
+    generate_windshield()        # 前风挡玻璃
+    generate_roof()              # 车顶
+    generate_rear_window()       # 后风挡玻璃
+    generate_trunk()             # 行李箱盖
+    generate_door_front()        # 前门
+    generate_door_rear()         # 后门
+    generate_bumper_front()      # 前保险杠
+    generate_bumper_rear()       # 后保险杠
+    generate_fender()            # 翼子板
+    
+    # 车身部件生成（基础几何）
+    generate_headlight()         # 前大灯
+    generate_taillight()         # 后尾灯
+    generate_grille()            # 进气格栅
+    generate_wheel()             # 车轮
+    generate_mirror()            # 后视镜
+    generate_pillar()            # 立柱
+    generate_door_seam()         # 车门分缝
+    
+    # 整车组装与导出
+    generate_complete_car()      # 生成完整汽车模型
+    export_car_data()            # 导出JSON数据
+    export_glb()                 # 导出GLB格式
+    export_stl()                 # 导出STL格式
+    export_obj()                 # 导出OBJ格式
+    export_step()                # 导出STEP格式（AP214）
+```
+
+---
+
+## 5. 数据流
+
+### 5.1 主流程：参数 → NURBS曲面 → 3D模型
 
 ```
 用户 (Vue3)
-   │ 1. 调整 22 维参数
+   │ 1. 调整 14 维硬点参数
    ▼
 前端 ParamEditor
    │ 2. POST /api/v1/car/build  {params}
@@ -249,22 +317,58 @@ D:\API\AI_3D_Model_Build\EVOLUTION_AI\
 FastAPI 路由
    │ 3. 调用 CarModelService
    ▼
-algorithm_model.api.build_car(params)
-   │ 4. 返回 8 部件 dict
+NURBSCarBodyGenerator.generate_complete_car()
+   │ 4. 硬点推导 → NURBS控制点布局 → 曲面生成 → 质量评估
+   │ 5. 返回 34 部件数据（含NURBS曲面信息）
    ▼
 ExportService.to_glb(parts)
-   │ 5. 合并 + 编码 GLB
+   │ 6. NURBS曲面采样 → 三角面构建 → GLB编码
    ▼
-Response { glb_url, stats }
+Response { glb_url, stats, nurbs_quality }
    │
    ▼
 前端 CarPreview
-   │ 6. GLTFLoader 加载 /static/cars/{hash}.glb
+   │ 7. GLTFLoader 加载 /static/cars/{hash}.glb
    ▼
 Three.js 渲染
 ```
 
-### 4.2 AI 优化（异步 + WebSocket）
+### 5.2 NURBS曲面生成流程
+
+```
+硬点参数输入
+   │
+   ▼
+坐标系初始化 (L, W, H, WB, TW, GC, FO, RO)
+   │
+   ▼
+轮心坐标计算 (fwx, rwx, wcy, fwz)
+   │
+   ▼
+A/C柱位置推导 (aBaseX, aTopY, cBaseX, cTopY)
+   │
+   ▼
+按部件生成NURBS曲面：
+   ├─ 发动机盖 (degree_u=5, degree_v=3, num_u=12, num_v=8)
+   ├─ 前风挡 (degree_u=3, degree_v=3, num_u=8, num_v=6)
+   ├─ 车顶 (degree_u=5, degree_v=3, num_u=10, num_v=8)
+   ├─ 后风挡 (degree_u=3, degree_v=3, num_u=8, num_v=6)
+   ├─ 行李箱盖 (degree_u=3, degree_v=3, num_u=8, num_v=6)
+   ├─ 翼子板 (degree_u=3, degree_v=3, num_u=6, num_v=6)
+   ├─ 车门 (degree_u=3, degree_v=3, num_u=8, num_v=8)
+   └─ 保险杠 (degree_u=3, degree_v=3, num_u=6, num_v=8)
+   │
+   ▼
+曲面质量评估（法向量、曲率、G2连续性）
+   │
+   ▼
+车身网格生成（NURBS采样 + 三角面构建）
+   │
+   ▼
+导出（GLB/STL/OBJ/STEP）
+```
+
+### 5.3 AI 优化（异步 + WebSocket）
 
 ```
 用户点击"开始优化"
@@ -277,7 +381,7 @@ FastAPI 路由
 前端建立 WebSocket
    │ 4. WS /ws/optimize/{task_id}
    ▼
-Celery Worker 执行 algorithm_model.api.optimize_surface
+Celery Worker 执行 optimize_surface
    │ 5. 每 10 步 publish {progress, best_score, g2_ratio}
    ▼
 WebSocket 推送到前端
@@ -289,137 +393,101 @@ WebSocket 推送到前端
 前端 QualityReport 渲染最终报告
 ```
 
-### 4.3 视频脚本生成
-
-```
-用户在 Optimize.vue 完成
-   │ 1. POST /api/v1/storyboard/generate  {product_name, style, ...}
-   ▼
-StoryboardService
-   │ 2. 调用 make_storyboard
-   │ 3. 调用 render_storyboard(md) + render_storyboard(html)
-   │ 4. 保存到 outputs/storyboards/{id}.{md,html,json}
-   ▼
-Response { storyboard_id, md_url, html_url, json_url }
-   │
-   ▼
-前端 StoryboardView 内嵌展示
-```
-
 ---
 
-## 5. API 设计
+## 6. API 设计
 
-### 5.1 REST API
+### 6.1 REST API
 
 | 方法 | 路径 | 功能 | 请求体 | 响应 |
 |------|------|------|--------|------|
 | GET | `/api/v1/car/params/default` | 默认参数 | - | CarParams |
-| POST | `/api/v1/car/build` | 构建 3D 模型 | CarParams | {glb_url, stats, parts_count} |
+| POST | `/api/v1/car/build` | 构建 NURBS 车身 | CarParams | {glb_url, stats, nurbs_quality} |
 | POST | `/api/v1/car/validate` | 参数越界校验 | CarParams | {valid, errors} |
-| POST | `/api/v1/quality/assess` | 评估曲面 | {points, panel_name} | QualityReport |
+| POST | `/api/v1/quality/assess` | 评估曲面质量 | {points, panel_name} | QualityReport |
 | POST | `/api/v1/optimize/start` | 启动优化 | {points, panel_name, max_iter} | {task_id, ws_url} |
 | GET | `/api/v1/optimize/{task_id}` | 查询优化结果 | - | OptimizationResult |
 | POST | `/api/v1/storyboard/generate` | 生成分镜 | {product_name, style, ...} | {md, html, json} |
 | GET | `/api/v1/storyboard/templates` | 列出模板 | - | [template_name, ...] |
 | GET | `/api/v1/project/list` | 方案列表 | ?skip&limit | [Project, ...] |
 | POST | `/api/v1/project/save` | 保存方案 | {name, params, ...} | {project_id} |
-| GET | `/api/v1/export/{format}/{id}` | 导出 | ?format=glb/stl/obj | file |
+| GET | `/api/v1/export/{format}/{id}` | 导出 | ?format=glb/stl/obj/step | file |
 
-### 5.2 WebSocket
+### 6.2 WebSocket
 
 | 路径 | 功能 | 消息格式 |
 |------|------|---------|
 | `/ws/optimize/{task_id}` | 优化进度 | `{progress: 0~100, best_score, g2_ratio, current_iter, done}` |
 
-### 5.3 OpenAPI 文档
+### 6.3 OpenAPI 文档
 
 FastAPI 自动生成 `/docs`（Swagger UI）和 `/redoc`，无需额外配置。
 
 ---
 
-## 6. 关键子系统设计
+## 7. 关键子系统设计
 
-### 6.1 CarModelService（建模服务）
+### 7.1 CarModelService（建模服务）
 
-**职责**：参数校验 → 调 build_car → 导出 GLB → 缓存
+**职责**：参数校验 → 调用 NURBSCarBodyGenerator → 导出 GLB/STEP → 缓存
 
 ```python
 class CarModelService:
     def build(self, params: CarParams) -> BuildResult:
-        # 1. Pydantic 校验（已在 CarParams.validate()）
-        # 2. 调 algorithm_model.api.build_car
-        parts = build_car(params)
-        # 3. 合并 + GLB 编码
-        glb_bytes = trimesh.util.concatenate(list(parts.values())).export(file_type='glb')
-        # 4. 存文件 + 算 hash
+        # 1. Pydantic 校验
+        # 2. 调用 NURBSCarBodyGenerator
+        generator = NURBSCarBodyGenerator()
+        car = generator.generate_complete_car()
+        # 3. 导出 GLB
+        glb_bytes = generator.export_glb(temp_path)
+        # 4. 导出 STEP（可选）
+        step_bytes = generator.export_step(temp_path)
+        # 5. 存文件 + 算 hash
         glb_hash = sha256(glb_bytes).hexdigest()[:16]
-        path = f"outputs/cars/{glb_hash}.glb"
-        # 5. 返回 URL
-        return BuildResult(glb_url=f"/static/cars/{glb_hash}.glb", stats=...)
+        # 6. 返回 URL 和质量信息
+        return BuildResult(
+            glb_url=f"/static/cars/{glb_hash}.glb",
+            stats=...,
+            nurbs_quality=car['nurbs_quality']
+        )
 ```
 
 **缓存策略**：相同 params hash 命中缓存（Redis，M3 引入）
 
-### 6.2 OptimizeService（异步优化服务）
+### 7.2 NURBS质量评估
 
-**为什么异步**：AI 优化 80 步 5s+（已测），同步会阻塞
-
-```python
-# tasks/optimize_task.py
-@celery_app.task(bind=True)
-def run_optimize(self, points, panel_name, max_iter, task_id):
-    def progress_cb(iter, best_score, g2):
-        self.update_state(state='PROGRESS', meta={
-            'iter': iter, 'best_score': best_score, 'g2_ratio': g2
-        })
-        redis.publish(f'optimize:{task_id}', json.dumps(meta))
-    result = optimize_surface(points, panel_name, max_iter, progress_cb=progress_cb)
-    redis.set(f'optimize:result:{task_id}', pickle.dumps(result), ex=3600)
-    return result
-```
-
-### 6.3 ProjectService（方案库）
-
-**Schema**（SQLAlchemy）：
+**职责**：验证曲面连续性，输出质量报告
 
 ```python
-class Project(Base):
-    __tablename__ = "projects"
-    id: int = Column(primary_key=True)
-    name: str = Column(String(100), index=True)
-    description: str = Column(Text)
-    params_json: str = Column(Text)  # CarParams.to_dict()
-    quality_json: str = Column(Text, nullable=True)
-    optimize_json: str = Column(Text, nullable=True)
-    storyboard_json: str = Column(Text, nullable=True)
-    glb_path: str = Column(String(200), nullable=True)
-    created_at: datetime
-    updated_at: datetime
-    tags: str = Column(String(200))  # 逗号分隔
+class NURBSQualityService:
+    def assess_surface(self, surface: NURBSSurface) -> QualityReport:
+        # 1. 边界点检查（G0连续）
+        # 2. 法向量检查（G1连续）
+        # 3. 曲率检查（G2连续）
+        # 4. 斑马纹评分
+        # 5. 高光轨迹评分
+        return QualityReport(
+            grade=grade,
+            g2_ratio=g2_ratio,
+            reflection_score=reflection_score,
+            curvature_stats=curvature_stats
+        )
 ```
 
-### 6.4 ExportService（导出服务）
+### 7.3 ExportService（导出服务）
 
 支持格式：
 - **GLB**（主用，Three.js / Web 原生）
 - **STL**（3D 打印）
 - **OBJ**（Blender / Maya 通用）
+- **STEP**（AP214，工程CAD对接）
 - **PNG**（matplotlib 静态图）
-
-```python
-class ExportService:
-    def to_glb(self, parts) -> bytes: ...
-    def to_stl(self, parts) -> bytes: ...
-    def to_obj(self, parts) -> bytes: ...
-    def to_png(self, parts, view='iso') -> bytes:  # matplotlib 三视图
-```
 
 ---
 
-## 7. 前端架构
+## 8. 前端架构
 
-### 7.1 路由结构
+### 8.1 路由结构
 
 ```
 /                       # 首页 (项目概览)
@@ -434,7 +502,7 @@ class ExportService:
   └─ /projects/:id      # 方案详情
 ```
 
-### 7.2 状态管理（Pinia）
+### 8.2 状态管理（Pinia）
 
 ```typescript
 // stores/car.ts
@@ -443,6 +511,7 @@ export const useCarStore = defineStore('car', {
     params: defaultCarParams,
     glbUrl: null,
     stats: null,
+    nurbsQuality: null,
     loading: false,
   }),
   actions: {
@@ -467,7 +536,7 @@ export const useOptimizeStore = defineStore('optimize', {
 })
 ```
 
-### 7.3 Three.js 集成
+### 8.3 Three.js 集成
 
 - **GLTFLoader** 加载 GLB
 - **OrbitControls** 旋转缩放
@@ -477,54 +546,37 @@ export const useOptimizeStore = defineStore('optimize', {
   - 轮毂：金属 + 辐条
   - 灯：自发光（emissive）
 
-```typescript
-// components/CarPreview.vue 核心
-const loader = new GLTFLoader()
-loader.load(props.glbUrl, (gltf) => {
-  const model = gltf.scene
-  model.traverse((child) => {
-    if (child.isMesh) {
-      // 根据 part name 设置材质
-      applyMaterial(child)
-    }
-  })
-  scene.add(model)
-})
-```
-
 ---
 
-## 8. 性能基线（已测）
+## 9. 性能基线
 
 | 操作 | 耗时 | 数据量 | 备注 |
 |------|------|--------|------|
-| `build_car()` 默认参数 | ~200ms | 3475 顶点 / 6504 面 | 含合并 |
-| `build_car()` 自定义 | ~250ms | 3539 顶点 / 6600 面 | - |
-| `evaluate_surface()` 球面 | ~50ms | 20×20 网格 | - |
-| `evaluate_surface()` 车身 | ~80ms | 20×20 网格 | - |
-| `optimize_surface()` 球面 80 步 | 1.28s | - | 保持 D |
-| `optimize_surface()` 车身 80 步 | 4.79s | - | G2 改善 -119 |
-| `optimize_surface()` 平面+噪声 120 步 | 3.00s | - | 优化效果最显著 |
-| `make_storyboard()` | <50ms | 7 镜 | 模板生成 |
-| `render_storyboard()` md | <10ms | 1968 字符 | - |
-| `render_storyboard()` html | <30ms | 9471 字符 | - |
-| `test_all.py` 全套 | 9.49s | 5 步 | ✅ |
+| NURBS车身生成（34部件） | ~250ms | 776+控制点 | G2连续 |
+| NURBS曲面评估（单部件） | ~10ms | 20×16采样点 | |
+| GLB导出 | < 0.1s | ~130KB | |
+| STEP导出 | < 0.5s | B样条曲面 | AP214 |
+| 默认参数整车建模 | < 0.5s | 3475 顶点 / 6504 面 | |
+| 车身曲面质量评估 | < 0.3s | QualityReport | |
+| AI优化（80步） | ~1-5s | OptimizationResult | |
+| 7镜视频脚本生成 | < 0.05s | Storyboard | |
+| **一站式自检** | **9.5s** | **5模块全过** | |
 
 **优化策略**：
-- 同 params 缓存 GLB（hash 命中省 200ms）
+- 同 params 缓存 GLB（hash 命中省 250ms）
 - AI 优化必须异步（5s+ 必阻塞）
 - 评估结果用 Redis 缓存（key=points_hash）
 - 静态资源走 CDN（Nginx，M4）
 
 ---
 
-## 9. 安全设计
+## 10. 安全设计
 
 | 维度 | 措施 |
 |------|------|
 | **API 鉴权** | JWT Token (M3 引入，M1-M2 先开放) |
 | **参数越界** | Pydantic + CarParams.validate() 双重校验 |
-| **文件上传** | 限制类型（仅 .glb/.stl/.obj）+ 大小（<50MB） |
+| **文件上传** | 限制类型（仅 .glb/.stl/.obj/.step）+ 大小（<50MB） |
 | **CORS** | 限定 origin（生产环境） |
 | **限流** | slowapi（IP 维度 100 req/min） |
 | **SQL 注入** | SQLAlchemy ORM（无裸 SQL） |
@@ -533,168 +585,113 @@ loader.load(props.glbUrl, (gltf) => {
 
 ---
 
-## 10. 部署架构
+## 11. 重构核心变化
 
-### 10.1 开发环境（M1）
+### 11.1 架构变化
 
-```
-主机
-  ├─ algorithm_model/        # 算法层（直接 import）
-  ├─ backend/                # uvicorn main:app --reload --port 8000
-  ├─ frontend/               # npm run dev (port 5173)
-  └─ SQLite                  # 本地文件
-```
+| 维度 | 重构前 | 重构后 |
+|------|--------|--------|
+| 曲面生成 | 简单参数函数 (sin/cos/exp) | NURBS曲面引擎 |
+| 连续性 | 手动拼接，无保证 | G2曲率连续 |
+| 控制点 | 无 | 完整NURBS控制点布局 |
+| 曲面质量 | 无法量化 | 可计算曲率、法向量 |
+| 可扩展性 | 差 | 支持任意degree和控制点 |
+| STEP导出 | 不支持 | AP214格式B样条曲面 |
 
-### 10.2 生产环境（M4）
+### 11.2 功能变化
 
-```
-                    ┌──────────┐
-                    │   CDN    │
-                    └────┬─────┘
-                         │
-                    ┌────▼─────┐
-                    │  Nginx   │  :443 (HTTPS)
-                    │  反向代理 │
-                    └────┬─────┘
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-   ┌────▼────┐     ┌────▼────┐     ┌────▼────┐
-   │Frontend │     │Backend  │     │Backend  │
-   │ (静态)  │     │  #1     │     │  #2     │
-   └─────────┘     └────┬────┘     └────┬────┘
-                        │                │
-                        └────────┬───────┘
-                                 │
-                    ┌────────────┼────────────┐
-                    │            │            │
-               ┌────▼───┐  ┌────▼───┐  ┌────▼───┐
-               │Postgres│  │ Redis  │  │ Celery │
-               │        │  │        │  │ Workers│
-               └────────┘  └────────┘  └────────┘
-```
-
-**docker-compose.yml**（M4）：
-```yaml
-version: '3.8'
-services:
-  backend:
-    build: ./backend
-    ports: ["8000:8000"]
-    depends_on: [postgres, redis]
-  celery-worker:
-    build: ./backend
-    command: celery -A tasks.celery_app worker -l info
-  postgres:
-    image: postgres:15
-    volumes: ["pgdata:/var/lib/postgresql/data"]
-  redis:
-    image: redis:7
-  nginx:
-    image: nginx
-    ports: ["443:443"]
-    volumes: ["./nginx.conf:/etc/nginx/nginx.conf"]
-```
+| 维度 | 重构前 | 重构后 |
+|------|--------|--------|
+| 车身部件数 | 8个 | 34个 |
+| NURBS曲面数 | 0 | 15+ |
+| 控制点总数 | 0 | 776+ |
+| 导出格式 | GLB/STL/OBJ | GLB/STL/OBJ/STEP |
+| 质量评估 | 三角网格级别 | NURBS曲面级别 |
 
 ---
 
-## 11. 迭代路线（4 个里程碑）
+## 12. 迭代路线（4 个里程碑）
 
-### M1: MVP —— 后端 + CLI（1 周）
-**目标**：FastAPI 后端能跑，CLI 可用，浏览器能看 OpenAPI 文档
-- [ ] FastAPI 项目骨架（backend/main.py + config + deps）
-- [ ] 5 大 API 路由（car/quality/optimize/storyboard/export）
-- [ ] 静态资源服务（GLB 导出 + 访问）
-- [ ] CORS 配置（开发环境放开）
-- [ ] 简单测试页（OpenAPI docs）
-- [ ] 后端单元测试（pytest）
-- ✅ **验收**：浏览器访问 `/docs` 能调通所有 API，能下载 GLB
+### M1: MVP —— 后端 + CLI（已完成）
+- ✅ FastAPI 项目骨架
+- ✅ 5 大 API 路由
+- ✅ NURBS曲面引擎集成
+- ✅ 静态资源服务
+- ✅ 后端单元测试
 
-### M2: 数据库 + 异步任务（1 周）
-**目标**：方案能保存，优化能异步
+### M2: 数据库 + 异步任务（进行中）
 - [ ] SQLAlchemy + Alembic 初始化
 - [ ] Project 模型 + CRUD API
 - [ ] Celery + Redis 接入
-- [ ] 优化任务改异步（task_id + 轮询）
-- [ ] 数据迁移脚本
-- [ ] 集成测试
-- ✅ **验收**：保存方案 → 异步优化 → 完成后查询结果
+- [ ] 优化任务改异步
 
-### M3: 前端 + WebSocket（2 周）
-**目标**：完整 Web 端工作流
-- [ ] Vue 3 + Vite 项目骨架
-- [ ] 5 大页面（Designer / Quality / Optimize / Storyboard / Projects）
-- [ ] Three.js 3D 预览组件
-- [ ] ECharts 评估报告组件
+### M3: 前端 + WebSocket（进行中）
+- ✅ Vue 3 + Vite 项目骨架
+- ✅ Three.js 3D 预览组件
+- ✅ 14 维参数编辑器
 - [ ] WebSocket 实时优化进度
-- [ ] 22 维参数编辑器（滑块 + 数字输入）
-- [ ] 方案库管理（列表 + 详情 + 编辑）
-- ✅ **验收**：完整流程跑通（参数→预览→评估→优化→脚本→保存）
+- [ ] 方案库管理
 
-### M4: 部署 + 监控（1 周）
-**目标**：可上生产
+### M4: 部署 + 监控（规划中）
 - [ ] Dockerfile + docker-compose.yml
 - [ ] Nginx 配置（HTTPS + 反代）
 - [ ] Loguru 日志结构化
-- [ ] Prometheus 指标（API QPS / 任务耗时）
-- [ ] Grafana 面板（M4 延后到 M5）
+- [ ] Prometheus 指标
 - [ ] CI/CD（GitHub Actions）
-- [ ] 用户手册 + 部署文档
-- ✅ **验收**：`docker-compose up` 一键起服，浏览器访问 HTTPS 域名
 
 ---
 
-## 12. 与现有产物映射
+## 13. 与现有产物映射
 
 | 现有产物 | 在新架构中的位置 | 备注 |
 |---------|----------------|------|
-| `algorithm_model/api.py` | L4 算法层 | **不动**，作为后端服务依赖 |
+| `nurbs_engine.py` | L4 NURBS引擎层 | **核心重构**，新增 |
+| `car_body_generator.py` | L4 NURBS车身生成器 | **核心重构**，NURBSCarBodyGenerator |
+| `algorithm_model/api.py` | L4 算法层 | 保留，作为后端服务依赖 |
 | `algorithm_model/main.py` | CLI 入口 | 保留，运维/调试用 |
 | `algorithm_model/test_all.py` | 测试基线 | **不动**，每次发布前跑 |
-| `core/full_body.py` | 历史归档 | 可删除，算法模型已包含 |
-| `app.py` (Streamlit) | **删除** | 已被算法模型 + FastAPI 替代 |
-| `generate_screenshots.py` | scripts/ | 保留作为静态图生成 |
-| `start.bat` / `start.sh` | scripts/ | 重写为 FastAPI 启动 |
-| `outputs/*.png` | outputs/snapshots/ | 迁移到新位置 |
-| `docs/PRODUCT_SPEC.md` | docs/ | **不动** |
-| `docs/算法模型交付总结.md` | docs/ | **不动** |
-| `docs/视频脚本展示功能整合总结.md` | docs/ | **不动** |
+| `frontend/src/views/Designer.vue` | L1 表现层 | ✅ 已完成 |
+| `frontend/src/components/Car3D.vue` | L1 表现层 | ✅ 已完成 |
 
 ---
 
-## 13. 风险与缓解
+## 14. 风险与缓解
 
 | 风险 | 影响 | 缓解措施 |
 |------|------|---------|
-| AI 优化耗时不确定 | 异步任务超时 | Celery 软超时 60s + 硬超时 120s，前端可取消 |
-| 复杂参数导致 GLB 过大 | 加载慢 | 简化策略（LOD）+ 压缩（draco）|
+| NURBS曲面计算耗时 | 响应延迟 | 缓存策略 + 异步计算 |
+| 复杂参数导致模型过大 | 加载慢 | 简化策略（LOD）+ 压缩（draco）|
 | Three.js 学习曲线 | 前端延期 | M3 单独排期 + 用现成示例 |
 | SQLite 并发写入 | 方案丢失 | M2 升级 PostgreSQL |
-| Celery 部署复杂 | M2 延期 | M1 先用 FastAPI BackgroundTasks 同步版 |
+| Celery 部署复杂 | M2 延期 | M1 先用 FastAPI BackgroundTasks |
 | 三方库升级破坏 API | 重构 | requirements 锁版本 + 测试覆盖 |
 
 ---
 
-## 14. 总结
+## 15. 总结
 
 **核心思路**：
-1. **算法先行** ✅（已交付，5/5 自检，9.49s）
-2. **后端承上启下**（M1-M2）：把算法包成 RESTful + WebSocket
+1. **NURBS引擎先行** ✅（已完成，15+曲面，G2连续）
+2. **后端承上启下**（M1-M2）：把NURBS引擎包成 RESTful + WebSocket
 3. **前端发力**（M3）：把后端装进 Three.js + Vue 3
 4. **工程化收尾**（M4）：Docker + Nginx + 监控
 
 **关键决策**：
-- **算法模型与 Web 完全解耦**：算法可独立 CLI 跑、可独立测试、可被其他项目直接 `pip install`
-- **后端只做编排，不重写算法**：服务层是薄壳，调 `algorithm_model.api` 即可
+- **NURBS引擎与Web完全解耦**：引擎可独立运行、可独立测试、可被其他项目直接引用
+- **后端只做编排，不重写算法**：服务层是薄壳，调 NURBSCarBodyGenerator 即可
 - **异步优先**：所有 > 1s 的操作（AI 优化 / 视频生成）默认异步 + 任务队列
 - **数据结构稳定**：5 大 API 数据类签名冻结，前端按字段渲染
 
-**预期产出**（4 周）：
-- 完整 Web 平台（参数编辑 → 3D 预览 → 质量评估 → AI 优化 → 视频脚本 → 方案管理）
+**预期产出**：
+- 完整 Web 平台（参数编辑 → NURBS曲面生成 → 质量评估 → AI 优化 → 视频脚本 → 方案管理）
 - 一键 Docker 启动
 - OpenAPI 自动文档
+- STEP格式导出，可对接工业CAD软件
 - 主对话演示流程跑通
 
 ---
 
-**主人，要我接着推 M1（FastAPI 后端骨架）吗？还是先把这套架构过一遍，有要改的地方？**
+**基线版本：8143827**
+
+*EVOLUTION AI Development Team*
+*2026年7月*
