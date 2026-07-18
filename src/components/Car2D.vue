@@ -19,8 +19,19 @@
         <path :d="frontWheelInnerPath" fill="none" stroke="rgba(74,222,128,0.5)" stroke-width="1" />
         <path :d="rearWheelInnerPath" fill="none" stroke="rgba(74,222,128,0.5)" stroke-width="1" />
         <line :x1="groundLineX1" :y1="groundLineY" :x2="groundLineX2" :y2="groundLineY" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+        
+        <line :x1="frontX" :y1="groundLineY - 8" :x2="frontWheelX" :y2="groundLineY - 8" stroke="#00ff88" stroke-width="1.5" stroke-dasharray="4,2" />
+        <line :x1="frontX" :y1="groundLineY - 12" :x2="frontX" :y2="groundLineY - 4" stroke="#00ff88" stroke-width="1.5" />
+        <line :x1="frontWheelX" :y1="groundLineY - 12" :x2="frontWheelX" :y2="groundLineY - 4" stroke="#00ff88" stroke-width="1.5" />
+        <text :x="frontWheelX / 2" :y="groundLineY - 20" text-anchor="middle" fill="#00ff88" font-size="11" font-family="Inter, sans-serif" font-weight="600">FO: {{ FO }}mm</text>
+
+        <line :x1="rearWheelX" :y1="groundLineY - 8" :x2="rearX" :y2="groundLineY - 8" stroke="#ff6b6b" stroke-width="1.5" stroke-dasharray="4,2" />
+        <line :x1="rearWheelX" :y1="groundLineY - 12" :x2="rearWheelX" :y2="groundLineY - 4" stroke="#ff6b6b" stroke-width="1.5" />
+        <line :x1="rearX" :y1="groundLineY - 12" :x2="rearX" :y2="groundLineY - 4" stroke="#ff6b6b" stroke-width="1.5" />
+        <text :x="(rearWheelX + rearX) / 2" :y="groundLineY - 20" text-anchor="middle" fill="#ff6b6b" font-size="11" font-family="Inter, sans-serif" font-weight="600">RO: {{ RO }}mm</text>
+
         <text :x="wheelBaseX" :y="dimTextY" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11" font-family="Inter, sans-serif">WB {{ carParams.wheel_base }}mm</text>
-        <text :x="lengthX" :y="dimTextY + 16" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11" font-family="Inter, sans-serif">L {{ carParams.overall_length }}mm</text>
+        <text :x="lengthX" :y="dimTextY + 16" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11" font-family="Inter, sans-serif">L {{ FO + WB + RO }}mm</text>
       </g>
     </svg>
   </div>
@@ -54,13 +65,17 @@ const scale = computed(() => {
 
 const s = (val) => val * scale.value
 
-const frontX = computed(() => 0)
-const rearX = computed(() => s(props.carParams.overall_length))
-const lengthX = computed(() => s(props.carParams.overall_length) / 2)
+const FO = computed(() => props.carParams.front_overhang || 1000)
+const RO = computed(() => props.carParams.rear_overhang || 1000)
+const WB = computed(() => props.carParams.wheel_base)
 
-const frontWheelX = computed(() => s(props.carParams.overall_length / 2 - props.carParams.wheel_base / 2))
-const rearWheelX = computed(() => s(props.carParams.overall_length / 2 + props.carParams.wheel_base / 2))
+const frontWheelX = computed(() => s(FO.value))
+const rearWheelX = computed(() => s(FO.value + WB.value))
 const wheelBaseX = computed(() => (frontWheelX.value + rearWheelX.value) / 2)
+
+const frontX = computed(() => 0)
+const rearX = computed(() => s(FO.value + WB.value + RO.value))
+const lengthX = computed(() => rearX.value / 2)
 
 const wheelRadius = computed(() => s(props.carParams.wheel_diameter / 2))
 const groundClearance = computed(() => s(props.carParams.ground_clearance))
