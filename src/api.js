@@ -170,4 +170,20 @@ export const modifyAPI = {
   exportState: () => api.post('/modify/export')
 }
 
+// AI训练集 API - 云端计算服务
+export const aiAPI = {
+  train: (data) => api.post('/ai/train', data),
+  evaluateQuality: (data) => api.post('/ai/evaluate-quality', data),
+  classifyStyle: (featureVector) => api.post('/ai/classify-style', { feature_vector: featureVector }),
+  generateDesign: (data) => api.post('/ai/generate-design', data),
+  optimize: (data) => api.post('/ai/optimize', data),
+  styleTransfer: (data) => api.post('/ai/style-transfer', data),
+  brandFusion: (data) => api.post('/ai/brand-fusion', data),
+  getDatasetStats: () => api.get('/ai/dataset-stats'),
+  getCarTypes: () => api.get('/ai/car-types'),
+  getStyles: () => api.get('/ai/styles'),
+  getBrands: () => api.get('/ai/brands'),
+  getModelWeights: () => api.get('/ai/model-weights')
+}
+
 export default api

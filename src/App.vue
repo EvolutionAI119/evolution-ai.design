@@ -150,12 +150,14 @@ body {
 .sidebar-menu { border-right: none; background: transparent !important; }
 
 .sidebar-menu :deep(.el-menu-item) {
-  height: 40px;
-  line-height: 40px;
+  height: 44px;
+  line-height: 44px;
   margin: 2px 8px;
   border-radius: 6px;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
@@ -171,6 +173,12 @@ body {
 .sidebar-menu :deep(.el-menu-item .el-icon) {
   font-size: 16px;
   margin-right: 10px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .header {
@@ -178,9 +186,15 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0 20px;
   height: 52px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.header :deep(.el-header) { height: 52px !important; }
+.header :deep(.el-header) { 
+  height: 52px !important;
+  padding: 0;
+}
 
 .header-left {
   display: flex;

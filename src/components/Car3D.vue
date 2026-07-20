@@ -122,7 +122,6 @@ const viewPresets = {
 const createCar = () => {
   const group = new THREE.Group()
   
-  const L = props.carParams.overall_length / 1000
   const W = props.carParams.overall_width / 1000
   const H = props.carParams.overall_height / 1000
   const WB = props.carParams.wheel_base / 1000
@@ -133,6 +132,7 @@ const createCar = () => {
   const roofH = props.carParams.roof_height / 1000
   const wAngle = props.carParams.windshield_angle * Math.PI / 180
   const rAngle = props.carParams.rear_window_angle * Math.PI / 180
+  const rSlant = props.carParams.rear_slant_angle * Math.PI / 180
   const FO = (props.carParams.front_overhang || 1000) / 1000
   const RO = (props.carParams.rear_overhang || 1000) / 1000
 
@@ -176,24 +176,34 @@ const createCar = () => {
 
   const bodyShape = new THREE.Shape()
   const hoodEndX = frontX - hoodLen
-  const trunkStartX = rearX + hoodLen * 0.6
 
-  const windshieldHeight = roofH * 0.7
-  const windshieldTopX = hoodEndX - windshieldHeight / Math.tan(wAngle)
-  
-  const rearWindowHeight = roofH * 0.65
-  const rearWindowTopX = trunkStartX + rearWindowHeight / Math.tan(rAngle)
+  const trunkLength = Math.min(RO * 0.6, hoodLen * 0.5)
+  const trunkStartX = rearX + trunkLength
 
   const bodyBottomY = gc
   const bodyTopY = gc + H * 0.4
   const roofTopY = gc + H * 0.4 + roofH
   const beltLineY = gc + H * 0.55
 
+  const windshieldHeight = (roofTopY - beltLineY) * 0.7
+  const windshieldTopX = hoodEndX - windshieldHeight / Math.tan(wAngle)
+
+  const maxRoofLength = windshieldTopX - trunkStartX
+  const slantFactor = Math.min(Math.max(props.carParams.rear_slant_angle / 60, 0), 1)
+  const roofLen = Math.max(maxRoofLength * (1 - slantFactor * 0.7), 0.8)
+  const rearWindowTopX = windshieldTopX - roofLen
+
+  const rearWindowVertHeight = roofTopY - beltLineY
+  const rearWindowHeightRatio = 0.5 + slantFactor * 0.3
+  const rearWindowHeight = rearWindowVertHeight * rearWindowHeightRatio
+  const rearWindowBottomX = rearWindowTopX - rearWindowHeight / Math.tan(rAngle)
+
   bodyShape.moveTo(frontX, bodyBottomY)
   bodyShape.quadraticCurveTo(frontX + 0.05, bodyTopY - 0.1, frontX, bodyTopY)
   bodyShape.lineTo(hoodEndX, bodyTopY)
   bodyShape.lineTo(windshieldTopX, roofTopY)
   bodyShape.lineTo(rearWindowTopX, roofTopY)
+  bodyShape.lineTo(rearWindowBottomX, bodyTopY)
   bodyShape.lineTo(trunkStartX, bodyTopY)
   bodyShape.lineTo(rearX, bodyTopY)
   bodyShape.lineTo(rearX, bodyBottomY)
@@ -237,10 +247,10 @@ const createCar = () => {
   group.add(bodyMesh)
 
   const roofCenterX = (windshieldTopX + rearWindowTopX) / 2
-  const roofLength = Math.abs(rearWindowTopX - windshieldTopX)
+  const roofMeshLength = Math.abs(rearWindowTopX - windshieldTopX)
   const roofWidth = bodyDepth + bodyThickness * 2 + 0.02
   
-  const roofGeom = new THREE.BoxGeometry(roofLength, 0.02, roofWidth)
+  const roofGeom = new THREE.BoxGeometry(roofMeshLength, 0.02, roofWidth)
   const roofMesh = new THREE.Mesh(roofGeom, bodyMat)
   roofMesh.position.set(roofCenterX, roofTopY + 0.01, 0)
   roofMesh.castShadow = true
@@ -398,7 +408,8 @@ const createCar = () => {
   }
 
   if (props.carType === 'suv' || props.carType === 'mpv') {
-    const railGeom = new THREE.BoxGeometry(0.04, 0.03, roofLen * 0.8)
+    const railLength = Math.abs(rearWindowTopX - windshieldTopX)
+    const railGeom = new THREE.BoxGeometry(0.04, 0.03, railLength * 0.8)
     const rail1 = new THREE.Mesh(railGeom, chromeMat)
     rail1.position.set((windshieldTopX + rearWindowTopX) / 2, roofTopY + 0.02, halfTrack - 0.1)
     group.add(rail1)
@@ -628,9 +639,33 @@ const toggleFullscreen = () => {
   }
 }
 
+const disposeObject = (obj) => {
+  if (!obj) return
+  obj.traverse((child) => {
+    if (child.geometry) child.geometry.dispose()
+    if (child.material) {
+      if (Array.isArray(child.material)) {
+        child.material.forEach(m => m.dispose())
+      } else {
+        child.material.dispose()
+      }
+    }
+  })
+  if (obj.geometry) obj.geometry.dispose()
+  if (obj.material) {
+    if (Array.isArray(obj.material)) {
+      obj.material.forEach(m => m.dispose())
+    } else {
+      obj.material.dispose()
+    }
+  }
+}
+
 const updateCar = () => {
   if (!scene || !carGroup) return
   scene.remove(carGroup)
+  disposeObject(carGroup)
+  carGroup = null
   carGroup = createCar()
   carGroup.traverse((child) => {
     if (child.isMesh) {
@@ -683,7 +718,19 @@ onUnmounted(() => {
     container.removeEventListener('mouseleave', onMouseUp)
     container.removeEventListener('wheel', onWheel)
     window.removeEventListener('resize', onWindowResize)
+  }
+  disposeObject(carGroup)
+  if (renderer) {
     renderer.dispose()
+    const gl = renderer.getContext()
+    const ext = gl.getExtension('WEBGL_lose_context')
+    if (ext) ext.loseContext()
+    renderer.domElement.remove()
+    renderer = null
+  }
+  if (scene) {
+    scene.clear()
+    scene = null
   }
 })
 </script>

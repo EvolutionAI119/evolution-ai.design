@@ -268,10 +268,11 @@
                 <input
                   type="range"
                   v-model.number="carParams.overall_length"
-                  min="3500"
-                  max="6000"
+                  :min="carParams.wheel_base + 1000"
+                  :max="carParams.wheel_base + 3800"
                   step="10"
                   class="param-slider"
+                  @input="onOverallLengthChange"
                 />
               </div>
               <div class="param-item">
@@ -310,39 +311,48 @@
                 <input
                   type="range"
                   v-model.number="carParams.wheel_base"
-                  min="2400"
-                  max="4000"
+                  :min="1800"
+                  :max="carParams.overall_length - 1000"
                   step="10"
                   class="param-slider"
+                  @input="onWheelBaseChange"
                 />
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Front Overhang</span>
+                  <span class="param-name">Front Overhang (FO)</span>
                   <span class="param-value">{{ carParams.front_overhang }} mm</span>
                 </div>
                 <input
                   type="range"
                   v-model.number="carParams.front_overhang"
-                  min="500"
-                  max="1800"
+                  :min="300"
+                  :max="(carParams.overall_length - carParams.wheel_base) * 0.7"
                   step="10"
                   class="param-slider"
+                  @input="onOverhangChange"
                 />
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Rear Overhang</span>
+                  <span class="param-name">Rear Overhang (RO)</span>
                   <span class="param-value">{{ carParams.rear_overhang }} mm</span>
                 </div>
                 <input
                   type="range"
                   v-model.number="carParams.rear_overhang"
-                  min="500"
-                  max="2000"
+                  :min="300"
+                  :max="(carParams.overall_length - carParams.wheel_base) * 0.7"
                   step="10"
                   class="param-slider"
+                  @input="onOverhangChange"
                 />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Length Formula</span>
+                  <span class="param-value" style="color: #4ade80">{{ carParams.front_overhang }} + {{ carParams.wheel_base }} + {{ carParams.rear_overhang }} = {{ carParams.front_overhang + carParams.wheel_base + carParams.rear_overhang }}</span>
+                </div>
               </div>
             </div>
             <div v-else class="param-items">
@@ -397,6 +407,34 @@
                   type="range"
                   v-model.number="carParams.windshield_angle"
                   min="20"
+                  max="60"
+                  step="1"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Rear Window Angle</span>
+                  <span class="param-value">{{ carParams.rear_window_angle }}°</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.rear_window_angle"
+                  min="10"
+                  max="60"
+                  step="1"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">Rear Slant Angle</span>
+                  <span class="param-value">{{ carParams.rear_slant_angle }}°</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.rear_slant_angle"
+                  min="5"
                   max="60"
                   step="1"
                   class="param-slider"
@@ -460,12 +498,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import Car3D from '../components/Car3D.vue'
 import Car2D from '../components/Car2D.vue'
-import { carTypes, carTypeParams, brands, bodyColors, defaultCarParams, imageLoaderConfig } from '../config/carPresets'
-import { useImageLoader } from '../composables/useImageLoader'
+import { carTypes, carTypeParams, brands, bodyColors, defaultCarParams } from '../config/carPresets'
 import { carAPI, buildAPI, aiAPI } from '../api'
 
 const generating = ref(false)
@@ -525,21 +562,84 @@ const applyCustomColor = () => {
   }
 }
 
-const {
-  imageLoadStates,
-  imageRetryCount,
-  getImageState,
-  getImageSrc,
-  checkImageReady,
-  handleImageLoad,
-  preloadAllImages: _preloadAll,
-  cleanup: cleanupImageLoader
-} = useImageLoader(imageLoaderConfig)
+const onOverallLengthChange = () => {
+  const availableSpace = carParams.value.overall_length - carParams.value.wheel_base
+  const currentFO = carParams.value.front_overhang
+  const currentRO = carParams.value.rear_overhang
+  const totalOverhang = currentFO + currentRO
+  
+  if (totalOverhang > 0) {
+    const foRatio = currentFO / totalOverhang
+    const roRatio = currentRO / totalOverhang
+    carParams.value.front_overhang = Math.round(availableSpace * foRatio)
+    carParams.value.rear_overhang = Math.round(availableSpace * roRatio)
+  } else {
+    carParams.value.front_overhang = Math.round(availableSpace * 0.45)
+    carParams.value.rear_overhang = Math.round(availableSpace * 0.55)
+  }
+}
+
+const onWheelBaseChange = () => {
+  const availableSpace = carParams.value.overall_length - carParams.value.wheel_base
+  const currentFO = carParams.value.front_overhang
+  const currentRO = carParams.value.rear_overhang
+  const totalOverhang = currentFO + currentRO
+  
+  if (totalOverhang > 0 && availableSpace > 600) {
+    const foRatio = currentFO / totalOverhang
+    const roRatio = currentRO / totalOverhang
+    carParams.value.front_overhang = Math.max(300, Math.round(availableSpace * foRatio))
+    carParams.value.rear_overhang = Math.max(300, Math.round(availableSpace * roRatio))
+  }
+}
+
+const onOverhangChange = () => {
+  const newTotal = carParams.value.front_overhang + carParams.value.wheel_base + carParams.value.rear_overhang
+  carParams.value.overall_length = newTotal
+}
+
+const imageStates = reactive({})
+const imageRetryCount = reactive({})
+const imageCache = reactive({})
+
+const getImageState = (key) => {
+  return imageStates[key] || 'fallback'
+}
+
+const getImageSrc = (model) => {
+  return imageCache[model.key] || model.image
+}
+
+const loadImage = async (model) => {
+  const key = model.key
+  if (imageStates[key] === 'loading') return
+  
+  imageStates[key] = 'loading'
+  imageRetryCount[key] = imageRetryCount[key] || 0
+
+  try {
+    const response = await fetch(model.image)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    imageCache[key] = url
+    imageStates[key] = 'loaded'
+  } catch (error) {
+    imageStates[key] = 'fallback'
+  }
+}
 
 const handleImageError = (modelKey) => {
-  const model = getModelByKey(modelKey)
-  if (model) {
-    checkImageReady(modelKey, model)
+  imageStates[modelKey] = 'fallback'
+}
+
+const cleanupImageCache = () => {
+  for (const key in imageCache) {
+    const url = imageCache[key]
+    if (url && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+    }
   }
 }
 
@@ -555,13 +655,11 @@ const getModelByKey = (modelKey) => {
 }
 
 const preloadAllImages = () => {
-  const allModels = []
   brands.forEach(brand => {
     brand.models.forEach(model => {
-      allModels.push(model)
+      loadImage(model)
     })
   })
-  _preloadAll(allModels)
 }
 
 const generateCar = async () => {
@@ -724,7 +822,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  cleanupImageLoader()
+  cleanupImageCache()
 })
 </script>
 

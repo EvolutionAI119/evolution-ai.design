@@ -108,48 +108,77 @@ class NURBSCarBodyGenerator:
     def generate_roof(self):
         """车顶"""
         t = self.nurbs_templates['roof']
-        length = self._p('车身部件', 'roof_length')
         width = self._p('车身部件', 'roof_width')
         height = self._p('车身部件', 'roof_height')
         nu, nv = t['num_u'], t['num_v']
-        cx_start, cy_base = 1950, 1200
+
+        windshield_top_x = self.FO + self.WB * 0.4
+        windshield_top_y = self.GC + 900
+        trunk_start_x = self.L - self.RO - self._p('车身部件', 'trunk_length') * 0.3
+
+        max_roof_length = trunk_start_x - windshield_top_x
+        slant_factor = min(max(self._p('造型角度', 'rear_slant_angle') / 60.0, 0), 1)
+        roof_len = max(max_roof_length * (1 - slant_factor * 0.7), 800)
+
+        cx_start = windshield_top_x
+        cy_base = windshield_top_y
+
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                x = cx_start + u * length
+                x = cx_start + u * roof_len
                 y = cy_base + height * np.cos((u - 0.5) * np.pi * 2)
                 z = (v - 0.5) * width * (1 - u * 0.2)
                 row.append((x, y, z))
             cps.append(row)
         surf = self._build_surface(cps, t)
         return {'name': '车顶', 'type': 'roof', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#c0c0c0', 'position': {'x': 0, 'y': 0, 'z': 0}}
+                'surface': surf.to_dict(), 'color': '#c0c0c0', 'position': {'x': 0, 'y': 0, 'z': 0},
+                'roof_end_x': cx_start + roof_len, 'roof_top_y': cy_base}
 
     def generate_rear_window(self):
         """后风挡玻璃"""
         t = self.nurbs_templates['rear_window']
         width = self._p('车身部件', 'rear_window_width')
         height = self._p('车身部件', 'rear_window_height')
-        angle = np.radians(self._p('造型角度', 'rear_window_angle'))
+        rear_window_angle = np.radians(self._p('造型角度', 'rear_window_angle'))
         nu, nv = t['num_u'], t['num_v']
-        cx_base, cy_top = 3400, 1150
+
+        windshield_top_x = self.FO + self.WB * 0.4
+        windshield_top_y = self.GC + 900
+        trunk_start_x = self.L - self.RO - self._p('车身部件', 'trunk_length') * 0.3
+
+        max_roof_length = trunk_start_x - windshield_top_x
+        slant_factor = min(max(self._p('造型角度', 'rear_slant_angle') / 60.0, 0), 1)
+        roof_len = max(max_roof_length * (1 - slant_factor * 0.7), 800)
+
+        rear_window_top_x = windshield_top_x + roof_len
+        rear_window_top_y = windshield_top_y
+
+        rear_window_bottom_x = rear_window_top_x - height / np.tan(rear_window_angle)
+        rear_window_bottom_y = rear_window_top_y - height
+
+        cx_base = rear_window_top_x
+        cy_top = rear_window_top_y
+
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                x = cx_base + u * height * np.sin(angle)
-                y = cy_top - u * height * np.cos(angle)
+                x = cx_base - u * (rear_window_top_x - rear_window_bottom_x)
+                y = cy_top - u * height
                 z = (v - 0.5) * width * (1 - u * 0.1)
                 row.append((x, y, z))
             cps.append(row)
         surf = self._build_surface(cps, t)
         return {'name': '后风挡玻璃', 'type': 'rear_window', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#87CEEB', 'opacity': 0.6, 'position': {'x': 0, 'y': 0, 'z': 0}}
+                'surface': surf.to_dict(), 'color': '#87CEEB', 'opacity': 0.6, 'position': {'x': 0, 'y': 0, 'z': 0},
+                'rear_window_bottom_x': rear_window_bottom_x, 'rear_window_bottom_y': rear_window_bottom_y}
 
     def generate_trunk(self):
         """行李箱盖"""
@@ -157,7 +186,23 @@ class NURBSCarBodyGenerator:
         length = self._p('车身部件', 'trunk_length')
         width = self._p('车身部件', 'trunk_width')
         nu, nv = t['num_u'], t['num_v']
-        cx_start, cy_base = 3650, 550
+
+        windshield_top_x = self.FO + self.WB * 0.4
+        windshield_top_y = self.GC + 900
+        trunk_start_x = self.L - self.RO - length * 0.3
+
+        max_roof_length = trunk_start_x - windshield_top_x
+        slant_factor = min(max(self._p('造型角度', 'rear_slant_angle') / 60.0, 0), 1)
+        roof_len = max(max_roof_length * (1 - slant_factor * 0.7), 800)
+
+        rear_window_top_x = windshield_top_x + roof_len
+        rear_window_angle = np.radians(self._p('造型角度', 'rear_window_angle'))
+        rear_window_height = self._p('车身部件', 'rear_window_height')
+        rear_window_bottom_x = rear_window_top_x - rear_window_height / np.tan(rear_window_angle)
+
+        cx_start = rear_window_bottom_x
+        cy_base = windshield_top_y - rear_window_height + 50
+
         cps = []
         for i in range(nu):
             u = i / (nu - 1)

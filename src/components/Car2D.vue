@@ -30,8 +30,8 @@
         <line :x1="rearX" :y1="groundLineY - 12" :x2="rearX" :y2="groundLineY - 4" stroke="#ff6b6b" stroke-width="1.5" />
         <text :x="(rearWheelX + rearX) / 2" :y="groundLineY - 20" text-anchor="middle" fill="#ff6b6b" font-size="11" font-family="Inter, sans-serif" font-weight="600">RO: {{ RO }}mm</text>
 
-        <text :x="wheelBaseX" :y="dimTextY" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11" font-family="Inter, sans-serif">WB {{ carParams.wheel_base }}mm</text>
-        <text :x="lengthX" :y="dimTextY + 16" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11" font-family="Inter, sans-serif">L {{ FO + WB + RO }}mm</text>
+        <text :x="wheelBaseX" :y="dimTextY" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11" font-family="Inter, sans-serif">WB {{ WB }}mm</text>
+        <text :x="lengthX" :y="dimTextY + 16" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11" font-family="Inter, sans-serif">L {{ actualLength }}mm</text>
       </g>
     </svg>
   </div>
@@ -58,23 +58,25 @@ const offsetY = 40
 const groundLineY = 200
 const dimTextY = 240
 
-const scale = computed(() => {
-  const usableWidth = svgWidth - offsetX * 2
-  return usableWidth / props.carParams.overall_length
-})
-
-const s = (val) => val * scale.value
-
 const FO = computed(() => props.carParams.front_overhang || 1000)
 const RO = computed(() => props.carParams.rear_overhang || 1000)
 const WB = computed(() => props.carParams.wheel_base)
+
+const actualLength = computed(() => FO.value + WB.value + RO.value)
+
+const scale = computed(() => {
+  const usableWidth = svgWidth - offsetX * 2
+  return usableWidth / actualLength.value
+})
+
+const s = (val) => val * scale.value
 
 const frontWheelX = computed(() => s(FO.value))
 const rearWheelX = computed(() => s(FO.value + WB.value))
 const wheelBaseX = computed(() => (frontWheelX.value + rearWheelX.value) / 2)
 
 const frontX = computed(() => 0)
-const rearX = computed(() => s(FO.value + WB.value + RO.value))
+const rearX = computed(() => s(actualLength.value))
 const lengthX = computed(() => rearX.value / 2)
 
 const wheelRadius = computed(() => s(props.carParams.wheel_diameter / 2))
@@ -85,19 +87,28 @@ const roofTopY = computed(() => groundLineY - groundClearance.value - s(props.ca
 const beltLineY = computed(() => groundLineY - groundClearance.value - s(props.carParams.overall_height * 0.55))
 
 const hoodEndX = computed(() => s(props.carParams.hood_length))
-const trunkStartX = computed(() => rearX.value - s(props.carParams.hood_length * 0.7))
+const trunkLength = computed(() => Math.min(s(props.carParams.rear_overhang * 0.6), s(props.carParams.hood_length * 0.5)))
+const trunkStartX = computed(() => rearX.value - trunkLength.value)
 
 const windshieldAngleRad = computed(() => props.carParams.windshield_angle * Math.PI / 180)
 const rearWindowAngleRad = computed(() => props.carParams.rear_window_angle * Math.PI / 180)
+const rearSlantAngleRad = computed(() => props.carParams.rear_slant_angle * Math.PI / 180)
 
+const windshieldHeight = computed(() => (beltLineY.value - roofTopY.value) * 0.7)
 const windshieldTopX = computed(() => {
-  const roofH = beltLineY.value - roofTopY.value
-  return hoodEndX.value + roofH / Math.tan(windshieldAngleRad.value)
+  return hoodEndX.value + windshieldHeight.value / Math.tan(windshieldAngleRad.value)
 })
 
-const rearWindowTopX = computed(() => {
-  const roofH = beltLineY.value - roofTopY.value
-  return trunkStartX.value - roofH / Math.tan(rearWindowAngleRad.value)
+const maxRoofLength = computed(() => trunkStartX.value - windshieldTopX.value)
+const slantFactor = computed(() => Math.min(Math.max(props.carParams.rear_slant_angle / 60, 0), 1))
+const roofLen = computed(() => Math.max(maxRoofLength.value * (1 - slantFactor.value * 0.7), s(800)))
+const rearWindowTopX = computed(() => windshieldTopX.value + roofLen.value)
+
+const rearWindowVertHeight = computed(() => beltLineY.value - roofTopY.value)
+const rearWindowHeightRatio = computed(() => 0.5 + slantFactor.value * 0.3)
+const rearWindowHeight = computed(() => rearWindowVertHeight.value * rearWindowHeightRatio.value)
+const rearWindowBottomX = computed(() => {
+  return rearWindowTopX.value + rearWindowHeight.value / Math.tan(rearWindowAngleRad.value)
 })
 
 const roofPath = computed(() => {
@@ -109,15 +120,15 @@ const hoodPath = computed(() => {
 })
 
 const trunkPath = computed(() => {
-  return `M${trunkStartX.value},${beltLineY.value} Q${rearX.value - s(80)},${bodyTopY.value} ${rearX.value},${bodyTopY.value + s(30)}`
+  return `M${rearWindowBottomX.value},${beltLineY.value} Q${rearX.value - s(80)},${bodyTopY.value} ${rearX.value},${bodyTopY.value + s(30)}`
 })
 
 const beltLinePath = computed(() => {
-  return `M${hoodEndX.value},${beltLineY.value} L${trunkStartX.value},${beltLineY.value}`
+  return `M${hoodEndX.value},${beltLineY.value} L${rearWindowBottomX.value},${beltLineY.value}`
 })
 
 const windowPath = computed(() => {
-  return `M${hoodEndX.value},${beltLineY.value} L${windshieldTopX.value},${roofTopY.value} L${rearWindowTopX.value},${roofTopY.value} L${trunkStartX.value},${beltLineY.value} Z`
+  return `M${hoodEndX.value},${beltLineY.value} L${windshieldTopX.value},${roofTopY.value} L${rearWindowTopX.value},${roofTopY.value} L${rearWindowBottomX.value},${beltLineY.value} Z`
 })
 
 const frontWheelPath = computed(() => {
