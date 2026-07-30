@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缓存清理 - Evolution AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0f;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: #16161f;
+      border: 1px solid rgba(74, 222, 128, 0.2);
+      border-radius: 12px;
+      padding: 40px 30px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #4ade80;
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 30px;
+    }
+    .status {
+      font-size: 13px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-family: 'Consolas', monospace;
+      text-align: left;
+      min-height: 120px;
+      background: #0a0a0f;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      white-space: pre-wrap;
+      overflow-y: auto;
+      max-height: 200px;
+    }
+    .status.info { color: #60a5fa; }
+    .status.success { color: #4ade80; }
+    .status.error { color: #f87171; }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      background: #4ade80;
+      color: #0a0a0f;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover { background: #22c55e; transform: translateY(-1px); }
+    button.secondary {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    button.secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .progress {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 2px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #4ade80;
+      border-radius: 2px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Cache Cleaner</h1>
+    <p class="subtitle">清除GitHub Pages CDN缓存并强制刷新页面</p>
+
+    <div class="progress" id="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="status info" id="status">点击下方按钮开始清理缓存...</div>
+
+    <div class="btn-group">
+      <button onclick="clearAllAndReload()">清除缓存并刷新</button>
+      <button class="secondary" onclick="hardReload()">仅强制刷新</button>
+      <button class="secondary" onclick="checkDeploy()">检查部署版本</button>
+    </div>
+  </div>
+
+  <script>
+    const TARGET_URL = 'https://evolution-ai.design'
+    const statusEl = document.getElementById('status')
+    const progressEl = document.getElementById('progress')
+    const progressBar = document.getElementById('progressBar')
+
+    function log(msg, type = 'info') {
+      statusEl.className = 'status ' + type
+      statusEl.textContent += '\n' + msg
+      statusEl.scrollTop = statusEl.scrollHeight
+    }
+
+    function clearLog() {
+      statusEl.textContent = ''
+    }
+
+    function showProgress(percent) {
+      progressEl.style.display = 'block'
+      progressBar.style.width = percent + '%'
+    }
+
+    // 清除所有缓存并重新加载
+    async function clearAllAndReload() {
+      clearLog()
+      showProgress(0)
+      log('开始清除缓存...', 'info')
+
+      try {
+        // Step 1: 清除Service Worker
+        showProgress(20)
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          for (const reg of registrations) {
+            await reg.unregister()
+            log('Service Worker 已清除', 'success')
+          }
+        }
+        log('Service Worker 清除完成', 'success')
+
+        // Step 2: 清除Cache Storage
+        showProgress(40)
+        if ('caches' in window) {
+          const cacheNames = await caches.keys()
+          for (const name of cacheNames) {
+            await caches.delete(name)
+            log('Cache Storage 已清除: ' + name, 'success')
+          }
+        }
+        log('Cache Storage 清除完成', 'success')
+
+        // Step 3: 清除Local Storage
+        showProgress(60)
+        localStorage.clear()
+        sessionStorage.clear()
+        log('Local/Session Storage 已清除', 'success')
+
+        // Step 4: 清除IndexedDB
+        showProgress(75)
+        if (window.indexedDB) {
+          const dbs = await indexedDB.databases()
+          for (const db of dbs) {
+            indexedDB.deleteDatabase(db.name)
+            log('IndexedDB 已清除: ' + db.name, 'success')
+          }
+        }
+
+        // Step 5: 强制刷新页面
+        showProgress(90)
+        log('正在强制刷新页面...', 'info')
+
+        showProgress(100)
+        setTimeout(() => {
+          // 使用location.reload强制刷新
+          window.location.href = TARGET_URL + '/?_t=' + Date.now()
+        }, 500)
+
+      } catch (err) {
+        log('清除缓存出错: ' + err.message, 'error')
+      }
+    }
+
+    // 仅强制刷新（添加时间戳绕过缓存）
+    function hardReload() {
+      clearLog()
+      log('正在强制刷新...', 'info')
+      const url = TARGET_URL + '/?_t=' + Date.now()
+      log('跳转: ' + url, 'info')
+      window.location.href = url
+    }
+
+    // 检查部署版本
+    async function checkDeploy() {
+      clearLog()
+      showProgress(50)
+      log('正在检查部署版本...', 'info')
+
+      try {
+        // 获取index.html检查最新版本
+        const response = await fetch(TARGET_URL + '/?_t=' + Date.now(), {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        })
+
+        if (!response.ok) {
+          log('HTTP ' + response.status + ' - 页面无法访问', 'error')
+          showProgress(100)
+          return
+        }
+
+        const html = await response.text()
+        log('页面获取成功 (' + html.length + ' bytes)', 'success')
+
+        // 检查是否包含最新的JS文件
+        const jsMatch = html.match(/src="\.\/assets\/(index-[a-zA-Z0-9_-]+\.js)"/)
+        const cssMatch = html.match(/href="\.\/assets\/(index-[a-zA-Z0-9_-]+\.css)"/)
+
+        if (jsMatch) {
+          log('主JS文件: ' + jsMatch[1], 'success')
+        }
+        if (cssMatch) {
+          log('主CSS文件: ' + cssMatch[1], 'success')
+        }
+
+        // 检查CNAME是否生效
+        const finalUrl = response.url
+        if (finalUrl.includes('evolution-ai.design')) {
+          log('自定义域名生效: ' + finalUrl, 'success')
+        } else {
+          log('自定义域名未生效: ' + finalUrl, 'error')
+        }
+
+        // 检查Designer组件是否包含后风档逻辑
+        const designerJsMatch = html.match(/Designer-[a-zA-Z0-9_-]+\.js/)
+        if (designerJsMatch) {
+          log('Designer组件: ' + designerJsMatch[0], 'success')
+        }
+
+        log('\n检查完成！如果版本不是最新，请点击"清除缓存并刷新"', 'info')
+        showProgress(100)
+
+      } catch (err) {
+        log('检查失败: ' + err.message, 'error')
+        log('可能是网络问题或CORS限制，请直接访问网站验证', 'info')
+        showProgress(100)
+      }
+    }
+  </script>
+</body>
+</html>

@@ -27,6 +27,12 @@ env/
 # Node
 node_modules/
 dist/
+.vite/
+
+# Environment files (contain API keys and secrets)
+.env
+.env.*
+!.env.example
 
 # OS
 Thumbs.db
@@ -78,3 +84,8 @@ coverage.xml
 # NURBS sample files (large binary)
 *.igs
 *.stp
+
+# Historical archives - legacy code, use src/ for active development
+frontend/
+3d_model_archive/
+_archive/
