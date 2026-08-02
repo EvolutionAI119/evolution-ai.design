@@ -143,6 +143,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft, Edit, Clock, Picture, Brush, Upload, Document, Delete } from '@element-plus/icons-vue'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
 import TechSelectionMatrix from '../components/TechSelectionMatrix.vue'
+import { getMockProjectById } from '../data/mockProjects.js'
 import { useProjectStore } from '../stores/project.js'
 
 const route = useRoute()
@@ -156,7 +157,14 @@ const uploading = ref(false)
 
 const editForm = ref({ name: '', description: '' })
 
-const project = computed(() => projectStore.currentProject)
+const mockProject = ref(null)
+
+const project = computed(() => {
+  if (projectStore.currentProject) {
+    return projectStore.currentProject
+  }
+  return mockProject.value
+})
 
 const getStatusType = (status) => {
   const types = { Active: 'success', Completed: 'info', Draft: 'warning' }
@@ -175,6 +183,9 @@ const formatDate = (dateStr) => {
 const loadProject = async () => {
   const projectId = route.params.id
   if (!projectId) return
+
+  mockProject.value = getMockProjectById(projectId)
+
   try {
     await projectStore.loadProject(projectId)
     if (projectStore.currentProject) {
@@ -182,9 +193,17 @@ const loadProject = async () => {
         name: projectStore.currentProject.name || '',
         description: projectStore.currentProject.description || ''
       }
+      return
     }
   } catch (err) {
-    ElMessage.error(err.message || 'Failed to load project')
+    console.warn('Backend unavailable, using mock data:', err.message)
+  }
+
+  if (mockProject.value) {
+    editForm.value = {
+      name: mockProject.value.name || '',
+      description: mockProject.value.description || ''
+    }
   }
 }
 

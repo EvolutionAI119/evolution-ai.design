@@ -56,23 +56,22 @@
                     <img
                       :src="getImageSrc(model)"
                       :alt="model.name"
-                      :key="'img-' + model.key + '-' + (imageRetryCount[model.key] || 0)"
+                      class="model-img"
                     />
                   </template>
-                  <template v-else-if="getImageState(model.key) === 'loading'">
-                    <div class="model-image-loading">
+                  <template v-else>
+                    <img
+                      :src="getImageSrc(model)"
+                      :alt="model.name"
+                      class="model-img local-img"
+                      @error="handleImageError(model.key)"
+                    />
+                    <div v-if="getImageState(model.key) === 'loading'" class="img-loading-overlay">
                       <svg class="loading-spinner" viewBox="0 0 24 24">
                         <circle class="spinner-ring" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
                       </svg>
-                      <span class="loading-text">Generating...</span>
                     </div>
                   </template>
-                  <div v-else class="model-image-fallback">
-                    <svg viewBox="0 0 120 60" class="fallback-svg">
-                      <path :d="getCarTypeSvg('sedan')" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-                    </svg>
-                    <span class="fallback-text">{{ model.name }}</span>
-                  </div>
                 </div>
                 <div class="model-info">
                   <div class="model-name">{{ model.name }}</div>
@@ -176,33 +175,24 @@
             </div>
             <div class="reference-image-container">
               <template v-if="currentModel">
-                <template v-if="getImageState(currentModel.key) === 'loaded'">
+                <div class="reference-image-wrapper">
                   <img
                     :src="getImageSrc(currentModel)"
                     :alt="currentModel.name"
-                    :key="'ref-' + currentModel.key + '-' + (imageRetryCount[currentModel.key] || 0)"
                     class="reference-img"
+                    @error="handleImageError(currentModel.key)"
                   />
-                </template>
-                <template v-else-if="getImageState(currentModel.key) === 'loading'">
-                  <div class="reference-loading">
+                  <div v-if="getImageState(currentModel.key) === 'loading'" class="ref-loading-overlay">
                     <svg class="ref-loading-spinner" viewBox="0 0 24 24">
                       <circle class="spinner-ring" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
                     </svg>
-                    <span class="ref-loading-text">AI Generating...</span>
+                    <span class="ref-loading-text">Loading HD...</span>
                   </div>
-                </template>
-                <div v-else class="reference-fallback">
-                  <svg viewBox="0 0 300 150" class="ref-fallback-svg">
-                    <rect x="5" y="8" width="290" height="100" rx="4" fill="rgba(74,222,128,0.05)" stroke="rgba(74,222,128,0.2)" stroke-width="1"/>
-                    <path :d="getCarTypeSvg(selectedCarType)" fill="rgba(74,222,128,0.15)" stroke="rgba(74,222,128,0.7)" stroke-width="2"/>
-                    <line x1="5" y1="120" x2="295" y2="120" stroke="rgba(74,222,128,0.3)" stroke-width="1"/>
-                  </svg>
-                  <div class="ref-fallback-info">
-                    <span class="ref-fallback-text">{{ currentModel.name }}</span>
-                    <span class="ref-fallback-spec">L:{{ carParams.overall_length }}mm W:{{ carParams.overall_width }}mm H:{{ carParams.overall_height }}mm</span>
-                  </div>
-                  <span class="ref-fallback-hint">Remote image unavailable - showing outline</span>
+                </div>
+                <div class="ref-model-info">
+                  <span class="ref-model-name">{{ currentModel.name }}</span>
+                  <span class="ref-model-spec">L:{{ carParams.overall_length }}mm W:{{ carParams.overall_width }}mm H:{{ carParams.overall_height }}mm</span>
+                  <span v-if="getImageState(currentModel.key) === 'local-fallback'" class="ref-local-hint">Local preview · HD image unavailable</span>
                 </div>
               </template>
               <div v-else class="reference-placeholder">
@@ -511,6 +501,7 @@ import Car2D from '../components/Car2D.vue'
 import { carTypes, brands, bodyColors } from '../config/carPresets'
 import { carAPI, buildAPI, aiAPI } from '../api'
 import { useDesignerStore } from '../stores/designer'
+import { generateCarSvg, generatePlaceholderSvg, getModelInitials } from '../utils/imageGenerator.js'
 
 const designer = useDesignerStore()
 const { carType, brand, selectedModel, selectedColor, params, generating } = storeToRefs(designer)
@@ -558,25 +549,35 @@ const applyCustomColor = () => {
 const imageStates = reactive({})
 const imageRetryCount = reactive({})
 const imageCache = reactive({})
-const MAX_RETRY_COUNT = 3
+const MAX_RETRY_COUNT = 2
 
 const getImageState = (key) => {
   return imageStates[key] || 'loading'
 }
 
 const getImageSrc = (model) => {
-  return imageCache[model.key] || model.image
+  if (imageCache[model.key]) {
+    return imageCache[model.key]
+  }
+  if (model.localImage) {
+    return model.localImage
+  }
+  return model.image
 }
 
 const loadImage = async (model) => {
   const key = model.key
-  if (imageStates[key] === 'loading' || imageStates[key] === 'loaded') return
+  if (imageStates[key] === 'loaded') return
   
   imageStates[key] = 'loading'
-  imageRetryCount[key] = imageRetryCount[key] || 0
-
+  
+  if (!model.localImage) {
+    const brandKey = getBrandKeyForModel(key)
+    model.localImage = generatePlaceholderSvg({ ...model, brandKey }, carType.value)
+  }
+  
   try {
-    const response = await fetch(model.image)
+    const response = await fetch(model.image, { mode: 'cors' })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     
     const blob = await response.blob()
@@ -586,15 +587,24 @@ const loadImage = async (model) => {
   } catch (error) {
     imageRetryCount[key]++
     if (imageRetryCount[key] < MAX_RETRY_COUNT) {
-      setTimeout(() => loadImage(model), 2000 * imageRetryCount[key])
+      setTimeout(() => loadImage(model), 1000 * imageRetryCount[key])
     } else {
-      imageStates[key] = 'fallback'
+      imageStates[key] = 'local-fallback'
     }
   }
 }
 
+const getBrandKeyForModel = (modelKey) => {
+  for (const brand of brands) {
+    if (brand.models.some(m => m.key === modelKey)) {
+      return brand.key
+    }
+  }
+  return 'default'
+}
+
 const handleImageError = (modelKey) => {
-  imageStates[modelKey] = 'fallback'
+  imageStates[modelKey] = 'local-fallback'
 }
 
 const cleanupImageCache = () => {
@@ -1137,6 +1147,96 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.model-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.model-img.local-img {
+  filter: brightness(1.1) saturate(0.9);
+}
+
+.img-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.model-image {
+  position: relative;
+}
+
+.reference-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reference-image-wrapper .reference-img {
+  max-width: 100%;
+  max-height: calc(100% - 40px);
+  object-fit: contain;
+}
+
+.ref-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  gap: 8px;
+  pointer-events: none;
+}
+
+.ref-model-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 8px;
+}
+
+.ref-model-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ref-model-spec {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.ref-local-hint {
+  font-size: 9px;
+  color: #f59e0b;
+  margin-top: 2px;
 }
 
 .model-image-fallback {

@@ -12,17 +12,17 @@
     </div>
 
     <div class="filter-bar">
-      <el-input v-model="projectStore.searchQuery" placeholder="Search projects..." class="search-input" clearable>
+      <el-input v-model="searchQuery" placeholder="Search projects..." class="search-input" clearable>
         <template #prefix>
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
-      <el-select v-model="projectStore.statusFilter" placeholder="Filter by status" clearable class="filter-select">
+      <el-select v-model="statusFilter" placeholder="Filter by status" clearable class="filter-select">
         <el-option label="Active" value="Active" />
         <el-option label="Completed" value="Completed" />
         <el-option label="Draft" value="Draft" />
       </el-select>
-      <el-select v-model="projectStore.sortBy" placeholder="Sort by" class="sort-select">
+      <el-select v-model="sortBy" placeholder="Sort by" class="sort-select">
         <el-option label="Name" value="name" />
         <el-option label="Created Date" value="createdAt" />
         <el-option label="Updated Date" value="updatedAt" />
@@ -31,19 +31,19 @@
         type="text"
         class="sort-order-btn"
         @click="toggleSortOrder"
-        :title="projectStore.sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'"
+        :title="sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'"
       >
-        <el-icon><ArrowUp v-if="projectStore.sortOrder === 'asc'" /><ArrowDown v-else /></el-icon>
+        <el-icon><ArrowUp v-if="sortOrder === 'asc'" /><ArrowDown v-else /></el-icon>
       </el-button>
-      <el-button type="text" class="reset-btn" @click="projectStore.resetFilters">
+      <el-button type="text" class="reset-btn" @click="resetFilters">
         <el-icon><RefreshLeft /></el-icon>
         <span>Reset</span>
       </el-button>
     </div>
 
-    <div v-loading="projectStore.isLoading" class="projects-grid">
+    <div v-loading="isLoading" class="projects-grid">
       <el-card
-        v-for="project in projectStore.paginatedProjects"
+        v-for="project in paginatedProjects"
         :key="project.id"
         class="project-card"
         @click="openProject(project.id)"
@@ -85,32 +85,32 @@
       </el-card>
     </div>
 
-    <div v-if="projectStore.error" class="error-state">
+    <div v-if="error" class="error-state">
       <el-icon :size="48" class="error-icon"><Warning /></el-icon>
-      <p class="error-text">{{ projectStore.error }}</p>
+      <p class="error-text">{{ error }}</p>
       <el-button type="primary" @click="loadProjectsData">
         <el-icon><Refresh /></el-icon>
         <span>Retry</span>
       </el-button>
     </div>
 
-    <div v-else-if="!projectStore.isLoading && projectStore.filteredProjects.length === 0" class="empty-state">
+    <div v-else-if="!isLoading && filteredProjects.length === 0" class="empty-state">
       <el-icon :size="48" class="empty-icon"><FolderOpened /></el-icon>
       <p class="empty-text">No projects found</p>
       <p class="empty-hint">Create your first project to get started</p>
     </div>
 
-    <div v-if="!projectStore.isLoading && projectStore.filteredProjects.length > 0" class="pagination-bar">
+    <div v-if="!isLoading && filteredProjects.length > 0" class="pagination-bar">
       <span class="pagination-info">
-        Showing {{ (projectStore.currentPage - 1) * projectStore.pageSize + 1 }} - 
-        {{ Math.min(projectStore.currentPage * projectStore.pageSize, projectStore.filteredProjects.length) }} 
-        of {{ projectStore.filteredProjects.length }} projects
+        Showing {{ (currentPage - 1) * 9 + 1 }} - 
+        {{ Math.min(currentPage * 9, filteredProjects.length) }} 
+        of {{ filteredProjects.length }} projects
       </span>
       <el-pagination
-        v-model:current-page="projectStore.currentPage"
-        v-model:page-size="projectStore.pageSize"
+        v-model:current-page="currentPage"
+        :page-size="9"
         :page-sizes="[6, 9, 12, 18]"
-        :total="projectStore.filteredProjects.length"
+        :total="filteredProjects.length"
         layout="total, sizes, prev, pager, next"
         class="pagination"
       />
@@ -148,21 +148,118 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Search, FolderOpened, Clock, Picture, Upload, Delete, ArrowUp, ArrowDown, RefreshLeft, Warning, Refresh } from '@element-plus/icons-vue'
 import { useProjectStore } from '../stores/project.js'
+import { mockProjects } from '../data/mockProjects.js'
 
 const router = useRouter()
 const fileInputRef = ref(null)
 const projectStore = useProjectStore()
 
+const useMockFallback = ref(false)
+
+const mockProjectsLocal = ref([...mockProjects])
+const mockSearchQuery = ref('')
+const mockStatusFilter = ref('')
+const mockSortBy = ref('createdAt')
+const mockSortOrder = ref('desc')
+const mockCurrentPage = ref(1)
+const mockPageSize = ref(9)
+
+const mockFilteredProjects = computed(() => {
+  let result = [...mockProjectsLocal.value]
+
+  if (mockStatusFilter.value) {
+    result = result.filter(p => (p.status || '').toLowerCase() === mockStatusFilter.value.toLowerCase())
+  }
+
+  if (mockSearchQuery.value) {
+    const query = mockSearchQuery.value.toLowerCase()
+    result = result.filter(p =>
+      (p.name || '').toLowerCase().includes(query) ||
+      (p.description || '').toLowerCase().includes(query)
+    )
+  }
+
+  result.sort((a, b) => {
+    if (mockSortBy.value === 'createdAt' || mockSortBy.value === 'updatedAt') {
+      return mockSortOrder.value === 'desc'
+        ? new Date(b[mockSortBy.value]) - new Date(a[mockSortBy.value])
+        : new Date(a[mockSortBy.value]) - new Date(b[mockSortBy.value])
+    }
+    return mockSortOrder.value === 'desc'
+      ? (b[mockSortBy.value] || '').localeCompare(a[mockSortBy.value] || '')
+      : (a[mockSortBy.value] || '').localeCompare(b[mockSortBy.value] || '')
+  })
+
+  return result
+})
+
+const mockPaginatedProjects = computed(() => {
+  const start = (mockCurrentPage.value - 1) * mockPageSize.value
+  const end = start + mockPageSize.value
+  return mockFilteredProjects.value.slice(start, end)
+})
+
+const mockTotalPages = computed(() => Math.ceil(mockFilteredProjects.value.length / mockPageSize.value))
+
+const isLoading = computed(() => useMockFallback.value ? false : projectStore.isLoading)
+const error = computed(() => useMockFallback.value ? null : projectStore.error)
+const filteredProjects = computed(() => useMockFallback.value ? mockFilteredProjects.value : projectStore.filteredProjects)
+const paginatedProjects = computed(() => useMockFallback.value ? mockPaginatedProjects.value : projectStore.paginatedProjects)
+const totalPages = computed(() => useMockFallback.value ? mockTotalPages.value : projectStore.totalPages)
+const currentPage = computed({
+  get: () => useMockFallback.value ? mockCurrentPage.value : projectStore.currentPage,
+  set: (val) => {
+    if (useMockFallback.value) mockCurrentPage.value = val
+    else projectStore.currentPage = val
+  }
+})
+const searchQuery = computed({
+  get: () => useMockFallback.value ? mockSearchQuery.value : projectStore.searchQuery,
+  set: (val) => {
+    if (useMockFallback.value) mockSearchQuery.value = val
+    else projectStore.searchQuery = val
+  }
+})
+const statusFilter = computed({
+  get: () => useMockFallback.value ? mockStatusFilter.value : projectStore.statusFilter,
+  set: (val) => {
+    if (useMockFallback.value) mockStatusFilter.value = val
+    else projectStore.statusFilter = val
+  }
+})
+const sortBy = computed({
+  get: () => useMockFallback.value ? mockSortBy.value : projectStore.sortBy,
+  set: (val) => {
+    if (useMockFallback.value) mockSortBy.value = val
+    else projectStore.sortBy = val
+  }
+})
+const sortOrder = computed({
+  get: () => useMockFallback.value ? mockSortOrder.value : projectStore.sortOrder,
+  set: (val) => {
+    if (useMockFallback.value) mockSortOrder.value = val
+    else projectStore.sortOrder = val
+  }
+})
+
 const showCreateDialog = ref(false)
 const projectForm = ref({ name: '', description: '', document: '', documentName: '' })
 
 const toggleSortOrder = () => {
-  projectStore.sortOrder = projectStore.sortOrder === 'asc' ? 'desc' : 'asc'
+  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+}
+
+const resetFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+  sortBy.value = 'createdAt'
+  sortOrder.value = 'desc'
+  currentPage.value = 1
 }
 
 const getStatusType = (status) => {
@@ -188,6 +285,23 @@ const createProject = async () => {
     ElMessage.warning('Please enter a project name')
     return
   }
+  if (useMockFallback.value) {
+    const newId = Math.max(...mockProjectsLocal.value.map(p => p.id), 0) + 1
+    mockProjectsLocal.value.unshift({
+      id: newId,
+      name: projectForm.value.name,
+      description: projectForm.value.description,
+      status: 'Draft',
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0],
+      modelCount: 0,
+      document: projectForm.value.document
+    })
+    ElMessage.success('Project created successfully (mock)')
+    showCreateDialog.value = false
+    projectForm.value = { name: '', description: '', document: '', documentName: '' }
+    return
+  }
   try {
     await projectStore.createProject({
       name: projectForm.value.name,
@@ -203,6 +317,11 @@ const createProject = async () => {
 }
 
 const handleDelete = async (id) => {
+  if (useMockFallback.value) {
+    mockProjectsLocal.value = mockProjectsLocal.value.filter(p => p.id !== id)
+    ElMessage.success('Project deleted (mock)')
+    return
+  }
   try {
     await projectStore.deleteProject(id)
     ElMessage.success('Project deleted successfully')
@@ -245,8 +364,10 @@ const loadProjectsData = async () => {
   try {
     projectStore.clearError()
     await projectStore.loadProjects()
+    useMockFallback.value = false
   } catch (err) {
-    console.error('Failed to load projects:', err)
+    console.warn('Backend unavailable, using mock data:', err.message)
+    useMockFallback.value = true
   }
 }
 
