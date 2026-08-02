@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.2.0] - 2026-08-02
+
+### Added - 治乱整理 + v1.02-stable 基线
+
+- **目录治理**：确立 `D:\API\Evolution-Ai.Design` 为唯一活跃开发目录
+  - `D:\API\EVOLUTION_AI` 已退役，3d_model_archive 归档至 `D:\API\_archive\`
+  - 删除冗余的 TypeScript 版 frontend/、.vite 缓存
+- **Mock Fallback 系统**：前端在 backend 不可用时不黑屏
+  - `src/data/mockProjects.js`: 10 个项目 mock 数据
+  - `src/utils/imageGenerator.js`: 8 品牌 6 车型 SVG 生成器，本地即时预览
+- **视图集成**：`Designer.vue` / `Projects.vue` / `ProjectDetail.vue` 集成 mock fallback 和 SVG 预览
+- **技术路线图**：`docs/TECHNICAL_AUDIT_20260801.md` NURBS+STEP 工程化审计报告
+  - 双轨并行策略（mesh 管线 + NURBS 管线）
+  - 纯 Python STEP writer 方案（无需 OCCT/build123d 500MB 依赖）
+  - 8-12 天工期规划（Phase 0→4）
+
+### Changed
+
+- **README.md** 全面重写，反映 Vite+Vue3+Three.js 真实现状
+- **Git hooks 禁用**：`core.hooksPath` 指向不存在路径，避免 `.pre-commit-config.yaml` 缺失导致的 commit 失败
+
+### Tag
+
+- `v1.02-stable` (commit `e8a7f8e9`): 治乱后稳定基线，作为 NURBS+STEP 管线开发起点
+
+---
+
 ## [1.1.0] - 2026-07-01
 
 ### Added - 构建参数持久化改造

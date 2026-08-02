@@ -2,7 +2,7 @@
 
 > 下一代 AI 汽车造型开发平台 — 从一句话到 3D 整车，全链路 AI 辅助设计
 
-![Status](https://img.shields.io/badge/status-M2%20done-brightgreen) ![Version](https://img.shields.io/badge/version-0.2.0-blue) ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![Status](https://img.shields.io/badge/status-v1.02--stable-brightgreen) ![Version](https://img.shields.io/badge/version-1.2.0-blue) ![Frontend](https://img.shields.io/badge/frontend-Vue%203%20%2B%20Vite%20%2B%20Three.js-blue) ![Backend](https://img.shields.io/badge/backend-FastAPI-green)
 
 ---
 
@@ -13,133 +13,150 @@
 
 ---
 
-## 📦 当前状态
+## 📦 当前状态 (v1.02-stable, 2026-08-02)
 
-| 里程碑 | 状态 | 工期 | 交付物 |
-|--------|------|------|--------|
-| **M0** 算法模型 | ✅ Done | - | `algorithm_model/`（30 文件 / 5 API / 7 CLI，5/5 自检 9.49s） |
-| **M1** 后端骨架 | ✅ Done | 1 周 | `backend/`（26 文件 / 17 端点 / 15/15 测试通过 3.04s） |
-| **M2** 数据+异步 | ✅ Done | 1 周 | 4 张表（SQLAlchemy 2.0 ORM）/ Celery + Redis / 21 端点 / 19/19 测试 / 端到端 3s 闭环 |
-| **M3** 前端 | ⏳ Pending | 2 周 | Vue 3 + Three.js + WebSocket |
-| **M4** 部署 | ⏳ Pending | 1 周 | Docker + Nginx + 监控 |
+治乱后稳定基线，作为 NURBS+STEP 工程化管线开发起点。
+
+| 模块 | 状态 | 技术栈 | 说明 |
+|------|------|--------|------|
+| **前端** | ✅ 可运行 | Vue 3 + Vite 5 + Three.js + Element Plus + Pinia | 8 个路由页面，3D 实时渲染，i18n 双语 |
+| **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 + Celery + Redis | 21 端点，4 张 ORM 表，异步任务队列 |
+| **算法层** | ✅ 黑盒 | Python 3.11+ / NumPy / SciPy / Trimesh | 5 大 API / 7 CLI / 155 测试通过 |
+| **Mock Fallback** | ✅ 已集成 | - | backend 不可用时显示 10 个 mock 项目 + SVG 预览 |
+| **NURBS+STEP 管线** | ⏳ 规划中 | 纯 Python STEP writer | 按 [技术审计报告](docs/TECHNICAL_AUDIT_20260801.md) Phase 0→4 推进 |
 
 ---
 
 ## 🚀 快速开始
 
-### 1. 安装依赖
-```bash
-cd backend
+唯一活跃开发目录：`D:\API\Evolution-Ai.Design`
+
+### 1. 启动前端 (Vite Dev Server, 端口 5173)
+
+```powershell
+cd D:\API\Evolution-Ai.Design
+npm install      # 首次运行
+npm run dev      # 启动开发服务器
+# 访问 http://localhost:5173/
+```
+
+路由使用 Hash 模式（适配 GitHub Pages 静态部署）：
+- 首页：`http://localhost:5173/#/`
+- AI 设计器：`http://localhost:5173/#/designer`
+- 项目列表：`http://localhost:5173/#/projects`
+- 项目详情：`http://localhost:5173/#/projects/1`
+
+### 2. 启动后端 (FastAPI, 端口 8000, 可选)
+
+前端已内置 mock fallback，后端可选。如需完整功能：
+
+```powershell
+cd D:\API\Evolution-Ai.Design\backend
 pip install -r requirements.txt
+
+# 起 Redis (M2 必装)
+redis-server --port 6379
+
+# 起 Celery worker (M2 必起, 新终端)
+.\start_celery_worker.bat
+
+# 起 FastAPI
+.\start_backend.bat
+# API 文档：http://localhost:8000/docs
 ```
 
-### 2. 启动后端服务
+### 3. 构建生产版本
 
-#### 2.1 起 Redis（M2 必装）
-```bash
-# Linux / macOS
-redis-server --daemonize yes --port 6379
-redis-cli ping  # 应返回 PONG
-```
-> Windows 用户需先装 Redis（推荐 WSL 或 Memurai）。
-
-#### 2.2 起 Celery worker（M2 必起）
-```bash
-# Linux / macOS
-./start_celery_worker.sh
-
-# Windows
-start_celery_worker.bat
+```powershell
+npm run build     # 输出到 dist/
+npm run preview   # 本地预览生产构建
 ```
 
-#### 2.3 起 FastAPI 服务
-```bash
-# Linux / macOS
-./start_backend.sh
+### 4. 跑测试
 
-# Windows
-start_backend.bat
-```
+```powershell
+# 前端测试
+npm test
 
-服务跑起来后：
-- **API 文档**：http://localhost:8000/docs
-- **OpenAPI Schema**：http://localhost:8000/openapi.json
-- **健康检查**：http://localhost:8000/health
-
-### 3. 跑测试
-```bash
+# 后端测试
 cd backend
 pytest tests/ -v
-```
 
-### 4. 调算法层（独立使用）
-```bash
+# 算法层自检
 cd algorithm_model
-python cli.py quick
-# 跑 5/5 自检，约 9.5 秒
+python test_all.py
 ```
 
 ---
 
 ## 🏗️ 架构设计
 
-详见：[`docs/ARCHITECTURE_DESIGN.md`](docs/ARCHITECTURE_DESIGN.md)（14 章 / 1.0 版）
+详见：[`docs/ARCHITECTURE_DESIGN.md`](docs/ARCHITECTURE_DESIGN.md)
 
 **核心架构 5 层分层**：
+
 ```
-L1 前端层  ─  Vue 3 + Three.js + WebSocket
-L2 API 网关  ─  FastAPI + CORS + 静态资源
-L3 服务层  ─  6 大薄壳服务（编排不重写）
-L4 算法层  ─  algorithm_model（5 大 API / 7 CLI）
-L5 基础设施  ─  文件存储 / 日志 / 配置
+L1 前端层    ─  Vue 3 + Three.js + Element Plus + Pinia
+L2 API 网关  ─  Vite Dev Proxy (/api/v1 → 8000, /api/ide → trae-api-cn)
+L3 后端服务  ─  FastAPI + 6 大薄壳服务 (编排不重写算法)
+L4 算法层    ─  algorithm_model (5 大 API / 7 CLI, 黑盒使用)
+L5 基础设施  ─  SQLite + Redis + Celery + 文件存储
 ```
 
-**4 个关键设计决策**：
-1. ✅ 算法模型与 Web 完全解耦（可 pip install）
+**关键设计决策**：
+1. ✅ 算法模型与 Web 完全解耦（可独立 pip install）
 2. ✅ 后端只做编排，不重写算法
-3. ✅ 异步优先（>1s 操作必异步）
-4. ✅ 5 大 API 数据类签名冻结
+3. ✅ 异步优先（>1s 操作走 Celery，API 返回 `202 + task_id`）
+4. ✅ 前端内置 mock fallback（backend 不可用时不黑屏）
 
 ---
 
 ## 📂 项目结构
 
 ```
-EVOLUTION_AI/
-├── README.md                       ← 你在这里
-├── docs/
-│   └── ARCHITECTURE_DESIGN.md     ← 架构设计 v1.0
-├── algorithm_model/                ← M0 算法核心（黑盒使用）
-│   ├── api/                        ← 5 大 API（build_car / assess_quality / ...）
-│   ├── core/                       ← 算法实现（NURBS / 优化 / 评估）
-│   ├── models/                     ← 数据类（字段签名已冻结）
-│   ├── cli.py                      ← CLI 入口
-│   └── quick_test.py               ← 5/5 自检
-├── backend/                        ← M1+M2 后端（异步 + 数据持久化）
-│   ├── main.py                     ← FastAPI 入口（21 端点）
-│   ├── config.py                   ← 配置（Pydantic + env_prefix=EVOLUTION_）
-│   ├── deps.py                     ← 依赖注入
-│   ├── api/v1/                     ← 6 大路由（project / car / optimize / storyboard / quality / task）
-│   ├── services/                   ← 6 大薄壳服务
-│   ├── models/                     ← 5 大 Pydantic 模型
-│   ├── db/                         ← M2 新增：SQLAlchemy 2.0 ORM（4 表）
-│   │   ├── base.py                 ← DeclarativeBase + snake_case
-│   │   ├── session.py              ← engine + SessionLocal + get_db
-│   │   └── models.py               ← Project / CarModel / QualityReport / OptimizationTask
-│   ├── tasks/                      ← M2 新增：Celery 异步任务
-│   │   ├── celery_app.py           ← Celery 实例（Redis broker/backend）
-│   │   └── optimize_task.py        ← @celery_app.task 优化任务
-│   ├── algorithm_compat.py         ← 算法层 sys.path 注入兼容层
-│   ├── tests/                      ← 19 个测试用例（M1 15 + M2 4）
-│   ├── outputs/                    ← 静态产物 + evolution_ai.db
-│   ├── start_backend.sh            ← Linux 启动
-│   ├── start_backend.bat           ← Windows 启动
-│   ├── start_celery_worker.sh      ← M2 新增：Celery 启动（Linux）
-│   ├── start_celery_worker.bat     ← M2 新增：Celery 启动（Windows）
+Evolution-Ai.Design/
+├── src/                            ← Vue 3 前端源码
+│   ├── views/                      ← 8 个路由页面
+│   │   ├── Dashboard.vue           ← 首页总览
+│   │   ├── Designer.vue            ← AI 设计器 (参数+3D预览)
+│   │   ├── Projects.vue            ← 项目列表 (含 mock fallback)
+│   │   ├── ProjectDetail.vue       ← 项目详情
+│   │   ├── DeepLearning.vue        ← 深度学习设计器
+│   │   ├── Quality.vue             ← 质量检查
+│   │   ├── Deliver.vue             ← 工程交付
+│   │   └── Demo.vue                ← DEMO 演示
+│   ├── components/                 ← 复用组件 (Car2D/Car3D/Markdown/TechMatrix)
+│   ├── stores/                     ← Pinia 状态 (designer/project/ui)
+│   ├── data/                       ← mock 数据 (mockProjects) + 配置
+│   ├── utils/                      ← imageGenerator (SVG) + llm
+│   ├── api.js                      ← axios 实例 + API 模块
+│   ├── router.js                   ← vue-router (Hash 模式)
+│   ├── i18n.js                     ← vue-i18n 双语
+│   └── main.js                     ← 应用入口
+├── backend/                        ← FastAPI 后端
+│   ├── app/
+│   │   ├── routes/                 ← 9 个路由模块 (build/car/export/...)
+│   │   ├── car_generator.py        ← 车身生成器
+│   │   ├── database.py             ← SQLAlchemy 2.0 ORM
+│   │   └── main.py                 ← FastAPI 入口
+│   ├── tests/                      ← pytest 测试
 │   └── requirements.txt
-├── core/                           ← 历史归档（完整车身建模 v0）
-├── legacy/                         ← v0.1 Streamlit 玩具版
-└── ...
+├── algorithm_model/                ← 算法核心 (黑盒使用)
+│   ├── car_modeling/               ← 整车建模 (body/assembler/wheels/...)
+│   ├── surface_quality/            ← 曲面质量 (G0/G1/G2 + 反射线)
+│   ├── freeform/                   ← NURBS 核心 + 扫掠 + 圆角
+│   └── tests/                      ← 155 测试通过
+├── docs/                           ← 文档
+│   ├── TECHNICAL_AUDIT_20260801.md ← ⭐ NURBS+STEP 技术路线审计报告
+│   ├── ARCHITECTURE_DESIGN.md      ← 架构设计 v1.0
+│   ├── PRODUCT_SPEC.md             ← 产品功能定义
+│   ├── DESIGN_TOKENS.md            ← 设计令牌
+│   ├── W1~W4_*.md                  ← 周报与完结报告
+│   └── 复盘总结_20260711.md        ← 历史复盘
+├── tests/                          ← 前端 vitest 测试
+├── vite.config.js                  ← Vite 配置 (端口 5173, 代理)
+├── package.json                    ← npm 依赖
+└── index.html                      ← HTML 入口
 ```
 
 ---
@@ -148,12 +165,30 @@ EVOLUTION_AI/
 
 | 层 | 技术 |
 |----|------|
-| **算法层** | Python 3.11+ / NumPy / SciPy / Trimesh / Plotly |
-| **后端** | FastAPI / Pydantic v2 / Loguru / Uvicorn |
-| **前端（M3）** | Vue 3 / Three.js / WebSocket |
-| **数据库（M2）** | SQLAlchemy 2.0 + SQLite（先）/ PostgreSQL（后） |
-| **异步队列（M2）** | Celery 5 + Redis 6 |
-| **部署（M4）** | Docker + Nginx + Prometheus + Grafana |
+| **前端** | Vue 3.4 / Vite 5.3 / Three.js 0.166 / Element Plus 2.7 / Pinia 2.1 / vue-router 4.4 / vue-i18n 9.13 / axios 1.7 |
+| **后端** | FastAPI / Pydantic v2 / SQLAlchemy 2.0 / Celery 5 / Redis 6 / Uvicorn / Loguru |
+| **算法层** | Python 3.11+ / NumPy / SciPy / Trimesh / Plotly / Cython (399x 加速) |
+| **数据库** | SQLite (开发) → PostgreSQL (生产) |
+| **部署** | Docker + Nginx (规划中) / GitHub Pages (静态) |
+
+---
+
+## 🎯 下一阶段路线图 (NURBS+STEP 工程化)
+
+按 [技术审计报告](docs/TECHNICAL_AUDIT_20260801.md) 的"双轨并行"策略推进：
+
+```
+Phase 1a (1天)    Phase 1b (0.5天)   Phase 2 (2-3天)    Phase 3 (2-3天)
+STEP writer    →  单曲面闭环      →  车身 NURBS化    →  全车 STEP 装配
+~200行 Python     SweptSurface       body.py 改造       14 零件导出
+                  验证 STEP 可打开   mesh→控制点        FreeCAD 验证
+```
+
+**核心策略**：
+- mesh 管线（现有）→ 继续用于前端实时预览、GLB 导出
+- NURBS 管线（新建）→ 用于 STEP/IGES 工程输出、A级曲面质量分析
+- 纯 Python STEP writer（无需 OCCT/build123d 500MB 依赖）
+- 参数直驱 NURBS（避免 mesh→NURBS 拟合误差）
 
 ---
 
@@ -162,12 +197,11 @@ EVOLUTION_AI/
 | 场景 | 耗时 | 指标 |
 |------|------|------|
 | 整车构建 | ~200ms | 3475 顶点 / 6504 面 |
-| 球面质量评估 | 50.8ms | grade=D / g2=0.199 / reflection=0.314 |
-| M1 后端测试 | 3.04s | 15/15 通过 |
-| M2 端到端测试 | 7.85s | 19/19 通过（M1 15 + M2 4） |
-| uvicorn 启动 | 4s | 21 端点全部注册 |
-| M2 异步优化（sphere/30 iter） | 0.62s | 算法耗时；端到端 3s 含调度 |
-| M2 任务消费延迟 | 0.8-1.5s | PENDING → STARTED 间隔 |
+| 球面质量评估 | 50.8ms | grade=D / g2=0.199 |
+| 后端测试 | 3.04s | 15/15 通过 |
+| 端到端测试 | 7.85s | 19/19 通过 |
+| 算法层自检 | 9.49s | 155/155 通过 (零回归) |
+| Cython 加速 | 0.40ms/板 | 399x 加速 |
 
 ---
 
@@ -179,27 +213,17 @@ EVOLUTION_AI/
 | **luxury** | 5.20 | 1.95 | 1.50 | 豪华轿车 |
 | **suv** | 4.80 | 1.95 | 1.72 | SUV |
 
-API 调 `GET /api/v1/car/presets` 查看完整 22 维参数。
-
 ---
 
 ## 📚 文档导航
 
-- [架构设计 v1.0](docs/ARCHITECTURE_DESIGN.md) — 5 层分层 + 4 里程碑 5 周
+- [⭐ NURBS+STEP 技术审计报告](docs/TECHNICAL_AUDIT_20260801.md) — 下一阶段路线图（必读）
+- [架构设计 v1.0](docs/ARCHITECTURE_DESIGN.md) — 5 层分层设计
 - [产品功能定义](docs/PRODUCT_SPEC.md) — 需求与场景
+- [设计令牌](docs/DESIGN_TOKENS.md) — UI 设计规范
 - [算法模型文档](algorithm_model/README.md) — 5 大 API + 7 CLI 速查
-- [M1+M2 后端测试](backend/tests/) — 19 个测试用例
-
----
-
-## 🧩 Coze 技能
-
-EVOLUTION AI 算法核心已发布为 Coze 技能 `ai-car-styling` v4：
-- 技能 ID：`7653081413079646242`
-- 部署 ID：`7653079383841718272`
-- 商店链接：https://www.coze.cn/store/skill/7653081413079646242
-
-可独立用作 AI 汽车造型开发的通用能力。
+- [复盘总结 20260711](docs/复盘总结_20260711.md) — 历史复盘
+- [W1~W4 周报](docs/) — 开发周报与完结报告
 
 ---
 
@@ -210,15 +234,19 @@ EVOLUTION AI 算法核心已发布为 Coze 技能 `ai-car-styling` v4：
 - **字段 100% 对齐**：Pydantic model 与 algorithm_model 数据类签名必须严格一致
 - **测试驱动**：新功能必须配测试用例
 - **M2 异步约定**：>1s 操作走 Celery，API 返回 `202 + task_id`，客户端轮询 `GET /api/v1/task/{tid}`
+- **Mock Fallback 优先**：前端关键页面必须有 mock 数据兜底，backend 不可用时不黑屏
+- **Hash 路由**：使用 `createWebHashHistory` 适配 GitHub Pages 静态部署
 
 ---
 
 ## 🤝 协作约定
 
-- **主对话渠道**：Coze
+- **唯一活跃目录**：`D:\API\Evolution-Ai.Design` （`D:\API\EVOLUTION_AI` 已退役）
+- **外部归档**：`D:\API\_archive\` （历史快照与 tar.gz）
 - **沟通风格**：先结论后依据；少解释过程
-- **格式**：Coze 用 Markdown；文件用绝对路径引用
-- **桌面前缀**：`D:\API\AI_3D_Model_Build\EVOLUTION_AI\`
+- **文件引用**：用绝对路径
+- **周复盘节奏**：每周一次复盘，沉淀到 `docs/weekly-reviews/`
+- **版本发布**：成熟版本及时更新 GitHub 仓库，让网站早日恢复常态化运行
 
 ---
 
