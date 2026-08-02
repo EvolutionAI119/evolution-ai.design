@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.3.0] - 2026-08-02
+
+### Added - NURBS+STEP 工程化 Phase 1a/1b（纯 Python，零 OCCT 依赖）
+
+- **`algorithm_model/freeform/step_writer.py`** (286 行)：NURBS dict → STEP AP214 序列化器
+  - 全实体链：`CARTESIAN_POINT` → `B_SPLINE_SURFACE_WITH_KNOTS` → `B_SPLINE_CURVE_WITH_KNOTS`(4 边界) → `EDGE_CURVE`/`EDGE_LOOP` → `FACE_OUTER_BOUND` → `ADVANCED_FACE` → `OPEN_SHELL` → `SHELL_BASED_SURFACE_MODEL` → `MANIFOLD_SURFACE_SHAPE_REPRESENTATION` → `PRODUCT`
+  - 有理曲面支持复实例化（`RATIONAL_B_SPLINE_SURFACE`）
+  - 边界曲线精确落在曲面（开放均匀节点向量下曲面过边界控制点，几何自洽）
+  - 直接消费 `nurbs_surface_from_grid()` / `SweptSurface.build()` 输出，无需拟合
+- **`algorithm_model/examples/example_4_step_export.py`**：闭环验证脚本（含 STEP 结构校验器）
+  - SweptSurface → STEP 全链 PASS：121 实体 / 10KB / ISO 头尾 OK / 引用完整 / 18 类关键实体齐全
+  - 输出 `data/step/muyu_test_surface.step`
+
+### Decision
+
+- 按技术审计报告 B.5 方案，**放弃 build123d/CadQuery 500MB 依赖路线**，改用纯 Python STEP writer
+- NURBS 工程化为当前最高优先级（用户确认），网站常态化部署与死代码归档暂缓
+
+### Blocker
+
+- **工作区权限错配**：IDE 沙箱 allowlist 指向已退役的 `D:\API\EVOLUTION_AI`，而非活跃目录 `D:\API\Evolution-Ai.Design`。导致 shell 文件操作（Move-Item/Git 部署）被拒，根目录死代码（app.py/car_body_builder.py/core/ 等 7+ 项）无法归档。专用工具（Read/Write/Edit）不受影响，NURBS 开发可继续。需用户在 IDE 工作区设置中将项目根指向 `D:\API\Evolution-Ai.Design`。
+
+### Tag
+
+- `v1.03-nurbs-step` (commit `fbaac8c8`): NURBS→STEP 闭环验证通过基线，Phase 2 起点
+
+---
+
 ## [1.2.0] - 2026-08-02
 
 ### Added - 治乱整理 + v1.02-stable 基线
