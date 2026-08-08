@@ -33,6 +33,8 @@ from .trim import (
     create_rubber_seal,
     create_body_molding,
 )
+from .continuity_checker import ContinuityChecker
+from .sop_checklist import SOPChecklist
 
 __all__ = [
     "CarParams",
@@ -64,4 +66,8 @@ __all__ = [
     "create_chrome_trim",
     "create_rubber_seal",
     "create_body_molding",
+    # continuity_checker 模块
+    "ContinuityChecker",
+    # sop_checklist 模块
+    "SOPChecklist",
 ]

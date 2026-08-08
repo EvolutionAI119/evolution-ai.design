@@ -1,0 +1,110 @@
+==============================================================================
+NURBS Surface Continuity Analysis Report
+  Target: full_car_nurbs.step (18 surfaces / 14 parts)
+  Method: Pure Python (finite-diff normals + KDTree nearest)
+  Threshold: G0 <= 0.1mm positional / G1 <= 1deg tangential / G1 <= 5deg visual
+==============================================================================
+
+[Summary] Key connections (sorted by min_gap ascending):
+------------------------------------------------------------------------------
+Pair                                 min_gap(mm) max_gap(mm) best_edge    contact%  Rating
+------------------------------------------------------------------------------
+body_upper_skin <-> front_bumper         21.500      500.610  u0<->v1         0.0%  Small gap
+body_upper_skin <-> rear_bumper          24.031      592.100  u1<->v0         0.0%  Small gap
+front_bumper <-> headlight_R            120.416     1355.360  v1<->v0         0.0%  Separated
+front_bumper <-> headlight_L            120.416     1355.360  v1<->v0         0.0%  Separated
+front_bumper <-> grille                 125.576     1231.391  v1<->u0         0.0%  Separated
+rear_bumper <-> taillight_R             215.407     1465.913  v1<->v0         0.0%  Separated
+rear_bumper <-> taillight_L             215.407     1465.913  v1<->v0         0.0%  Separated
+body_upper_skin <-> wheel_FL_tire       257.570     3400.704  v0<->v0         0.0%  Separated
+------------------------------------------------------------------------------
+
+Legend:
+  min_gap  = minimum distance between best-matching boundary pair (closest points)
+  max_gap  = maximum distance along the best-matching boundary pair (worst point)
+  contact% = fraction of boundary points within 5mm of the other surface
+  best_edge = boundary pair with smallest min_gap (u0/u1/v0/v1 of each surface)
+
+[Detail] Per-pair analysis:
+==============================================================================
+
+* body_upper_skin <-> front_bumper
+  min_gap: 21.500 mm  max_gap: 500.610 mm  contact: 0.0%  contact_points: 0
+  normal_angle: max N/A deg  mean N/A deg (no contact -> no G1)
+  best boundary pair: u0<->v1  (body front end <-> bumper top edge)
+  worst boundary pair: u1<->u0  max=4862.210mm (body rear end, irrelevant)
+  NOTE: body u=0 edge spans full front section (roof to bottom, ~3m arc),
+        bumper v=1 edge is only top edge (y span W, z=gc+0.50). Only local
+        overlap near z=gc+0.50; 21.5mm gap = body section vs bumper top mismatch.
+
+* body_upper_skin <-> rear_bumper
+  min_gap: 24.031 mm  max_gap: 592.100 mm  contact: 0.0%  contact_points: 0
+  normal_angle: max N/A deg  mean N/A deg
+  best boundary pair: u1<->v0  (body rear end <-> bumper bottom edge)
+  NOTE: 24mm gap similar to front; body rear section vs rear bumper mismatch.
+
+* front_bumper <-> grille
+  min_gap: 125.576 mm  max_gap: 1231.391 mm  contact: 0.0%  contact_points: 0
+  best boundary pair: v1<->u0  (bumper top edge <-> grille left edge)
+  NOTE: grille is recessed 6cm behind bumper face (design intent), but 125mm
+        gap indicates grille boundary does NOT align with bumper recess boundary.
+
+* front_bumper <-> headlight_R/L
+  min_gap: 120.416 mm  max_gap: 1355.360 mm  contact: 0.0%  contact_points: 0
+  best boundary pair: v1<->v0  (bumper top edge <-> headlight bottom edge)
+  NOTE: headlights are positioned at x=-L/2+0.10, bumper at x=-L/2+0.02..+0.10.
+        120mm gap = headlight boundary does NOT align with bumper cutout.
+
+* rear_bumper <-> taillight_R/L
+  min_gap: 215.407 mm  max_gap: 1465.913 mm  contact: 0.0%  contact_points: 0
+  best boundary pair: v1<->v0
+  NOTE: 215mm gap = taillight boundary far from bumper boundary.
+
+* body_upper_skin <-> wheel_FL_tire
+  min_gap: 257.570 mm  max_gap: 3400.704 mm  contact: 0.0%  contact_points: 0
+  NOTE: Wheel is a separate part (design clearance to avoid interference).
+        257mm min gap is adequate (wheel center is ~1m from body side).
+
+==============================================================================
+[Conclusion]
+  Body connection pairs: 3 (body<->front_bumper, body<->rear_bumper, body<->wheel)
+  G0 pass (<0.1mm): 0/3
+  G1 pass (<1deg):   0/3
+
+  Root cause: All 14 parts are constructed as INDEPENDENT NURBS surfaces.
+  No boundary curves are shared between adjacent parts. Each part's boundary
+  is determined by its own control point grid, which does not match the
+  neighboring part's boundary geometry.
+
+  Body<->bumper: 21-24mm gap (body section profile vs bumper rectangular edge)
+  Bumper<->lights/grille: 120-215mm gap (parts positioned in x but boundaries
+    do not align with cutout/recess boundaries)
+
+  Notes:
+  - Wheels/mirrors are separate parts (design clearance), not rated.
+  - Headlights/taillights embed into bumper recesses, small gaps expected
+    (assembly tolerance), but current 120-215mm gaps are too large.
+
+==============================================================================
+[Improvement Recommendations]
+==============================================================================
+1. G0 continuity (positional): Share boundary curves between adjacent parts.
+   a) Body<->bumper: Extract body u=0/u=1 boundary lower section (z in
+      [gc, gc+0.5]) and use it as the bumper's top edge (v=1) control points.
+   b) Bumper<->grille: Use grille boundary as the bumper recess boundary
+      (same control points for matching edges).
+   c) Bumper<->headlight: Cut a hole in the bumper matching headlight outline.
+
+2. G1 continuity (tangential): Match control points across shared boundary.
+   - For each shared edge, ensure the 2 rows of control points on either side
+     are collinear with the boundary control points (3-point collinearity).
+   - This makes surface normals match at the boundary (G1).
+
+3. Implementation approach:
+   - Build a topological graph of shared edges first.
+   - Construct shared boundary B-spline curves once.
+   - Each part's NURBS surface reuses these shared curves as boundary rows.
+   - Adjust interior control points for G1 (collinearity constraint).
+
+4. Priority: body<->bumper (21mm -> 0mm) first, then bumper<->grille/lights.
+==============================================================================

@@ -138,14 +138,14 @@ def _section_height(x_norm: float, params: CarParams) -> float:
     elif x < roof_start:  # 座舱前沿
         t = (x - windshield_top) / max(1e-6, roof_start - windshield_top)
         h_start = ground_clear + 1.0
-        h_end = params.H - 0.05
+        h_end = params.H
         arc = params.roof_arc
         return h_start + t * (h_end - h_start) * (1 + arc * np.sin(t * np.pi))
     elif x < roof_end:  # 车顶
-        return params.H - 0.05
+        return params.H
     elif x < rear_glass_end:  # 后挡风
         t = (x - rear_glass_start) / max(1e-6, rear_glass_end - rear_glass_start)
-        h_start = params.H - 0.05
+        h_start = params.H
         h_end = ground_clear + 0.7
         return h_start + t * (h_end - h_start)
     else:  # 行李箱

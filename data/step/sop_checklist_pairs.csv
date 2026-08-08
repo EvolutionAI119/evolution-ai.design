@@ -1,0 +1,184 @@
+﻿check_id,item,sop_ref,surface,status,value,threshold,passed,note
+1,坐标系正确，与总布置发布一致,SOP section 3,,MANUAL,-,与总布置一致,MANUAL,确认整车坐标系与总布置发布一致
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,body_upper_skin,WARN,cp=30x20 spans=27x17 total=600,"cp<=10x10, spans<=6x6, total<=100",FAIL,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,body_upper_skin,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,body_upper_skin,PASS,sign_changes=14/144 (9.7%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,body_upper_skin,PASS,"U: deg=3 -> 4/span, V: deg=3 -> 4/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,body_upper_skin,WARN,"CV=1.329, mean_R=4.4mm",CV <= 0.50,FAIL,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,body_upper_skin,WARN,"R_min=0.09mm, U_ctrl=30",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,body_upper_skin,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,body_upper_skin,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,body_upper_skin,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,body_upper_skin,PASS,"mean_grad=0.7628, max_grad=3.1877, ratio=4.2",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,front_bumper_g1,WARN,cp=20x4 spans=17x1 total=80,"cp<=10x10, spans<=6x6, total<=100",FAIL,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,front_bumper_g1,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,front_bumper_g1,PASS,sign_changes=5/144 (3.5%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,front_bumper_g1,PASS,"U: deg=3 -> 4/span, V: deg=3 -> 4/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,front_bumper_g1,WARN,"CV=2.476, mean_R=4.2mm",CV <= 0.50,FAIL,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,front_bumper_g1,WARN,"R_min=0.00mm, U_ctrl=20",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,front_bumper_g1,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,front_bumper_g1,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,front_bumper_g1,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,front_bumper_g1,WARN,"mean_grad=542.5818, max_grad=15962.0942, ratio=29.4",max/mean gradient ratio < 10,FAIL,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,rear_bumper_g1,WARN,cp=20x4 spans=17x1 total=80,"cp<=10x10, spans<=6x6, total<=100",FAIL,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,rear_bumper_g1,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,rear_bumper_g1,PASS,sign_changes=11/144 (7.6%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,rear_bumper_g1,PASS,"U: deg=3 -> 4/span, V: deg=3 -> 4/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,rear_bumper_g1,WARN,"CV=2.338, mean_R=8.5mm",CV <= 0.50,FAIL,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,rear_bumper_g1,WARN,"R_min=0.00mm, U_ctrl=20",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,rear_bumper_g1,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,rear_bumper_g1,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,rear_bumper_g1,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,rear_bumper_g1,WARN,"mean_grad=1684.9483, max_grad=31621.4954, ratio=18.8",max/mean gradient ratio < 10,FAIL,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,grille_attached,PASS,cp=4x3 spans=1x1 total=12,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,grille_attached,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,grille_attached,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,grille_attached,PASS,"U: deg=3 -> 4/span, V: deg=2 -> 3/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,grille_attached,PASS,"CV=0.207, mean_R=1.0mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,grille_attached,WARN,"R_min=0.72mm, U_ctrl=4",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,grille_attached,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,grille_attached,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,grille_attached,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,grille_attached,PASS,"mean_grad=0.0156, max_grad=0.0434, ratio=2.8",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,headlight_R,PASS,cp=3x3 spans=1x1 total=9,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,headlight_R,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,headlight_R,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,headlight_R,PASS,"U: deg=2 -> 3/span, V: deg=2 -> 3/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,headlight_R,PASS,"CV=0.054, mean_R=8.2mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,headlight_R,PASS,"R_min=7.62mm, U_ctrl=3",R_min >= 3mm AND U_ctrl < 8,PASS,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,headlight_R,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,headlight_R,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,headlight_R,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,headlight_R,PASS,"mean_grad=0.0009, max_grad=0.0015, ratio=1.7",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,headlight_L,PASS,cp=3x3 spans=1x1 total=9,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,headlight_L,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,headlight_L,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,headlight_L,PASS,"U: deg=2 -> 3/span, V: deg=2 -> 3/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,headlight_L,PASS,"CV=0.026, mean_R=5.7mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,headlight_L,PASS,"R_min=5.48mm, U_ctrl=3",R_min >= 3mm AND U_ctrl < 8,PASS,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,headlight_L,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,headlight_L,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,headlight_L,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,headlight_L,PASS,"mean_grad=0.0004, max_grad=0.0005, ratio=1.3",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,taillight_R,PASS,cp=3x3 spans=1x1 total=9,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,taillight_R,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,taillight_R,PASS,sign_changes=2/144 (1.4%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,taillight_R,PASS,"U: deg=2 -> 3/span, V: deg=2 -> 3/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,taillight_R,WARN,"CV=1.070, mean_R=2.6mm",CV <= 0.50,FAIL,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,taillight_R,WARN,"R_min=0.86mm, U_ctrl=3",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,taillight_R,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,taillight_R,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,taillight_R,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,taillight_R,PASS,"mean_grad=0.0697, max_grad=0.1231, ratio=1.8",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,taillight_L,PASS,cp=3x3 spans=1x1 total=9,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,taillight_L,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,taillight_L,PASS,sign_changes=2/144 (1.4%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,taillight_L,PASS,"U: deg=2 -> 3/span, V: deg=2 -> 3/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,taillight_L,WARN,"CV=0.972, mean_R=2.3mm",CV <= 0.50,FAIL,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,taillight_L,WARN,"R_min=0.83mm, U_ctrl=3",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,taillight_L,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,taillight_L,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,taillight_L,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,taillight_L,PASS,"mean_grad=0.0700, max_grad=0.1237, ratio=1.8",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_FL_tire,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_FL_tire,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_FL_tire,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_FL_tire,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_FL_tire,PASS,"CV=0.462, mean_R=0.7mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_FL_tire,WARN,"R_min=0.27mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_FL_tire,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_FL_tire,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_FL_tire,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_FL_tire,PASS,"mean_grad=0.2522, max_grad=0.9878, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_FL_hub,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_FL_hub,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_FL_hub,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_FL_hub,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_FL_hub,PASS,"CV=0.462, mean_R=0.3mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_FL_hub,WARN,"R_min=0.11mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_FL_hub,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_FL_hub,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_FL_hub,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_FL_hub,PASS,"mean_grad=0.6305, max_grad=2.4694, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_FR_tire,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_FR_tire,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_FR_tire,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_FR_tire,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_FR_tire,PASS,"CV=0.462, mean_R=0.7mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_FR_tire,WARN,"R_min=0.27mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_FR_tire,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_FR_tire,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_FR_tire,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_FR_tire,PASS,"mean_grad=0.2522, max_grad=0.9878, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_FR_hub,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_FR_hub,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_FR_hub,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_FR_hub,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_FR_hub,PASS,"CV=0.462, mean_R=0.3mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_FR_hub,WARN,"R_min=0.11mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_FR_hub,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_FR_hub,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_FR_hub,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_FR_hub,PASS,"mean_grad=0.6305, max_grad=2.4694, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_RL_tire,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_RL_tire,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_RL_tire,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_RL_tire,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_RL_tire,PASS,"CV=0.462, mean_R=0.7mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_RL_tire,WARN,"R_min=0.27mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_RL_tire,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_RL_tire,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_RL_tire,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_RL_tire,PASS,"mean_grad=0.2522, max_grad=0.9878, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_RL_hub,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_RL_hub,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_RL_hub,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_RL_hub,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_RL_hub,PASS,"CV=0.462, mean_R=0.3mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_RL_hub,WARN,"R_min=0.11mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_RL_hub,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_RL_hub,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_RL_hub,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_RL_hub,PASS,"mean_grad=0.6305, max_grad=2.4694, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_RR_tire,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_RR_tire,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_RR_tire,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_RR_tire,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_RR_tire,PASS,"CV=0.462, mean_R=0.7mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_RR_tire,WARN,"R_min=0.27mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_RR_tire,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_RR_tire,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_RR_tire,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_RR_tire,PASS,"mean_grad=0.2522, max_grad=0.9878, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,wheel_RR_hub,PASS,cp=9x2 spans=6x1 total=18,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,wheel_RR_hub,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,wheel_RR_hub,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,wheel_RR_hub,PASS,"U: deg=3 -> 4/span, V: deg=1 -> 2/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,wheel_RR_hub,PASS,"CV=0.462, mean_R=0.3mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,wheel_RR_hub,WARN,"R_min=0.11mm, U_ctrl=9",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,wheel_RR_hub,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,wheel_RR_hub,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,wheel_RR_hub,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,wheel_RR_hub,PASS,"mean_grad=0.6305, max_grad=2.4694, ratio=3.9",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,mirror_R,PASS,cp=4x4 spans=1x1 total=16,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,mirror_R,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,mirror_R,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,mirror_R,PASS,"U: deg=3 -> 4/span, V: deg=3 -> 4/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,mirror_R,PASS,"CV=0.317, mean_R=0.1mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,mirror_R,WARN,"R_min=0.08mm, U_ctrl=4",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,mirror_R,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,mirror_R,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,mirror_R,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,mirror_R,PASS,"mean_grad=0.7885, max_grad=1.2327, ratio=1.6",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+2,基础大面简洁，面块/段数最少化,SOP 4.2.1,mirror_L,PASS,cp=4x4 spans=1x1 total=16,"cp<=10x10, spans<=6x6, total<=100",PASS,控制点网格规模反映曲面简洁程度
+3,与点云误差 <= 0.5mm,SOP 4.2.1,mirror_L,MANUAL,-,<= 0.5mm,MANUAL,需导入点云数据，使用偏差分析工具检查
+4,单凹/单凸，无多余拐点,SOP 4.2.3,mirror_L,PASS,sign_changes=0/144 (0.0%),sign_changes <= 15%% of samples,PASS,均曲率符号变化反映拐点数量
+5,单段控制点 <= 7,SOP 4.2.4,mirror_L,PASS,"U: deg=3 -> 4/span, V: deg=3 -> 4/span",<= 7/span (both U and V),PASS,degree+1 = 单段控制点数
+7,R 值均匀变化（边界曲率 CV）,SOP 4.3.1,mirror_L,PASS,"CV=0.317, mean_R=0.1mm",CV <= 0.50,PASS,边界曲率半径变异系数反映 R 值均匀性
+8,R 角 >= 3mm + U 向控制点 < 8,SOP 4.3.2,mirror_L,WARN,"R_min=0.08mm, U_ctrl=4",R_min >= 3mm AND U_ctrl < 8,FAIL,R 角长度和 U 向控制点数影响过渡曲面质量
+9,特征线饱满流畅，线面误差 < 0.001mm,SOP 4.4,mirror_L,MANUAL,-,线面误差 < 0.001mm,MANUAL,需提取特征线，与基础面做偏差分析
+10,Shading 检查无鼓包/凹陷/扭曲,SOP 5.1.1,mirror_L,MANUAL,-,肉眼无可见缺陷,MANUAL,在 CAx 软件中激活 Shading，旋转数模全方位检查
+11,截面线与点云形状一致,SOP 5.1.2,mirror_L,MANUAL,-,截面形状匹配,MANUAL,截取数模断面线，与点云切面对比
+12,Curvature / ISO Curvature 检查,SOP 5.1.3,mirror_L,PASS,"mean_grad=0.7885, max_grad=1.2327, ratio=1.6",max/mean gradient ratio < 10,PASS,曲率梯度突变反映 ISO 曲率线的不连续程度
+6,交线光顺，边界间隙 < 0.010mm,SOP 4.2.6,,PASS,"strict_pairs=2, contact_pairs=2, worst_gap=1805.9714mm",共享边界间隙 < 0.010mm,PASS,严格 G0（0.01mm）用于 A 面对接边界
+13,G0/G1/G2 连续性达标,SOP 5.2,,PASS,G1_pairs=2/124 (1.6%),"至少 1 对 G1 OK (G0<0.1mm, G1<1.0deg)",PASS,复用 ContinuityChecker 结果

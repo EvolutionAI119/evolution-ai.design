@@ -30,7 +30,7 @@ from algorithm_model.freeform.swept_surface import SweptSurface
 from algorithm_model.surface_quality.curvature import estimate_normals, angle_between
 from algorithm_model.surface_quality.continuity import check_g0_g1_g2
 from algorithm_model.car_modeling.car_params import CarParams
-from algorithm_model.car_modeling.assembler import build_full_car, merge_all, export
+from algorithm_model.car_modeling.assembler import build_full_car, merge_all
 
 
 # ============================================================

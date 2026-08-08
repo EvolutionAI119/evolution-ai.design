@@ -25,7 +25,7 @@ def test_car_modeling():
     print("\n" + "=" * 60)
     print("【1/5】car_modeling - 整车造型建模")
     print("=" * 60)
-    from car_modeling import CarParams, build_full_car, compute_stats
+    from algorithm_model.car_modeling import CarParams, build_full_car, compute_stats
 
     # 默认参数
     parts = build_full_car(CarParams())

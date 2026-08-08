@@ -304,8 +304,8 @@ def _get_base_width_fast(x: float, hardpoints: dict) -> float:
     front_factor = 1.0 - 0.15 * max(0, -x_norm)
     rear_factor = 1.0 - 0.08 * max(0, x_norm)
     result = 0.94 * base * front_factor * rear_factor
-    # 确保不为零
-    return max(result, 0.01)
+    # 端部最小半宽保护（模拟保险杠宽度，避免车头车尾退化为尖角）
+    return max(result, 0.40)
 
 
 

@@ -1,0 +1,125 @@
+pair,label_a,label_b,min_gap_mm,mean_g0_mm,max_g1_deg,mean_g1_deg,best_edge_pair,samples,g0_pass,g1_pass,visual_smooth,rating
+body_upper_skin <-> front_bumper_g1,body_upper_skin,front_bumper_g1,0.0,35.27114661591927,0.13124107709452618,0.08145460662544038,u0<->u0,2,True,True,True,G1 OK
+body_upper_skin <-> rear_bumper_g1,body_upper_skin,rear_bumper_g1,0.0,39.68118903356796,0.030823733814723815,0.023264769302715906,u1<->u0,2,True,True,True,G1 OK
+headlight_R_attached <-> taillight_L_attached,headlight_R_attached,taillight_L_attached,0.46581215441198376,4804.5481603941635,4.507262525987923,4.507262424121443,u0<->v0,2,False,False,True,Near G0
+front_bumper_g1 <-> rear_bumper_g1,front_bumper_g1,rear_bumper_g1,0.6168086470761506,4700.000089355324,3.31833143851253,3.123381987633752,v0<->v0,5,False,False,True,Near G0
+headlight_L_attached <-> taillight_R_attached,headlight_L_attached,taillight_R_attached,0.7794019921824744,4802.839760728042,5.1301324779253745,5.128284634283663,u1<->v0,2,False,False,False,Near G0
+grille_attached <-> headlight_R_attached,grille_attached,headlight_R_attached,0.911440311924019,80.24414660114611,2.8973768893030627,2.8973768893030627,u1<->u1,1,False,False,True,Near G0
+grille_attached <-> headlight_L_attached,grille_attached,headlight_L_attached,1.1748561437009137,80.30929250184094,3.167670757977297,3.167670757977297,u0<->u0,1,False,False,True,Small gap
+headlight_L_attached <-> taillight_L_attached,headlight_L_attached,taillight_L_attached,1.3453275963290425,4777.885709752577,6.755908499514712,6.755908499514712,v1<->u0,1,False,False,False,Small gap
+headlight_R_attached <-> taillight_R_attached,headlight_R_attached,taillight_R_attached,1.3823101709721948,4777.591857024393,6.111793071067931,6.111793071067931,v1<->u1,1,False,False,False,Small gap
+grille_attached <-> taillight_R_attached,grille_attached,taillight_R_attached,1.6922271233368762,4856.302503661864,4.944511017429968,4.944511017429968,u1<->v0,1,False,False,True,Small gap
+body_upper_skin <-> grille_attached,body_upper_skin,grille_attached,1.7904254580606431,4805.407493018279,87.57469296402698,87.57469296402698,u1<->u0,1,False,False,False,Small gap
+rear_bumper_g1 <-> grille_attached,rear_bumper_g1,grille_attached,1.7904254580606431,4805.407493018279,87.57469107694614,87.57469107694614,v0<->u0,1,False,False,False,Small gap
+grille_attached <-> taillight_L_attached,grille_attached,taillight_L_attached,1.8831568158283214,4856.444551844964,5.450245284211039,5.450245284211039,u0<->v0,1,False,False,False,Small gap
+headlight_R_attached <-> headlight_L_attached,headlight_R_attached,headlight_L_attached,2.3589682211398175,2.358968221139837,2.3480123098879857,2.1034223901525007,v1<->v1,5,False,False,True,Small gap
+body_upper_skin <-> taillight_L_attached,body_upper_skin,taillight_L_attached,3.291310482458455,16.39802732193279,89.22647687790811,86.95607861658665,u1<->u0,5,False,False,False,Small gap
+rear_bumper_g1 <-> taillight_L_attached,rear_bumper_g1,taillight_L_attached,3.291310482458455,16.39802732193279,89.22649601174108,86.95611592607489,v0<->u0,5,False,False,False,Small gap
+front_bumper_g1 <-> grille_attached,front_bumper_g1,grille_attached,3.2938782221007177,19.833961788163162,88.8142344511801,87.28432417813487,v0<->u0,5,False,False,False,Small gap
+body_upper_skin <-> wheel_FL_tire,body_upper_skin,wheel_FL_tire,4.704017420491162,11.713285934674591,89.9858156451126,81.16604069185047,v0<->v0,5,False,False,False,Small gap
+body_upper_skin <-> wheel_FR_tire,body_upper_skin,wheel_FR_tire,4.704017420491162,11.713285934674591,87.42870217137647,78.69600219005899,v1<->v1,5,False,False,False,Small gap
+body_upper_skin <-> wheel_RL_tire,body_upper_skin,wheel_RL_tire,4.704017420491162,11.713285934674591,89.9858156468607,81.16604069075115,v0<->v0,5,False,False,False,Small gap
+body_upper_skin <-> wheel_RR_tire,body_upper_skin,wheel_RR_tire,4.704017420491162,11.713285934674591,87.42870216967218,78.69600218829666,v1<->v1,5,False,False,False,Small gap
+body_upper_skin <-> headlight_L_attached,body_upper_skin,headlight_L_attached,5.742915501759345,13.77866134220201,86.52379641706432,86.11289467368661,u1<->u0,5,False,False,False,Small gap
+rear_bumper_g1 <-> headlight_L_attached,rear_bumper_g1,headlight_L_attached,5.742915501759345,13.77866134220201,86.52377304128977,86.11287946762566,v0<->u0,5,False,False,False,Small gap
+body_upper_skin <-> taillight_R_attached,body_upper_skin,taillight_R_attached,6.173219960412466,15.04706634283021,89.5154363897863,87.25526010047204,u1<->u1,5,False,False,False,Small gap
+rear_bumper_g1 <-> taillight_R_attached,rear_bumper_g1,taillight_R_attached,6.173219960412466,15.04706634283021,89.51545389915441,87.25529127811184,v0<->u1,5,False,False,False,Small gap
+body_upper_skin <-> headlight_R_attached,body_upper_skin,headlight_R_attached,6.217651546230463,13.793635795318545,87.06067675660542,86.69904936937999,u1<->u1,5,False,False,False,Small gap
+rear_bumper_g1 <-> headlight_R_attached,rear_bumper_g1,headlight_R_attached,6.217651546230463,13.793635795318545,87.06065249062463,86.6990322484555,v0<->u1,5,False,False,False,Small gap
+front_bumper_g1 <-> taillight_R_attached,front_bumper_g1,taillight_R_attached,10.608718435726471,21.121879840672126,89.44792182459122,87.48605010856106,v0<->u1,5,False,False,False,Separated
+front_bumper_g1 <-> taillight_L_attached,front_bumper_g1,taillight_L_attached,11.060330852835907,21.40571509414658,89.79182629090084,88.5474770401351,v0<->u0,5,False,False,False,Separated
+front_bumper_g1 <-> headlight_L_attached,front_bumper_g1,headlight_L_attached,15.547206096437028,22.901283955933515,84.81303863693898,84.40949590023362,v0<->u0,5,False,False,False,Separated
+front_bumper_g1 <-> headlight_R_attached,front_bumper_g1,headlight_R_attached,17.35841548989885,22.393729200253652,85.41710804959992,85.12984471033332,v0<->u1,5,False,False,False,Separated
+taillight_R_attached <-> taillight_L_attached,taillight_R_attached,taillight_L_attached,25.118870387943716,25.118870387943723,9.206224664069364,7.909381912998481,u0<->u1,5,False,False,False,Separated
+body_upper_skin <-> wheel_FL_hub,body_upper_skin,wheel_FL_hub,53.926655426549885,55.38047174281404,72.7804266804255,72.21587310379493,v0<->v0,5,False,False,False,Separated
+body_upper_skin <-> wheel_FR_hub,body_upper_skin,wheel_FR_hub,53.926655426549885,55.38047174281404,68.59437599088302,67.91808768147942,v1<->v1,5,False,False,False,Separated
+body_upper_skin <-> wheel_RL_hub,body_upper_skin,wheel_RL_hub,53.926655426549885,55.38047174281404,72.78042668042542,72.21587310379485,v0<->v0,5,False,False,False,Separated
+body_upper_skin <-> wheel_RR_hub,body_upper_skin,wheel_RR_hub,53.926655426549885,55.38047174281404,68.59437599088294,67.91808768147932,v1<->v1,5,False,False,False,Separated
+grille_attached <-> wheel_FL_hub,grille_attached,wheel_FL_hub,304.0008415006892,310.1320322199814,35.06382624960784,24.392604099747928,u1<->v0,5,False,False,False,Separated
+grille_attached <-> wheel_FR_hub,grille_attached,wheel_FR_hub,304.0008415006892,310.1320322199814,35.01120526249156,24.453834051775193,u0<->v1,5,False,False,False,Separated
+grille_attached <-> wheel_RL_hub,grille_attached,wheel_RL_hub,304.0008415006892,310.1320322199814,35.063826249568194,24.392604099701902,u1<->v0,5,False,False,False,Separated
+grille_attached <-> wheel_RR_hub,grille_attached,wheel_RR_hub,304.0008415006892,310.1320322199814,35.0112052624597,24.453834051729974,u0<->v1,5,False,False,False,Separated
+grille_attached <-> wheel_FL_tire,grille_attached,wheel_FL_tire,315.0117274308377,321.1968225696754,8.308344211477662,8.141207996995856,u1<->v0,5,False,False,False,Separated
+grille_attached <-> wheel_FR_tire,grille_attached,wheel_FR_tire,315.0117274308377,321.1968225696754,8.421435882346477,8.22146319677844,u0<->v1,5,False,False,False,Separated
+grille_attached <-> wheel_RL_tire,grille_attached,wheel_RL_tire,315.0117274308377,321.1968225696754,8.308344211495932,8.141207997049614,u1<->v0,5,False,False,False,Separated
+grille_attached <-> wheel_RR_tire,grille_attached,wheel_RR_tire,315.0117274308377,321.1968225696754,8.421435882347954,8.221463196820853,u0<->v1,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_FL_hub,front_bumper_g1,wheel_FL_hub,350.7617267786614,351.9583377497357,89.68485260927632,87.59877904551593,v0<->v0,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_RL_hub,front_bumper_g1,wheel_RL_hub,350.7617267786614,351.9583377497357,89.6848526092766,87.59877904543828,v0<->v0,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_FR_hub,front_bumper_g1,wheel_FR_hub,351.0993610899001,352.12238479840573,89.30535215495115,88.4175751962542,v0<->v1,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_RR_hub,front_bumper_g1,wheel_RR_hub,351.0993610899001,352.12238479840573,89.30535215495125,88.41757519601971,v0<->v1,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_FR_hub,rear_bumper_g1,wheel_FR_hub,360.4317915619809,360.9261404849164,89.99770934729793,89.068020548592,v0<->v1,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_RR_hub,rear_bumper_g1,wheel_RR_hub,360.4317915619809,360.9261404849164,89.99770934779389,89.06802054896937,v0<->v1,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_FL_hub,rear_bumper_g1,wheel_FL_hub,360.4335948576888,361.2471270816362,89.86284292190305,88.13667129957047,v0<->v0,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_RL_hub,rear_bumper_g1,wheel_RL_hub,360.4335948576888,361.2471270816362,89.8628429212692,88.13667129933776,v0<->v0,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_FL_tire,front_bumper_g1,wheel_FL_tire,361.7786926977232,362.8025761905952,89.83421700412835,88.76015453883943,v0<->v0,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_RL_tire,front_bumper_g1,wheel_RL_tire,361.7786926977232,362.8025761905952,89.83421700140129,88.760154537717,v0<->v0,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_FR_tire,front_bumper_g1,wheel_FR_tire,362.18485389765823,363.09092878294894,89.6405781855954,88.5047471861694,v0<->v1,5,False,False,False,Separated
+front_bumper_g1 <-> wheel_RR_tire,front_bumper_g1,wheel_RR_tire,362.18485389765823,363.09092878294894,89.6405781855954,88.50474718526357,v0<->v1,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_FR_tire,rear_bumper_g1,wheel_FR_tire,371.4119518128795,371.88401389025955,89.9991288423177,89.65354810905461,v0<->v1,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_RR_tire,rear_bumper_g1,wheel_RR_tire,371.4119518128795,371.88401389025955,89.99912884346156,89.65354810970013,v0<->v1,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_FL_tire,rear_bumper_g1,wheel_FL_tire,371.4312789757921,372.1786320666339,89.94828159432062,89.05282352751672,v0<->v0,5,False,False,False,Separated
+rear_bumper_g1 <-> wheel_RL_tire,rear_bumper_g1,wheel_RL_tire,371.4312789757921,372.1786320666339,89.94828159704852,89.05282352735931,v0<->v0,5,False,False,False,Separated
+headlight_R_attached <-> wheel_FL_hub,headlight_R_attached,wheel_FL_hub,380.81182382702633,380.94318556120675,89.49118948295047,89.48520591859895,u1<->v0,5,False,False,False,Separated
+headlight_R_attached <-> wheel_RL_hub,headlight_R_attached,wheel_RL_hub,380.81182382702633,380.94318556120675,89.4911894829504,89.48520591859888,u1<->v0,5,False,False,False,Separated
+headlight_L_attached <-> wheel_FR_hub,headlight_L_attached,wheel_FR_hub,381.13131353916543,381.269242923786,89.47759278779502,89.46649793594833,u0<->v1,5,False,False,False,Separated
+headlight_L_attached <-> wheel_RR_hub,headlight_L_attached,wheel_RR_hub,381.13131353916543,381.269242923786,89.47759278779495,89.46649793594825,u0<->v1,5,False,False,False,Separated
+headlight_R_attached <-> wheel_FL_tire,headlight_R_attached,wheel_FL_tire,391.7556163481364,391.75567453287425,53.664216264905484,39.393305085353155,u1<->v0,5,False,False,False,Separated
+headlight_R_attached <-> wheel_RL_tire,headlight_R_attached,wheel_RL_tire,391.7556163481364,391.75567453287425,53.664216264875606,39.39330508532985,u1<->v0,5,False,False,False,Separated
+headlight_L_attached <-> wheel_FR_tire,headlight_L_attached,wheel_FR_tire,392.06589487905524,392.0659735819854,50.27744198944768,39.84831096673341,u0<->v1,5,False,False,False,Separated
+headlight_L_attached <-> wheel_RR_tire,headlight_L_attached,wheel_RR_tire,392.06589487905524,392.0659735819854,50.27744198960332,39.84831096674671,u0<->v1,5,False,False,False,Separated
+taillight_R_attached <-> wheel_FL_hub,taillight_R_attached,wheel_FL_hub,398.8613639382611,399.68251560265963,89.44276663144744,89.437076021318,u1<->v0,5,False,False,False,Separated
+taillight_R_attached <-> wheel_RL_hub,taillight_R_attached,wheel_RL_hub,398.8613639382611,399.68251560265963,89.4427666314475,89.43707602131808,u1<->v0,5,False,False,False,Separated
+taillight_L_attached <-> wheel_FR_hub,taillight_L_attached,wheel_FR_hub,399.2910944111455,400.1186722240615,89.38653653707345,89.37873331803009,u0<->v1,5,False,False,False,Separated
+taillight_L_attached <-> wheel_RR_hub,taillight_L_attached,wheel_RR_hub,399.2910944111455,400.1186722240615,89.38653653707351,89.37873331803014,u0<->v1,5,False,False,False,Separated
+taillight_R_attached <-> wheel_FL_tire,taillight_R_attached,wheel_FL_tire,402.2977758878916,402.29796449543267,89.30675389253092,73.44342945951706,u1<->v0,5,False,False,False,Separated
+taillight_R_attached <-> wheel_RL_tire,taillight_R_attached,wheel_RL_tire,402.2977758878916,402.29796449543267,89.30675389253092,73.44342945952191,u1<->v0,5,False,False,False,Separated
+taillight_L_attached <-> wheel_FR_tire,taillight_L_attached,wheel_FR_tire,402.5936137975482,402.59363453724507,77.17627588184158,61.42546768664681,u0<->v1,5,False,False,False,Separated
+taillight_L_attached <-> wheel_RR_tire,taillight_L_attached,wheel_RR_tire,402.5936137975482,402.59363453724507,77.17627588184158,61.425467686623435,u0<->v1,5,False,False,False,Separated
+wheel_FL_tire <-> mirror_R,wheel_FL_tire,mirror_R,539.0471704206757,542.5840618951061,83.06748321805905,70.65502392322978,v1<->v0,5,False,False,False,Separated
+wheel_FR_tire <-> mirror_L,wheel_FR_tire,mirror_L,539.0471704206757,542.5840618951061,83.06748321958943,70.65502392476017,v0<->v0,5,False,False,False,Separated
+wheel_RL_tire <-> mirror_R,wheel_RL_tire,mirror_R,539.0471704206757,542.5840618951061,83.06748321803715,70.6550239232254,v1<->v0,5,False,False,False,Separated
+wheel_RR_tire <-> mirror_L,wheel_RR_tire,mirror_L,539.0471704206757,542.5840618951061,83.06748321956755,70.65502392475578,v0<->v0,5,False,False,False,Separated
+headlight_L_attached <-> wheel_FL_hub,headlight_L_attached,wheel_FL_hub,676.970970355749,677.0486395542273,89.98908058580459,89.97877129181619,u1<->v0,5,False,False,False,Separated
+headlight_L_attached <-> wheel_RL_hub,headlight_L_attached,wheel_RL_hub,676.970970355749,677.0486395542273,89.98908058580454,89.97877129181613,u1<->v0,5,False,False,False,Separated
+headlight_R_attached <-> wheel_FR_hub,headlight_R_attached,wheel_FR_hub,677.2759873053567,677.3498622972785,89.98909459494453,89.98909459367299,u0<->v1,5,False,False,False,Separated
+headlight_R_attached <-> wheel_RR_hub,headlight_R_attached,wheel_RR_hub,677.2759873053567,677.3498622972785,89.98909459494448,89.98909459367295,u0<->v1,5,False,False,False,Separated
+headlight_L_attached <-> wheel_FL_tire,headlight_L_attached,wheel_FL_tire,687.9341422977219,687.9341871519263,50.671608134307604,39.739273286826815,u1<->v0,5,False,False,False,Separated
+headlight_L_attached <-> wheel_RL_tire,headlight_L_attached,wheel_RL_tire,687.9341422977219,687.9341871519263,50.67160813435649,39.739273286805414,u1<->v0,5,False,False,False,Separated
+headlight_R_attached <-> wheel_FR_tire,headlight_R_attached,wheel_FR_tire,688.2443851399703,688.2444182593102,52.94057003019437,38.86878221440044,u0<->v1,5,False,False,False,Separated
+headlight_R_attached <-> wheel_RR_tire,headlight_R_attached,wheel_RR_tire,688.2443851399703,688.2444182593102,52.940570030228535,38.868782214375265,u0<->v1,5,False,False,False,Separated
+wheel_FL_hub <-> mirror_R,wheel_FL_hub,mirror_R,713.6187262673105,715.0334842531552,85.96958346129523,73.55712416649598,v1<->v0,5,False,False,False,Separated
+wheel_RL_hub <-> mirror_R,wheel_RL_hub,mirror_R,713.6187262673105,715.0334842531552,85.96958346129523,73.55712416650287,v1<->v0,5,False,False,False,Separated
+wheel_FR_hub <-> mirror_L,wheel_FR_hub,mirror_L,713.6187262673108,715.0334842531554,85.96958346094914,73.5571241661499,v0<->v0,5,False,False,False,Separated
+wheel_RR_hub <-> mirror_L,wheel_RR_hub,mirror_L,713.6187262673108,715.0334842531554,85.96958346094914,73.55712416615678,v0<->v0,5,False,False,False,Separated
+body_upper_skin <-> mirror_L,body_upper_skin,mirror_L,741.481227661853,748.7816600944755,88.82177036101496,87.14944041838281,u1<->u1,5,False,False,False,Separated
+rear_bumper_g1 <-> mirror_L,rear_bumper_g1,mirror_L,741.481227661853,748.7816600944755,88.8218144198315,87.14955370892358,v0<->u1,5,False,False,False,Separated
+body_upper_skin <-> mirror_R,body_upper_skin,mirror_R,742.131602744681,749.4965596479393,89.04160481683914,87.45222562051154,u1<->u0,5,False,False,False,Separated
+rear_bumper_g1 <-> mirror_R,rear_bumper_g1,mirror_R,742.131602744681,749.4965596479393,89.04164036587262,87.45232543081795,v0<->u0,5,False,False,False,Separated
+front_bumper_g1 <-> mirror_L,front_bumper_g1,mirror_L,750.0224291005866,757.5534190552302,87.53136162013782,83.52035585216086,v0<->u1,5,False,False,False,Separated
+front_bumper_g1 <-> mirror_R,front_bumper_g1,mirror_R,751.4244831875509,758.5070315686373,88.0656788321291,84.2051537989359,v0<->u0,5,False,False,False,Separated
+taillight_L_attached <-> mirror_L,taillight_L_attached,mirror_L,762.4098878373557,765.2854897444988,3.2886909773574766,3.2805633831147984,u0<->u1,5,False,False,True,Separated
+taillight_R_attached <-> mirror_R,taillight_R_attached,mirror_R,762.7034143104764,765.5817315205334,3.0660785469943743,3.063330564322553,u1<->u0,5,False,False,True,Separated
+taillight_L_attached <-> wheel_FL_hub,taillight_L_attached,wheel_FL_hub,770.3678312070504,770.7972661003905,89.98912874845128,89.98912493581926,u1<->v0,5,False,False,False,Separated
+taillight_L_attached <-> wheel_RL_hub,taillight_L_attached,wheel_RL_hub,770.3678312070504,770.7972661003905,89.98912874845124,89.9891249358192,u1<->v0,5,False,False,False,Separated
+taillight_R_attached <-> wheel_FR_hub,taillight_R_attached,wheel_FR_hub,770.5898817803712,771.0153981408992,89.98912807137957,89.98912442955832,u0<->v1,5,False,False,False,Separated
+taillight_R_attached <-> wheel_RR_hub,taillight_R_attached,wheel_RR_hub,770.5898817803712,771.0153981408992,89.9891280713795,89.98912442955826,u0<->v1,5,False,False,False,Separated
+taillight_L_attached <-> wheel_FL_tire,taillight_L_attached,wheel_FL_tire,777.406403791448,777.406414531866,77.95565143976552,61.57973059034261,u1<->v0,5,False,False,False,Separated
+taillight_L_attached <-> wheel_RL_tire,taillight_L_attached,wheel_RL_tire,777.406403791448,777.406414531866,77.95565143976033,61.57973059034005,u1<->v0,5,False,False,False,Separated
+taillight_R_attached <-> wheel_FR_tire,taillight_R_attached,wheel_FR_tire,777.7022419422036,777.7023395070802,89.98909616437979,73.59162203950777,u0<->v1,5,False,False,False,Separated
+taillight_R_attached <-> wheel_RR_tire,taillight_R_attached,wheel_RR_tire,777.7022419422036,777.7023395070802,89.98909616437979,73.59162203954217,u0<->v1,5,False,False,False,Separated
+headlight_L_attached <-> mirror_L,headlight_L_attached,mirror_L,791.9230304195088,795.5609948750454,4.3752557589042835,4.366695518437129,u0<->u1,5,False,False,True,Separated
+headlight_R_attached <-> mirror_R,headlight_R_attached,mirror_R,792.0998729335461,795.7402236003184,3.8396699278666073,3.8270172990226228,u1<->u0,5,False,False,True,Separated
+grille_attached <-> mirror_R,grille_attached,mirror_R,859.1420138719791,860.1260279923026,5.736373791758109,5.622446690217286,u1<->u0,5,False,False,False,Separated
+grille_attached <-> mirror_L,grille_attached,mirror_L,859.1420138719791,860.1260279923026,6.298276924786487,6.187459262547134,u0<->u1,5,False,False,False,Separated
+headlight_L_attached <-> mirror_R,headlight_L_attached,mirror_R,1014.6540870904411,1017.497274500802,0.2533144614408289,0.24297184363265437,u1<->u0,5,False,True,True,Separated
+headlight_R_attached <-> mirror_L,headlight_R_attached,mirror_L,1015.2078283848227,1018.0519693224229,0.9062588752666068,0.9062581808636573,u0<->u1,5,False,True,True,Separated
+taillight_L_attached <-> mirror_R,taillight_L_attached,mirror_R,1062.3066970607804,1064.3733195191376,1.186954099330969,1.156527172417722,u1<->u0,5,False,False,True,Separated
+taillight_R_attached <-> mirror_L,taillight_R_attached,mirror_L,1062.9238104972242,1064.9919820837601,1.3598950236808387,1.3392386169024022,u0<->u1,5,False,False,True,Separated
+wheel_FL_tire <-> mirror_L,wheel_FL_tire,mirror_L,1754.8422110120136,1755.9342056389182,89.98909323084128,82.77878683064766,v0<->u1,5,False,False,False,Separated
+wheel_FR_tire <-> mirror_R,wheel_FR_tire,mirror_R,1754.8422110120136,1755.9342056389182,89.98909323084128,82.77878683064766,v1<->u0,5,False,False,False,Separated
+wheel_RL_tire <-> mirror_L,wheel_RL_tire,mirror_L,1754.8422110120136,1755.9342056389182,89.98909323084128,82.77878683065202,v0<->u1,5,False,False,False,Separated
+wheel_RR_tire <-> mirror_R,wheel_RR_tire,mirror_R,1754.8422110120136,1755.9342056389182,89.98909323084128,82.77878683065202,v1<->u0,5,False,False,False,Separated
+wheel_FL_hub <-> mirror_L,wheel_FL_hub,mirror_L,1805.971355289269,1806.5311918596076,89.98909323079866,82.7787868306276,v0<->u1,5,False,False,False,Separated
+wheel_FR_hub <-> mirror_R,wheel_FR_hub,mirror_R,1805.971355289269,1806.5311918596076,89.98909323079866,82.7787868306276,v1<->u0,5,False,False,False,Separated
+wheel_RL_hub <-> mirror_L,wheel_RL_hub,mirror_L,1805.971355289269,1806.5311918596076,89.9890932307986,82.77878683063801,v0<->u1,5,False,False,False,Separated
+wheel_RR_hub <-> mirror_R,wheel_RR_hub,mirror_R,1805.971355289269,1806.5311918596076,89.9890932307986,82.77878683063801,v1<->u0,5,False,False,False,Separated
