@@ -1,0 +1,172 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.python312/
+.venv/
+venv/
+env/
+
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Environment files (contain API keys and secrets)
+.env
+.env.*
+!.env.example
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# Logs
+*.log
+
+# Model output files
+*.glb
+*.stl
+*.obj
+*.step
+*.iges
+*.gltf
+
+# Large binary files (>100MB, exceed GitHub limit)
+*.fbx
+*.mp4
+*.zip
+*.pptx
+*.ppt
+*.pdf
+
+# Embedded Python
+.python312/
+
+# Runtime data exports (generated, not source)
+3d_model_archive/EVOLUTION_AI/data/exports/model_*/
+data/exports/model_*/
+
+# Temporary NURBS screenshots (generated at runtime)
+data/step/nurbs_a_class_*.png
+
+# Old build artifacts
+3d_model_archive/EVOLUTION_AI/evo_build_dist_v6/
+
+# Demo output frames (generated)
+3d_model_archive/EVOLUTION_AI/output/
+
+# Script generated outputs
+3d_model_archive/EVOLUTION_AI/scripts/output/
+
+# Old demo builds
+3d_model_archive/EVOLUTION_AI/EVOLUTION_AI_DEMO/evolution_ai_demo_local/
+
+# NURBS sample files (large binary)
+*.igs
+*.stp
+
+# Historical archives - legacy code, use src/ for active development
+frontend/
+3d_model_archive/
+_archive/
+
+# ======================================================================
+# Evolution-Ai.Design 项目专属（源码骨架纳入 Git，运行时生成/下载产物忽略）
+# ======================================================================
+
+# --- 一次性/调试临时脚本：scripts/_*.py / _*.json / _*.txt / _*.html ---
+scripts/_*.py
+scripts/_*.json
+scripts/_*.txt
+scripts/_*.html
+# 版本化候选图下载中间目录（含大量jpg/png，可随时重跑脚本生成）
+scripts/_candidates/
+scripts/_candidates_v12/
+scripts/_candidates_v13/
+scripts/_candidates_v14/
+scripts/_fix11_tmp/
+
+# --- 下载/运行时品牌图、候选图与预览报告：public/ 下的所有生成产物 ---
+# 原则：只保留 public/brands/（19款车最终品牌图，E2E测试需要）和非下划线前缀的静态资产（如 hero-poster.svg）
+# 其余所有 public/_*（任何以 _ 开头的目录/散文件，含 jpg/png/html/json/svg/预览诊断图）一律忽略，
+# 体积大且可通过 scripts/*download* / scripts/*filter* / scripts/*_pipeline_e2e 等脚本重新生成。
+# 说明：public/brands/ 体积相对不大，若后续品牌图频繁迭代建议改用 Git LFS；如要忽略可取消下一行注释：
+# public/brands/
+public/_*
+
+# --- 本机生成的报告/汇总 ---
+reports/
+
+# --- data/：算法运行中间输出 & 训练数据（体积大，可再生） ---
+# 注意：data/training/*.jsonl 数据集若属于"训练集基准"请手动 git add -f
+data/step/
+data/training/
+
+# --- JSON Lines 数据集 & 下载日志（通常 >10MB，可脚本重新生成） ---
+*.jsonl
+
+# --- Cython 编译产物（algorithm_model/freeform/_nurbs_cy）---
+algorithm_model/freeform/_nurbs_cy.c
+algorithm_model/freeform/_nurbs_cy.*.so
+algorithm_model/freeform/_nurbs_cy.*.pyd
+algorithm_model/freeform/*.c
+algorithm_model/freeform/*.html
+__pycache__/
+*.pyc
+
+# --- 再次强化：依赖与构建产物（node_modules 绝不可入库，经验 382291） ---
+node_modules/
+dist/
+build/
+.vite/
+.rollup.cache/
+coverage/
+.husky/_/
+
+# --- Ollama / LLM 本地运行产物 ---
+*.gguf
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+data/*.bin
+algorithm_model/**/*.bin
+
+# --- 启动脚本产生的本地缓存 / 锁 / 临时文件 ---
+*.pid
+*.sock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- 本地备份/快照（如备份分支、拷贝文件）---
+*.bak
+*.orig
+*.old
+

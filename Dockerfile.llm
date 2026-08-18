@@ -1,0 +1,45 @@
+# ============================================
+# EVOLUTION AI - NURBS LLM 推理服务
+# 自包含 transformers + RAG，Ollama API 兼容
+# ============================================
+
+FROM python:3.11-slim
+
+LABEL maintainer="quantum-swordsman <evolution-ai@embodied.systems>"
+LABEL description="NURBS 专家 LLM 推理服务 (Qwen2.5 + RAG + Ollama API 兼容)"
+
+WORKDIR /app
+
+# 系统依赖
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# 安装 PyTorch (CPU) + transformers
+# torch 从 PyTorch CPU 索引安装（约 200MB，不含 CUDA）
+# transformers 从阿里云镜像安装
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch && \
+    pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ \
+        --trusted-host mirrors.aliyun.com transformers
+
+# COPY 应用文件（保持目录结构，使 DEFAULT_KNOWLEDGE_PATH 自动解析）
+COPY scripts/llm_server.py /app/scripts/llm_server.py
+COPY scripts/Modelfile /app/scripts/Modelfile
+COPY data/training/parametric_design_knowledge.json /app/data/training/parametric_design_knowledge.json
+
+# 模型目录（通过 volume 挂载）
+VOLUME ["/models"]
+
+# 环境变量
+ENV PYTHONUNBUFFERED=1 \
+    MODEL_PATH=/models/merged_model
+
+EXPOSE 11434
+
+# 健康检查（模型加载需要时间，start_period 设长）
+HEALTHCHECK --interval=10s --timeout=5s --start-period=90s --retries=5 \
+    CMD curl -f http://localhost:11434/api/tags || exit 1
+
+# 启动推理服务
+CMD ["python", "scripts/llm_server.py", \
+     "--model-path", "/models/merged_model", \
+     "--port", "11434"]

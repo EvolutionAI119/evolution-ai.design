@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="gradBg_ferrari_sf90" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradBody_ferrari_sf90" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#dc2626;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:0.5" />
+    </linearGradient>
+    <linearGradient id="gradWindow_ferrari_sf90" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:0.92" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0.92" />
+    </linearGradient>
+    <radialGradient id="gradShadow_ferrari_sf90" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="gradRim_ferrari_sf90" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#64748b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#gradBg_ferrari_sf90)" />
+  <ellipse cx="400.0" cy="358" rx="335.99999999999994" ry="7" fill="url(#gradShadow_ferrari_sf90)" />
+  <line x1="20" y1="351" x2="780" y2="351" stroke="rgba(220,38,38,0.3)" stroke-width="1" />
+  <path d="M50,336.62420382165607 Q100.97664543524415,266.11889596602975 173.8004246284501,227.34097664543526 L265.49893842887474,227.34097664543526 L265.49893842887474,202.66411889596606 L300.99552511949275,160.36093418259026 L459.70995919788663,160.36093418259026 L494.4338233167826,202.66411889596606 L494.4338233167826,220.29044585987265 Q613.5668789808917,260.8309978768578 685.796178343949,322.5231422505308 L750.0,336.62420382165607 L648.7367303609342,332.62420382165607 Q589.4904458598726,392.2951167728238 530.244161358811,332.62420382165607 L254.89384288747345,332.62420382165607 Q195.64755838641187,392.2951167728238 136.4012738853503,332.62420382165607 L50,332.62420382165607 Z" fill="url(#gradBody_ferrari_sf90)" stroke="#dc2626" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M265.49893842887474,202.66411889596606 L300.99552511949275,160.36093418259026 L459.70995919788663,160.36093418259026 L494.4338233167826,202.66411889596606 Z" fill="url(#gradWindow_ferrari_sf90)" stroke="rgba(220,38,38,0.6)" stroke-width="0.6" stroke-linejoin="round" />
+  <circle cx="195.64755838641187" cy="295.75371549893845" r="54.24628450106157" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="195.64755838641187" cy="295.75371549893845" r="29.835456475583864" fill="url(#gradRim_ferrari_sf90)" stroke="#334155" stroke-width="1" />
+  <circle cx="195.64755838641187" cy="295.75371549893845" r="11.934182590233545" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="195.64755838641187" cy="295.75371549893845" r="4.88216560509554" fill="#dc2626" />
+  <circle cx="589.4904458598726" cy="295.75371549893845" r="54.24628450106157" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="589.4904458598726" cy="295.75371549893845" r="29.835456475583864" fill="url(#gradRim_ferrari_sf90)" stroke="#334155" stroke-width="1" />
+  <circle cx="589.4904458598726" cy="295.75371549893845" r="11.934182590233545" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="589.4904458598726" cy="295.75371549893845" r="4.88216560509554" fill="#dc2626" />
+  <text x="776" y="385" text-anchor="end" fill="#dc2626" font-family="monospace" font-size="13" font-weight="bold">Ferrari - SF90 Stradale  L:4710mm</text>
+</svg>

@@ -1,0 +1,26 @@
+# EVOLUTION AI - LLM 推理服务 Docker Compose
+# 一键管理：.\scripts\docker-llm.ps1          (构建+启动+测试)
+# 单独操作：.\scripts\docker-llm.ps1 up|logs|test|status|down|restart
+
+services:
+  llm-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.llm
+    container_name: evolution-llm
+    ports:
+      - "11434:11434"
+    volumes:
+      # 挂载微调模型（只读）
+      - ./data/training/merged/merged_model:/models/merged_model:ro
+      # 挂载知识库（只读，便于实时更新）
+      - ./data/training/parametric_design_knowledge.json:/app/data/training/parametric_design_knowledge.json:ro
+    environment:
+      - MODEL_PATH=/models/merged_model
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
