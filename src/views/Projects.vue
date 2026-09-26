@@ -2,42 +2,42 @@
   <div class="projects-page">
     <div class="page-header">
       <div class="header-left">
-        <h2 class="page-title">Projects</h2>
-        <p class="page-subtitle">Manage and organize your design projects</p>
+        <h2 class="page-title">{{ t('projects.title') }}</h2>
+        <p class="page-subtitle">{{ t('projects.subtitle') }}</p>
       </div>
       <el-button type="primary" class="btn-primary" @click="showCreateDialog = true">
         <el-icon><Plus /></el-icon>
-        <span>New Project</span>
+        <span>{{ t('projects.newProject') }}</span>
       </el-button>
     </div>
 
     <div class="filter-bar">
-      <el-input v-model="searchQuery" placeholder="Search projects..." class="search-input" clearable>
+      <el-input v-model="searchQuery" :placeholder="t('projects.search')" class="search-input" clearable>
         <template #prefix>
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
-      <el-select v-model="statusFilter" placeholder="Filter by status" clearable class="filter-select">
-        <el-option label="Active" value="Active" />
-        <el-option label="Completed" value="Completed" />
-        <el-option label="Draft" value="Draft" />
+      <el-select v-model="statusFilter" :placeholder="t('projects.statusFilter')" clearable class="filter-select">
+        <el-option :label="t('projects.active')" value="Active" />
+        <el-option :label="t('projects.completed')" value="Completed" />
+        <el-option :label="t('projects.draft')" value="Draft" />
       </el-select>
-      <el-select v-model="sortBy" placeholder="Sort by" class="sort-select">
-        <el-option label="Name" value="name" />
-        <el-option label="Created Date" value="createdAt" />
-        <el-option label="Updated Date" value="updatedAt" />
+      <el-select v-model="sortBy" :placeholder="t('projects.sortBy')" class="sort-select">
+        <el-option :label="t('projects.sortName')" value="name" />
+        <el-option :label="t('projects.sortCreatedAt')" value="createdAt" />
+        <el-option :label="t('projects.sortUpdatedAt')" value="updatedAt" />
       </el-select>
       <el-button
         type="text"
         class="sort-order-btn"
         @click="toggleSortOrder"
-        :title="sortOrder === 'asc' ? 'Sort ascending' : 'Sort descending'"
+        :title="sortOrder === 'asc' ? t('projects.sortAsc') : t('projects.sortDesc')"
       >
         <el-icon><ArrowUp v-if="sortOrder === 'asc'" /><ArrowDown v-else /></el-icon>
       </el-button>
       <el-button type="text" class="reset-btn" @click="resetFilters">
         <el-icon><RefreshLeft /></el-icon>
-        <span>Reset</span>
+        <span>{{ t('common.reset') }}</span>
       </el-button>
     </div>
 
@@ -53,11 +53,11 @@
             <el-icon :size="20"><FolderOpened /></el-icon>
           </div>
           <div class="header-actions">
-            <el-tag :type="getStatusType(project.status)" effect="dark" size="small">{{ project.status }}</el-tag>
+            <el-tag :type="getStatusType(project.status)" effect="dark" size="small">{{ getStatusText(project.status) }}</el-tag>
             <el-popconfirm
-              title="Delete this project?"
-              confirm-button-text="Delete"
-              cancel-button-text="Cancel"
+              :title="t('projects.confirmDelete')"
+              :confirm-button-text="t('common.delete')"
+              :cancel-button-text="t('common.cancel')"
               @confirm.stop="handleDelete(project.id)"
             >
               <template #reference>
@@ -78,7 +78,7 @@
             </span>
             <span class="meta-item">
               <el-icon :size="12"><Picture /></el-icon>
-              <span>{{ project.modelCount || 0 }} models</span>
+              <span>{{ t('projects.modelsCount', { count: project.modelCount || 0 }) }}</span>
             </span>
           </div>
         </div>
@@ -90,21 +90,23 @@
       <p class="error-text">{{ error }}</p>
       <el-button type="primary" @click="loadProjectsData">
         <el-icon><Refresh /></el-icon>
-        <span>Retry</span>
+        <span>{{ t('projects.retry') }}</span>
       </el-button>
     </div>
 
     <div v-else-if="!isLoading && filteredProjects.length === 0" class="empty-state">
       <el-icon :size="48" class="empty-icon"><FolderOpened /></el-icon>
-      <p class="empty-text">No projects found</p>
-      <p class="empty-hint">Create your first project to get started</p>
+      <p class="empty-text">{{ t('projects.noProjects') }}</p>
+      <p class="empty-hint">{{ t('projects.createFirstHint') }}</p>
     </div>
 
     <div v-if="!isLoading && filteredProjects.length > 0" class="pagination-bar">
       <span class="pagination-info">
-        Showing {{ (currentPage - 1) * 9 + 1 }} - 
-        {{ Math.min(currentPage * 9, filteredProjects.length) }} 
-        of {{ filteredProjects.length }} projects
+        {{ t('projects.showingRange', {
+          start: (currentPage - 1) * 9 + 1,
+          end: Math.min(currentPage * 9, filteredProjects.length),
+          total: filteredProjects.length
+        }) }}
       </span>
       <el-pagination
         v-model:current-page="currentPage"
@@ -116,15 +118,15 @@
       />
     </div>
 
-    <el-dialog v-model="showCreateDialog" title="Create New Project" width="480px" class="create-dialog">
+    <el-dialog v-model="showCreateDialog" :title="t('projects.createTitle')" width="480px" class="create-dialog">
       <el-form :model="projectForm" label-position="top">
-        <el-form-item label="Project Name">
-          <el-input v-model="projectForm.name" placeholder="Enter project name" />
+        <el-form-item :label="t('projects.projectNameLabel')">
+          <el-input v-model="projectForm.name" :placeholder="t('projects.enterName')" />
         </el-form-item>
-        <el-form-item label="Description">
-          <el-input v-model="projectForm.description" type="textarea" :rows="3" placeholder="Brief description of the project" />
+        <el-form-item :label="t('projects.description')">
+          <el-input v-model="projectForm.description" type="textarea" :rows="3" :placeholder="t('projects.descPlaceholder')" />
         </el-form-item>
-        <el-form-item label="Project Document (Markdown)">
+        <el-form-item :label="t('projects.documentLabel')">
           <div class="upload-area" @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop">
             <input
               ref="fileInputRef"
@@ -134,14 +136,14 @@
               @change="handleFileSelect"
             />
             <el-icon :size="32" class="upload-icon"><Upload /></el-icon>
-            <span class="upload-text">{{ projectForm.document ? 'Replace document' : 'Click or drag to upload .md file' }}</span>
+            <span class="upload-text">{{ projectForm.document ? t('projects.replaceDocument') : t('projects.uploadMdHint') }}</span>
             <span v-if="projectForm.document" class="upload-filename">{{ projectForm.documentName }}</span>
           </div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">Cancel</el-button>
-        <el-button type="primary" class="btn-primary" @click="createProject">Create</el-button>
+        <el-button @click="showCreateDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" class="btn-primary" @click="createProject">{{ t('common.create') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -150,11 +152,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus, Search, FolderOpened, Clock, Picture, Upload, Delete, ArrowUp, ArrowDown, RefreshLeft, Warning, Refresh } from '@element-plus/icons-vue'
 import { useProjectStore } from '../stores/project.js'
 import { mockProjects } from '../data/mockProjects.js'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const fileInputRef = ref(null)
 const projectStore = useProjectStore()
@@ -267,6 +271,11 @@ const getStatusType = (status) => {
   return types[status] || 'info'
 }
 
+const getStatusText = (status) => {
+  const keys = { Active: 'projects.active', Completed: 'projects.completed', Draft: 'projects.draft' }
+  return keys[status] ? t(keys[status]) : (status || '-')
+}
+
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   try {
@@ -282,7 +291,7 @@ const openProject = (id) => {
 
 const createProject = async () => {
   if (!projectForm.value.name.trim()) {
-    ElMessage.warning('Please enter a project name')
+    ElMessage.warning(t('projects.enterName'))
     return
   }
   if (useMockFallback.value) {
@@ -297,7 +306,7 @@ const createProject = async () => {
       modelCount: 0,
       document: projectForm.value.document
     })
-    ElMessage.success('Project created successfully (mock)')
+    ElMessage.success(t('projects.createSuccessMock'))
     showCreateDialog.value = false
     projectForm.value = { name: '', description: '', document: '', documentName: '' }
     return
@@ -308,25 +317,25 @@ const createProject = async () => {
       description: projectForm.value.description,
       document: projectForm.value.document
     })
-    ElMessage.success('Project created successfully')
+    ElMessage.success(t('projects.createSuccess'))
     showCreateDialog.value = false
     projectForm.value = { name: '', description: '', document: '', documentName: '' }
   } catch (err) {
-    ElMessage.error(err.message || 'Failed to create project')
+    ElMessage.error(err.message || t('projects.createFailed'))
   }
 }
 
 const handleDelete = async (id) => {
   if (useMockFallback.value) {
     mockProjectsLocal.value = mockProjectsLocal.value.filter(p => p.id !== id)
-    ElMessage.success('Project deleted (mock)')
+    ElMessage.success(t('projects.deleteSuccessMock'))
     return
   }
   try {
     await projectStore.deleteProject(id)
-    ElMessage.success('Project deleted successfully')
+    ElMessage.success(t('projects.deleteSuccess'))
   } catch (err) {
-    ElMessage.error(err.message || 'Failed to delete project')
+    ElMessage.error(err.message || t('projects.deleteFailed'))
   }
 }
 
@@ -346,7 +355,7 @@ const handleDrop = (event) => {
   if (file && (file.name.endsWith('.md') || file.name.endsWith('.txt'))) {
     loadFile(file)
   } else if (file) {
-    ElMessage.warning('Only .md and .txt files are allowed')
+    ElMessage.warning(t('projects.fileTypeWarn'))
   }
 }
 
@@ -355,7 +364,7 @@ const loadFile = (file) => {
   reader.onload = (e) => {
     projectForm.value.document = e.target?.result || ''
     projectForm.value.documentName = file.name
-    ElMessage.success(`Loaded: ${file.name}`)
+    ElMessage.success(t('projects.fileLoaded', { name: file.name }))
   }
   reader.readAsText(file, 'utf-8')
 }

@@ -7,10 +7,15 @@ const api = axios.create({
   timeout: 60000
 })
 
-// 请求拦截器：记录请求开始时间和详细信息
+// 请求拦截器：JWT 注入 + 记录请求开始时间和详细信息
 api.interceptors.request.use(
   config => {
     config.metadata = { startTime: Date.now() }
+    // 自动携带 JWT（登录/注册等公开接口也可携带，不影响）
+    const token = localStorage.getItem('evoai_token')
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     const { method, url, headers, data, params } = config
     console.groupCollapsed(`🔄 [${method?.toUpperCase()}] ${url}`)
     console.log('📝 Request Headers:', headers)
@@ -55,6 +60,17 @@ api.interceptors.response.use(
     }
     console.log(`⏱️ Duration: ${duration}ms`)
     console.groupEnd()
+
+    // 401 统一处理：令牌缺失/失效 → 清除并跳转登录页
+    // （登录/注册接口本身的 401 由调用页面自行提示，不跳转）
+    const isAuthEndpoint = typeof config?.url === 'string' &&
+      config.url.startsWith('/auth/')
+    if (response?.status === 401 && !isAuthEndpoint) {
+      localStorage.removeItem('evoai_token')
+      if (!window.location.hash.startsWith('#/login')) {
+        window.location.hash = '#/login'
+      }
+    }
     return Promise.reject(error)
   }
 )
@@ -169,6 +185,34 @@ export const exportAPI = {
   getHistory: (modelId) => api.get(`/export/history/${modelId}`)
 }
 
+// 导入改参导出 API（全链路工作流）
+export const importExportAPI = {
+  // 导入
+  importModel: (data) => api.post('/import-export/import', data),
+  importFile: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/import-export/import/file', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  // 参数查询
+  getParams: (sid) => api.get(`/import-export/${sid}/params`),
+  getParamGroups: (sid) => api.get(`/import-export/${sid}/params/groups`),
+  // 参数修改
+  modifyParams: (sid, overrides) => api.put(`/import-export/${sid}/params`, { overrides }),
+  // 预览
+  getPreview: (sid) => api.get(`/import-export/${sid}/preview`),
+  // 导出
+  exportModel: (sid, formats, name) => api.post(`/import-export/${sid}/export`, { formats, name }),
+  downloadFile: (sid, filename) => api.get(`/import-export/${sid}/download/${filename}`, { responseType: 'blob' }),
+  // 参数快照
+  getSnapshot: (sid) => api.get(`/import-export/${sid}/snapshot`),
+  // 会话管理
+  listSessions: () => api.get('/import-export/sessions'),
+  deleteSession: (sid) => api.delete(`/import-export/${sid}`)
+}
+
 // 模型变体 API
 export const variantAPI = {
   create: (data) => api.post('/variants/', data),
@@ -215,7 +259,15 @@ export const modifyAPI = {
 
 // AI训练集 API - 云端计算服务
 export const aiAPI = {
+  // 创建后台 PyTorch 训练任务（返回任务对象，通过 getTask 轮询）
   train: (data) => api.post('/ai/train', data),
+  // 同步生成一批合成样本（Designer「云端训练批次」）
+  trainBatch: (data) => api.post('/ai/train/batch', data),
+  // 训练任务管理
+  listTasks: (status = null) => api.get('/ai/tasks', { params: status ? { status_filter: status } : {} }),
+  getTask: (id) => api.get(`/ai/tasks/${id}`),
+  cancelTask: (id) => api.post(`/ai/tasks/${id}/cancel`),
+  getTrainingCapabilities: () => api.get('/ai/training/capabilities'),
   evaluateQuality: (data) => api.post('/ai/evaluate-quality', data),
   classifyStyle: (featureVector) => api.post('/ai/classify-style', { feature_vector: featureVector }),
   generateDesign: (data) => api.post('/ai/generate-design', data),
@@ -231,6 +283,28 @@ export const aiAPI = {
   chatWithExpert: (question, context) => api.post('/ai/chat', { question, context }),
   getAIHealth: () => api.get('/ai/health'),
   getAIModels: () => api.get('/ai/models')
+}
+
+// 用户认证 API
+export const authAPI = {
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  me: () => api.get('/auth/me'),
+  // 登录方式探测：前端据此隐藏未配置的第三方登录入口
+  methods: () => api.get('/auth/methods'),
+  // 微信扫码登录：获取授权二维码 URL（未配置时后端返回 503）
+  wechatQr: () => api.get('/auth/wechat/qr'),
+  // 微信公众号网页授权：按会话票据获取授权 URL（未配置时后端返回 503）
+  mpAuthorize: (ticket) => api.get('/auth/mp/authorize', { params: { ticket } }),
+  // 公众号扫码轮询：按会话票据查询授权结果（pending / done / expired）
+  mpPoll: (ticket) => api.get('/auth/mp/poll', { params: { ticket } })
+}
+
+// API Key(Token) 管理
+export const apiKeyAPI = {
+  list: () => api.get('/api-keys'),
+  set: (provider, apiKey) => api.put(`/api-keys/${provider}`, { api_key: apiKey }),
+  remove: (provider) => api.delete(`/api-keys/${provider}`)
 }
 
 // 百度文心一言 API
@@ -299,13 +373,25 @@ export const kimiAPI = {
   images: (prompt) => api.post('/llm/kimi/images/generations', { prompt })
 }
 
+// 硅基流动 SiliconFlow 聚合平台（OpenAI 兼容）
+export const siliconflowAPI = {
+  chat: (messages, model = 'Qwen/Qwen2.5-7B-Instruct') => api.post('/llm/siliconflow/chat/completions', {
+    model,
+    messages,
+    temperature: 0.8
+  }),
+  embeddings: (text) => api.post('/llm/siliconflow/embeddings', { input: text }),
+  images: (prompt) => api.post('/llm/siliconflow/images/generations', { prompt })
+}
+
 const llmProviders = {
   ernie: ernieAPI,
   qwen: qwenAPI,
   hunyuan: hunyuanAPI,
   doubao: doubaoAPI,
   deepseek: deepseekAPI,
-  kimi: kimiAPI
+  kimi: kimiAPI,
+  siliconflow: siliconflowAPI
 }
 
 // 大模型统一调用 API

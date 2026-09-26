@@ -25,29 +25,29 @@
         <div class="video-overlay"></div>
       </div>
       <div class="hero-content">
-        <div class="hero-badge">Class A Surface Development Platform</div>
-        <h1 class="hero-title">EVOLUTION AI</h1>
-        <p class="hero-subtitle">From Concept to Class A - Parametric Automotive Surface Generation</p>
+        <div class="hero-badge">{{ t('app.subtitle') }}</div>
+        <h1 class="hero-title">{{ t('app.title') }}</h1>
+        <p class="hero-subtitle">{{ t('dashboard.heroSubtitle') }}</p>
         <div class="hero-stats">
           <div class="hero-stat">
             <span class="stat-number">22</span>
-            <span class="stat-unit">Dimensions</span>
+            <span class="stat-unit">{{ t('dashboard.heroDimensions') }}</span>
           </div>
           <div class="hero-stat">
             <span class="stat-number">19</span>
-            <span class="stat-unit">Models</span>
+            <span class="stat-unit">{{ t('dashboard.statModels') }}</span>
           </div>
           <div class="hero-stat">
             <span class="stat-number">5</span>
-            <span class="stat-unit">Brands</span>
+            <span class="stat-unit">{{ t('dashboard.heroBrands') }}</span>
           </div>
         </div>
         <div class="hero-actions">
           <el-button type="primary" size="large" @click="$router.push('/designer')">
-            Start Designing
+            {{ t('dashboard.startDesigning') }}
           </el-button>
           <el-button size="large" @click="$router.push('/demo')">
-            View Demo
+            {{ t('dashboard.viewDemo') }}
           </el-button>
         </div>
       </div>
@@ -69,24 +69,24 @@
       <el-card class="content-card">
         <template #header>
           <div class="card-header">
-            <span class="card-title">Recent Projects</span>
-            <el-button type="primary" text @click="$router.push('/projects')">View All</el-button>
+            <span class="card-title">{{ t('dashboard.recentProjects') }}</span>
+            <el-button type="primary" text @click="$router.push('/projects')">{{ t('dashboard.viewAll') }}</el-button>
           </div>
         </template>
         <el-table :data="recentProjects" style="width: 100%" :row-style="{ background: 'transparent' }">
-          <el-table-column prop="name" label="Project Name" />
-          <el-table-column prop="status" label="Status" width="120">
+          <el-table-column prop="name" :label="t('dashboard.projectName')" />
+          <el-table-column prop="status" :label="t('dashboard.status')" width="120">
             <template #default="{ row }">
-              <el-tag :type="getStatusType(row.status)" effect="dark" size="small">{{ row.status }}</el-tag>
+              <el-tag :type="getStatusType(row.status)" effect="dark" size="small">{{ getStatusLabel(row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createdAt" label="Created" width="160" />
+          <el-table-column prop="createdAt" :label="t('dashboard.createdAt')" width="160" />
         </el-table>
       </el-card>
 
       <el-card class="content-card">
         <template #header>
-          <span class="card-title">Workflow Status</span>
+          <span class="card-title">{{ t('dashboard.workflowStatus') }}</span>
         </template>
         <div class="workflow-list">
           <div class="workflow-item" v-for="item in workflowItems" :key="item.id">
@@ -97,7 +97,7 @@
             <el-progress :percentage="item.progress" :stroke-width="8" :show-text="false" :color="'#4ade80'" />
             <div class="workflow-status">
               <span class="status-dot" :class="item.status"></span>
-              <span class="status-text">{{ item.statusText }}</span>
+              <span class="status-text">{{ t('dashboard.' + item.statusText) }}</span>
             </div>
           </div>
         </div>
@@ -107,8 +107,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { FolderOpened, Picture, CircleCheck, Download } from '@element-plus/icons-vue'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const heroVideo = ref(null)
 const videoError = ref(false)
@@ -142,32 +145,37 @@ onMounted(() => {
   }
 })
 
-const statCards = [
-  { key: 'projects', icon: FolderOpened, value: '24', label: 'Projects' },
-  { key: 'models', icon: Picture, value: '156', label: 'Models' },
-  { key: 'quality', icon: CircleCheck, value: '94.2%', label: 'Quality Score' },
-  { key: 'exported', icon: Download, value: '89', label: 'Exported Files' }
-]
+const statCards = computed(() => [
+  { key: 'projects', icon: FolderOpened, value: '24', label: t('dashboard.statProjects') },
+  { key: 'models', icon: Picture, value: '156', label: t('dashboard.statModels') },
+  { key: 'quality', icon: CircleCheck, value: '94.2%', label: t('dashboard.qualityScore') },
+  { key: 'exported', icon: Download, value: '89', label: t('dashboard.exportedFiles') }
+])
 
-const recentProjects = [
-  { id: 1, name: 'EV-Sedan Concept', status: 'Active', createdAt: '2026-07-10' },
-  { id: 2, name: 'SUV-A Platform', status: 'Completed', createdAt: '2026-07-08' },
-  { id: 3, name: 'Sports Coupe V2', status: 'Active', createdAt: '2026-07-05' },
-  { id: 4, name: 'Hatchback Design', status: 'Draft', createdAt: '2026-07-02' },
-  { id: 5, name: 'Crossover Study', status: 'Completed', createdAt: '2026-06-28' }
-]
+const recentProjects = computed(() => [
+  { id: 1, name: t('dashboard.recentProject1'), status: 'Active', createdAt: '2026-07-10' },
+  { id: 2, name: t('dashboard.recentProject2'), status: 'Completed', createdAt: '2026-07-08' },
+  { id: 3, name: t('dashboard.recentProject3'), status: 'Active', createdAt: '2026-07-05' },
+  { id: 4, name: t('dashboard.recentProject4'), status: 'Draft', createdAt: '2026-07-02' },
+  { id: 5, name: t('dashboard.recentProject5'), status: 'Completed', createdAt: '2026-06-28' }
+])
 
-const workflowItems = [
-  { id: 1, name: 'EV-Sedan Surface Generation', progress: 75, status: 'running', statusText: 'In Progress' },
-  { id: 2, name: 'SUV-A Quality Check', progress: 100, status: 'completed', statusText: 'Completed' },
-  { id: 3, name: 'Sports Coupe Optimization', progress: 45, status: 'running', statusText: 'In Progress' },
-  { id: 4, name: 'Hatchback Export', progress: 0, status: 'pending', statusText: 'Pending' }
-]
+const workflowItems = computed(() => [
+  { id: 1, name: t('dashboard.workflowName1'), progress: 75, status: 'running', statusText: 'inProgress' },
+  { id: 2, name: t('dashboard.workflowName2'), progress: 100, status: 'completed', statusText: 'completed' },
+  { id: 3, name: t('dashboard.workflowName3'), progress: 45, status: 'running', statusText: 'inProgress' },
+  { id: 4, name: t('dashboard.workflowName4'), progress: 0, status: 'pending', statusText: 'pending' }
+])
 
 const getStatusType = (status) => {
   const types = { Active: 'success', Completed: 'info', Draft: 'warning' }
   return types[status] || 'info'
 }
+
+// 原始状态值（Active/Completed/Draft）→ i18n 文案
+const statusLabelMap = { Active: 'inProgress', Completed: 'completed', Draft: 'draft' }
+const getStatusLabel = (status) =>
+  t(`dashboard.${statusLabelMap[status] || 'draft'}`)
 </script>
 
 <style scoped>

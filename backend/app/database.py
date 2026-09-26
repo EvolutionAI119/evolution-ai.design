@@ -1,7 +1,7 @@
 """SQLAlchemy数据库引擎与ORM模型"""
 from datetime import datetime
 from sqlalchemy import (create_engine, Column, Integer, String, Float, Text,
-                        DateTime, Boolean, ForeignKey)
+                        DateTime, Boolean, ForeignKey, UniqueConstraint)
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
 from .config import settings
@@ -122,9 +122,86 @@ class ModelVariant(Base):
     parent_variant = relationship("ModelVariant", remote_side=[id])
 
 
+class User(Base):
+    """用户账户"""
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    username = Column(String(100), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    # 微信扫码登录（开放平台 OpenID）
+    wechat_unionid = Column(String(64), unique=True, index=True, nullable=True)
+    wechat_openid = Column(String(64), unique=True, index=True, nullable=True)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    api_keys = relationship("ApiKey", back_populates="user",
+                            cascade="all, delete-orphan")
+
+
+class ApiKey(Base):
+    """用户配置的各 LLM 提供商 API Key（Fernet 加密存储）"""
+    __tablename__ = "api_keys"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    provider = Column(String(30), nullable=False)   # ernie/qwen/hunyuan/doubao/deepseek/kimi
+    key_encrypted = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="api_keys")
+    # 同一用户同一提供商仅保留一条
+    __table_args__ = (
+        UniqueConstraint("user_id", "provider", name="uq_api_keys_user_provider"),
+    )
+
+
+class ParameterRecord(Base):
+    """参数持久化记录（替代 modify 路由的内存 _parameters）"""
+    __tablename__ = "parameter_records"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), unique=True, index=True, nullable=False)
+    value = Column(Float, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class TrainingTask(Base):
+    """AI 训练任务（PyTorch 训练状态持久化）"""
+    __tablename__ = "training_tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    name = Column(String(150), nullable=False)
+    dataset = Column(String(100), default="synthetic")
+    config_json = Column(Text, default="{}")         # epochs/batch_size/lr 等
+    status = Column(String(20), default="pending")   # pending/running/completed/failed/cancelled
+    progress = Column(Float, default=0.0)            # 0~100
+    metrics_json = Column(Text, default="[]")        # 每轮 loss/acc 等
+    logs = Column(Text, default="")                  # 训练日志
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+
 def init_db():
     """创建所有表"""
     Base.metadata.create_all(bind=engine)
+    _migrate_wechat_columns()
+
+
+def _migrate_wechat_columns():
+    """向已存在的 users 表补充 wechat_unionid / wechat_openid（SQLite 简化版）。"""
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        return
+    existing = {col["name"] for col in inspector.get_columns("users")}
+    with engine.begin() as conn:
+        if "wechat_unionid" not in existing:
+            conn.execute(text("ALTER TABLE users ADD COLUMN wechat_unionid VARCHAR(64)"))
+        if "wechat_openid" not in existing:
+            conn.execute(text("ALTER TABLE users ADD COLUMN wechat_openid VARCHAR(64)"))
 
 
 def get_db():

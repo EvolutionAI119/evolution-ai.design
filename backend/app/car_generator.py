@@ -10,11 +10,18 @@ from .nurbs import NURBSSurface, ControlPoint
 class NURBSCarBodyGenerator:
     """车身生成器：读取汽车参数配置，生成各部件NURBS曲面并支持导出"""
 
-    def __init__(self, config_path=None):
+    def __init__(self, config_path=None, config_override=None):
         if config_path is None:
             config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'automotive_parameters.json')
         with open(config_path, 'r', encoding='utf-8') as f:
             self.config = json.load(f)
+        # 应用参数覆盖：config_override 为 {group: {key: value}} 的扁平字典
+        if config_override:
+            for group, items in config_override.items():
+                if group in self.config['automotive_parameters']:
+                    for key, val in items.items():
+                        if key in self.config['automotive_parameters'][group]:
+                            self.config['automotive_parameters'][group][key]['value'] = val
         self.params = self.config['automotive_parameters']
         self.components_cfg = self.config['car_body_components']
         self.nurbs_templates = self.config['nurbs_surface_templates']

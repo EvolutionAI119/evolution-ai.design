@@ -237,3 +237,57 @@ class ModelCompareRequest(BaseModel):
     model_id_a: int
     model_id_b: int
     compare_fields: Optional[List[str]] = None
+
+
+# ============ 导入改参导出 ============
+
+class ParamOverrideItem(BaseModel):
+    group: str = Field(..., description="参数分组，如 整车尺寸/车身部件/造型角度")
+    key: str = Field(..., description="参数键名，如 overall_length")
+    value: float = Field(..., description="新参数值")
+
+
+class ParamModifyRequest(BaseModel):
+    overrides: List[ParamOverrideItem] = Field(..., description="要修改的参数列表")
+
+
+class ImportModelRequest(BaseModel):
+    params: Optional[Dict[str, Dict[str, float]]] = Field(
+        None, description="参数覆盖字典 {group: {key: value}}，为空则使用默认参数")
+    name: Optional[str] = Field(None, description="模型名称")
+
+
+class ExportFromSessionRequest(BaseModel):
+    formats: List[str] = Field(default=["step"], description="导出格式：step/stl/obj/glb/json")
+    name: Optional[str] = Field(None, description="导出文件名（不含扩展名）")
+
+
+class SessionResponse(BaseModel):
+    session_id: str
+    name: str
+    param_count: int
+    created_at: str
+    source_format: Optional[str] = Field(None, description="导入源格式标签，如 .step / .catpart / .json")
+    warnings: Optional[List[str]] = Field(None, description="导入时产生的警告（如单位转换、几何解析回退）")
+    bbox_size_mm: Optional[List[float]] = Field(None, description="整车包围盒尺寸 [长度, 高度, 宽度] mm（几何解析成功时才有）")
+    overrides_count: Optional[int] = Field(None, description="通过 CAD 几何反推得到的参数覆盖数量")
+    meta: Optional[Dict[str, Any]] = Field(None, description="其它元信息（原始文件引用、解析状态等）")
+    # 导入后图片预览契约：前端 Deliver / Designer 直接用 brandKey / modelKey 匹配真车图，
+    # 未命中品牌/车型时走运行时 SVG 兜底，保证整车数据导入后必有图可显示。
+    inferred_brand_key: Optional[str] = Field(None, description="从文件名/名称推断的品牌稳定键，如 rolls-royce")
+    inferred_model_key: Optional[str] = Field(None, description="从文件名/名称推断的车型稳定键，如 phantom")
+    preview_url: Optional[str] = Field(None, description="3D 部件预览接口：/api/v1/import-export/{sid}/preview（供前端渲染三维缩略图）")
+
+
+class ParamInfoResponse(BaseModel):
+    # 为前端 i18n 提供稳定英文键：前端一律以 group_key / key 拼接 t()，不直出中文。
+    group: str = Field(..., description="分组中文显示名（保留向后兼容，前端不直接渲染）")
+    group_key: str = Field(..., description="分组稳定英文键，如 overall_dimensions / body_components / styling_angles / class_a_params / proportions")
+    key: str = Field(..., description="参数稳定英文键，如 overall_length，可直接作为 i18n key")
+    name: str = Field(..., description="参数中文显示名（保留向后兼容，前端不直接渲染）")
+    value: float
+    unit: str
+    type: str
+    min_value: float
+    max_value: float
+    category: str

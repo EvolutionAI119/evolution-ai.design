@@ -2,16 +2,16 @@
   <div class="quality-page">
     <div class="page-header">
       <div class="header-left">
-        <h2 class="page-title">Quality Check</h2>
-        <p class="page-subtitle">Comprehensive surface quality analysis and validation</p>
+        <h2 class="page-title">{{ t('quality.title') }}</h2>
+        <p class="page-subtitle">{{ t('quality.pageSubtitle') }}</p>
       </div>
       <div class="header-actions">
-        <el-select v-model="selectedModel" placeholder="Select model" class="model-select">
+        <el-select v-model="selectedModel" :placeholder="t('quality.selectModel')" class="model-select">
           <el-option v-for="model in models" :key="model.id" :label="model.name" :value="model.id" />
         </el-select>
         <el-button type="primary" class="btn-primary" :disabled="!selectedModel" @click="startCheck">
           <el-icon><VideoPlay /></el-icon>
-          <span>Start Check</span>
+          <span>{{ t('quality.startCheck') }}</span>
         </el-button>
       </div>
     </div>
@@ -22,15 +22,15 @@
           <div class="check-icon" :class="check.key">
             <el-icon :size="24"><component :is="check.icon" /></el-icon>
           </div>
-          <el-tag :type="check.statusType" effect="dark" size="small">{{ check.statusText }}</el-tag>
+          <el-tag :type="check.statusType" effect="dark" size="small">{{ checkStatusText(check.status) }}</el-tag>
         </div>
-        <h3 class="check-title">{{ check.title }}</h3>
-        <p class="check-desc">{{ check.description }}</p>
+        <h3 class="check-title">{{ t(check.titleKey) }}</h3>
+        <p class="check-desc">{{ t(check.descKey) }}</p>
         <div class="check-progress" v-if="check.status === 'running'">
           <el-progress :percentage="check.progress" :stroke-width="6" :show-text="false" :color="'#4ade80'" />
         </div>
         <div class="check-score" v-if="check.status === 'completed'">
-          <span class="score-label">Score</span>
+          <span class="score-label">{{ t('quality.score') }}</span>
           <span class="score-value">{{ check.score }}/100</span>
         </div>
       </el-card>
@@ -39,28 +39,28 @@
     <el-card class="reports-card">
       <template #header>
         <div class="card-header">
-          <span class="card-title">Recent Reports</span>
-          <el-button type="primary" text>View All</el-button>
+          <span class="card-title">{{ t('quality.recentReports') }}</span>
+          <el-button type="primary" text>{{ t('dashboard.viewAll') }}</el-button>
         </div>
       </template>
       <el-table :data="recentReports" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="modelName" label="Model" />
-        <el-table-column prop="checkType" label="Check Type" width="140" />
-        <el-table-column prop="score" label="Score" width="120">
+        <el-table-column prop="id" :label="t('projects.id')" width="80" />
+        <el-table-column prop="modelName" :label="t('quality.colModel')" />
+        <el-table-column prop="checkType" :label="t('quality.checkType')" width="140" />
+        <el-table-column prop="score" :label="t('quality.score')" width="120">
           <template #default="{ row }">
             <span :class="row.score >= 80 ? 'score-pass' : 'score-fail'">{{ row.score }}/100</span>
           </template>
         </el-table-column>
-        <el-table-column prop="result" label="Result" width="100">
+        <el-table-column prop="result" :label="t('quality.result')" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.passed ? 'success' : 'danger'" effect="dark" size="small">{{ row.passed ? 'Pass' : 'Fail' }}</el-tag>
+            <el-tag :type="row.passed ? 'success' : 'danger'" effect="dark" size="small">{{ row.passed ? t('quality.passShort') : t('quality.failShort') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="date" label="Date" width="160" />
-        <el-table-column label="Actions" width="100">
+        <el-table-column prop="date" :label="t('quality.dateLabel')" width="160" />
+        <el-table-column :label="t('common.actions')" width="100">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="viewReport(row)">View</el-button>
+            <el-button type="primary" link size="small" @click="viewReport(row)">{{ t('quality.view') }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -69,73 +69,81 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { VideoPlay, Grid, Sunny, TrendCharts } from '@element-plus/icons-vue'
 import { qualityAPI, modelAPI } from '../api'
 
+const { t, locale } = useI18n({ useScope: 'global' })
+
 const selectedModel = ref('')
 
-const models = ref([
-  { id: 1, name: 'EV-Sedan Concept v1' },
-  { id: 2, name: 'SUV-A Platform' },
-  { id: 3, name: 'Sports Coupe V2' },
-  { id: 4, name: 'Hatchback Design' }
+const models = computed(() => [
+  { id: 1, name: t('quality.model1') },
+  { id: 2, name: t('quality.model2') },
+  { id: 3, name: t('quality.model3') },
+  { id: 4, name: t('quality.model4') }
 ])
 
 const checkTypes = ref([
   {
     key: 'zebra',
     icon: Grid,
-    title: 'Zebra Analysis',
-    description: 'Analyze surface continuity and reflection lines using zebra striping technique.',
+    titleKey: 'quality.zebraAnalysis',
+    descKey: 'quality.zebraAnalysisDesc',
     status: 'completed',
     statusType: 'success',
-    statusText: 'Completed',
     progress: 100,
     score: 92
   },
   {
     key: 'highlight',
     icon: Sunny,
-    title: 'Highlight Analysis',
-    description: 'Evaluate highlight reflections and surface smoothness across curvature transitions.',
+    titleKey: 'quality.highlightAnalysis',
+    descKey: 'quality.highlightAnalysisDesc',
     status: 'running',
     statusType: 'primary',
-    statusText: 'Running',
     progress: 65,
     score: null
   },
   {
     key: 'curvature',
     icon: TrendCharts,
-    title: 'Curvature Analysis',
-    description: 'Detailed curvature comb analysis for precise surface quality measurement.',
+    titleKey: 'quality.curvatureAnalysis',
+    descKey: 'quality.curvatureAnalysisDesc',
     status: 'not-started',
     statusType: 'info',
-    statusText: 'Not Started',
     progress: 0,
     score: null
   }
 ])
 
-const recentReports = ref([
-  { id: 'R-001', modelName: 'EV-Sedan Concept v1', checkType: 'Full Analysis', score: 94, passed: true, date: '2026-07-12 14:30' },
-  { id: 'R-002', modelName: 'SUV-A Platform', checkType: 'Zebra Analysis', score: 88, passed: true, date: '2026-07-11 10:15' },
-  { id: 'R-003', modelName: 'Sports Coupe V2', checkType: 'Curvature Analysis', score: 76, passed: false, date: '2026-07-10 16:45' },
-  { id: 'R-004', modelName: 'Hatchback Design', checkType: 'Full Analysis', score: 91, passed: true, date: '2026-07-09 09:20' },
-  { id: 'R-005', modelName: 'EV-Sedan Concept v1', checkType: 'Highlight Analysis', score: 85, passed: true, date: '2026-07-08 11:50' }
+const checkStatusText = (status) => {
+  const keys = {
+    completed: 'quality.statusCompleted',
+    running: 'quality.statusRunning',
+    'not-started': 'quality.statusNotStarted'
+  }
+  return keys[status] ? t(keys[status]) : status
+}
+
+const recentReports = computed(() => [
+  { id: 'R-001', modelName: t('quality.model1'), checkType: t('quality.fullAnalysis'), score: 94, passed: true, date: '2026-07-12 14:30' },
+  { id: 'R-002', modelName: t('quality.model2'), checkType: t('quality.zebraAnalysis'), score: 88, passed: true, date: '2026-07-11 10:15' },
+  { id: 'R-003', modelName: t('quality.model3'), checkType: t('quality.curvatureAnalysis'), score: 76, passed: false, date: '2026-07-10 16:45' },
+  { id: 'R-004', modelName: t('quality.model4'), checkType: t('quality.fullAnalysis'), score: 91, passed: true, date: '2026-07-09 09:20' },
+  { id: 'R-005', modelName: t('quality.model1'), checkType: t('quality.highlightAnalysis'), score: 85, passed: true, date: '2026-07-08 11:50' }
 ])
 
 const startCheck = async () => {
   if (!selectedModel.value) {
-    ElMessage.warning('Please select a model first')
+    ElMessage.warning(t('quality.selectModelFirst'))
     return
   }
   try {
     checkTypes.value[2].status = 'running'
     checkTypes.value[2].statusType = 'primary'
-    checkTypes.value[2].statusText = 'Running'
     checkTypes.value[2].progress = 0
 
     const response = await qualityAPI.check({
@@ -143,24 +151,22 @@ const startCheck = async () => {
       checks: ['zebra', 'highlight', 'curvature']
     })
     const result = response.data
-    
+
     checkTypes.value[2].status = 'completed'
     checkTypes.value[2].statusType = 'success'
-    checkTypes.value[2].statusText = 'Completed'
     checkTypes.value[2].progress = 100
     checkTypes.value[2].score = result.score || 95
-    
-    ElMessage.success('Quality check completed')
+
+    ElMessage.success(t('quality.checkCompleted'))
   } catch (error) {
-    ElMessage.error('Quality check failed')
+    ElMessage.error(t('quality.checkFailed'))
     checkTypes.value[2].status = 'not-started'
     checkTypes.value[2].statusType = 'info'
-    checkTypes.value[2].statusText = 'Not Started'
   }
 }
 
 const viewReport = (row) => {
-  ElMessage.info(`Viewing report ${row.id}`)
+  ElMessage.info(t('quality.viewingReport', { id: row.id }))
 }
 </script>
 

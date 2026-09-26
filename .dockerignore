@@ -1,0 +1,62 @@
+# ======================================================
+#  Evolution-Ai.Design — Docker 构建忽略规则
+#  让 docker build 上下文尽量小（加速、避免 COPY 到无关大文件）
+# ======================================================
+
+# --- 本地容器运行时数据 / 上传物 / 导出物（全部走 Volume 不进镜像） ---
+data/
+*.db
+*.sqlite3
+
+# --- Python 字节码 / venv ---
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# --- Node 依赖 & 中间产物（镜像内做 npm ci / vite build） ---
+node_modules/
+dist/
+.vite/
+.cache/
+.rollup.cache/
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- 日志 & 临时脚本 & 调试输出 ---
+*.log
+deploy/*.log
+scripts/
+docs/
+tests/
+backend/tests/
+backend/_*.py
+backend/conftest.py
+backend/pytest.ini
+backend/test_*.py
+backend/*.log
+
+# --- 调试相关的 3d/大文件（根 .gitignore 已有，这里在 Docker context 层再强化） ---
+3d_model_archive/
+_archive/
+frontend/
+*.step *.iges *.igs *.stp *.stl *.obj *.fbx *.gltf *.glb
+*.zip *.tar *.gz *.mp4 *.pptx *.ppt
+public/_*
+*.jsonl
+
+# --- 环境 / 密钥文件 ---
+.env
+.env.*
+!.env.example

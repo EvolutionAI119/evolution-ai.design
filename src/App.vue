@@ -1,10 +1,12 @@
 <template>
-  <div class="app-container">
+  <!-- 登录/注册页：无侧边栏的全屏布局 -->
+  <router-view v-if="isLoginRoute" />
+  <div v-else class="app-container">
     <el-container>
       <el-aside width="200px" class="sidebar">
         <div class="logo">
           <h2>EVOLUTION AI</h2>
-          <p>Class A Surface Development Platform</p>
+          <p>{{ t('app.subtitle') }}</p>
         </div>
         <el-menu
           :default-active="activeMenu"
@@ -15,15 +17,15 @@
           active-text-color="#4ade80"
         >
           <template #default>
-            <template v-for="group in menuGroups" :key="group.label">
-              <div v-if="group.label" class="menu-group-label">{{ group.label }}</div>
+            <template v-for="group in menuGroups" :key="group.labelKey || 'ungrouped'">
+              <div v-if="group.labelKey" class="menu-group-label">{{ t(group.labelKey) }}</div>
               <el-menu-item
                 v-for="item in group.items"
                 :key="item.path"
                 :index="item.path"
               >
                 <el-icon><component :is="item.icon" /></el-icon>
-                <span>{{ item.name }}</span>
+                <span>{{ t(item.nameKey) }}</span>
               </el-menu-item>
             </template>
           </template>
@@ -37,15 +39,61 @@
             <span class="current-page">{{ currentPageName }}</span>
           </div>
           <div class="header-right">
-            <div class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换到浅色模式' : '切换到深色模式'">
+            <!-- 中英文独立语言切换 -->
+            <div class="lang-switch" :title="t('menu.language')">
+              <button
+                class="lang-btn"
+                :class="{ active: locale === 'zh' }"
+                @click="changeLanguage('zh')"
+              >中</button>
+              <button
+                class="lang-btn"
+                :class="{ active: locale === 'en' }"
+                @click="changeLanguage('en')"
+              >EN</button>
+            </div>
+            <div class="theme-toggle" @click="toggleTheme" :title="isDark ? t('menu.lightMode') : t('menu.darkMode')">
               <el-icon class="header-icon"><component :is="isDark ? Moon : Sunny" /></el-icon>
             </div>
             <el-icon class="header-icon"><Bell /></el-icon>
-            <el-icon class="header-icon"><Setting /></el-icon>
+
+            <!-- 已登录：用户菜单；未登录：登录入口 -->
+            <el-dropdown
+              v-if="auth.isAuthenticated"
+              trigger="click"
+              @command="onUserCommand"
+            >
+              <div class="user-chip">
+                <div class="user-chip-avatar">{{ userInitial }}</div>
+                <span class="user-chip-name">{{ auth.user?.username || '—' }}</span>
+                <el-icon class="chip-arrow"><ArrowDown /></el-icon>
+              </div>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="account">
+                    <el-icon><UserFilled /></el-icon>{{ t('account.menuItem') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="logout" divided>
+                    <el-icon><SwitchButton /></el-icon>{{ t('account.logout') }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-button
+              v-else
+              size="small"
+              class="login-btn"
+              @click="goLogin"
+            >
+              <el-icon><UserFilled /></el-icon>{{ t('auth.login') }}
+            </el-button>
           </div>
         </el-header>
         <el-main class="main-content">
-          <router-view />
+          <!-- Element Plus 组件级语言随全局语言联动 -->
+          <el-config-provider :locale="elementLocale">
+            <router-view />
+          </el-config-provider>
         </el-main>
       </el-container>
     </el-container>
@@ -54,14 +102,42 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
-  Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay, Bell, Setting, Moon, Sunny
+  Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
+  Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton,
 } from '@element-plus/icons-vue'
+// Element Plus 内置语言包
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import enLocale from 'element-plus/dist/locale/en.mjs'
+import { useAuthStore } from './stores/auth'
 
+const route = useRoute()
 const router = useRouter()
+const { t, locale } = useI18n({ useScope: 'global' })
+const auth = useAuthStore()
 
 const isDark = ref(true)
+
+// 登录页采用全屏独立布局
+const isLoginRoute = computed(() => route.name === 'Login')
+
+const userInitial = computed(() => {
+  const name = auth.user?.username || 'U'
+  return name.slice(0, 1).toUpperCase()
+})
+
+const goLogin = () => router.push('/login')
+
+const onUserCommand = (command) => {
+  if (command === 'account') {
+    router.push('/account')
+  } else if (command === 'logout') {
+    auth.logout()
+    router.replace('/login')
+  }
+}
 
 const toggleTheme = () => {
   isDark.value = !isDark.value
@@ -69,40 +145,56 @@ const toggleTheme = () => {
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
 
+// 切换语言：两种语言独立模式，持久化保存
+const changeLanguage = (lang) => {
+  locale.value = lang
+  localStorage.setItem('language', lang)
+  document.documentElement.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en')
+}
+
+// Element Plus 组件语言（分页、日历、校验提示等）
+const elementLocale = computed(() => (locale.value === 'zh' ? zhCn : enLocale))
+
 onMounted(() => {
   const saved = localStorage.getItem('theme')
   if (saved === 'light') {
     isDark.value = false
     document.documentElement.classList.add('light-theme')
   }
+  document.documentElement.setAttribute('lang', locale.value === 'zh' ? 'zh-CN' : 'en')
+  // 本地有令牌时拉取用户信息（失效则保持未登录态）
+  if (auth.token && !auth.user) {
+    auth.fetchMe().catch(() => {})
+  }
 })
 
 const menuGroups = [
   {
-    label: '',
+    labelKey: '',
     items: [
-      { path: '/', name: 'Dashboard', icon: Odometer },
-      { path: '/designer', name: 'AI Designer', icon: Brush }
+      { path: '/', nameKey: 'menu.dashboard', icon: Odometer },
+      { path: '/designer', nameKey: 'menu.aiDesigner', icon: Brush }
     ]
   },
   {
-    label: 'Design',
+    labelKey: 'menu.groupDesign',
     items: [
-      { path: '/projects', name: 'Projects', icon: Folder },
-      { path: '/deep-learning', name: 'Deep Learning Designer', icon: MagicStick }
+      { path: '/projects', nameKey: 'menu.projects', icon: Folder },
+      { path: '/deep-learning', nameKey: 'menu.deepLearning', icon: MagicStick }
     ]
   },
   {
-    label: 'Workflow',
+    labelKey: 'menu.groupWorkflow',
     items: [
-      { path: '/quality', name: 'Quality', icon: CircleCheck },
-      { path: '/deliver', name: 'Deliver', icon: Upload }
+      { path: '/quality', nameKey: 'menu.quality', icon: CircleCheck },
+      { path: '/deliver', nameKey: 'menu.deliver', icon: Upload }
     ]
   },
   {
-    label: '',
+    labelKey: '',
     items: [
-      { path: '/demo', name: 'DEMO', icon: VideoPlay }
+      { path: '/demo', nameKey: 'menu.demo', icon: VideoPlay },
+      { path: '/account', nameKey: 'menu.account', icon: UserFilled }
     ]
   }
 ]
@@ -113,7 +205,7 @@ const activeMenu = computed(() => router.currentRoute.value.path)
 
 const currentPageName = computed(() => {
   const item = allMenuItems.find(m => m.path === router.currentRoute.value.path)
-  return item ? item.name : 'AI Designer'
+  return item ? t(item.nameKey) : t('menu.aiDesigner')
 })
 </script>
 
@@ -245,7 +337,7 @@ body {
   transition: background 0.3s, border-color 0.3s;
 }
 
-.header :deep(.el-header) { 
+.header :deep(.el-header) {
   height: 52px !important;
   padding: 0;
 }
@@ -278,6 +370,36 @@ body {
   gap: 16px;
 }
 
+/* 语言切换器 */
+.lang-switch {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.lang-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-btn:hover { color: var(--text-primary); }
+
+.lang-btn.active {
+  background: var(--accent);
+  color: #06120a;
+}
+
 .theme-toggle {
   display: flex;
   align-items: center;
@@ -292,6 +414,64 @@ body {
 }
 
 .header-icon:hover { color: var(--icon-hover); }
+
+/* 用户芯片 */
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.user-chip:hover {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.user-chip-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #06120a;
+  background: var(--accent);
+}
+
+.user-chip-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip-arrow {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.login-btn {
+  border-color: rgba(74, 222, 128, 0.4);
+  color: var(--accent);
+  background: transparent;
+}
+
+.login-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 .main-content {
   background: var(--bg-primary);

@@ -1,15 +1,16 @@
 """模型修改API路由：NURBS曲面管理与参数化修改"""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any, Tuple
+from sqlalchemy.orm import Session
 
+from ..database import ParameterRecord, get_db
 from ..nurbs import NURBSSurface, ControlPoint
 
 router = APIRouter(prefix="/api/v1/modify", tags=["模型修改"])
 
-# 全局曲面与参数存储
+# 全局曲面存储（参数已迁移至数据库 parameter_records 表持久化）
 _surfaces: Dict[str, NURBSSurface] = {}
-_parameters: Dict[str, Dict[str, Any]] = {}
 _history: List[Dict[str, Any]] = []
 
 
@@ -131,16 +132,44 @@ async def delete_surface(surface_id: str):
 
 # ============ 参数API ============
 
+def _upsert_parameter(db: Session, name: str, value: float) -> ParameterRecord:
+    """按 name 唯一键 upsert 参数记录并提交"""
+    record = (db.query(ParameterRecord)
+              .filter(ParameterRecord.name == name).first())
+    if record:
+        record.value = value
+    else:
+        record = ParameterRecord(name=name, value=value)
+        db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
 @router.get("/parameters")
-async def get_parameters():
-    return {"parameters": _parameters}
+async def get_parameters(db: Session = Depends(get_db)):
+    rows = db.query(ParameterRecord).all()
+    return {"parameters": {
+        r.name: {"name": r.name, "value": r.value} for r in rows
+    }}
+
+
+@router.post("/parameters/add")
+async def add_parameter(data: ParameterUpdate, db: Session = Depends(get_db)):
+    record = _upsert_parameter(db, data.name, data.value)
+    _history.append({"operation": "add_parameter",
+                     "name": data.name, "value": data.value})
+    return {"success": True,
+            "parameter": {"name": record.name, "value": record.value}}
 
 
 @router.post("/parameters/update")
-async def update_parameter(data: ParameterUpdate):
-    _parameters[data.name] = {"name": data.name, "value": data.value}
-    _history.append({"operation": "update_parameter", "name": data.name, "value": data.value})
-    return {"success": True, "parameter": _parameters[data.name]}
+async def update_parameter(data: ParameterUpdate, db: Session = Depends(get_db)):
+    record = _upsert_parameter(db, data.name, data.value)
+    _history.append({"operation": "update_parameter",
+                     "name": data.name, "value": data.value})
+    return {"success": True,
+            "parameter": {"name": record.name, "value": record.value}}
 
 
 @router.get("/parameters/automotive")

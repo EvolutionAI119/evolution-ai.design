@@ -1,0 +1,147 @@
+# =====================================================================
+#  Evolution-Ai.Design — Production Docker Compose
+# ---------------------------------------------------------------------
+#  用法：
+#    cp deploy/.env.example .env            # 可选：自定义环境变量
+#    docker compose up -d --build           # 构建+一键启动
+#    docker compose logs -f backend         # 看后端日志
+#    docker compose exec backend /bin/bash  # 进后端容器（调试）
+#    docker compose down                    # 停止并移除容器（Volume 数据保留）
+#
+#  架构（单主机部署，容器内网互通，外网只暴露 80/443）：
+#    [client] → :80  frontend (nginx) → proxy_pass  http://backend:8000
+#
+#  说明：
+#   * 若启用 HTTPS，请在 nginx 外层加反向代理（Traefik / Caddy / Cloudflare），
+#     并把前端容器端口映射从 80→80 改成 443（及挂载证书），或用 nginx-proxy/acme.sh。
+#   * 会话持久化默认走内存（重启丢失）；要保留 → 打开下方 `redis` service 并
+#     将 backend 的 SESSION_USE_REDIS=true。
+# =====================================================================
+
+name: evolution-ai
+
+services:
+  # ---------------------- 后端 FastAPI ----------------------
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+      args:
+        # 国内网络：构建时 --build-arg PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-}
+        PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-}
+    image: evolution-ai/backend:latest
+    container_name: evoai-backend
+    restart: unless-stopped
+    stop_grace_period: 30s
+    networks:
+      - evoai-net
+    # 生产环境建议不直接对外暴露 8000；只允许 frontend 同网络访问
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+    environment:
+      # —— 基本环境 ——
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG:       ${DEBUG:-false}
+      LOG_LEVEL:   ${LOG_LEVEL:-INFO}
+      API_HOST:    "0.0.0.0"   # 容器内必须监听所有接口，nginx 才能连上
+      API_PORT:    "8000"
+      # —— 数据目录（与 backend.Dockerfile Volume 挂载点一致） ——
+      DATA_DIR:    /app/data
+      MODELS_DIR:  /app/data/models
+      REPORTS_DIR: /app/data/reports
+      EXPORTS_DIR: /app/data/exports
+      # —— CORS（允许的 Origin 列表，逗号分隔；这里填部署前端的对外域名） ——
+      #   典型：http://your-domain.com,https://your-domain.com,http://localhost:5173
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://127.0.0.1,http://localhost}
+      CORS_VARY_ORIGIN:   "true"
+      # —— 安全头 ——
+      HIDE_SERVER_HEADER: "true"
+      SEC_HEADER_HSTS_MAX_AGE: ${SEC_HEADER_HSTS_MAX_AGE:-0}
+      # —— 会话持久化（默认内存；取消注释 redis service 后建议打开） ——
+      SESSION_USE_REDIS:     ${SESSION_USE_REDIS:-false}
+      SESSION_REDIS_URL:     ${SESSION_REDIS_URL:-redis://redis:6379/0}
+      SESSION_TTL_SECONDS:   ${SESSION_TTL_SECONDS:-86400}
+      SESSION_REDIS_PREFIX:  "evoai:prod:session:"
+      # —— 上传限制 ——
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-52428800}   # 50MB
+    volumes:
+      - evoai-data:/app/data
+      - evoai-logs:/app/logs
+    depends_on:
+      # 如果打开了 redis service，请取消下面注释，避免启动时序问题
+      # redis:
+      #   condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 30s
+      timeout:  5s
+      retries:  3
+      start_period: 15s
+
+  # ---------------------- 前端 Nginx ----------------------
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+      args:
+        NPM_REGISTRY: ${NPM_REGISTRY:-}
+    image: evolution-ai/frontend:latest
+    container_name: evoai-frontend
+    restart: unless-stopped
+    stop_grace_period: 10s
+    networks:
+      - evoai-net
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      # 如果加了证书/HTTPS 反代层可启用：
+      # - "443:443"
+    environment:
+      # 传入到 default.conf.template 模板：
+      BACKEND_HOST:          backend
+      BACKEND_PORT:          "8000"
+      FRONTEND_SERVER_NAME:  ${FRONTEND_SERVER_NAME:-_}
+      HSTS_MAX_AGE:          ${SEC_HEADER_HSTS_MAX_AGE:-0}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout:  3s
+      retries:  3
+      start_period: 5s
+
+  # ---------------------- 可选：Redis 会话持久化 ----------------------
+  # 默认注释掉；需要持久化会话/多副本部署时取消注释，并把 backend 的
+  # SESSION_USE_REDIS 置 true。
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: evoai-redis
+  #   restart: unless-stopped
+  #   command: >
+  #     redis-server
+  #       --appendonly yes
+  #       --maxmemory 256mb
+  #       --maxmemory-policy allkeys-lru
+  #   networks:
+  #     - evoai-net
+  #   volumes:
+  #     - evoai-redis:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "--raw", "ping"]
+  #     interval: 20s
+  #     timeout:  3s
+  #     retries:  3
+
+networks:
+  evoai-net:
+    driver: bridge
+
+volumes:
+  evoai-data:
+    driver: local
+  evoai-logs:
+    driver: local
+  # evoai-redis:
+  #   driver: local

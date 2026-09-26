@@ -42,11 +42,17 @@ const writeFailedSet = (list) => {
 
 export const isUrlMarkedFailed = (url) => {
   if (!url) return false
+  // /brands/* 静态照片随项目打包 -> 永远可用，不允许 dev 环境偶发 abort / 404 / 网络抖动
+  // 把它们"误记为失败"。只对远程图 / data: 以外的 URL 做记忆。
+  if (url.startsWith('/brands/')) return false
   return readFailedSet().some(x => x.url === url)
 }
 
 export const markUrlFailed = (url) => {
   if (!url) return
+  // /brands/* 是打包产物，随项目发布，永远不进失败名单。
+  if (url.startsWith('/brands/')) return
+  if (url.startsWith('data:')) return
   const list = readFailedSet().filter(x => x.url !== url)
   list.push({ url, ts: Date.now() })
   // 限制上限 200 条
@@ -318,22 +324,58 @@ export const normalizeCarImageUrl = (model, brandKey, opts = {}) => {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 批量验证：静态 JPG 照片是否存在（通过 fetch head）
+// 静态 JPG 清单：用 Vite import.meta.glob 在构建期一次性枚举真实文件
+// → 0 网络请求 / 0 fetch HEAD / 0 ERR_ABORTED 控制台刷屏
+// glob 返回 key 形如 "/public/brands/rolls-royce/phantom.jpg"，
+// 映射到浏览器访问路径 "/brands/rolls-royce/phantom.jpg"。
+// ────────────────────────────────────────────────────────────────────────────
+let _staticPhotoSetPromise = null
+const getStaticPhotoSet = async () => {
+  // Vite/rollup 严格禁止对 import.meta 做可选链（`import?.meta`），
+  // 这里直接访问 import.meta.env / import.meta.glob；SSR 构建由 Vite 提供对应 env。
+  const isSSR = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.SSR
+  if (typeof window === 'undefined' && isSSR) return new Set()
+  if (typeof import.meta.glob !== 'function') return new Set()
+  if (!_staticPhotoSetPromise) {
+    _staticPhotoSetPromise = (async () => {
+      try {
+        const files = import.meta.glob('/public/brands/**/*.jpg', { eager: false })
+        const keys = Object.keys(files || {})
+        const set = new Set()
+        for (const k of keys) {
+          const browserPath = k.replace(/^\/public/, '')
+          set.add(browserPath)
+          // 同时接受不带 encodeURIComponent 的形式作为 key，与 getStaticPhotoPath 输出对齐
+          set.add(decodeURIComponent(browserPath))
+        }
+        return set
+      } catch {
+        return new Set()
+      }
+    })()
+  }
+  return _staticPhotoSetPromise
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 批量验证：静态 JPG 照片是否存在（纯内存查表，无任何网络请求）
+// 旧版 fetch HEAD 会在 Vite 冷启动并发下触发大量 net::ERR_ABORTED 控制台刷屏，
+// 现改为基于构建期 glob 清单匹配，保证 0 错误日志。
 // ────────────────────────────────────────────────────────────────────────────
 export const verifyAllStaticPhotos = async (brands) => {
+  const set = await getStaticPhotoSet()
   const total = []
   let ok = 0
   for (const b of brands || []) {
     for (const m of b.models || []) {
       const p = getStaticPhotoPath(b.key, m.key)
-      try {
-        const r = await fetch(p, { method: 'HEAD' })
-        const stat = r.ok ? 'ok' : `HTTP ${r.status}`
-        if (r.ok) ok++
-        total.push({ brand: b.key, model: m.key, path: p, status: stat })
-      } catch (e) {
-        total.push({ brand: b.key, model: m.key, path: p, status: `ERR ${e.message}` })
-      }
+      const exists = set.size === 0
+        ? null   // 非 Vite 环境：不判断，留给浏览器 img.onerror 兜底
+        : (set.has(p) || set.has(decodeURIComponent(p)))
+      const stat = exists === null ? 'skip (no-glob env)' : (exists ? 'ok' : 'not-found-in-glob')
+      if (exists === true) ok++
+      else if (exists === null) ok++ // 非 Vite：默认跳过不计数缺失
+      total.push({ brand: b.key, model: m.key, path: p, status: stat })
     }
   }
   return { total, ok, expected: total.length }

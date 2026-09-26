@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 
 // 端口配置说明：
@@ -8,10 +8,17 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: './',
+  // 单元/集成测试：jsdom 提供 localStorage / location，测试文件放 src/tests
+  test: {
+    environment: 'jsdom',
+    include: ['src/tests/**/*.spec.js']
+  },
   server: {
     port: parseInt(process.env.VITE_PORT) || 5173,
     strictPort: false,
-    host: 'localhost',
+    // 显式监听 IPv4 的 127.0.0.1，避免 Vite 5 在 Win 上只绑 [::1]
+    // 导致“localhost / 预览器”按 IPv4 访问时出现「服务不可用」占位页
+    host: '127.0.0.1',
     proxy: {
       '/api/ide': {
         target: 'https://trae-api-cn.mchost.guru',
@@ -19,14 +26,15 @@ export default defineConfig({
         secure: false
       },
       '/api/v1': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true
       }
     }
   },
   preview: {
     port: parseInt(process.env.VITE_PREVIEW_PORT) || 4173,
-    strictPort: false
+    strictPort: false,
+    host: '127.0.0.1'
   },
   build: {
     assetsDir: 'assets',

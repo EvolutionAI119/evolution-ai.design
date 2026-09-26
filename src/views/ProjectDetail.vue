@@ -4,29 +4,29 @@
       <div class="header-left">
         <el-button class="back-btn" @click="goBack">
           <el-icon><ArrowLeft /></el-icon>
-          <span>Back</span>
+          <span>{{ t('projectDetail.back') }}</span>
         </el-button>
         <div class="title-group">
-          <h2 class="page-title">{{ project?.name || 'Project Details' }}</h2>
-          <el-tag :type="getStatusType(project?.status)" effect="dark" size="small">{{ project?.status }}</el-tag>
+          <h2 class="page-title">{{ project?.name || t('projectDetail.defaultTitle') }}</h2>
+          <el-tag :type="getStatusType(project?.status)" effect="dark" size="small">{{ getStatusText(project?.status) }}</el-tag>
         </div>
       </div>
       <div class="header-actions">
         <el-button @click="showEditDialog = true">
           <el-icon><Edit /></el-icon>
-          <span>Edit</span>
+          <span>{{ t('common.edit') }}</span>
         </el-button>
         <el-popconfirm
-          title="Delete this project?"
-          confirm-button-text="Delete"
-          cancel-button-text="Cancel"
+          :title="t('projects.confirmDelete')"
+          :confirm-button-text="t('common.delete')"
+          :cancel-button-text="t('common.cancel')"
           confirm-button-type="danger"
           @confirm="handleDelete"
         >
           <template #reference>
             <el-button type="danger" plain>
               <el-icon><Delete /></el-icon>
-              <span>Delete</span>
+              <span>{{ t('common.delete') }}</span>
             </el-button>
           </template>
         </el-popconfirm>
@@ -37,15 +37,15 @@
       <div class="info-card">
         <div class="info-icon"><Clock /></div>
         <div class="info-content">
-          <span class="info-label">Created</span>
+          <span class="info-label">{{ t('projectDetail.createdLabel') }}</span>
           <span class="info-value">{{ project?.createdAt }}</span>
         </div>
       </div>
       <div class="info-card">
         <div class="info-icon"><Picture /></div>
         <div class="info-content">
-          <span class="info-label">Models</span>
-          <span class="info-value">{{ project?.modelCount }} files</span>
+          <span class="info-label">{{ t('projectDetail.modelsLabel') }}</span>
+          <span class="info-value">{{ t('projectDetail.filesCount', { count: project?.modelCount ?? 0 }) }}</span>
         </div>
       </div>
     </div>
@@ -54,25 +54,25 @@
       <div class="left-panel">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">DESCRIPTION</span>
+            <span class="card-title">{{ t('projectDetail.descriptionTitle') }}</span>
           </div>
           <div class="card-body">
-            <p>{{ project?.description || 'No description available.' }}</p>
+            <p>{{ project?.description || t('projectDetail.noDescription') }}</p>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <span class="card-title">ACTIONS</span>
+            <span class="card-title">{{ t('projectDetail.actionsTitle') }}</span>
           </div>
           <div class="card-body actions-list">
             <el-button class="action-btn" @click="navigateToDesigner">
               <el-icon><Brush /></el-icon>
-              <span>Open Designer</span>
+              <span>{{ t('projectDetail.openDesigner') }}</span>
             </el-button>
             <el-button class="action-btn" @click="showDocumentUpload = true">
               <el-icon><Upload /></el-icon>
-              <span>Update Document</span>
+              <span>{{ t('projectDetail.updateDocument') }}</span>
             </el-button>
           </div>
         </div>
@@ -81,15 +81,15 @@
       <div class="right-panel">
         <div class="card document-card">
           <div class="card-header">
-            <span class="card-title">PROJECT DOCUMENT</span>
-            <span class="doc-format">Markdown</span>
+            <span class="card-title">{{ t('projectDetail.projectDocument') }}</span>
+            <span class="doc-format">{{ t('projectDetail.markdown') }}</span>
           </div>
           <div class="card-body document-body">
             <MarkdownRenderer v-if="project?.document" :content="project.document" />
             <div v-else class="no-document">
               <el-icon :size="48" class="no-doc-icon"><Document /></el-icon>
-              <span class="no-doc-text">No document uploaded</span>
-              <span class="no-doc-hint">Upload a .md file to add project documentation</span>
+              <span class="no-doc-text">{{ t('projectDetail.noDocument') }}</span>
+              <span class="no-doc-hint">{{ t('projectDetail.uploadDocHint') }}</span>
             </div>
           </div>
         </div>
@@ -101,22 +101,22 @@
       <TechSelectionMatrix />
     </div>
 
-    <el-dialog v-model="showEditDialog" title="Edit Project" width="480px" class="edit-dialog">
+    <el-dialog v-model="showEditDialog" :title="t('projectDetail.editTitle')" width="480px" class="edit-dialog">
       <el-form :model="editForm" label-position="top">
-        <el-form-item label="Project Name">
-          <el-input v-model="editForm.name" placeholder="Enter project name" />
+        <el-form-item :label="t('projects.projectNameLabel')">
+          <el-input v-model="editForm.name" :placeholder="t('projects.enterName')" />
         </el-form-item>
-        <el-form-item label="Description">
-          <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="Brief description" />
+        <el-form-item :label="t('projects.description')">
+          <el-input v-model="editForm.description" type="textarea" :rows="3" :placeholder="t('projectDetail.briefDesc')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showEditDialog = false">Cancel</el-button>
-        <el-button type="primary" class="btn-primary" @click="saveEdit">Save</el-button>
+        <el-button @click="showEditDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" class="btn-primary" @click="saveEdit">{{ t('common.save') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showDocumentUpload" title="Upload Document" width="480px" class="upload-dialog">
+    <el-dialog v-model="showDocumentUpload" :title="t('projectDetail.uploadTitle')" width="480px" class="upload-dialog">
       <div class="upload-area-large" @click="triggerDocInput" @dragover.prevent @drop.prevent="handleDocDrop">
         <input
           ref="docInputRef"
@@ -126,11 +126,11 @@
           @change="handleDocSelect"
         />
         <el-icon :size="48" class="upload-icon"><Upload /></el-icon>
-        <span class="upload-text">Click or drag to upload .md file</span>
-        <span v-if="uploading" class="upload-status">Uploading...</span>
+        <span class="upload-text">{{ t('projects.uploadMdHint') }}</span>
+        <span v-if="uploading" class="upload-status">{{ t('projectDetail.uploading') }}</span>
       </div>
       <template #footer>
-        <el-button @click="showDocumentUpload = false">Cancel</el-button>
+        <el-button @click="showDocumentUpload = false">{{ t('common.cancel') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -139,6 +139,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Edit, Clock, Picture, Brush, Upload, Document, Delete } from '@element-plus/icons-vue'
 import MarkdownRenderer from '../components/MarkdownRenderer.vue'
@@ -146,6 +147,7 @@ import TechSelectionMatrix from '../components/TechSelectionMatrix.vue'
 import { getMockProjectById } from '../data/mockProjects.js'
 import { useProjectStore } from '../stores/project.js'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const router = useRouter()
 const docInputRef = ref(null)
@@ -169,6 +171,11 @@ const project = computed(() => {
 const getStatusType = (status) => {
   const types = { Active: 'success', Completed: 'info', Draft: 'warning' }
   return types[status] || 'info'
+}
+
+const getStatusText = (status) => {
+  const keys = { Active: 'projectDetail.active', Completed: 'projectDetail.completed', Draft: 'projectDetail.draft' }
+  return keys[status] ? t(keys[status]) : (status || '-')
 }
 
 const formatDate = (dateStr) => {
@@ -213,7 +220,7 @@ const goBack = () => {
 
 const saveEdit = async () => {
   if (!editForm.value.name.trim()) {
-    ElMessage.warning('Please enter a project name')
+    ElMessage.warning(t('projects.enterName'))
     return
   }
   const projectId = route.params.id
@@ -222,10 +229,10 @@ const saveEdit = async () => {
       name: editForm.value.name,
       description: editForm.value.description
     })
-    ElMessage.success('Project updated successfully')
+    ElMessage.success(t('projectDetail.updateSuccess'))
     showEditDialog.value = false
   } catch (err) {
-    ElMessage.error(err.message || 'Failed to update project')
+    ElMessage.error(err.message || t('projectDetail.updateFailed'))
   }
 }
 
@@ -233,10 +240,10 @@ const handleDelete = async () => {
   const projectId = route.params.id
   try {
     await projectStore.deleteProject(projectId)
-    ElMessage.success('Project deleted successfully')
+    ElMessage.success(t('projects.deleteSuccess'))
     router.push('/projects')
   } catch (err) {
-    ElMessage.error(err.message || 'Failed to delete project')
+    ElMessage.error(err.message || t('projects.deleteFailed'))
   }
 }
 
@@ -260,7 +267,7 @@ const handleDocDrop = (event) => {
   if (file && (file.name.endsWith('.md') || file.name.endsWith('.txt'))) {
     loadDocFile(file)
   } else if (file) {
-    ElMessage.warning('Only .md and .txt files are allowed')
+    ElMessage.warning(t('projects.fileTypeWarn'))
   }
 }
 
@@ -273,7 +280,7 @@ const loadDocFile = (file) => {
     }
     uploading.value = false
     showDocumentUpload.value = false
-    ElMessage.success('Document uploaded successfully')
+    ElMessage.success(t('projectDetail.docUploadedSuccess'))
   }
   reader.readAsText(file, 'utf-8')
 }

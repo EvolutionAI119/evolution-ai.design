@@ -170,3 +170,33 @@ pip-delete-this-directory.txt
 *.orig
 *.old
 
+# ======================================================================
+# 2026-09-27 补充：各目录下散落的一次性脚本与运行产物
+# ======================================================================
+
+# 任意层级的一次性调试脚本（保留 __init__.py / __main__.py 等双下划线文件）
+_*.py
+!__*.py
+/_test_imgs/
+
+# rhino/ 下的调试产物（只保留 evo_branddna/ 与 load_evo.py）
+/rhino/_*
+
+# backend 运行输出
+/backend/output/
+
+# data 导出与上传的运行产物
+/data/exports/
+/data/uploads/
+/data/*.json
+
+# 根目录分析/报告产物（保留 Vite 入口 index.html）
+/*.html
+!index.html
+/*.png
+/PROJECT_STATUS_*.md
+/debug-igs-import-error.md
+
+# 根目录 tests/ 为早期车身调试快照目录（正式测试在 backend/tests 与 src/tests）
+/tests/
+

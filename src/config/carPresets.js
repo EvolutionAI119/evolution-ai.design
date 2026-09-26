@@ -1,10 +1,11 @@
+// name 字段为 i18n 键（designer 域），渲染时通过 t('designer.' + name) 翻译
 export const carTypes = [
-  { key: 'sedan', name: 'Sedan', desc: 'Classic sedan' },
-  { key: 'suv', name: 'SUV', desc: 'Sport utility' },
-  { key: 'coupe', name: 'Coupe', desc: 'Two-door' },
-  { key: 'sport', name: 'Sports', desc: 'High performance' },
-  { key: 'mpv', name: 'MPV', desc: 'Multi-purpose' },
-  { key: 'pickup', name: 'Pickup', desc: 'Pickup truck' }
+  { key: 'sedan', name: 'carSedan', desc: 'Classic sedan' },
+  { key: 'suv', name: 'carSuv', desc: 'Sport utility' },
+  { key: 'coupe', name: 'carCoupe', desc: 'Two-door' },
+  { key: 'sport', name: 'carSport', desc: 'High performance' },
+  { key: 'mpv', name: 'carMpv', desc: 'Multi-purpose' },
+  { key: 'pickup', name: 'carPickup', desc: 'Pickup truck' }
 ]
 
 export const defaultCarParams = {
@@ -69,22 +70,23 @@ export const carTypeParams = {
   }
 }
 
+// name 字段为 i18n 键（designer 域），渲染时通过 t('designer.' + name) 翻译
 export const bodyColors = [
-  { name: 'Obsidian Black', value: '#0a0a0f' },
-  { name: 'Carbon Gray', value: '#374151' },
-  { name: 'Silver Metallic', value: '#9ca3af' },
-  { name: 'Pearl White', value: '#f3f4f6' },
-  { name: 'Cream Beige', value: '#d4c5a9' },
-  { name: 'Champagne Gold', value: '#d4af37' },
-  { name: 'Racing Red', value: '#dc2626' },
-  { name: 'Burgundy', value: '#7f1d1d' },
-  { name: 'Sunset Orange', value: '#ea580c' },
-  { name: 'Canary Yellow', value: '#facc15' },
-  { name: 'British Green', value: '#166534' },
-  { name: 'Mint Green', value: '#4ade80' },
-  { name: 'Ocean Blue', value: '#0369a1' },
-  { name: 'Royal Blue', value: '#1e40af' },
-  { name: 'Amethyst Purple', value: '#6b21a8' }
+  { name: 'colorObsidianBlack', value: '#0a0a0f' },
+  { name: 'colorCarbonGray', value: '#374151' },
+  { name: 'colorSilverMetallic', value: '#9ca3af' },
+  { name: 'colorPearlWhite', value: '#f3f4f6' },
+  { name: 'colorCreamBeige', value: '#d4c5a9' },
+  { name: 'colorChampagneGold', value: '#d4af37' },
+  { name: 'colorRacingRed', value: '#dc2626' },
+  { name: 'colorBurgundy', value: '#7f1d1d' },
+  { name: 'colorSunsetOrange', value: '#ea580c' },
+  { name: 'colorCanaryYellow', value: '#facc15' },
+  { name: 'colorBritishGreen', value: '#166534' },
+  { name: 'colorMintGreen', value: '#4ade80' },
+  { name: 'colorOceanBlue', value: '#0369a1' },
+  { name: 'colorRoyalBlue', value: '#1e40af' },
+  { name: 'colorAmethystPurple', value: '#6b21a8' }
 ]
 
 const IMG = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image'

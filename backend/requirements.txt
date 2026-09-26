@@ -1,8 +1,25 @@
 fastapi==0.104.1
-uvicorn==0.24.0
-sqlalchemy==2.0.23
+uvicorn>=0.24.0
+sqlalchemy>=2.0.23
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
+python-multipart>=0.0.6
 httpx==0.25.2
-numpy==1.26.2
-scipy==1.11.3
+# 用户账户鉴权：JWT 令牌
+PyJWT>=2.8.0
+# API Key 静态加密（Fernet）
+cryptography>=42.0.0
+numpy>=1.26.2
+scipy>=1.11.3
+trimesh>=4.0.0
+# 参数化纹理设计（纹样特征提取）
+Pillow>=10.0.0
+# 会话持久化（可选）。Windows 上常见 Redis 3.0.504，请用 redis-py < 4.0
+# 以避免 "unknown command HELLO"。未安装时自动降级到内存。
+redis>=3.5.3,<4.0.0
+# CLIP 语义特征提取（可选，约 600MB）。未安装时纹样分析自动降级为纯几何特征。
+# 注意：transformers 4.57+ 拒绝用 torch<2.6 加载 .bin 权重（CVE-2025-32434），
+# 需将 openai/clip-vit-base-patch32 的权重转为 safetensors 放入 HF 缓存。
+# torch>=2.0.1
+# transformers>=4.40.0
+# safetensors>=0.4.0

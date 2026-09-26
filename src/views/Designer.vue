@@ -5,7 +5,7 @@
       <div class="left-panel">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">CAR TYPE</span>
+            <span class="card-title">{{ t('designer.carType') }}</span>
           </div>
           <div class="car-type-grid">
             <div
@@ -20,14 +20,14 @@
                   <path :d="getCarTypeSvg(ct.key)" fill="none" stroke="currentColor" stroke-width="1.5"/>
                 </svg>
               </div>
-              <div class="car-type-name">{{ ct.name }}</div>
+              <div class="car-type-name">{{ t('designer.' + ct.name) }}</div>
             </div>
           </div>
         </div>
 
         <div class="card card-brand">
           <div class="card-header">
-            <span class="card-title">A-CLASS CERTIFIED PRESETS</span>
+            <span class="card-title">{{ t('designer.certifiedPresets') }}</span>
             <span class="card-badge">PRO</span>
           </div>
           <div class="brand-section">
@@ -52,26 +52,18 @@
                 @click="designer.selectModel(model)"
               >
                 <div class="model-image">
-                  <template v-if="getImageState(model.key) === 'loaded'">
-                    <img
-                      :src="getImageSrc(model)"
-                      :alt="model.name"
-                      class="model-img"
-                    />
-                  </template>
-                  <template v-else>
-                    <img
-                      :src="getImageSrc(model)"
-                      :alt="model.name"
-                      class="model-img local-img"
-                      @error="handleImageError(model.key)"
-                    />
-                    <div v-if="getImageState(model.key) === 'loading'" class="img-loading-overlay">
-                      <svg class="loading-spinner" viewBox="0 0 24 24">
-                        <circle class="spinner-ring" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
-                      </svg>
-                    </div>
-                  </template>
+                  <img
+                    :key="imageRenderKey(model.key)"
+                    :src="getImageSrc(model)"
+                    :alt="model.name"
+                    class="model-img"
+                    @error="handleImageError(model.key)"
+                  />
+                  <div v-if="getImageState(model.key) === 'loading'" class="img-loading-overlay">
+                    <svg class="loading-spinner" viewBox="0 0 24 24">
+                      <circle class="spinner-ring" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
+                    </svg>
+                  </div>
                 </div>
                 <div class="model-info">
                   <div class="model-name">{{ model.name }}</div>
@@ -87,16 +79,16 @@
       <div class="center-panel">
         <div class="center-header">
           <div class="center-title">
-            <span class="title-main">AI Automotive Designer</span>
-            <span class="title-sub">Parametric A-Class Surface Generation</span>
+            <span class="title-main">{{ t('designer.centerTitle') }}</span>
+            <span class="title-sub">{{ t('designer.centerSubtitle') }}</span>
           </div>
           <div class="center-tabs">
             <div class="center-tab active">
               <span class="tab-dot"></span>
-              NURBS A-Class
+              {{ t('designer.tabNurbsAclass') }}
             </div>
             <div class="center-tab">
-              Parametric
+              {{ t('designer.tabParametric') }}
             </div>
           </div>
           <button class="generate-btn" @click="generateCar" :disabled="generating">
@@ -106,7 +98,7 @@
             <svg v-else class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
             </svg>
-            <span>{{ generating ? 'Generating...' : 'Generate Complete Car' }}</span>
+            <span>{{ generating ? t('designer.generating') : t('designer.generateCar') }}</span>
           </button>
         </div>
         <div class="viewport-row">
@@ -115,10 +107,10 @@
             <div class="viewport-header">
               <div class="viewport-tabs">
                 <div class="viewport-tab" :class="{ active: baseModelTab === 'parametric' }" @click="baseModelTab = 'parametric'">
-                  Parametric
+                  {{ t('designer.tabParametric') }}
                 </div>
                 <div class="viewport-tab active-green active" :class="{ active: baseModelTab === 'nurbs' }" @click="baseModelTab = 'nurbs'">
-                  NURBS A-Class
+                  {{ t('designer.tabNurbsAclass') }}
                 </div>
               </div>
             </div>
@@ -139,10 +131,10 @@
             <div class="viewport-header">
               <div class="viewport-tabs">
                 <div class="viewport-tab blue active" :class="{ active: previewTab === '3d' }" @click="previewTab = '3d'">
-                  3D视图
+                  {{ t('designer.view3d') }}
                 </div>
                 <div class="viewport-tab blue" :class="{ active: previewTab === '2d' }" @click="previewTab = '2d'">
-                  2D视图
+                  {{ t('designer.view2d') }}
                 </div>
               </div>
             </div>
@@ -166,17 +158,18 @@
         <div class="bottom-row">
           <div class="card reference-card">
             <div class="card-header">
-              <span class="card-title">REFERENCE</span>
+              <span class="card-title">{{ t('designer.reference') }}</span>
               <div class="ref-tabs">
-                <span class="ref-tab active">横向</span>
-                <span class="ref-tab">正面</span>
-                <span class="ref-tab">俯视</span>
+                <span class="ref-tab active">{{ t('designer.refSide') }}</span>
+                <span class="ref-tab">{{ t('designer.refFront') }}</span>
+                <span class="ref-tab">{{ t('designer.refTop') }}</span>
               </div>
             </div>
             <div class="reference-image-container">
               <template v-if="currentModel">
                 <div class="reference-image-wrapper">
                   <img
+                    :key="imageRenderKey(currentModel.key)"
                     :src="getImageSrc(currentModel)"
                     :alt="currentModel.name"
                     class="reference-img"
@@ -186,24 +179,24 @@
                     <svg class="ref-loading-spinner" viewBox="0 0 24 24">
                       <circle class="spinner-ring" cx="12" cy="12" r="10" fill="none" stroke-width="2"/>
                     </svg>
-                    <span class="ref-loading-text">Loading HD...</span>
+                    <span class="ref-loading-text">{{ t('designer.loadingHd') }}</span>
                   </div>
                 </div>
                 <div class="ref-model-info">
                   <span class="ref-model-name">{{ currentModel.name }}</span>
                   <span class="ref-model-spec">L:{{ carParams.overall_length }}mm W:{{ carParams.overall_width }}mm H:{{ carParams.overall_height }}mm</span>
-                  <span v-if="getImageState(currentModel.key) === 'local-fallback'" class="ref-local-hint">Local preview · HD image unavailable</span>
+                  <span v-if="getImageState(currentModel.key) === 'local-fallback'" class="ref-local-hint">{{ t('designer.localPreviewHint') }}</span>
                 </div>
               </template>
               <div v-else class="reference-placeholder">
-                <span>Select a model to view reference</span>
+                <span>{{ t('designer.selectModelReference') }}</span>
               </div>
             </div>
           </div>
 
           <div class="card wireframe-card">
             <div class="card-header">
-              <span class="card-title">2D RENDER</span>
+              <span class="card-title">{{ t('designer.render2d') }}</span>
             </div>
             <div class="wireframe-container">
               <Car2D :car-params="carParams" :car-type="carType" />
@@ -216,7 +209,7 @@
       <div class="right-panel">
         <div class="card">
           <div class="card-header">
-            <span class="card-title">BODY COLOR</span>
+            <span class="card-title">{{ t('designer.bodyColor') }}</span>
           </div>
           <div class="color-grid">
             <div
@@ -226,7 +219,7 @@
               :class="{ active: selectedColor === color.value }"
               :style="{ background: color.value }"
               @click="designer.selectColor(color.value)"
-              :title="color.name"
+              :title="t('designer.' + color.name)"
             >
               <div v-if="selectedColor === color.value" class="color-check">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -237,27 +230,27 @@
           </div>
           <div class="color-input-row">
             <input type="text" v-model="customColor" class="color-input" placeholder="#000000" />
-            <button class="apply-btn" @click="applyCustomColor">Apply</button>
+            <button class="apply-btn" @click="applyCustomColor">{{ t('designer.apply') }}</button>
           </div>
         </div>
 
         <div class="card param-card">
           <div class="card-header">
-            <span class="card-title">PARAMETER CONFIGURATION</span>
+            <span class="card-title">{{ t('designer.paramConfig') }}</span>
           </div>
           <div class="param-tabs">
             <div class="param-tab active" :class="{ active: paramTab === 'dimensions' }" @click="paramTab = 'dimensions'">
-              Dimension Parameters
+              {{ t('designer.dimensionParameters') }}
             </div>
             <div class="param-tab" :class="{ active: paramTab === 'styling' }" @click="paramTab = 'styling'">
-              Styling Parameters
+              {{ t('designer.stylingParameters') }}
             </div>
           </div>
           <div class="param-list">
             <div v-if="paramTab === 'dimensions'" class="param-items">
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Overall Length</span>
+                  <span class="param-name">{{ t('designer.overallLength') }}</span>
                   <span class="param-value">{{ carParams.overall_length }} mm</span>
                 </div>
                 <input
@@ -272,7 +265,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Overall Width</span>
+                  <span class="param-name">{{ t('designer.overallWidth') }}</span>
                   <span class="param-value">{{ carParams.overall_width }} mm</span>
                 </div>
                 <input
@@ -286,7 +279,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Overall Height</span>
+                  <span class="param-name">{{ t('designer.overallHeight') }}</span>
                   <span class="param-value">{{ carParams.overall_height }} mm</span>
                 </div>
                 <input
@@ -300,7 +293,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">WheelBase</span>
+                  <span class="param-name">{{ t('designer.wheelBase') }}</span>
                   <span class="param-value">{{ carParams.wheel_base }} mm</span>
                 </div>
                 <input
@@ -315,7 +308,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Front Overhang (FO)</span>
+                  <span class="param-name">{{ t('designer.frontOverhang') }}</span>
                   <span class="param-value">{{ carParams.front_overhang }} mm</span>
                 </div>
                 <input
@@ -330,7 +323,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Rear Overhang (RO)</span>
+                  <span class="param-name">{{ t('designer.rearOverhang') }}</span>
                   <span class="param-value">{{ carParams.rear_overhang }} mm</span>
                 </div>
                 <input
@@ -345,7 +338,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Length Formula</span>
+                  <span class="param-name">{{ t('designer.lengthFormula') }}</span>
                   <span class="param-value" style="color: #4ade80">{{ carParams.front_overhang }} + {{ carParams.wheel_base }} + {{ carParams.rear_overhang }} = {{ carParams.front_overhang + carParams.wheel_base + carParams.rear_overhang }}</span>
                 </div>
               </div>
@@ -353,7 +346,7 @@
             <div v-else class="param-items">
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Hood Length</span>
+                  <span class="param-name">{{ t('designer.hoodLength') }}</span>
                   <span class="param-value">{{ carParams.hood_length }} mm</span>
                 </div>
                 <input
@@ -367,7 +360,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Roof Height</span>
+                  <span class="param-name">{{ t('designer.roofHeight') }}</span>
                   <span class="param-value">{{ carParams.roof_height }} mm</span>
                 </div>
                 <input
@@ -381,7 +374,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Wheel Diameter</span>
+                  <span class="param-name">{{ t('designer.wheelDiameter') }}</span>
                   <span class="param-value">{{ carParams.wheel_diameter }} mm</span>
                 </div>
                 <input
@@ -395,7 +388,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Windshield Angle</span>
+                  <span class="param-name">{{ t('designer.windshieldAngle') }}</span>
                   <span class="param-value">{{ carParams.windshield_angle }}°</span>
                 </div>
                 <input
@@ -409,7 +402,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Rear Window Angle</span>
+                  <span class="param-name">{{ t('designer.rearWindowAngle') }}</span>
                   <span class="param-value">{{ carParams.rear_window_angle }}°</span>
                 </div>
                 <input
@@ -494,6 +487,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import Car3D from '../components/Car3D.vue'
@@ -509,10 +503,12 @@ import {
   buildRuntimeSvgDataUrl,
   UNIVERSAL_FALLBACK,
   clearFailedMarks,
-  verifyAllStaticPhotos
+  verifyAllStaticPhotos,
+  getStaticPhotoPath
 } from '../utils/carImageManager.js'
 
 const designer = useDesignerStore()
+const { t } = useI18n({ useScope: 'global' })
 const { carType, brand, selectedModel, selectedColor, params, generating } = storeToRefs(designer)
 
 const customColor = ref('')
@@ -557,23 +553,60 @@ const applyCustomColor = () => {
 
 const imageStates = reactive({})
 
+const ensureState = (key) => {
+  if (!imageStates[key] || typeof imageStates[key] !== 'object') {
+    imageStates[key] = { layer: 0, attempt: 0, renderKey: 0, minLayer: 0 }
+  }
+  return imageStates[key]
+}
+
 const getImageState = (key) => {
-  return imageStates[key] || 'loaded'
+  const s = ensureState(key)
+  if (s.layer === 3 || s.layer === 4) return 'local-fallback'
+  if (s.attempt === 0 && s.layer === 0) return 'loading'
+  return `L${s.layer}`
+}
+
+const imageRenderKey = (key) => {
+  const s = ensureState(key)
+  return `${key}__r${s.renderKey}`
 }
 
 /**
- * 统一解析车型图片：4 层兜底，保证"永远不丢失"。
- *   LAYER-1: 本地真实 JPG 照片 (/brands/brand/model.jpg) — 首选！真车照片，随项目打包
- *   LAYER-2: 远程 AI 生成图 (text_to_image API)          — 本地照片失败时降级
- *   LAYER-3: 运行时内联 SVG (dataURL)                    — 无网络请求的兜底
- *   LAYER-4: 终极通用兜底图                              — 万无一失
- * 配合失败记忆（localStorage 24h），URL 失败一次后自动跳过，不再反复 404。
+ * 显式指定 minLayer：让 normalizeCarImageUrl 从"至少 minLayer 之后"解析，
+ * 解决"失败记忆 + online 环境 localStorage 污染"导致永远卡在 L1 的问题。
+ */
+const resolveByLayer = (model, bk, minLayer = 0) => {
+  const all = []
+  // 1) 本地 JPG
+  const staticPath = getStaticPhotoPath(bk, model?.key || 'x')
+  if (staticPath && !isUrlMarkedFailed(staticPath)) {
+    all.push({ src: staticPath, layer: 1 })
+  }
+  // 2) 远程 AI 生成图
+  if (model?.image && !isUrlMarkedFailed(model.image)) {
+    all.push({ src: model.image, layer: 2 })
+  }
+  // 3) 运行时 SVG
+  const svg = buildRuntimeSvgDataUrl(model, bk)
+  if (svg) all.push({ src: svg, layer: 3 })
+  // 4) 终极兜底
+  all.push({ src: UNIVERSAL_FALLBACK, layer: 4 })
+
+  const chosen = all.find(a => a.layer > minLayer) || all[all.length - 1]
+  return { ...chosen, key: model?.key || 'x', brandKey: bk }
+}
+
+/**
+ * 统一解析车型图片：4 层兜底 + 渲染中不做 reactive 副作用
  */
 const getImageSrc = (model) => {
   if (!model) return UNIVERSAL_FALLBACK
   const bk = getBrandKeyForModel(model.key)
-  const resolved = normalizeCarImageUrl(model, bk)
-  imageStates[model.key] = `L${resolved.layer}`
+  const state = ensureState(model.key)
+  const resolved = resolveByLayer(model, bk, state.minLayer || 0)
+  // 记录当前 layer，不做赋值触发重渲染（渲染期写 reactive 会告警/递归）
+  state.layer = resolved.layer
   return resolved.src
 }
 
@@ -588,34 +621,53 @@ const getBrandKeyForModel = (modelKey) => {
 
 const prepareModelImage = (model) => {
   if (!model) return
-  const key = model.key
-  imageStates[key] = 'loaded'
+  const s = ensureState(model.key)
+  s.layer = 0
+  s.attempt = 0
+  s.renderKey = 0
+  s.minLayer = 0
 }
 
 /**
- * 图片加载失败处理：
- * 1. 把失败 URL 记入 localStorage 失败名单（24h 内不再尝试）
- * 2. 触发重新渲染，getImageSrc 会自动调用 normalizeCarImageUrl 返回下一层
- * 降级链：L1(本地JPG) → L2(远程API) → L3(运行时SVG) → L4(通用兜底)
+ * 图片加载失败处理（确定性降级，不再依赖 localStorage 隐式跳过）：
+ *   1. 当前失败 URL 若不是 data:，记入失败名单（远程 / 本地 JPG 都记；但 carImageManager 已会忽略 /brands/*）
+ *   2. state.minLayer = 当前 layer → 下次解析直接从下一层开始
+ *   3. renderKey++ → Vue 强制重新挂载 <img :key>，保证 onerror 二次触发可用
+ *   4. attempt <= 5 防护，到顶直接锁定 L4 dataURL
  */
+const MAX_ATTEMPTS = 5
 const handleImageError = (modelKey) => {
   const model = getModelByKey(modelKey)
   if (!model) return
   const bk = getBrandKeyForModel(modelKey)
+  const state = ensureState(modelKey)
+  state.attempt++
 
-  // 获取当前层级的 src 并标记失败（data: URL 不标记，避免污染失败名单）
-  const resolved = normalizeCarImageUrl(model, bk)
+  // 先把本次失败的 src（按当前 minLayer 解析所得）标记失败
+  const resolved = resolveByLayer(model, bk, state.minLayer || 0)
   if (resolved.src && !resolved.src.startsWith('data:')) {
     markUrlFailed(resolved.src)
   }
 
-  // 触发重新渲染：getImageSrc 会重新解析，由于当前 URL 已标记失败，自动返回下一层
-  imageStates[modelKey] = `retry-${Date.now()}`
+  if (state.attempt >= MAX_ATTEMPTS) {
+    // 兜底：直接锁定 L4
+    state.minLayer = 4
+    state.renderKey++
+    return
+  }
+
+  // 从下一层开始解析
+  state.minLayer = Math.max(state.minLayer || 0, resolved.layer)
+  // 超过 L3 就锁在 L4（避免 attempt 耗尽前跑乱）
+  if (state.minLayer >= 4) state.minLayer = 4
+  state.renderKey++
 }
 
 const cleanupImageCache = () => {
-  // 可选：清空失败记忆（开发者调试用）
   clearFailedMarks()
+  Object.keys(imageStates).forEach(k => {
+    prepareModelImage({ key: k })
+  })
 }
 
 const getModelByKey = (modelKey) => {
@@ -709,7 +761,7 @@ const aiTrain = async () => {
   aiLoading.value = true
   aiResultType.value = 'Training Batch (Cloud)'
   try {
-    const res = await aiAPI.train({ batch_size: 100, car_type: carType.value })
+    const res = await aiAPI.trainBatch({ batch_size: 100, car_type: carType.value })
     aiResult.value = {
       batch_size: res.data.batch_size,
       compute_time_ms: res.data.compute_time_ms + 'ms',
@@ -1416,18 +1468,26 @@ onUnmounted(() => {
 .reference-image-container {
   width: 100%;
   height: calc(100% - 32px);
+  /* 关键兜底：父级 flex 高度塌陷时，至少给图片一个可渲染形状 */
+  min-height: 280px;
+  aspect-ratio: 16 / 9;
+  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-primary);
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
 }
 
 .reference-img {
+  width: 100%;
+  height: 100%;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  display: block;
 }
 
 .reference-placeholder {
