@@ -199,8 +199,8 @@ def run_tests():
         geom_parsed = (data.get("meta") or {}).get("geometry_parsed")
         print(f"     geometry_parsed = {geom_parsed}  (应为 False/None)")
         warn = data.get("warnings") or []
-        assert any("专有" in w or "兜底" in w or "暂不支持" in w for w in warn), (
-            "CATPart 应当产出专有格式提示"
+        assert any("proprietary" in w or "not supported" in w or "Fallback" in w for w in warn), (
+            "CATPart 应当产出专有格式兜底提示"
         )
         print(f"     warnings = {warn}")
 
