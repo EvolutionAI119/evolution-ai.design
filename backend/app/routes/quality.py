@@ -1,4 +1,6 @@
 """质量检查与拓扑优化API路由"""
+import ast
+import json
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
@@ -11,6 +13,45 @@ from ..schemas import (TopologyOptimizationRequest, QualityCheckRequest,
 from ..config import settings
 
 router = APIRouter()
+
+
+def _coerce_report_data(raw):
+    """把 report_data 统一规整为 dict。
+
+    历史行以 Python repr（str(result)）或 JSON 字符串存储；
+    新行以 json.dumps 存储。无法解析时保留原文，避免响应校验再次 500。
+    """
+    if raw is None or isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        text = raw.strip()
+        if not text:
+            return None
+        try:
+            value = json.loads(text)
+            return value if isinstance(value, dict) else {"value": value}
+        except (json.JSONDecodeError, ValueError):
+            pass
+        try:
+            value = ast.literal_eval(text)
+            return value if isinstance(value, dict) else {"value": value}
+        except (ValueError, SyntaxError):
+            return {"raw_text": text}
+    return {"raw_text": str(raw)}
+
+
+def _report_to_response(r: QualityReport) -> QualityReportResponse:
+    """ORM 报告行 → 响应模型（解析字符串形式的 report_data）。"""
+    return QualityReportResponse(
+        id=r.id,
+        project_id=r.project_id,
+        model_id=r.model_id,
+        overall_score=r.overall_score,
+        passed=r.passed,
+        report_data=_coerce_report_data(r.report_data),
+        report_path=r.report_path,
+        created_at=r.created_at,
+    )
 
 
 @router.post("/topology/optimize/")
@@ -43,7 +84,7 @@ def check_quality(request: QualityCheckRequest, db: Session = Depends(get_db)):
     db_report = QualityReport(
         project_id=model.project_id, model_id=model.id,
         overall_score=result["score"], passed=result["passed"],
-        report_data=str(result))
+        report_data=json.dumps(result, ensure_ascii=False))
     db.add(db_report)
     db.commit()
     db.refresh(db_report)
@@ -58,7 +99,7 @@ def get_quality_reports(project_id: Optional[int] = None, model_id: Optional[int
         query = query.filter(QualityReport.project_id == project_id)
     if model_id:
         query = query.filter(QualityReport.model_id == model_id)
-    return query.all()
+    return [_report_to_response(r) for r in query.all()]
 
 
 @router.get("/quality/reports/{report_id}", response_model=QualityReportResponse)
@@ -66,7 +107,7 @@ def get_quality_report(report_id: int, db: Session = Depends(get_db)):
     report = db.query(QualityReport).filter(QualityReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
-    return report
+    return _report_to_response(report)
 
 
 @router.post("/data/handover/")

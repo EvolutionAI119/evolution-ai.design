@@ -1,6 +1,12 @@
 """应用配置：基于pydantic-settings，从.env读取"""
 from pathlib import Path
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# 开发默认密钥：仅允许非生产环境使用（生产 fail-fast 校验依赖此常量识别默认值）
+_DEFAULT_SECRET_KEY = "evolution-ai-dev-secret-change-me-in-production-2026"
+# 生产环境 SECRET_KEY 最小长度
+_MIN_PROD_SECRET_LEN = 32
 
 
 class Settings(BaseSettings):
@@ -13,8 +19,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./evolution_ai.db"
 
     # ============ 用户账户 / JWT 鉴权 ============
-    # 开发默认密钥；生产必须通过 .env 覆盖（>=32 位随机字符串）
-    SECRET_KEY: str = "evolution-ai-dev-secret-change-me-in-production-2026"
+    # 开发默认密钥；生产必须通过 .env 覆盖（>=32 位随机字符串），
+    # 未覆盖时下方 _require_strong_secret_in_production 校验会拒绝启动（fail-fast）
+    SECRET_KEY: str = _DEFAULT_SECRET_KEY
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 天
     # 注册时是否要求邮箱唯一（默认开启）
@@ -122,6 +129,28 @@ class Settings(BaseSettings):
     @property
     def cors_allow_origins_list(self):
         return [o.strip() for o in self.CORS_ALLOW_ORIGINS.split(",") if o.strip()]
+
+    @model_validator(mode="after")
+    def _require_strong_secret_in_production(self):
+        """生产环境强制 SECRET_KEY 合规：禁止内置开发默认值、长度至少 32 位。
+
+        违规时 pydantic 抛 ValidationError，应用启动阶段即失败（fail-fast），
+        避免带着可预测的弱密钥静默上线签发 JWT / 加密 API Key。
+        """
+        if self.ENVIRONMENT.strip().lower() == "production":
+            if self.SECRET_KEY == _DEFAULT_SECRET_KEY:
+                raise ValueError(
+                    "生产环境必须通过环境变量或 .env 覆盖 SECRET_KEY，"
+                    "不能使用内置开发默认值；请设置一个至少 "
+                    f"{_MIN_PROD_SECRET_LEN} 位的随机字符串，例如："
+                    "python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+                )
+            if len(self.SECRET_KEY) < _MIN_PROD_SECRET_LEN:
+                raise ValueError(
+                    f"生产环境 SECRET_KEY 长度至少 {_MIN_PROD_SECRET_LEN} 位，"
+                    f"当前仅 {len(self.SECRET_KEY)} 位"
+                )
+        return self
 
     @property
     def data_path(self): return Path(self.DATA_DIR).resolve()

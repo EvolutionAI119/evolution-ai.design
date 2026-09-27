@@ -9,8 +9,11 @@ from ..config import settings
 
 router = APIRouter(prefix="/api/v1", tags=["AI 助手"])
 
-# Ollama 默认地址
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "").strip() or "http://localhost:11434"
+# Ollama 默认地址（自动补全协议头，避免 httpx UnsupportedProtocol）
+_raw_host = os.getenv("OLLAMA_HOST", "").strip() or "http://localhost:11434"
+if not _raw_host.startswith(("http://", "https://")):
+    _raw_host = "http://" + _raw_host
+OLLAMA_HOST = _raw_host.rstrip("/")
 DEFAULT_MODEL = os.getenv("NURBS_MODEL", "").strip() or "nurbs-expert"
 
 
@@ -75,10 +78,11 @@ async def chat_with_nurbs_expert(req: ChatRequest):
             )
             resp.raise_for_status()
             data = resp.json()
-    except httpx.ConnectError:
+    except httpx.RequestError as e:
+        # ConnectError / UnsupportedProtocol / 超时等统一视为服务不可用
         raise HTTPException(
             status_code=503,
-            detail=f"Ollama 服务未启动，请运行: ollama serve (地址: {OLLAMA_HOST})",
+            detail=f"Ollama 服务不可用（{type(e).__name__}），请运行: ollama serve (地址: {OLLAMA_HOST})",
         )
     except httpx.HTTPStatusError as e:
         raise HTTPException(
@@ -102,10 +106,11 @@ async def list_ollama_models():
             resp = await client.get(f"{OLLAMA_HOST}/api/tags")
             resp.raise_for_status()
             data = resp.json()
-    except httpx.ConnectError:
+    except httpx.RequestError as e:
+        # ConnectError / UnsupportedProtocol / 超时等统一返回 503
         raise HTTPException(
             status_code=503,
-            detail=f"Ollama 服务未启动 (地址: {OLLAMA_HOST})",
+            detail=f"Ollama 服务不可用（{type(e).__name__}，地址: {OLLAMA_HOST}）",
         )
 
     models = []

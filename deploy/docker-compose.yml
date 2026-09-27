@@ -44,6 +44,10 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-production}
       DEBUG:       ${DEBUG:-false}
       LOG_LEVEL:   ${LOG_LEVEL:-INFO}
+      # —— 密钥（必填）：缺失时 docker compose 在此直接报错；
+      #    即便绕过，后端启动时还有 SECRET_KEY 生产 fail-fast 校验兜底。
+      #    生成：python -c "import secrets; print(secrets.token_urlsafe(48))"
+      SECRET_KEY:  ${SECRET_KEY:?SECRET_KEY is required; generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))"}
       API_HOST:    "0.0.0.0"   # 容器内必须监听所有接口，nginx 才能连上
       API_PORT:    "8000"
       # —— 数据目录（与 backend.Dockerfile Volume 挂载点一致） ——

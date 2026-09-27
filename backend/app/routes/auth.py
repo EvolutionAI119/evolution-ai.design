@@ -431,26 +431,6 @@ def mp_poll_by_ticket(ticket: str = ""):
     return {"status": "expired"}
 
 
-@router.get("/mp/poll/{state}")
-def mp_poll(state: str):
-    """PC 端轮询公众号授权结果。
-
-    pending：等待用户扫码确认；done：返回结果并一次性清除；
-    expired：state 过期（10 分钟）或不存在。
-    """
-    now = time.time()
-    for k in [k for k, v in _mp_results.items() if v["expire"] < now]:
-        _mp_results.pop(k, None)
-    entry = _mp_results.pop(state, None)
-    if entry:
-        return {"status": "done", "result": entry["result"]}
-    expire = _mp_states.get(state)
-    if expire is not None and expire > now:
-        return {"status": "pending"}
-    _mp_states.pop(state, None)
-    return {"status": "expired"}
-
-
 @router.get("/mp/callback")
 async def mp_callback(request: Request, code: str = "", state: str = "",
                       db: Session = Depends(get_db)):
