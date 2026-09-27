@@ -13,17 +13,19 @@
 
 ---
 
-## 📦 当前状态 (v1.02-stable, 2026-08-02)
+## 📦 当前状态 (v1.2, 2026-09-27 全面复盘)
 
-治乱后稳定基线，作为 NURBS+STEP 工程化管线开发起点。
+经全面复盘对齐现状，三层测试全绿。
 
-| 模块 | 状态 | 技术栈 | 说明 |
+| 模块 | 状态 | 技术栈 | 规模（实测） |
 |------|------|--------|------|
-| **前端** | ✅ 可运行 | Vue 3 + Vite 5 + Three.js + Element Plus + Pinia | 8 个路由页面，3D 实时渲染，i18n 双语 |
-| **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 + Celery + Redis | 21 端点，4 张 ORM 表，异步任务队列 |
-| **算法层** | ✅ 黑盒 | Python 3.11+ / NumPy / SciPy / Trimesh | 5 大 API / 7 CLI / 155 测试通过 |
-| **Mock Fallback** | ✅ 已集成 | - | backend 不可用时显示 10 个 mock 项目 + SVG 预览 |
-| **NURBS+STEP 管线** | ⏳ 规划中 | 纯 Python STEP writer | 按 [技术审计报告](docs/TECHNICAL_AUDIT_20260801.md) Phase 0→4 推进 |
+| **前端** | ✅ 可运行 | Vue 3 + Vite 5 + Three.js + Element Plus + Pinia | **10 个路由页面**，3D 实时渲染，i18n 双语 |
+| **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 | **16 个路由模块 / 116 个端点 / 11 张 ORM 表** |
+| **算法层** | ✅ 可运行 | Python 3.11+ / NumPy / SciPy / Trimesh | NURBS 整车 + freeform + surface_quality + storyboard；**200 pytest + 自检 5 模块全过** |
+| **测试基线** | ✅ 489+ 全绿 | algorithm_model 200 / backend 178 / frontend 111 | 详见 [架构文档](docs/ARCHITECTURE_DESIGN.md) |
+| **Mock Fallback** | ✅ 已集成 | - | backend 不可用时显示 mock 项目，页面不黑屏 |
+| **可选能力** | ✅ 真实降级 | PyTorch / Ollama / Redis / CLIP | 缺失时 503 或自动降级，绝不伪装成功 |
+| **部署** | ✅ Docker | Compose + Nginx + cpolar 隧道 | 见 [deploy/](deploy/) |
 
 ---
 
@@ -54,16 +56,17 @@ npm run dev      # 启动开发服务器
 cd D:\API\Evolution-Ai.Design\backend
 pip install -r requirements.txt
 
-# 起 Redis (M2 必装)
-redis-server --port 6379
-
-# 起 Celery worker (M2 必起, 新终端)
-.\start_celery_worker.bat
+# Redis 可选（会话持久化增强；未安装时自动降级到内存）
+# redis-server --port 6379
 
 # 起 FastAPI
 .\start_backend.bat
+# 或：python start.py
 # API 文档：http://localhost:8000/docs
 ```
+
+> 一键启动/重启三服务（前端、后端、cpolar 隧道）可用
+> `.trae/skills/launch-services-detached` 独立进程脚本，详见该技能说明。
 
 ### 3. 构建生产版本
 
@@ -98,15 +101,15 @@ python test_all.py
 ```
 L1 前端层    ─  Vue 3 + Three.js + Element Plus + Pinia
 L2 API 网关  ─  Vite Dev Proxy (/api/v1 → 8000, /api/ide → trae-api-cn)
-L3 后端服务  ─  FastAPI + 6 大薄壳服务 (编排不重写算法)
-L4 算法层    ─  algorithm_model (5 大 API / 7 CLI, 黑盒使用)
-L5 基础设施  ─  SQLite + Redis + Celery + 文件存储
+L3 后端服务  ─  FastAPI + 16 个薄壳路由模块 (116 端点，编排不重写算法)
+L4 算法层    ─  algorithm_model (独立包；7 大高层 API，黑盒使用)
+L5 基础设施  ─  SQLite + 文件存储；可选 Redis
 ```
 
 **关键设计决策**：
 1. ✅ 算法模型与 Web 完全解耦（可独立 pip install）
 2. ✅ 后端只做编排，不重写算法
-3. ✅ 异步优先（>1s 操作走 Celery，API 返回 `202 + task_id`）
+3. ✅ 长任务后台化（训练等耗时任务在后台线程执行，接口立即返回任务对象，客户端轮询状态）
 4. ✅ 前端内置 mock fallback（backend 不可用时不黑屏）
 
 ---
@@ -116,44 +119,49 @@ L5 基础设施  ─  SQLite + Redis + Celery + 文件存储
 ```
 Evolution-Ai.Design/
 ├── src/                            ← Vue 3 前端源码
-│   ├── views/                      ← 8 个路由页面
+│   ├── views/                      ← 10 个路由页面
 │   │   ├── Dashboard.vue           ← 首页总览
 │   │   ├── Designer.vue            ← AI 设计器 (参数+3D预览)
 │   │   ├── Projects.vue            ← 项目列表 (含 mock fallback)
 │   │   ├── ProjectDetail.vue       ← 项目详情
 │   │   ├── DeepLearning.vue        ← 深度学习设计器
 │   │   ├── Quality.vue             ← 质量检查
-│   │   ├── Deliver.vue             ← 工程交付
+│   │   ├── Deliver.vue             ← 工程交付 (导入改参导出)
+│   │   ├── Login.vue / Account.vue ← 登录 / 账户
 │   │   └── Demo.vue                ← DEMO 演示
 │   ├── components/                 ← 复用组件 (Car2D/Car3D/Markdown/TechMatrix)
-│   ├── stores/                     ← Pinia 状态 (designer/project/ui)
-│   ├── data/                       ← mock 数据 (mockProjects) + 配置
-│   ├── utils/                      ← imageGenerator (SVG) + llm
-│   ├── api.js                      ← axios 实例 + API 模块
-│   ├── router.js                   ← vue-router (Hash 模式)
+│   ├── stores/                     ← Pinia 状态 (auth/designer/project/ui)
+│   ├── config/                     ← carPresets 品牌车型预设
+│   ├── data/                       ← mock 数据 + 配置
+│   ├── utils/                      ← carImageManager / imageGenerator / llm
+│   ├── api.js                      ← axios 实例 + API 模块（含 bayesAPI）
+│   ├── router.js                   ← vue-router (Hash 模式 + 登录守卫)
 │   ├── i18n.js                     ← vue-i18n 双语
 │   └── main.js                     ← 应用入口
 ├── backend/                        ← FastAPI 后端
 │   ├── app/
-│   │   ├── routes/                 ← 9 个路由模块 (build/car/export/...)
+│   │   ├── routes/                 ← 16 个路由模块 (116 端点)
+│   │   ├── bayes_optimizer.py      ← 贝叶斯优化引擎 (GP+EI/UCB)
 │   │   ├── car_generator.py        ← 车身生成器
-│   │   ├── database.py             ← SQLAlchemy 2.0 ORM
+│   │   ├── brand_knowledge.py      ← 品牌知识库查询
+│   │   ├── cad_importer.py         ← CAD 导入与降级
+│   │   ├── database.py             ← SQLAlchemy 2.0 ORM (11 表)
 │   │   └── main.py                 ← FastAPI 入口
-│   ├── tests/                      ← pytest 测试
+│   ├── config/                     ← automotive_parameters / brand_design_knowledge
+│   ├── tests/                      ← pytest 178 测试
 │   └── requirements.txt
-├── algorithm_model/                ← 算法核心 (黑盒使用)
-│   ├── car_modeling/               ← 整车建模 (body/assembler/wheels/...)
-│   ├── surface_quality/            ← 曲面质量 (G0/G1/G2 + 反射线)
-│   ├── freeform/                   ← NURBS 核心 + 扫掠 + 圆角
-│   └── tests/                      ← 155 测试通过
-├── docs/                           ← 文档
-│   ├── TECHNICAL_AUDIT_20260801.md ← ⭐ NURBS+STEP 技术路线审计报告
-│   ├── ARCHITECTURE_DESIGN.md      ← 架构设计 v1.0
-│   ├── PRODUCT_SPEC.md             ← 产品功能定义
-│   ├── DESIGN_TOKENS.md            ← 设计令牌
-│   ├── W1~W4_*.md                  ← 周报与完结报告
-│   └── 复盘总结_20260711.md        ← 历史复盘
+├── algorithm_model/                ← 算法核心 (独立可安装)
+│   ├── car_modeling/               ← 参数化整车 (body/body_nurbs/assembler/...)
+│   ├── surface_quality/            ← 曲面质量 (G0/G1/G2 + 反射线 + 优化)
+│   ├── freeform/                   ← NURBS 核心 + 扫掠 + 圆角 + STEP writer
+│   ├── storyboard/                 ← 分镜生成 + viewer
+│   ├── examples/                   ← 17 个示例
+│   └── tests/                      ← pytest 200 测试
+├── deploy/                         ← Docker Compose / Dockerfile / Nginx 配置
+├── docs/                           ← 文档（架构/产品/API/贝叶斯/审计报告）
+├── scripts/                        ← 历史数据采集与训练辅助脚本
 ├── tests/                          ← 前端 vitest 测试
+├── rhino/、backend/rhino_plugin/   ← Rhino 品牌 DNA 面板与插件
 ├── vite.config.js                  ← Vite 配置 (端口 5173, 代理)
 ├── package.json                    ← npm 依赖
 └── index.html                      ← HTML 入口
@@ -166,29 +174,28 @@ Evolution-Ai.Design/
 | 层 | 技术 |
 |----|------|
 | **前端** | Vue 3.4 / Vite 5.3 / Three.js 0.166 / Element Plus 2.7 / Pinia 2.1 / vue-router 4.4 / vue-i18n 9.13 / axios 1.7 |
-| **后端** | FastAPI / Pydantic v2 / SQLAlchemy 2.0 / Celery 5 / Redis 6 / Uvicorn / Loguru |
-| **算法层** | Python 3.11+ / NumPy / SciPy / Trimesh / Plotly / Cython (399x 加速) |
-| **数据库** | SQLite (开发) → PostgreSQL (生产) |
-| **部署** | Docker + Nginx (规划中) / GitHub Pages (静态) |
+| **后端** | FastAPI / Uvicorn / Pydantic v2 / SQLAlchemy 2.0 / PyJWT / cryptography / httpx；可选 Redis |
+| **算法层** | Python 3.11+ / NumPy / SciPy / Trimesh / Pillow / Cython 加速 |
+| **数据库** | SQLite (开发/当前)；PostgreSQL (规划) |
+| **部署** | Docker Compose + Nginx（已实现）/ cpolar HTTPS 隧道 / GitHub Pages (静态) |
 
 ---
 
-## 🎯 下一阶段路线图 (NURBS+STEP 工程化)
+## 🎯 路线图进展（NURBS+STEP 工程化）
 
-按 [技术审计报告](docs/TECHNICAL_AUDIT_20260801.md) 的"双轨并行"策略推进：
+双轨并行策略已落地：
 
 ```
-Phase 1a (1天)    Phase 1b (0.5天)   Phase 2 (2-3天)    Phase 3 (2-3天)
-STEP writer    →  单曲面闭环      →  车身 NURBS化    →  全车 STEP 装配
-~200行 Python     SweptSurface       body.py 改造       14 零件导出
-                  验证 STEP 可打开   mesh→控制点        FreeCAD 验证
+STEP writer  ✅   单曲面闭环  ✅   车身 NURBS 化  ✅   全车装配  ✅
+freeform/step      SweptSurface     body_nurbs +        17 个 examples
+_writer            已验证           body_ends(G1)       SOP 报告 / FreeCAD 宏
 ```
 
-**核心策略**：
-- mesh 管线（现有）→ 继续用于前端实时预览、GLB 导出
-- NURBS 管线（新建）→ 用于 STEP/IGES 工程输出、A级曲面质量分析
-- 纯 Python STEP writer（无需 OCCT/build123d 500MB 依赖）
-- 参数直驱 NURBS（避免 mesh→NURBS 拟合误差）
+**当前双管线策略**：
+- mesh 管线（trimesh 参数化网格）→ 前端实时预览、STL/GLB 导出
+- NURBS 管线（自研 NURBS 核心 + 纯 Python STEP writer）→ STEP/IGES 工程输出、A 级曲面 G0/G1/G2 分析
+- 参数直驱 NURBS，避免 mesh→NURBS 拟合误差
+- 下一阶段：贝叶斯优化与 NURBS 目标函数深度联动、扩展工程约束自动检查（详见 [架构文档](docs/ARCHITECTURE_DESIGN.md)）
 
 ---
 
@@ -196,12 +203,10 @@ STEP writer    →  单曲面闭环      →  车身 NURBS化    →  全车 STE
 
 | 场景 | 耗时 | 指标 |
 |------|------|------|
-| 整车构建 | ~200ms | 3475 顶点 / 6504 面 |
-| 球面质量评估 | 50.8ms | grade=D / g2=0.199 |
-| 后端测试 | 3.04s | 15/15 通过 |
-| 端到端测试 | 7.85s | 19/19 通过 |
-| 算法层自检 | 9.49s | 155/155 通过 (零回归) |
-| Cython 加速 | 0.40ms/板 | 399x 加速 |
+| 算法层 pytest（200 例） | ~3.8s | 200/200 通过 |
+| 算法层一站式自检（5 模块） | ~7.2s | 全部通过 |
+| 后端 pytest（178 例） | ~34s | 178/178 通过 |
+| 前端 vitest（111 例） | ~2.5s | 111/111 通过 |
 
 ---
 
@@ -217,24 +222,23 @@ STEP writer    →  单曲面闭环      →  车身 NURBS化    →  全车 STE
 
 ## 📚 文档导航
 
-- [⭐ NURBS+STEP 技术审计报告](docs/TECHNICAL_AUDIT_20260801.md) — 下一阶段路线图（必读）
+- [架构设计文档](docs/ARCHITECTURE_DESIGN.md) — 五层分层、模块清单、数据流、部署（必读）
+- [产品功能定义](docs/PRODUCT_SPEC.md) — 用户角色、10 页面功能、能力矩阵
+- [API 参考总览](docs/api_reference.md) — 16 模块 116 端点明细与认证标记
 - [贝叶斯优化模块使用文档](docs/bayes_optimization.md) — GP + EI/UCB 代理寻优容器，与训练模块联动
-- [架构设计 v1.0](docs/ARCHITECTURE_DESIGN.md) — 5 层分层设计
-- [产品功能定义](docs/PRODUCT_SPEC.md) — 需求与场景
-- [设计令牌](docs/DESIGN_TOKENS.md) — UI 设计规范
-- [算法模型文档](algorithm_model/README.md) — 5 大 API + 7 CLI 速查
-- [复盘总结 20260711](docs/复盘总结_20260711.md) — 历史复盘
-- [W1~W4 周报](docs/) — 开发周报与完结报告
+- [审计报告 2026-08-10](docs/AUDIT_REPORT_20260810.md) — 历史审计基线
+- [平台测试报告 2026-08-11](docs/PLATFORM_TEST_REPORT_20260811.md) — 历史平台测试记录
+- [算法模型文档](algorithm_model/README.md) — 5 大 API + CLI 速查
 
 ---
 
 ## 📝 开发规范
 
-- **算法层零修改**：`algorithm_model/` 是黑盒，service 层只调不写
+- **算法层业务零修改**：`algorithm_model/` 是独立黑盒，service 层只调不写；修复契约缺陷（如自检漂移）时保持接口向后兼容
 - **后端服务薄壳**：每个 service 10-50 行，纯调度
 - **字段 100% 对齐**：Pydantic model 与 algorithm_model 数据类签名必须严格一致
 - **测试驱动**：新功能必须配测试用例
-- **M2 异步约定**：>1s 操作走 Celery，API 返回 `202 + task_id`，客户端轮询 `GET /api/v1/task/{tid}`
+- **长任务约定**：训练等耗时任务在后台线程执行，接口返回任务对象，客户端轮询 `GET /api/v1/ai/tasks/{id}`
 - **Mock Fallback 优先**：前端关键页面必须有 mock 数据兜底，backend 不可用时不黑屏
 - **Hash 路由**：使用 `createWebHashHistory` 适配 GitHub Pages 静态部署
 
@@ -246,7 +250,7 @@ STEP writer    →  单曲面闭环      →  车身 NURBS化    →  全车 STE
 - **外部归档**：`D:\API\_archive\` （历史快照与 tar.gz）
 - **沟通风格**：先结论后依据；少解释过程
 - **文件引用**：用绝对路径
-- **周复盘节奏**：每周一次复盘，沉淀到 `docs/weekly-reviews/`
+- **复盘节奏**：阶段复盘沉淀到 `docs/`
 - **版本发布**：成熟版本及时更新 GitHub 仓库，让网站早日恢复常态化运行
 
 ---
