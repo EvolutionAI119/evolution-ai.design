@@ -4,7 +4,7 @@
 // 从而断言 method/url/请求体以及 Authorization 头；错误路径模拟上游 401。
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import api, {
-  aiAPI, apiKeyAPI, authAPI, llmAPI, modifyAPI
+  aiAPI, apiKeyAPI, authAPI, bayesAPI, llmAPI, modifyAPI
 } from '../api'
 
 const TOKEN_KEY = 'evoai_token'
@@ -104,6 +104,38 @@ describe('API 路径与后端路由契约', () => {
 
     await modifyAPI.updateParameter('p', 2)
     expect(captured.url).toBe('/modify/parameters/update')
+  })
+
+  it('bayesAPI 贝叶斯寻优容器端点与后端一致', async () => {
+    await bayesAPI.createSession({ goal: 'maximize', acquisition: 'ei' })
+    expect(captured.method).toBe('post')
+    expect(captured.url).toBe('/bayes/sessions')
+
+    await bayesAPI.getSession('abc')
+    expect(captured.method).toBe('get')
+    expect(captured.url).toBe('/bayes/sessions/abc')
+
+    await bayesAPI.suggest('abc', 3)
+    expect(captured.method).toBe('get')
+    expect(captured.url).toBe('/bayes/sessions/abc/suggest')
+    expect(captured.params).toEqual({ n: 3 })
+
+    await bayesAPI.observe('abc', { overall_length: 5000 }, 88.5)
+    expect(captured.method).toBe('post')
+    expect(captured.url).toBe('/bayes/sessions/abc/observe')
+    expect(JSON.parse(captured.data)).toEqual({
+      parameters: { overall_length: 5000 }, score: 88.5
+    })
+
+    await bayesAPI.best('abc')
+    expect(captured.url).toBe('/bayes/sessions/abc/best')
+
+    await bayesAPI.samples('abc')
+    expect(captured.url).toBe('/bayes/sessions/abc/samples')
+
+    await bayesAPI.deleteSession('abc')
+    expect(captured.method).toBe('delete')
+    expect(captured.url).toBe('/bayes/sessions/abc')
   })
 })
 

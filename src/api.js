@@ -233,28 +233,18 @@ export const modifyAPI = {
   updateControlPoint: (update) => api.post(`/modify/surfaces/${update.surface_id}/control-point`, update),
   evaluateSurface: (surfaceId, u, v) => api.get(`/modify/surfaces/${surfaceId}/evaluate`, { params: { u, v } }),
   deleteSurface: (surfaceId) => api.delete(`/modify/surfaces/${surfaceId}`),
-  // 草图
-  createSketch: (data) => api.post('/modify/sketches/create', data),
-  getSketch: (sketchId) => api.get(`/modify/sketches/${sketchId}`),
-  addSketchEntity: (sketchId, entityData) => api.post(`/modify/sketches/${sketchId}/entities`, entityData),
-  addSketchConstraint: (sketchId, constraintData) => api.post(`/modify/sketches/${sketchId}/constraints`, constraintData),
-  modifySketch: (sketchId, modification) => api.post(`/modify/sketches/${sketchId}/modify`, modification),
   // 参数
   getParameters: () => api.get('/modify/parameters'),
   addParameter: (data) => api.post('/modify/parameters/add', data),
   updateParameter: (name, value) => api.post('/modify/parameters/update', { name, value }),
-  driveWithParameter: (data) => api.post('/modify/parameters/drive', data),
   getAutomotiveParameters: () => api.get('/modify/parameters/automotive'),
-  applyAutomotiveParameter: (paramName, value) => api.post(`/modify/parameters/automotive/apply?param_name=${paramName}&value=${value}`),
   // 测量
   measureDistance: (data) => api.post('/modify/measurements/distance', data),
   measureAngle: (data) => api.post('/modify/measurements/angle', data),
-  measureCurvature: (data) => api.post('/modify/measurements/curvature', data),
   getMeasurementSummary: () => api.get('/modify/measurements/summary'),
   // 历史
   getHistory: () => api.get('/modify/history'),
-  undo: () => api.post('/modify/history/undo'),
-  exportState: () => api.post('/modify/export')
+  undo: () => api.post('/modify/history/undo')
 }
 
 // AI训练集 API - 云端计算服务
@@ -269,11 +259,8 @@ export const aiAPI = {
   cancelTask: (id) => api.post(`/ai/tasks/${id}/cancel`),
   getTrainingCapabilities: () => api.get('/ai/training/capabilities'),
   evaluateQuality: (data) => api.post('/ai/evaluate-quality', data),
-  classifyStyle: (featureVector) => api.post('/ai/classify-style', { feature_vector: featureVector }),
   generateDesign: (data) => api.post('/ai/generate-design', data),
   optimize: (data) => api.post('/ai/optimize', data),
-  styleTransfer: (data) => api.post('/ai/style-transfer', data),
-  brandFusion: (data) => api.post('/ai/brand-fusion', data),
   getDatasetStats: () => api.get('/ai/dataset-stats'),
   getCarTypes: () => api.get('/ai/car-types'),
   getStyles: () => api.get('/ai/styles'),
@@ -283,6 +270,19 @@ export const aiAPI = {
   chatWithExpert: (question, context) => api.post('/ai/chat', { question, context }),
   getAIHealth: () => api.get('/ai/health'),
   getAIModels: () => api.get('/ai/models')
+}
+
+// 贝叶斯优化 API（机器学习后台训练的代理寻优容器）
+// 闭环：suggest 建议参数 → 评估造型质量分 → observe 回填 → 迭代收敛 → samples 导出训练数据
+export const bayesAPI = {
+  // 创建寻优会话（space 缺省时使用 14 个造型规范参数，与训练管线对齐）
+  createSession: (data) => api.post('/bayes/sessions', data),
+  getSession: (sid) => api.get(`/bayes/sessions/${sid}`),
+  deleteSession: (sid) => api.delete(`/bayes/sessions/${sid}`),
+  suggest: (sid, n = 1) => api.get(`/bayes/sessions/${sid}/suggest`, { params: { n } }),
+  observe: (sid, parameters, score) => api.post(`/bayes/sessions/${sid}/observe`, { parameters, score }),
+  best: (sid) => api.get(`/bayes/sessions/${sid}/best`),
+  samples: (sid) => api.get(`/bayes/sessions/${sid}/samples`)
 }
 
 // 用户认证 API

@@ -30,7 +30,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from .config import settings
 from .database import init_db
 from .routes import (
-    ai, auth, build, car, export, import_export, llm_proxy, model, modify,
+    ai, auth, bayes, build, car, export, import_export, llm_proxy, model, modify,
     project, quality, training, texture, variant, workflow,
 )
 
@@ -317,6 +317,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.keys_router)
     app.include_router(llm_proxy.router, tags=["LLM 模型代理"])
     app.include_router(training.router)
+    app.include_router(bayes.router, tags=["贝叶斯优化"])
     app.include_router(import_export.router, tags=["导入改参导出"])
     app.include_router(texture.router, tags=["参数化纹理设计"])
 

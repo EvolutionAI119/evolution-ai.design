@@ -108,11 +108,6 @@ describe('API 模块测试', () => {
       await aiAPI.train({ epochs: 10 })
       expect(mockAxiosInstance.post).toHaveBeenCalledWith('/ai/train', { epochs: 10 })
     })
-
-    it('classifyStyle 应发送 feature_vector 字段', async () => {
-      await aiAPI.classifyStyle([1, 2, 3])
-      expect(mockAxiosInstance.post).toHaveBeenCalledWith('/ai/classify-style', { feature_vector: [1, 2, 3] })
-    })
   })
 
   describe('7. 模型导出 API', () => {

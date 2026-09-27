@@ -218,6 +218,7 @@ STEP writer    →  单曲面闭环      →  车身 NURBS化    →  全车 STE
 ## 📚 文档导航
 
 - [⭐ NURBS+STEP 技术审计报告](docs/TECHNICAL_AUDIT_20260801.md) — 下一阶段路线图（必读）
+- [贝叶斯优化模块使用文档](docs/bayes_optimization.md) — GP + EI/UCB 代理寻优容器，与训练模块联动
 - [架构设计 v1.0](docs/ARCHITECTURE_DESIGN.md) — 5 层分层设计
 - [产品功能定义](docs/PRODUCT_SPEC.md) — 需求与场景
 - [设计令牌](docs/DESIGN_TOKENS.md) — UI 设计规范
