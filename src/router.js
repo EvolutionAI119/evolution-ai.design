@@ -9,6 +9,7 @@ const routes = [
   { path: '/quality', name: 'Quality', component: () => import('./views/Quality.vue') },
   { path: '/deliver', name: 'Deliver', component: () => import('./views/Deliver.vue') },
   { path: '/demo', name: 'Demo', component: () => import('./views/Demo.vue') },
+  { path: '/help', name: 'Help', component: () => import('./views/Help.vue') },
   // 账户体系
   {
     path: '/login', name: 'Login',
@@ -17,7 +18,9 @@ const routes = [
   },
   {
     path: '/account', name: 'Account',
-    component: () => import('./views/Account.vue')
+    component: () => import('./views/Account.vue'),
+    // 账户页管理个人 Token：仅测试/商业用户与管理员需要登录
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -26,15 +29,15 @@ const router = createRouter({
   routes
 })
 
-// 全局守卫：未登录访问受保护页面 → 跳转登录并携带回跳地址
+// 全局守卫：平台默认免登录游客可浏览全部页面；
+// 仅当路由显式声明 meta.requiresAuth 时才要求登录（如账户设置）。
 router.beforeEach((to) => {
   const token = localStorage.getItem('evoai_token')
-  if (!to.meta.public && !token) {
-    return { name: 'Login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
-  }
-  // 已登录用户访问登录页 → 直接回首页
-  if (to.name === 'Login' && token) {
-    return { path: '/' }
+  if (to.meta.requiresAuth && !token) {
+    return {
+      name: 'Login',
+      query: to.fullPath !== '/' ? { redirect: to.fullPath } : {}
+    }
   }
   return true
 })

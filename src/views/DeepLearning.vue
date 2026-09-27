@@ -143,6 +143,25 @@
                 <el-icon><WarningFilled /></el-icon>
                 {{ currentTask.error_message }}
               </div>
+
+              <!-- 训练产出已接入预设审核工作流的状态横幅 -->
+              <div class="review-banner" v-if="reviewWf">
+                <el-icon><ArrowRight /></el-icon>
+                <span class="rb-text">{{ t('deepLearning.reviewBanner') }} #{{ reviewWf.id }}</span>
+                <el-button size="small" text type="primary"
+                  @click="router.push(`/projects/${reviewWf.project_id}`)">
+                  {{ t('deepLearning.reviewView') }}
+                </el-button>
+              </div>
+
+              <!-- 审核流接入失败：提供重试入口 -->
+              <div class="review-banner review-banner--warn" v-else-if="reviewFailed && currentTask?.status === 'completed'">
+                <el-icon><WarningFilled /></el-icon>
+                <span class="rb-text">{{ t('deepLearning.reviewFailed') }}</span>
+                <el-button size="small" text type="primary" @click="submitTrainingReview(currentTask)">
+                  {{ t('deepLearning.reviewRetry') }}
+                </el-button>
+              </div>
             </div>
           </div>
         </el-tab-pane>
@@ -207,13 +226,17 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Brush, MagicStick, Sunny, ArrowRight, VideoPlay, Cpu, WarningFilled
 } from '@element-plus/icons-vue'
-import { aiAPI } from '../api'
+import { aiAPI, workflowAPI, projectAPI } from '../api'
+import { useAuthStore } from '../stores/auth'
 
 const { t } = useI18n({ useScope: 'global' })
+const router = useRouter()
+const auth = useAuthStore()
 
 // ── 训练配置与状态 ──
 const cap = ref(null)
@@ -335,6 +358,8 @@ const pollTask = async () => {
       await loadHistory()
       if (data.status === 'completed') {
         ElMessage.success(t('deepLearning.statusCompleted'))
+        // 训练产出 → 预设工作流审核（合规性 + 质量），自动接入
+        await submitTrainingReview(data)
       }
     }
   } catch {
@@ -342,7 +367,43 @@ const pollTask = async () => {
   }
 }
 
+// ── 训练产出接入工作流审核 ──
+// 调用 POST /workflows/training-review（需登录 Token）：归属校验后
+// 在项目下创建 training_review 工作流并预置"合规性审核→质量审核"两道人工步骤
+const reviewWf = ref(null)
+const reviewFailed = ref(false)
+const submitTrainingReview = async (task) => {
+  reviewFailed.value = false
+  try {
+    const { data: projects } = await projectAPI.list()
+    if (!projects.length) {
+      console.warn('[review] 无可用项目，训练产出未接入审核流')
+      reviewFailed.value = true
+      return
+    }
+    const { data: wf } = await workflowAPI.createTrainingReview({
+      project_id: projects[0].id, task_id: task.id
+    })
+    reviewWf.value = wf
+    ElMessage.success(t('deepLearning.reviewSubmitted', { id: wf.id }))
+  } catch (e) {
+    console.warn('[review] 审核流接入失败', e?.response?.data?.detail || e)
+    reviewFailed.value = true
+  }
+}
+
 const startTrain = async () => {
+  // 身份验证闸口：后端 /ai/train 强制 JWT 校验，未登录时引导登录并回跳本页
+  if (!auth.isAuthenticated) {
+    try {
+      await ElMessageBox.confirm(
+        t('deepLearning.loginRequired'), t('deepLearning.loginRequiredTitle'),
+        { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'warning' }
+      )
+    } catch { return }
+    router.push({ path: '/login', query: { redirect: '/deep-learning' } })
+    return
+  }
   starting.value = true
   try {
     const { data } = await aiAPI.train({
@@ -604,6 +665,26 @@ onUnmounted(stopPolling)
   background: rgba(248, 113, 113, 0.08);
   border: 1px solid rgba(248, 113, 113, 0.2);
   border-radius: 8px;
+}
+
+/* 审核工作流接入横幅 */
+.review-banner {
+  margin-top: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 8px;
+}
+.review-banner .rb-text { flex: 1; }
+.review-banner--warn {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.3);
 }
 
 /* ===== 日志 ===== */

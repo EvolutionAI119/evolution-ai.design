@@ -61,15 +61,15 @@ api.interceptors.response.use(
     console.log(`⏱️ Duration: ${duration}ms`)
     console.groupEnd()
 
-    // 401 统一处理：令牌缺失/失效 → 清除并跳转登录页
-    // （登录/注册接口本身的 401 由调用页面自行提示，不跳转）
+    // 401 统一处理：游客默认可浏览全站，不强制跳转登录页。
+    // 仅广播「需要登录」事件，由 App 界面层弹出友好提示；
+    // 登录/注册接口本身的 401 由调用页面自行提示，请求也可通过 skipAuthPrompt 关闭弹窗。
     const isAuthEndpoint = typeof config?.url === 'string' &&
       config.url.startsWith('/auth/')
-    if (response?.status === 401 && !isAuthEndpoint) {
+    if (response?.status === 401 && !isAuthEndpoint && !config?.skipAuthPrompt) {
+      // 令牌失效时清除本地登录态（回到游客身份）
       localStorage.removeItem('evoai_token')
-      if (!window.location.hash.startsWith('#/login')) {
-        window.location.hash = '#/login'
-      }
+      window.dispatchEvent(new CustomEvent('evoai:auth-required'))
     }
     return Promise.reject(error)
   }
@@ -144,7 +144,12 @@ export const workflowAPI = {
   get: (id) => api.get(`/workflows/${id}`),
   execute: (id) => api.post(`/workflows/${id}/execute`),
   steps: (id) => api.get(`/workflows/${id}/steps`),
-  delete: (id) => api.delete(`/workflows/${id}`)
+  delete: (id) => api.delete(`/workflows/${id}`),
+  // 训练产出接入预设审核工作流（合规性+质量人工审核，需登录 Token）
+  createTrainingReview: (data) => api.post('/workflows/training-review', data),
+  // 人工审核工作流步骤：{approved: boolean, comment?: string}
+  reviewStep: (workflowId, stepId, data) =>
+    api.post(`/workflows/${workflowId}/steps/${stepId}/review`, data)
 }
 
 // 报告 API

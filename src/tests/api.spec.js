@@ -185,14 +185,17 @@ describe('401 响应统一处理', () => {
     localStorage.clear()
   })
 
-  it('非认证端点 401：清除 token 并跳转登录页', async () => {
+  it('非认证端点 401：清除 token 并广播登录事件（游客可继续浏览，不强制跳转）', async () => {
     localStorage.setItem(TOKEN_KEY, 'jwt-expired')
     window.location.hash = '#/deep-learning'
+    let prompted = false
+    window.addEventListener('evoai:auth-required', () => { prompted = true }, { once: true })
     api.defaults.adapter = unauthorizedAdapter('/ai/tasks')
 
     await expect(aiAPI.listTasks()).rejects.toBeTruthy()
     expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
-    expect(window.location.hash).toBe('#/login')
+    expect(prompted).toBe(true)
+    expect(window.location.hash).toBe('#/deep-learning')
   })
 
   it('登录接口本身 401：保留现场，不跳转', async () => {

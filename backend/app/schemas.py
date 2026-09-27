@@ -69,6 +69,18 @@ class WorkflowUpdate(BaseModel):
     status: Optional[str] = None
 
 
+class TrainingReviewCreate(BaseModel):
+    """训练产出接入预设审核工作流的请求体"""
+    project_id: int
+    task_id: int
+
+
+class StepReviewCreate(BaseModel):
+    """人工审核工作流步骤的结论（合规性/质量审核）"""
+    approved: bool
+    comment: Optional[str] = Field(None, max_length=500)
+
+
 class WorkflowResponse(WorkflowBase):
     id: int
     project_id: int

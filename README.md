@@ -224,7 +224,7 @@ _writer            已验证           body_ends(G1)       SOP 报告 / FreeCAD 
 
 - [架构设计文档](docs/ARCHITECTURE_DESIGN.md) — 五层分层、模块清单、数据流、部署（必读）
 - [技术白皮书](docs/whitepaper.md) — 平台定位、核心能力、架构部署、可信基线与演进
-- [产品功能定义](docs/PRODUCT_SPEC.md) — 用户角色、10 页面功能、能力矩阵
+- [产品功能定义](docs/PRODUCT_SPEC.md) — 用户角色、11 页面功能、能力矩阵
 - [API 参考总览](docs/api_reference.md) — 16 模块 118 端点明细与认证标记
 - [英文学术论文](docs/EVOLUTION_AI_paper.md) — 贝叶斯优化 + NURBS A 级曲面 + DL/LLM 融合 + 端到端集成
 - [造型开发方法论](docs/methodology.md) — 五维度方法论、SOP、成熟度自检

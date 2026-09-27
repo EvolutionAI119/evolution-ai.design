@@ -357,6 +357,8 @@ const createCar = () => {
   const createMirror = (zSide) => {
     const mirrorGroup = new THREE.Group()
 
+    // 后视镜安装在 A 柱根部（发动机舱线高度），与车顶保持明确间距，
+    // 避免任何视角下镜壳与车顶视觉重叠而成为"杂乱物"
     const armLength = 0.08
     const armGeom = new THREE.CylinderGeometry(0.015, 0.02, armLength, 8)
     armGeom.rotateX(Math.PI / 2)
@@ -364,20 +366,25 @@ const createCar = () => {
     arm.position.set(0, 0, zSide * (bodyExtentZ + armLength / 2))
     mirrorGroup.add(arm)
 
-    const housingGeom = new THREE.BoxGeometry(0.18, 0.1, 0.05)
+    // 镜壳：宽度沿车长、深度沿 Z 向外凸出，呈真实后视镜形态（非薄片状）
+    const housingDepth = 0.11
+    const housingGeom = new THREE.BoxGeometry(0.16, 0.09, housingDepth)
+    const housingZ = bodyExtentZ + armLength + housingDepth / 2
     const housing = new THREE.Mesh(housingGeom, bodyMat)
-    housing.position.set(0, 0.02, zSide * (bodyExtentZ + armLength + 0.025))
+    housing.position.set(0, 0.02, zSide * housingZ)
     mirrorGroup.add(housing)
 
-    const mirrorFaceGeom = new THREE.PlaneGeometry(0.14, 0.08)
+    // 镜面：嵌入镜壳内侧，朝向驾驶员方向
+    const mirrorFaceGeom = new THREE.PlaneGeometry(0.13, 0.07)
     const mirrorFace = new THREE.Mesh(mirrorFaceGeom, chromeMat)
-    mirrorFace.position.set(-0.06, 0.02, zSide * (bodyExtentZ + armLength + 0.025))
+    mirrorFace.position.set(-0.05, 0.02, zSide * (housingZ - 0.006))
     mirrorFace.rotation.y = -Math.PI / 2
     mirrorGroup.add(mirrorFace)
 
+    // 安装点：A 柱根部、发动机舱肩部（紧贴车身侧面，不悬空、不挤车顶）
     mirrorGroup.position.set(
-      windshieldTopX + 0.1,
-      beltLineY - 0.05,
+      hoodEndX + 0.02,
+      hoodLineY + 0.03,
       0
     )
     return mirrorGroup
@@ -387,17 +394,25 @@ const createCar = () => {
   group.add(createMirror(-1))
 
   if (props.carType === 'sport') {
-    const wingGeom = new THREE.BoxGeometry(W * 0.8, 0.04, 0.25)
+    // GT 尾翼：水平翼片横跨车身宽度方向（Z），位于车尾后备箱上方
+    const wingSpan = W * 0.9       // 翼展
+    const wingChord = 0.28         // 弦长（沿车长 X）
+    const wingGeom = new THREE.BoxGeometry(wingChord, 0.045, wingSpan)
+    const wingX = rearX + 0.32
+    const wingY = trunkLineY + 0.32
     const wing = new THREE.Mesh(wingGeom, bodyMat)
-    wing.position.set(rearWindowTopX + 0.1, roofTopY + 0.15, 0)
+    wing.position.set(wingX, wingY, 0)
     group.add(wing)
-    
-    const wingSupportGeom = new THREE.BoxGeometry(0.03, 0.15, 0.03)
+
+    // 两根垂直支柱，从后备箱甲板向上承托翼片
+    const supportH = wingY - (trunkLineY + 0.04)
+    const wingSupportGeom = new THREE.BoxGeometry(0.035, supportH, 0.05)
+    const strutZ = W * 0.28
     const ws1 = new THREE.Mesh(wingSupportGeom, chromeMat)
-    ws1.position.set(rearWindowTopX + 0.1, roofTopY + 0.07, W * 0.25)
+    ws1.position.set(wingX, trunkLineY + 0.04 + supportH / 2, strutZ)
     group.add(ws1)
     const ws2 = new THREE.Mesh(wingSupportGeom, chromeMat)
-    ws2.position.set(rearWindowTopX + 0.1, roofTopY + 0.07, -W * 0.25)
+    ws2.position.set(wingX, trunkLineY + 0.04 + supportH / 2, -strutZ)
     group.add(ws2)
   }
 

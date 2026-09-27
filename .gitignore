@@ -62,6 +62,8 @@ coverage.xml
 *.pptx
 *.ppt
 *.pdf
+# 知识库导出的 PDF 文档纳入版本管理（docs/ 下约 9MB，低于 GitHub 100MB 限制）
+!docs/*.pdf
 
 # Embedded Python
 .python312/

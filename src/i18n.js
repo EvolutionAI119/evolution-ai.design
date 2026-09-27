@@ -14,7 +14,7 @@ const zh = {
   menu: {
     dashboard: '仪表盘', aiDesigner: 'AI 设计器', projects: '项目管理',
     deepLearning: '深度学习设计器', quality: '质量检查', deliver: '数据交付', demo: 'DEMO 演示',
-    account: '账户设置',
+    account: '账户设置', help: '帮助中心',
     groupDesign: '设计', groupWorkflow: '工作流',
     lightMode: '切换到浅色模式', darkMode: '切换到深色模式', language: '语言'
   },
@@ -410,6 +410,13 @@ const zh = {
     colBestVal: '最佳验证准确率', colCompletedAt: '完成时间',
     capBackend: '训练后端', capUnavailable: '训练后端不可用',
     trainFailed: '启动训练失败',
+    loginRequiredTitle: '需要登录',
+    loginRequired: '启动训练任务需验证身份。登录后将使用账户 Token 鉴权执行训练。',
+    reviewSubmitted: '训练产出已接入工作流审核（#{id}）：合规性审核 → 质量审核',
+    reviewFailed: '审核流接入失败，请稍后在历史任务中重试',
+    reviewRetry: '重试接入',
+    reviewBanner: '已接入预设审核工作流（合规性审核 + 质量审核）',
+    reviewView: '查看项目',
     featuresTitle: 'AI 创意工具'
   },
   common: {
@@ -585,6 +592,12 @@ const zh = {
     loginSuccess: '登录成功', loginFailed: '登录失败，请重试',
     registerSuccess: '注册成功', registerFailed: '注册失败，请重试',
     demoHint: "演示账号：demo{'@'}evolution-ai.design / demo123456",
+    continueAsGuest: '游客身份继续浏览',
+    authRequiredTitle: '此功能需要登录',
+    authRequiredDesc: '需要关联 Token 的测试用户、商业用户或管理员请先登录；您也可以继续以游客身份自由浏览平台。',
+    goSignIn: '去登录',
+    continueBrowsing: '继续浏览',
+    loggedOut: '已退出登录，当前为游客模式',
     orContinueWith: '或使用以下方式登录',
     wechatLogin: '微信扫码登录', wechatLoading: '正在获取二维码…',
     wechatSuccess: '微信登录成功',
@@ -627,8 +640,8 @@ const en = {
   },
   menu: {
     dashboard: 'Dashboard', aiDesigner: 'AI Designer', projects: 'Projects',
-    deepLearning: 'Deep Learning Designer', quality: 'Quality', deliver: 'Deliver', demo: 'DEMO',
-    account: 'Account',
+    deepLearning: 'Deep Learning', quality: 'Quality', deliver: 'Deliver', demo: 'DEMO',
+    account: 'Account', help: 'Help Center',
     groupDesign: 'Design', groupWorkflow: 'Workflow',
     lightMode: 'Switch to light mode', darkMode: 'Switch to dark mode', language: 'Language'
   },
@@ -1024,6 +1037,13 @@ const en = {
     colBestVal: 'Best val accuracy', colCompletedAt: 'Completed at',
     capBackend: 'Backend', capUnavailable: 'Training backend unavailable',
     trainFailed: 'Failed to start training',
+    loginRequiredTitle: 'Login Required',
+    loginRequired: 'Starting a training task requires identity verification. Your account token will be used to authorize the training run.',
+    reviewSubmitted: 'Training output submitted to review workflow (#{id}): Compliance → Quality',
+    reviewFailed: 'Failed to submit for review. Retry later from task history.',
+    reviewRetry: 'Retry',
+    reviewBanner: 'Submitted to the preset review workflow (Compliance + Quality)',
+    reviewView: 'View project',
     featuresTitle: 'AI Creative Tools'
   },
   common: {
@@ -1210,6 +1230,12 @@ const en = {
     loginSuccess: 'Signed in successfully', loginFailed: 'Sign in failed, please retry',
     registerSuccess: 'Account created successfully', registerFailed: 'Sign up failed, please retry',
     demoHint: "Demo account: demo{'@'}evolution-ai.design / demo123456",
+    continueAsGuest: 'Continue as guest',
+    authRequiredTitle: 'Sign-in required',
+    authRequiredDesc: 'Test users, commercial users who need to associate tokens, or administrators should sign in first. You can also keep browsing freely as a guest.',
+    goSignIn: 'Sign in',
+    continueBrowsing: 'Continue browsing',
+    loggedOut: 'Signed out — you are now in guest mode',
     orContinueWith: 'or continue with',
     wechatLogin: 'Sign in with WeChat', wechatLoading: 'Loading QR code…',
     wechatSuccess: 'Signed in with WeChat',

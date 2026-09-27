@@ -3,7 +3,7 @@
   <router-view v-if="isLoginRoute" />
   <div v-else class="app-container">
     <el-container>
-      <el-aside width="200px" class="sidebar">
+      <el-aside width="216px" class="sidebar">
         <div class="logo">
           <h2>EVOLUTION AI</h2>
           <p>{{ t('app.subtitle') }}</p>
@@ -13,8 +13,8 @@
           router
           class="sidebar-menu"
           background-color="transparent"
-          text-color="rgba(255,255,255,0.7)"
-          active-text-color="#4ade80"
+          :text-color="menuTextColor"
+          :active-text-color="activeMenuColor"
         >
           <template #default>
             <template v-for="group in menuGroups" :key="group.labelKey || 'ungrouped'">
@@ -106,7 +106,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
-  Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton,
+  Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton, QuestionFilled,
 } from '@element-plus/icons-vue'
 // Element Plus 内置语言包
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
@@ -119,6 +119,12 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
 
 const isDark = ref(true)
+
+// 侧边栏文字颜色必须随主题切换（Element Plus 通过内联样式注入，CSS 无法覆盖）
+const menuTextColor = computed(() =>
+  isDark.value ? 'rgba(255,255,255,0.72)' : 'rgba(26,26,46,0.72)'
+)
+const activeMenuColor = computed(() => (isDark.value ? '#4ade80' : '#16a34a'))
 
 // 登录页采用全屏独立布局
 const isLoginRoute = computed(() => route.name === 'Login')
@@ -194,6 +200,7 @@ const menuGroups = [
     labelKey: '',
     items: [
       { path: '/demo', nameKey: 'menu.demo', icon: VideoPlay },
+      { path: '/help', nameKey: 'menu.help', icon: QuestionFilled },
       { path: '/account', nameKey: 'menu.account', icon: UserFilled }
     ]
   }
@@ -222,6 +229,7 @@ const currentPageName = computed(() => {
   --accent: #4ade80;
   --accent-bg: rgba(74, 222, 128, 0.12);
   --hover-bg: rgba(255, 255, 255, 0.06);
+  --control-bg: rgba(255, 255, 255, 0.05);
   --icon-color: rgba(255, 255, 255, 0.55);
   --icon-hover: #ffffff;
 }
@@ -238,6 +246,7 @@ const currentPageName = computed(() => {
   --accent: #16a34a;
   --accent-bg: rgba(22, 163, 74, 0.1);
   --hover-bg: rgba(0, 0, 0, 0.04);
+  --control-bg: rgba(0, 0, 0, 0.05);
   --icon-color: rgba(0, 0, 0, 0.55);
   --icon-hover: #1a1a2e;
 }
@@ -298,11 +307,20 @@ body {
   height: 44px;
   line-height: 44px;
   margin: 2px 8px;
+  padding: 0 12px;
   border-radius: 6px;
   font-size: 13px;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
+}
+
+/* 菜单名称完整显示：不换行、不省略 */
+.sidebar-menu :deep(.el-menu-item span) {
+  flex: 1;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .sidebar-menu :deep(.el-menu-item:hover) {
@@ -374,7 +392,7 @@ body {
 .lang-switch {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--control-bg);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 2px;
@@ -424,7 +442,7 @@ body {
   border-radius: 8px;
   cursor: pointer;
   border: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--control-bg);
   transition: border-color 0.2s, background 0.2s;
 }
 

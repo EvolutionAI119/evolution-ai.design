@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EVOLUTION AI · 一页纸综合报告</title>
+<style>
+  :root{
+    --ink:#1f2328; --sub:#57606a; --line:#d8dee4; --bg:#f6f8fa;
+    --blue:#0969da; --blue-d:#0a3069; --green:#1a7f37; --amber:#9a6700; --red:#cf222e;
+    --chip:#eaf1fb; --card:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;color:var(--ink);
+       background:var(--bg);font-size:13px;line-height:1.55}
+  .page{max-width:1280px;margin:0 auto;padding:14px 16px 20px}
+
+  /* ---------- header ---------- */
+  header{background:linear-gradient(120deg,#0a3069 0%,#0969da 62%,#218bff 100%);
+         color:#fff;border-radius:12px;padding:18px 22px;display:flex;
+         justify-content:space-between;align-items:center;gap:16px}
+  header h1{font-size:21px;letter-spacing:.5px}
+  header .en{font-size:10.5px;opacity:.85;letter-spacing:2.5px;text-transform:uppercase;margin-top:3px}
+  header .meta{text-align:right;font-size:11px;opacity:.95;line-height:1.7}
+  header .meta b{font-size:13px}
+
+  /* ---------- KPI ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:12px 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+       padding:10px 12px;box-shadow:0 1px 2px rgba(31,35,40,.04)}
+  .kpi .n{font-size:24px;font-weight:800;color:var(--blue-d);line-height:1.15}
+  .kpi .t{font-size:11px;color:var(--sub);margin-top:2px}
+  .kpi .u{font-size:10px;color:#8c959f}
+
+  /* ---------- layout ---------- */
+  .grid{display:grid;grid-template-columns:1.05fr 1fr 1fr;gap:12px;margin-bottom:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .card h2{font-size:13px;color:var(--blue-d);border-left:4px solid var(--blue);
+           padding-left:8px;margin-bottom:9px}
+  .card h2 small{font-weight:400;color:var(--sub);font-size:10.5px;margin-left:6px}
+
+  /* ---------- 五层架构 ---------- */
+  .layer{display:flex;align-items:stretch;gap:8px;margin-bottom:6px}
+  .layer .tag{flex:0 0 34px;background:var(--blue-d);color:#fff;border-radius:6px;
+              display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px}
+  .layer .box{flex:1;border:1px solid var(--line);border-radius:6px;padding:5px 9px;background:#fbfcfd}
+  .layer .box b{font-size:12px}
+  .layer .box span{display:block;font-size:10.5px;color:var(--sub)}
+  .layer:nth-child(2) .tag{background:#0b4aa2}
+  .layer:nth-child(3) .tag{background:#0969da}
+  .layer:nth-child(4) .tag{background:#218bff}
+  .layer:nth-child(5) .tag{background:#54aeff}
+
+  /* ---------- 算法内核 ---------- */
+  .mod{border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:6px;
+       padding:6px 9px;margin-bottom:6px;background:#fbfcfd}
+  .mod b{font-size:12px}
+  .mod code{font-family:Consolas,monospace;font-size:10px;color:var(--blue);background:var(--chip);
+            padding:0 4px;border-radius:3px}
+  .mod span{display:block;font-size:10.5px;color:var(--sub)}
+
+  /* ---------- 横向条形 ---------- */
+  .bar-row{display:grid;grid-template-columns:96px 1fr 30px;align-items:center;gap:6px;margin:3px 0}
+  .bar-row .lbl{font-size:10.5px;color:var(--sub);text-align:right;font-family:Consolas,monospace}
+  .bar-row .track{background:#eaeef2;border-radius:4px;height:13px;overflow:hidden}
+  .bar-row .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#0969da,#54aeff)}
+  .bar-row .val{font-size:10.5px;font-weight:700;color:var(--blue-d)}
+
+  /* ---------- 测试分布（SVG 柱状） ---------- */
+  .tests{display:flex;align-items:flex-end;gap:18px;height:96px;padding:0 6px;margin-top:4px}
+  .tests .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .tests .v{font-size:12px;font-weight:800;color:var(--blue-d)}
+  .tests .rect{width:44px;border-radius:5px 5px 0 0;background:linear-gradient(180deg,#218bff,#0969da)}
+  .tests .c1{height:100%}.tests .c2{height:89%}.tests .c3{height:55.5%}
+  .tests .l{font-size:10px;color:var(--sub);margin-top:3px}
+  .total-line{font-size:11px;color:var(--sub);margin-top:6px}
+  .total-line b{color:var(--green)}
+
+  /* ---------- 质量指标 ---------- */
+  table.q{width:100%;border-collapse:collapse;font-size:11px;margin-top:2px}
+  table.q th,table.q td{border:1px solid var(--line);padding:4px 7px;text-align:left}
+  table.q th{background:var(--chip);color:var(--blue-d)}
+  table.q td.g{font-weight:800}
+  .grade-a{color:var(--green)}.grade-b{color:#0b4aa2}.grade-c{color:var(--amber)}.grade-d{color:var(--red)}
+  .muted{color:var(--sub);font-size:10.5px;margin-top:6px}
+
+  /* ---------- 分级标准 ---------- */
+  .grades{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
+  .g{border-radius:8px;padding:7px 8px;font-size:10.5px;border:1px solid var(--line)}
+  .g b{display:block;font-size:15px}
+  .g.a{background:#dafbe1;border-color:#aceebb}.g.a b{color:var(--green)}
+  .g.b{background:#ddf4ff;border-color:#b6e3ff}.g.b b{color:#0b4aa2}
+  .g.c{background:#fff8c5;border-color:#eac54f}.g.c b{color:var(--amber)}
+  .g.d{background:#ffebe9;border-color:#ffcecb}.g.d b{color:var(--red)}
+  .g span{color:var(--sub)}
+
+  /* ---------- 业务流 ---------- */
+  .flows{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .flow{border:1px dashed var(--blue);border-radius:8px;padding:7px 9px;background:#f7fbff}
+  .flow b{font-size:11.5px;color:var(--blue-d);display:block;margin-bottom:2px}
+  .flow span{font-size:10px;color:var(--sub);display:block;line-height:1.5}
+
+  /* ---------- 文档地图 ---------- */
+  .docs{display:flex;flex-wrap:wrap;gap:6px}
+  .doc{background:var(--chip);border:1px solid #b6e3ff;color:var(--blue-d);
+       border-radius:999px;padding:3px 10px;font-size:10.5px}
+  .doc.new{background:#dafbe1;border-color:#aceebb;color:var(--green)}
+
+  /* ---------- 原则 ---------- */
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .pillar{background:#fbfcfd;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  .pillar b{font-size:11.5px;color:var(--blue-d)}
+  .pillar span{display:block;font-size:10px;color:var(--sub);margin-top:2px}
+
+  footer{margin-top:10px;font-size:10px;color:#8c959f;text-align:center}
+  footer b{color:var(--sub)}
+
+  /* ---------- 打印：单页 A4 横向 ---------- */
+  @media print{
+    @page{size:A4 landscape;margin:6mm}
+    body{background:#fff}
+    .page{max-width:none;padding:0}
+    .card,.kpi,header{box-shadow:none}
+    .kpis{margin:8px 0}.grid{margin-bottom:8px}
+  }
+  @media (max-width:1000px){
+    .kpis{grid-template-columns:repeat(3,1fr)}
+    .grid{grid-template-columns:1fr}
+    .flows{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div>
+      <h1>EVOLUTION AI · 汽车 A 级曲面 AI 造型平台</h1>
+      <div class="en">One-Page Project Report · Synthesized from Knowledge Base</div>
+    </div>
+    <div class="meta">
+      版本 <b>v1.2</b> ｜ 2026-09-27<br>
+      从一句话到 3D 整车：参数驱动 · 贝叶斯寻优 · NURBS 交付
+    </div>
+  </header>
+
+  <!-- KPI -->
+  <section class="kpis">
+    <div class="kpi"><div class="n">118</div><div class="t">HTTP 端点 <span class="u">16 路由模块 + 2 系统</span></div></div>
+    <div class="kpi"><div class="n">11</div><div class="t">ORM 数据表 <span class="u">SQLite · Fernet 加密 Key</span></div></div>
+    <div class="kpi"><div class="n">11</div><div class="t">前端页面 <span class="u">Vue 3 + Three.js · Hash 守卫</span></div></div>
+    <div class="kpi"><div class="n">489</div><div class="t">自动化测试 <span class="u">三层全绿 · 2026-09-27</span></div></div>
+    <div class="kpi"><div class="n">22</div><div class="t">维 CarParams <span class="u">带边界校验 · 10 部件输出</span></div></div>
+    <div class="kpi"><div class="n">14</div><div class="t">维贝叶斯空间 <span class="u">RBF-GP + EI/UCB</span></div></div>
+  </section>
+
+  <div class="grid">
+    <!-- 五层架构 -->
+    <div class="card">
+      <h2>五层架构 <small>薄壳编排 · 不重写算法</small></h2>
+      <div class="layer"><div class="tag">L1</div><div class="box"><b>前端</b><span>Vue 3 + Vite + Three.js + Element Plus + Pinia，11 页面双语 i18n</span></div></div>
+      <div class="layer"><div class="tag">L2</div><div class="box"><b>接入</b><span>Nginx / Vite 代理 → FastAPI:8000，cpolar HTTPS 公网隧道</span></div></div>
+      <div class="layer"><div class="tag">L3</div><div class="box"><b>后端</b><span>FastAPI 0.104 + Pydantic v2，16 薄壳路由模块 / 118 端点</span></div></div>
+      <div class="layer"><div class="tag">L4</div><div class="box"><b>算法</b><span>algorithm_model 独立包：建模 / NURBS 内核 / 质量 / 分镜</span></div></div>
+      <div class="layer"><div class="tag">L5</div><div class="box"><b>基础设施</b><span>SQLite + 文件存储，可选 Redis（缺失降级进程内）</span></div></div>
+      <div class="muted">端点最多的模块：modify 15 ｜ training 14 ｜ auth 12（含 3 个 API-Key 端点）｜ import_export 11</div>
+    </div>
+
+    <!-- 算法内核 -->
+    <div class="card">
+      <h2>算法内核 <small>5 个包 · 7 大 API</small></h2>
+      <div class="mod"><b>参数化整车</b> <code>car_modeling</code><span>22 维参数 → 截面壳体 + 10 部件装配，NURBS 车身 STEP 导出</span></div>
+      <div class="mod"><b>NURBS 自由曲面</b> <code>freeform</code><span>轻量内核：基函数 / 扫掠 / 圆角 / 混接 / 纯 Python STEP 写出</span></div>
+      <div class="mod"><b>质量评估与优化</b> <code>surface_quality</code><span>G0/G1/G2 连续性（5°/2°）· 反射线 · 模拟退火光顺</span></div>
+      <div class="mod"><b>分镜生成</b> <code>storyboard</code><span>3 套模板 · 时长等比缩放 · 自定义叙事</span></div>
+      <div class="mod"><b>分镜渲染</b> <code>storyboard_viewer</code><span>Markdown 表格 / 响应式 HTML 双渲染</span></div>
+      <div class="muted">配套：连续性检查器 0.1mm/1.0° 逐对偏差报告（TXT/CSV）；一站式自检 test_all.py 5 模块</div>
+    </div>
+
+    <!-- 质量与验证 -->
+    <div class="card">
+      <h2>质量与验证 <small>489 用例全绿</small></h2>
+      <div class="tests">
+        <div class="col"><div class="v">200</div><div class="rect c1"></div><div class="l">算法层 pytest</div></div>
+        <div class="col"><div class="v">178</div><div class="rect c2"></div><div class="l">后端 pytest</div></div>
+        <div class="col"><div class="v">111</div><div class="rect c3"></div><div class="l">前端 vitest</div></div>
+      </div>
+      <div class="total-line">合计 <b>489 / 489 通过</b> ｜ 贝叶斯 15 轮收敛：EI / UCB best = −0.00000（进入 −0.01 带）</div>
+      <table class="q">
+        <tr><th>参考曲面</th><th>等级</th><th>G2 比率</th><th>反射线</th></tr>
+        <tr><td>球面基线</td><td class="g grade-d">D</td><td>0.199</td><td>0.291</td></tr>
+        <tr><td>车身侧视 49×25</td><td class="g grade-c">C</td><td>0.855</td><td>0.158</td></tr>
+        <tr><td>噪声平面（优化 120 步）</td><td class="g grade-d">D</td><td>478→274</td><td>0.330→0.339</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- A 级分级标准 -->
+    <div class="card">
+      <h2>A 级曲面分级标准 <small>grader.py 阈值</small></h2>
+      <div class="grades">
+        <div class="g a"><b>A</b><span>G2&gt;85% 且 反射&gt;0.7</span></div>
+        <div class="g b"><b>B</b><span>G2&gt;70% 且 反射&gt;0.5</span></div>
+        <div class="g c"><b>C</b><span>G2&gt;50%</span></div>
+        <div class="g d"><b>D</b><span>未达 C</span></div>
+      </div>
+      <div class="muted">工程立场：硬点冻结后再做局部 A 级光顺——连续硬点主导面板上退火改善有限（ΔG2=0），受扰动曲面才可测改善。质量即门禁，不做装饰。</div>
+    </div>
+
+    <!-- 四条业务流 -->
+    <div class="card">
+      <h2>四条端到端业务流 <small>全链路可审计</small></h2>
+      <div class="flows">
+        <div class="flow"><b>① 参数化概念设计</b><span>参数输入 → 3D 整车 → 云端批次/评估/生成/优化 → 变体保存</span></div>
+        <div class="flow"><b>② CAD 导入改参导出</b><span>上传解析 → 改参预览 → STEP/GLB 等多格式下载</span></div>
+        <div class="flow"><b>③ 质量驱动迭代</b><span>质量检查 → 报告/历史 → 回设计端调整 → 复检</span></div>
+        <div class="flow"><b>④ ML 训练闭环</b><span>创建任务 → 轮询指标 → 贝叶斯观测样本桥接训练</span></div>
+      </div>
+      <div class="muted">十页面：首页 / 设计器 / 项目列表 / 项目详情 / 深度学习 / 质量中心 / 交付中心 / 演示中心 / 登录 / 账户</div>
+    </div>
+
+    <!-- 三大立场与可信降级 -->
+    <div class="card">
+      <h2>工程立场 <small>Signal, never simulate</small></h2>
+      <div class="pillars">
+        <div class="pillar"><b>信号优先</b><span>依赖缺失显式报不可用，绝不返回编造指标</span></div>
+        <div class="pillar"><b>薄壳编排</b><span>Web 层只编排与持久化，能力沉淀算法包</span></div>
+        <div class="pillar"><b>全链路可审计</b><span>参数/样本/评分/变体/任务可追溯可回滚</span></div>
+      </div>
+      <table class="q" style="margin-top:8px">
+        <tr><th>缺失依赖</th><th>降级行为</th></tr>
+        <tr><td>PyTorch</td><td>训练端点显式不可用</td></tr>
+        <tr><td>LLM Key</td><td>对话显式客户端错误</td></tr>
+        <tr><td>CLIP 权重</td><td>回退几何特征并标注</td></tr>
+        <tr><td>Redis</td><td>会话降级进程内存</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 文档地图 -->
+  <div class="card">
+    <h2>知识库文档地图 <small>docs/ 12 份 + 根 README，已导出 20 份 PDF</small></h2>
+    <div class="docs">
+      <span class="doc new">白皮书 whitepaper</span>
+      <span class="doc new">方法论 methodology</span>
+      <span class="doc new">设计哲学 design_philosophy</span>
+      <span class="doc new">设计元理论 design_meta_theory</span>
+      <span class="doc new">验证报告 20260927</span>
+      <span class="doc">英文学术论文 EVOLUTION_AI_paper</span>
+      <span class="doc">架构设计 ARCHITECTURE_DESIGN</span>
+      <span class="doc">产品定义 PRODUCT_SPEC</span>
+      <span class="doc">API 参考 api_reference（118 端点）</span>
+      <span class="doc">贝叶斯优化 bayes_optimization</span>
+      <span class="doc">审计报告 20260810</span>
+      <span class="doc">平台测试报告 20260811</span>
+      <span class="doc">算法包 README（7 API）</span>
+      <span class="doc">根 README（导航）</span>
+    </div>
+  </div>
+
+  <footer>
+    数据来源：源码事实基线（2026-09-27 核对）· 489 自动化用例当日执行 · <b>EVOLUTION AI v1.2</b> ·
+    参数即语言 ｜ 闭环即流程 ｜ 证据即决策 ｜ 观象 · 法地 · 成器 · 制变
+  </footer>
+</div>
+</body>
+</html>

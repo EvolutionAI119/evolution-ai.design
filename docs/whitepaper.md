@@ -19,7 +19,7 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 
 | 维度 | 规模 |
 |---|---|
-| 前端 | Vue 3 + Vite + Three.js；10 个页面，Hash 路由 + 全局登录守卫 |
+| 前端 | Vue 3 + Vite + Three.js；11 个页面，Hash 路由 + 全局登录守卫 |
 | 后端 | FastAPI + Pydantic v2 + SQLAlchemy 2.0；16 个路由模块 / 118 个 HTTP 端点 |
 | 数据 | SQLite；11 张 ORM 表（含 Fernet 加密的 API Key 存储） |
 | 算法 | 5 个算法包：参数化整车、NURBS 自由曲面内核、曲面质量评估、分镜生成与展示 |
@@ -64,7 +64,7 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 | 角色 | 核心诉求 | 平台价值 |
 |---|---|---|
 | 造型设计师 | 快速生成与比较方案 | 参数化整车秒级生成，变体对比 |
-| 项目负责人 | 项目、模型、工作流管理 | 10 页面协同，全链路状态可视 |
+| 项目负责人 | 项目、模型、工作流管理 | 11 页面协同，全链路状态可视 |
 | 曲面/质量工程师 | A 级曲面检查与交付 | G0/G1/G2 分级，多格式导出 |
 | ML 工程师 | 训练任务与样本 | PyTorch 后台训练，贝叶斯样本桥接 |
 | 注册用户/管理员 | 账户与权限 | 密码/微信登录，API Key 加密管理 |
@@ -145,7 +145,7 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 
 | 层 | 内容 |
 |---|---|
-| L1 前端 | Vue 3 + Vite + Three.js + Element Plus + Pinia；10 页面，双语 i18n，全局守卫 |
+| L1 前端 | Vue 3 + Vite + Three.js + Element Plus + Pinia；11 页面，双语 i18n，全局守卫 |
 | L2 接入 | Vite 开发代理 / Nginx；`/api/v1` → FastAPI:8000；公网经 cpolar HTTPS 隧道 |
 | L3 后端 | FastAPI 0.104 + Pydantic v2；16 薄壳路由模块 / 118 端点 |
 | L4 算法 | algorithm_model 独立可安装包：car_modeling / freeform / surface_quality / storyboard |

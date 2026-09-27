@@ -18,7 +18,7 @@ const md = new MarkdownIt({
   html: true,
   breaks: true,
   linkify: true
-}).use(markdownItEmoji)
+}).use(markdownItEmoji.full)
 
 const stripFrontmatter = (text) => {
   const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/
