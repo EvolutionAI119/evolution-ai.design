@@ -1,12 +1,14 @@
 """
 EVOLUTION AI 算法模型 - 统一对外 API
 
-5 个高层 API：
-1. build_car(params)            - 构建完整汽车（返回 8 部件 dict）
-2. evaluate_surface(points)     - 评估曲面质量（返回 QualityReport）
-3. optimize_surface(points)     - AI 优化曲面（返回 OptimizationResult）
-4. generate_storyboard(...)     - 生成视频脚本（返回 Storyboard）
-5. render_storyboard(sb, fmt)   - 渲染视频脚本（返回 md/html 字符串）
+7 个高层 API：
+1. build_car(params)             - 构建整车（返回 10 部件 dict）
+2. get_car_stats(params)        - 整车统计（顶点/面/部件/包围盒）
+3. evaluate_surface(points)     - 评估曲面质量（返回 QualityReport）
+4. optimize_surface(points)     - AI 模拟退火优化曲面（返回 OptimizationResult）
+5. make_storyboard(...)         - 生成视频脚本（返回 Storyboard）
+6. render_storyboard(sb, fmt)   - 渲染视频脚本（返回 md/html 字符串）
+7. run_full_pipeline()          - 跑完整流程（建模→评估→优化→脚本→渲染）
 
 设计原则：
 - 一个函数 = 一个完整工作流
@@ -58,13 +60,14 @@ def build_car(params: Optional[CarParams] = None) -> Dict[str, trimesh.Trimesh]:
         params: CarParams 对象，None 则用默认值
 
     Returns:
-        dict: {body, glass, wheels, headlights, taillights, grille, mirrors, seams}
+        dict: 10 部件 {body, hood, roof, windshield, rear_window,
+                       wheel_fl, wheel_fr, wheel_rl, wheel_rr}
 
     Example:
         >>> params = CarParams(L=4.8, W=1.88, H=1.48, roof_arc=0.55)
         >>> parts = build_car(params)
         >>> parts['body'].vertices.shape
-        (2352, 3)
+        (8, 3)
     """
     if params is None:
         params = CarParams()
@@ -213,17 +216,25 @@ def run_full_pipeline(
     跑完整流程：建模 → 提取面板 → 评估 → 优化 → 生成脚本 → 渲染
 
     Returns:
-        dict: {car_parts, stats, quality_before, quality_after, storyboard, md, html}
+        dict: {car_params, car_parts, stats, quality_before, quality_after,
+               optimization, storyboard, markdown, html}
     """
     if car_params is None:
         car_params = CarParams()
     parts = build_car(car_params)
     stats = get_car_stats(car_params)
 
-    # 用 body 网格作为测试面板
-    body = parts["body"]
-    n_long, n_circ = 49, 25
-    surface = body.vertices[:n_long * n_circ].reshape(n_long, n_circ, 3)
+    # 用参数化车身的单侧网格作为测试面板（build_full_car 的 body 为包围盒，
+    # 不能用于网格评估；build_body(process=False) 保留截面环构造顺序）
+    n_long, n_circ = 48, 24
+    try:
+        from .car_modeling import build_body
+    except ImportError:
+        from car_modeling import build_body
+    body_mesh = build_body(car_params, n_long=n_long, n_circ=n_circ, process=False)
+    ring = 2 * (n_circ + 1)
+    body_grid = np.asarray(body_mesh.vertices).reshape(n_long + 1, ring, 3)
+    surface = body_grid[:, 0::2, :]  # 偶数位 = 单侧点 → (49, 25, 3)
 
     quality_before = evaluate_surface(surface, "车身侧视")
     optimization = optimize_surface(surface, "车身侧视", max_iter=80)
