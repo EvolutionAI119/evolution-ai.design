@@ -1,7 +1,7 @@
 """
 Full-car assembler: builds all body panels and merges them into a single mesh.
 """
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import numpy as np
 
 try:
@@ -125,15 +125,62 @@ def build_full_car(params: CarParams) -> Dict[str, "trimesh.Trimesh"]:
     return parts
 
 
-def compute_stats(parts: Dict[str, "trimesh.Trimesh"]) -> Dict[str, int]:
-    """Compute basic statistics for all parts."""
+def _part_color(mesh) -> Optional[str]:
+    """提取部件颜色的 hex 字符串（无颜色信息时返回 None）。"""
+    try:
+        fc = getattr(mesh.visual, "face_colors", None)
+        if fc is not None and len(fc) > 0:
+            rgba = np.asarray(fc)[0]
+            return "#{:02x}{:02x}{:02x}".format(int(rgba[0]), int(rgba[1]), int(rgba[2]))
+    except Exception:
+        return None
+    return None
+
+
+def compute_stats(parts: Dict[str, "trimesh.Trimesh"]) -> Dict[str, Any]:
+    """统计全部部件的几何信息。
+
+    返回结构（与 test_all.py / main.py 的契约对齐）：
+      total_vertices / total_faces : 全部非空部件合计
+      components                   : {name: {vertices, faces, color}}
+      bounds                       : 整车 AABB {min, max}（无几何时为 None）
+      parts                        : 部件条目数
+      vertices / faces             : total_* 的历史别名
+    """
     total_verts = 0
     total_faces = 0
+    components: Dict[str, Dict[str, Any]] = {}
+    bb_min: Optional[np.ndarray] = None
+    bb_max: Optional[np.ndarray] = None
+
     for name, mesh in parts.items():
-        if mesh is not None:
-            total_verts += len(mesh.vertices)
-            total_faces += len(mesh.faces)
-    return {"parts": len(parts), "vertices": total_verts, "faces": total_faces}
+        if mesh is None:
+            components[name] = {"vertices": 0, "faces": 0, "color": None}
+            continue
+        nv, nf = len(mesh.vertices), len(mesh.faces)
+        total_verts += nv
+        total_faces += nf
+        components[name] = {"vertices": nv, "faces": nf, "color": _part_color(mesh)}
+        lo, hi = np.asarray(mesh.bounds[0]), np.asarray(mesh.bounds[1])
+        bb_min = lo if bb_min is None else np.minimum(bb_min, lo)
+        bb_max = hi if bb_max is None else np.maximum(bb_max, hi)
+
+    bounds = None
+    if bb_min is not None and bb_max is not None:
+        bounds = {
+            "min": [float(x) for x in bb_min],
+            "max": [float(x) for x in bb_max],
+        }
+
+    return {
+        "parts": len(parts),
+        "total_vertices": total_verts,
+        "total_faces": total_faces,
+        "vertices": total_verts,
+        "faces": total_faces,
+        "components": components,
+        "bounds": bounds,
+    }
 
 
 def merge_all(parts: Dict[str, "trimesh.Trimesh"]) -> "trimesh.Trimesh":

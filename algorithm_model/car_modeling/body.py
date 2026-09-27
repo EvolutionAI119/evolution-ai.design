@@ -215,6 +215,7 @@ def build_body(
     n_long: int = 48,
     n_circ: int = 24,
     use_blending: bool = True,
+    process: bool = True,
 ) -> trimesh.Trimesh:
     """
     构建主车身壳体（左右对称的完整外壳）
@@ -224,6 +225,8 @@ def build_body(
         n_long: 车长方向分段数
         n_circ: 截面方向分段数
         use_blending: 是否启用三区段 blending（默认 True）
+        process: 是否让 trimesh 合并/重排顶点（默认 True）；
+                 False 时保留截面环构造顺序，便于按网格提取做点阵分析
 
     Returns:
         trimesh.Trimesh 车身壳体
@@ -267,7 +270,7 @@ def build_body(
     mesh = trimesh.Trimesh(
         vertices=np.array(verts, dtype=np.float64),
         faces=np.array(faces, dtype=np.int64),
-        process=True,
+        process=process,
     )
     mesh.visual.face_colors = [200, 30, 40, 255]  # 经典红
     return mesh

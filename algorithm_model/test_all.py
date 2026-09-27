@@ -20,6 +20,24 @@ from algorithm_model.api import (
 )
 
 
+def _body_side_surface(params=None):
+    """构建单侧车身侧视参数化网格 (49, 25, 3)，供质量评估/优化使用。
+
+    build_body 顶点按截面环双侧交织排列，process=False 保留构造顺序；
+    每个截面环 2*(n_circ+1) 个点，取偶数位即单侧点。
+    """
+    import numpy as np
+    from algorithm_model.car_modeling import CarParams, build_body
+
+    if params is None:
+        params = CarParams()
+    n_long, n_circ = 48, 24
+    mesh = build_body(params, n_long=n_long, n_circ=n_circ, process=False)
+    ring = 2 * (n_circ + 1)
+    grid = np.asarray(mesh.vertices).reshape(n_long + 1, ring, 3)
+    return grid[:, 0::2, :]
+
+
 def test_car_modeling():
     """测试整车造型建模"""
     print("\n" + "=" * 60)
@@ -74,11 +92,8 @@ def test_quality_assessment():
     print(f"   等级: {report.grade} | G2 比率: {report.g2_ratio} | 反射线: {report.reflection_score}")
     print(f"   G0={report.g0_count} G1={report.g1_count} G2={report.g2_count} | 最大跳变={report.max_curvature_jump}°")
 
-    # 车身网格
-    parts = build_car()
-    body = parts["body"]
-    n_long, n_circ = 49, 25
-    surface = body.vertices[:n_long * n_circ].reshape(n_long, n_circ, 3)
+    # 车身侧视参数化网格（单侧 49x25）
+    surface = _body_side_surface()
     report2 = evaluate_surface(surface, "车身侧视")
     print(f"\n✅ 车身侧视评估:")
     print(f"   等级: {report2.grade} | G2 比率: {report2.g2_ratio} | 反射线: {report2.reflection_score}")
@@ -117,10 +132,8 @@ def test_ai_optimization():
     assert result.iterations > 0
     assert result.best_surface is not None
 
-    # 车身
-    parts = build_car()
-    body = parts["body"]
-    surface = body.vertices[:49 * 25].reshape(49, 25, 3)
+    # 车身侧视参数化网格（单侧 49x25）
+    surface = _body_side_surface()
     t0 = time.time()
     result2 = optimize_surface(surface, "车身侧视", max_iter=80, seed=42)
     dt = time.time() - t0
@@ -131,8 +144,8 @@ def test_ai_optimization():
           f"(Δ={result2.final_g2 - result2.initial_g2:+d})")
     print(f"   反射线: {result2.initial_reflection} → {result2.final_reflection} "
           f"(Δ={result2.final_reflection - result2.initial_reflection:+.3f})")
-    print("   ⚠️  车身是分段拼接曲面（5 段不同高度），优化空间有限")
-    print("   💡 工业场景：优化前先做曲面拼接光滑（CAD 阶段）")
+    print("   ℹ️  车身为参数化连续截面网格，光顺优化受硬点与比例参数约束")
+    print("   💡 工业场景：造型硬点确定后再做局部 A 级光顺，可获得更大改善空间")
 
     # 平面 + 噪声（最佳优化演示）
     print("\n✅ 平面+噪声 - 优化效果最显著的演示")
