@@ -45,9 +45,9 @@
 - **块 D (路由守卫)**: 按问题关键词严格映射到对应块，禁止跨块回答
 
 相关文件:
-- [scripts/llm_server.py:L33-L85](file:///d:/API/Evolution-Ai.Design/scripts/llm_server.py#L33-L85)
-- [scripts/Modelfile:L10-L55](file:///d:/API/Evolution-Ai.Design/scripts/Modelfile#L10-L55)
-- [scripts/docker-llm.ps1](file:///d:/API/Evolution-Ai.Design/scripts/docker-llm.ps1) (含 21 锚点一致性验证 + temperature=0.2)
+- [scripts/llm_server.py:L33-L85](../scripts/llm_server.py#L33-L85)
+- [scripts/Modelfile:L10-L55](../scripts/Modelfile#L10-L55)
+- [scripts/docker-llm.ps1](../scripts/docker-llm.ps1) (含 21 锚点一致性验证 + temperature=0.2)
 
 ---
 
@@ -73,9 +73,9 @@
 
 | 功能点 | 结果 | 说明 |
 |--------|------|------|
-| 3D 参数化车身 (NURBS 线框) | ✅ | [Car3D.vue](file:///d:/API/Evolution-Ai.Design/src/components/Car3D.vue) 渲染正确 |
+| 3D 参数化车身 (NURBS 线框) | ✅ | [Car3D.vue](../src/components/Car3D.vue) 渲染正确 |
 | A-Class 实心曲面预览 | ✅ | 视口同步参数，颜色实时更新 |
-| 2D 侧视图渲染 | ✅ | [Car2D.vue](file:///d:/API/Evolution-Ai.Design/src/components/Car2D.vue) 正确显示 beltLineY/hoodLineY/trunkLineY |
+| 2D 侧视图渲染 | ✅ | [Car2D.vue](../src/components/Car2D.vue) 正确显示 beltLineY/hoodLineY/trunkLineY |
 | 参数滑块 (L/W/H/WB/前悬/后悬) | ✅ | 6 个滑块响应灵敏，3D/2D 实时同步 |
 | 颜色选择器 | ✅ | 24 种预设 + HEX 输入 + Apply 按钮 |
 | 车型切换 (6 种) | ✅ | Sedan / SUV / Coupe / Sports / MPV / Pickup |
@@ -142,17 +142,17 @@ POST /api/v1/car/generate → 200 OK
 
 | 类别 | 文件路径 | 说明 |
 |------|---------|------|
-| 启动配置 | [vite.config.js](file:///d:/API/Evolution-Ai.Design/vite.config.js) | 前端代理 `/api/v1` → `:8000` |
-| 后端入口 | [backend/start.py](file:///d:/API/Evolution-Ai.Design/backend/start.py) | Uvicorn 启动 FastAPI |
-| 后端配置 | [backend/app/config.py](file:///d:/API/Evolution-Ai.Design/backend/app/config.py) | 端口 8000 / SQLite DB |
-| 后端路由 (车身生成) | [backend/app/routes/car.py](file:///d:/API/Evolution-Ai.Design/backend/app/routes/car.py) | `/api/v1/car/generate` |
-| 后端路由 (AI) | [backend/app/routes/ai.py](file:///d:/API/Evolution-Ai.Design/backend/app/routes/ai.py) | `/api/v1/ai/*` |
-| LLM 推理服务 | [scripts/llm_server.py](file:///d:/API/Evolution-Ai.Design/scripts/llm_server.py) | Ollama 兼容 API + RAG |
-| LLM 一键脚本 | [scripts/docker-llm.ps1](file:///d:/API/Evolution-Ai.Design/scripts/docker-llm.ps1) | verify + start + test(Q1/Q3/Q10) + logs |
-| API 客户端 | [src/api.js](file:///d:/API/Evolution-Ai.Design/src/api.js) | 前后端 API 定义 |
-| 核心视图 | [src/views/Designer.vue](file:///d:/API/Evolution-Ai.Design/src/views/Designer.vue) | AI Designer 主页面 |
-| 3D 组件 | [src/components/Car3D.vue](file:///d:/API/Evolution-Ai.Design/src/components/Car3D.vue) | Three.js 3D 渲染 |
-| 2D 组件 | [src/components/Car2D.vue](file:///d:/API/Evolution-Ai.Design/src/components/Car2D.vue) | 参数化 2D 侧视图 |
+| 启动配置 | [vite.config.js](../vite.config.js) | 前端代理 `/api/v1` → `:8000` |
+| 后端入口 | [backend/start.py](../backend/start.py) | Uvicorn 启动 FastAPI |
+| 后端配置 | [backend/app/config.py](../backend/app/config.py) | 端口 8000 / SQLite DB |
+| 后端路由 (车身生成) | [backend/app/routes/car.py](../backend/app/routes/car.py) | `/api/v1/car/generate` |
+| 后端路由 (AI) | [backend/app/routes/ai.py](../backend/app/routes/ai.py) | `/api/v1/ai/*` |
+| LLM 推理服务 | [scripts/llm_server.py](../scripts/llm_server.py) | Ollama 兼容 API + RAG |
+| LLM 一键脚本 | [scripts/docker-llm.ps1](../scripts/docker-llm.ps1) | verify + start + test(Q1/Q3/Q10) + logs |
+| API 客户端 | [src/api.js](../src/api.js) | 前后端 API 定义 |
+| 核心视图 | [src/views/Designer.vue](../src/views/Designer.vue) | AI Designer 主页面 |
+| 3D 组件 | [src/components/Car3D.vue](../src/components/Car3D.vue) | Three.js 3D 渲染 |
+| 2D 组件 | [src/components/Car2D.vue](../src/components/Car2D.vue) | 参数化 2D 侧视图 |
 
 ---
 

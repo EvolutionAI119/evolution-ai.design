@@ -3,7 +3,8 @@
 **Technical paper — platform version 1.2 (September 2026)**
 
 *All system claims in this paper are anchored to the shipped source tree:
-16 backend route modules with 116 HTTP endpoints, 11 ORM tables, 10 frontend
+16 backend route modules with 118 HTTP endpoints (116 router endpoints plus
+2 system endpoints), 11 ORM tables, 10 frontend
 pages, and a 489-case automated test baseline (200 algorithm-layer,
 178 backend, 111 frontend).*
 
@@ -180,8 +181,9 @@ L1  Frontend       Vue 3 + Vite + Three.js + Element Plus + Pinia
                    10 hash-routed pages, bilingual i18n, global auth guard
 L2  Gateway        Vite dev proxy / Nginx; /api/v1 -> FastAPI:8000
                    public exposure via an HTTPS tunnel (cpolar)
-L3  Backend        FastAPI + Pydantic v2; 16 thin route modules, 116
-                   endpoints; stateless orchestration over the algorithm
+L3  Backend        FastAPI + Pydantic v2; 16 thin route modules, 118
+                   endpoints (116 module endpoints + 2 system endpoints);
+                   stateless orchestration over the algorithm
                    package and the ML/LLM services
 L4  Algorithm      algorithm_model (independently installable):
                    car_modeling / freeform(NURBS) / surface_quality /
@@ -569,7 +571,17 @@ the evaluator reports grade D with a G2-level ratio of approximately
 0.199 — a transparent baseline showing that raw unfaired geometry does
 *not* satisfy Class-A curvature requirements and must be improved, which
 is precisely the condition the optimization/fairing operators are meant
-to address. For the NURBS body with G1 end caps, the continuity checker
+to address. The one-side grid extracted from the parameterized body
+(`n_long=48, n_circ=24`, even ring positions) yields grade C with a G2
+ratio of 0.855 but a reflection score of 0.158: the section-based body is
+already smooth in angular continuity while its curvature-uniformity
+metric remains below the Class-A band. On these continuous, hard-point-
+dominated panels the annealing fairer produces negligible change in the
+graded counts (ΔG2 = 0 over 80 iterations); its measurable effect
+appears on deliberately perturbed surfaces (e.g. a noisy plane,
+reflection 0.330 → 0.339), matching the documented engineering guidance
+that local Class-A fairing should follow hard-point freeze.
+For the NURBS body with G1 end caps, the continuity checker
 applies the 0.1 mm / 1.0° thresholds and reports per-pair positional and
 angular deviations into TXT and CSV artifacts, giving engineers an
 immediate seam-by-seam verdict rather than a single opaque score.

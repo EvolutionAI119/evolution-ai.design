@@ -11,13 +11,20 @@
 algorithm_model/
 ├── README.md                 # 本文档
 ├── requirements.txt          # 依赖
-├── main.py                   # 一站式 CLI 入口
-├── api.py                    # 统一对外 5 大 API
-├── test_all.py               # 一站式自检脚本
+├── main.py                   # 一站式 CLI 入口（7 个子命令）
+├── api.py                    # 统一对外 7 大 API
+├── test_all.py               # 一站式自检脚本（5 模块）
 │
 ├── car_modeling/             # 模块 1: 参数化车身建模
 │   ├── car_params.py         # 22 维 CarParams + 边界校验
-│   ├── body.py               # 主车身壳体
+│   ├── body.py               # 主车身截面壳体（process 开关）
+│   ├── body_nurbs.py         # NURBS 车身（STEP 导出）
+│   ├── body_ends*.py         # 车身端部 4 种连续性方案
+│   ├── accessories_nurbs.py  # NURBS 附件
+│   ├── blending.py           # 混接曲面
+│   ├── continuity_checker.py # G0/G1 连续性检查（0.1mm/1°）
+│   ├── parametrize.py        # 参数化工具
+│   ├── trim.py / sop_checklist.py
 │   ├── glass.py              # 玻璃（前/后挡风 + 天窗 + 侧窗）
 │   ├── wheels.py             # 车轮（单轮 + 4 轮布局）
 │   ├── lights.py             # 大灯 + 尾灯
@@ -26,30 +33,32 @@ algorithm_model/
 │   ├── seams.py              # 车门分缝线
 │   └── assembler.py          # 整车组装 + 统计 + 导出
 │
-├── surface_quality/          # 模块 2: 曲面质量评估 + AI 优化
+├── freeform/                 # 模块 2: NURBS 自由曲面内核
+│   ├── nurbs_core.py         # 曲线/曲面基函数与节点
+│   ├── freeform_surface.py   # 自由曲面
+│   ├── swept_surface.py      # 扫掠曲面
+│   ├── fillet_surface.py     # 圆角曲面
+│   └── step_writer.py        # 纯 Python STEP 写出
+│
+├── surface_quality/          # 模块 3: 曲面质量评估 + AI 优化
 │   ├── curvature.py          # 曲率估算（法向 + 夹角）
 │   ├── continuity.py         # G0/G1/G2 连续性判定
 │   ├── reflection.py         # 反射线评分
 │   ├── grader.py             # 综合等级（A/B/C/D）
 │   └── optimizer.py          # AI 模拟退火优化
 │
-├── storyboard/               # 模块 3: 视频脚本生成
+├── storyboard/               # 模块 4: 视频脚本生成
 │   ├── scene.py              # 分镜 / Storyboard 数据结构
 │   ├── templates.py          # 3 套内置模板
 │   └── generator.py          # 生成器（模板 + 自定义 + 时长缩放）
 │
-├── storyboard_viewer/        # 模块 4: 视频脚本展示
+├── storyboard_viewer/        # 模块 5: 视频脚本展示
 │   ├── markdown_renderer.py  # Markdown 渲染（表格/色卡/数据对比）
 │   └── html_renderer.py      # HTML 渲染（响应式 + 交互）
 │
-├── examples/                 # 完整使用示例
-│   ├── example_1_full_car.py
-│   ├── example_2_quality.py
-│   └── example_3_storyboard.py
-│
-└── outputs/                  # 默认输出目录
-    ├── example_storyboard.md
-    └── example_storyboard.html
+├── tests/                    # pytest 200 测试（8 个测试文件）
+├── examples/                 # 17 个完整使用示例
+└── outputs/                  # 默认输出目录（自检产物）
 ```
 
 ---
@@ -100,26 +109,29 @@ python main.py all
 
 ```python
 from api import (
-    build_car, evaluate_surface, optimize_surface,
+    build_car, get_car_stats, evaluate_surface, optimize_surface,
     make_storyboard, render_storyboard,
 )
-from car_modeling import CarParams
+from car_modeling import CarParams, build_body
+import numpy as np
 
-# 1) 建模
+# 1) 建模（10 部件：body/hood/roof/windshield/rear_window + 4 轮）
 params = CarParams(L=4.8, roof_arc=0.55)
 parts = build_car(params)
-print(f"车壳: {len(parts['body'].vertices)} 顶点")
+print(f"整车: {len(parts)} 部件，车身 {len(parts['body'].vertices)} 顶点")
 
-# 2) 评估
-import numpy as np
-body = parts["body"]
-surface = body.vertices[:49*25].reshape(49, 25, 3)
+# 2) 评估：用参数化车身单侧网格（build_full_car 的 body 为包围盒，不可直接评估）
+n_long, n_circ = 48, 24
+mesh = build_body(params, n_long=n_long, n_circ=n_circ, process=False)
+ring = 2 * (n_circ + 1)
+grid = np.asarray(mesh.vertices).reshape(n_long + 1, ring, 3)
+surface = grid[:, 0::2, :]  # (49, 25, 3)
 report = evaluate_surface(surface, "车身侧视")
 print(f"等级: {report.grade}, 反射线: {report.reflection_score}")
 
 # 3) 优化
 result = optimize_surface(surface, "车身侧视", max_iter=80)
-print(f"B → A: {result.initial_grade} → {result.final_grade}")
+print(f"{result.initial_grade} → {result.final_grade}")
 
 # 4) 视频脚本
 sb = make_storyboard(template="car_promotion", duration=90)
@@ -139,12 +151,13 @@ html_doc = render_storyboard(sb, "html")
 **输入**：22 维 `CarParams`（车长 L / 车宽 W / 车高 H / 轴距 / 22 项参数）
 
 **算法**：
-1. **车壳**：沿车长方向取 N 个截面（默认 48），每个截面按"宽+高+形状"3 个函数生成轮廓
+1. **车壳**：沿车长方向取 N 个截面（默认 48），每个截面按"宽+高+形状"3 个函数生成轮廓；`process=False` 保留截面环构造顺序
 2. **玻璃**：4 个矩形 + 1 个天窗（前/后挡风带角度、车顶天窗、左右侧窗）
 3. **车轮**：单轮 = 轮胎（圆柱）+ 轮毂（圆柱）+ N 辐条（长方体）
 4. **灯/格栅/镜/门缝**：基于位置 + 尺寸的简单几何体
+5. **组装**：`build_full_car` 以包围盒为 body 快速装配 10 部件
 
-**输出**：8 个独立 `trimesh.Trimesh`，可单独操作或合并导出
+**输出**：10 个独立 `trimesh.Trimesh`（body/hood/roof/windshield/rear_window + wheel_fl/fr/rl/rr），可单独操作或合并导出
 
 ### 模块 2: 曲面质量评估
 
@@ -212,12 +225,13 @@ html_doc = render_storyboard(sb, "html")
 
 | 模块 | 操作 | 耗时 | 输出 |
 |------|------|------|------|
-| 建模 | 8 部件整车 | < 0.5s | 3265 顶点 / 6192 面 |
-| 评估 | 车身曲面 (49×25) | < 0.3s | B 级 / G2=1142 / 反射线 0.78 |
-| 优化 | 模拟退火 80 步 | ~0.8s | A 级 / G2=1436 / 反射线 0.88 |
+| 建模 | 10 部件整车（默认参数） | < 0.5s | 176 顶点 / 316 面 |
+| 评估 | 球面 (16×16) | < 0.3s | D 级 / G2 比率 0.199 / 反射线 0.291 |
+| 评估 | 车身侧视 (49×25) | < 0.3s | C 级 / G2 比率 0.855 / 反射线 0.158 |
+| 优化 | 模拟退火 80 步 | 1~3.5s | 连续曲面 ΔG2=0；噪声平面反射线 0.330→0.339 |
 | 脚本 | 7 镜生成 | < 0.05s | 90s 视频脚本 |
-| 渲染 | Markdown | < 0.05s | ~6KB .md |
-| 渲染 | HTML | < 0.05s | ~15KB .html |
+| 渲染 | Markdown / HTML | < 0.05s | ~2KB .md / ~9KB .html |
+| 全流程 | run_full_pipeline | < 12s | 建模+评估+优化+脚本+渲染 |
 
 ---
 
@@ -277,13 +291,18 @@ def ai_optimize(surface_points, panel_name, **kwargs) -> OptimizationResult:
 ### `car_modeling.CarParams`
 
 22 维整车参数（详见 `car_params.py`）。提供：
-- `to_dict()`: 转字典
-- `validate()`: 校验参数合法性，返回错误列表
-- `from_dict(d)`: 从字典构造
+- `to_dict()`: 转字典（含 length/width/height/waistline_ratio 别名）
+- `validate()`: 校验参数合法性，返回错误列表（空列表表示全部合法）
 
 ### `api.build_car(params) -> dict[str, trimesh.Trimesh]`
 
-返回 8 部件字典：`{body, glass, wheels, headlights, taillights, grille, mirrors, seams}`
+返回 10 部件字典：`{body, hood, roof, windshield, rear_window,
+wheel_fl, wheel_fr, wheel_rl, wheel_rr}`
+
+### `api.get_car_stats(params) -> dict`
+
+返回：`total_vertices, total_faces, components{name:{vertices,faces,color}},
+bounds{min,max}, parts`（保留历史别名 `vertices, faces`）。
 
 ### `api.evaluate_surface(points, panel_name) -> QualityReport`
 

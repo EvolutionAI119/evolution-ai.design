@@ -20,7 +20,7 @@
 | 模块 | 状态 | 技术栈 | 规模（实测） |
 |------|------|--------|------|
 | **前端** | ✅ 可运行 | Vue 3 + Vite 5 + Three.js + Element Plus + Pinia | **10 个路由页面**，3D 实时渲染，i18n 双语 |
-| **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 | **16 个路由模块 / 116 个端点 / 11 张 ORM 表** |
+| **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 | **16 个路由模块 / 118 个端点 / 11 张 ORM 表** |
 | **算法层** | ✅ 可运行 | Python 3.11+ / NumPy / SciPy / Trimesh | NURBS 整车 + freeform + surface_quality + storyboard；**200 pytest + 自检 5 模块全过** |
 | **测试基线** | ✅ 489+ 全绿 | algorithm_model 200 / backend 178 / frontend 111 | 详见 [架构文档](docs/ARCHITECTURE_DESIGN.md) |
 | **Mock Fallback** | ✅ 已集成 | - | backend 不可用时显示 mock 项目，页面不黑屏 |
@@ -101,7 +101,7 @@ python test_all.py
 ```
 L1 前端层    ─  Vue 3 + Three.js + Element Plus + Pinia
 L2 API 网关  ─  Vite Dev Proxy (/api/v1 → 8000, /api/ide → trae-api-cn)
-L3 后端服务  ─  FastAPI + 16 个薄壳路由模块 (116 端点，编排不重写算法)
+L3 后端服务  ─  FastAPI + 16 个薄壳路由模块 (118 端点，编排不重写算法)
 L4 算法层    ─  algorithm_model (独立包；7 大高层 API，黑盒使用)
 L5 基础设施  ─  SQLite + 文件存储；可选 Redis
 ```
@@ -140,7 +140,7 @@ Evolution-Ai.Design/
 │   └── main.js                     ← 应用入口
 ├── backend/                        ← FastAPI 后端
 │   ├── app/
-│   │   ├── routes/                 ← 16 个路由模块 (116 端点)
+│   │   ├── routes/                 ← 16 个路由模块 (118 端点)
 │   │   ├── bayes_optimizer.py      ← 贝叶斯优化引擎 (GP+EI/UCB)
 │   │   ├── car_generator.py        ← 车身生成器
 │   │   ├── brand_knowledge.py      ← 品牌知识库查询
@@ -223,12 +223,18 @@ _writer            已验证           body_ends(G1)       SOP 报告 / FreeCAD 
 ## 📚 文档导航
 
 - [架构设计文档](docs/ARCHITECTURE_DESIGN.md) — 五层分层、模块清单、数据流、部署（必读）
+- [技术白皮书](docs/whitepaper.md) — 平台定位、核心能力、架构部署、可信基线与演进
 - [产品功能定义](docs/PRODUCT_SPEC.md) — 用户角色、10 页面功能、能力矩阵
-- [API 参考总览](docs/api_reference.md) — 16 模块 116 端点明细与认证标记
+- [API 参考总览](docs/api_reference.md) — 16 模块 118 端点明细与认证标记
+- [英文学术论文](docs/EVOLUTION_AI_paper.md) — 贝叶斯优化 + NURBS A 级曲面 + DL/LLM 融合 + 端到端集成
+- [造型开发方法论](docs/methodology.md) — 五维度方法论、SOP、成熟度自检
+- [汽车造型设计哲学](docs/design_philosophy.md) — 形·理·数，观察·约束·生成·演化，跨文明哲学根基
+- [设计元理论与自主知识体系](docs/design_meta_theory.md) — Love 九层框架、十维度知识体系、中国造型哲学（考工记/谢赫六法）
 - [贝叶斯优化模块使用文档](docs/bayes_optimization.md) — GP + EI/UCB 代理寻优容器，与训练模块联动
+- [平台验证报告 2026-09-27](docs/VALIDATION_REPORT_20260927.md) — 489 全绿、收敛与事实核对（最新）
 - [审计报告 2026-08-10](docs/AUDIT_REPORT_20260810.md) — 历史审计基线
 - [平台测试报告 2026-08-11](docs/PLATFORM_TEST_REPORT_20260811.md) — 历史平台测试记录
-- [算法模型文档](algorithm_model/README.md) — 5 大 API + CLI 速查
+- [算法模型文档](algorithm_model/README.md) — 7 大 API + CLI 速查
 
 ---
 
