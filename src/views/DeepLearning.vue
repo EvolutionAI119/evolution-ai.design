@@ -220,6 +220,106 @@
         </el-card>
       </div>
     </div>
+
+    <!-- ============ AI 创意工具执行结果对话框 ============ -->
+    <el-dialog
+      v-model="featureDialogVisible"
+      :title="activeFeature ? t(activeFeature.titleKey) : ''"
+      width="780px"
+      class="feature-dialog"
+    >
+      <div v-loading="featureRunning" class="feature-dialog-body">
+        <!-- 执行配置：风格迁移（车型+风格+品牌）/ 草图转3D（车型）/ 造梦设计（随机探索） -->
+        <div class="feature-config">
+          <el-form v-if="activeFeature?.key !== 'dream-design'" inline class="feature-form">
+            <el-form-item :label="t('deepLearning.carType')">
+              <el-select v-model="featureForm.car_type" class="cfg-select">
+                <el-option v-for="c in metaCarTypes" :key="c"
+                  :label="t(`deepLearning.carTypes.${c}`)" :value="c" />
+              </el-select>
+            </el-form-item>
+            <template v-if="activeFeature?.key === 'style-transfer'">
+              <el-form-item :label="t('deepLearning.styleLabel')">
+                <el-select v-model="featureForm.style" class="cfg-select">
+                  <el-option v-for="s in metaStyles" :key="s"
+                    :label="t(`deepLearning.styleNames.${s}`)" :value="s" />
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="t('deepLearning.brandLabel')">
+                <el-select v-model="featureForm.brand" clearable
+                  :placeholder="t('deepLearning.brandNone')" class="cfg-select">
+                  <el-option v-for="b in metaBrands" :key="b.key"
+                    :label="b.name" :value="b.key" />
+                </el-select>
+              </el-form-item>
+            </template>
+          </el-form>
+          <p v-else class="dream-hint">{{ t('deepLearning.dreamHint') }}</p>
+          <el-button type="primary" class="run-btn" :loading="featureRunning"
+            @click="runFeature">
+            {{ t('deepLearning.featureRun') }}
+          </el-button>
+        </div>
+
+        <el-alert v-if="featureError" :title="featureError" type="error"
+          :closable="false" class="feature-error" />
+
+        <!-- 风格迁移 / 草图转3D：单一生成结果 -->
+        <div v-if="designResult" class="design-result">
+          <div class="result-head">
+            <el-tag size="small" effect="dark">{{ designResult.design_id }}</el-tag>
+            <el-tag size="small" effect="dark" type="success">
+              {{ t(`deepLearning.carTypes.${designResult.car_type}`) }}</el-tag>
+            <el-tag v-if="designResult.style" size="small" effect="dark" type="info">
+              {{ t(`deepLearning.styleNames.${designResult.style}`) }}</el-tag>
+            <span v-if="designResult.brand_dna_match != null" class="dna-chip">
+              {{ t('deepLearning.brandDnaMatch') }}: <b>{{ designResult.brand_dna_match }}%</b>
+            </span>
+          </div>
+
+          <h4 class="result-sub">{{ t('deepLearning.qualityTitle') }}</h4>
+          <div class="quality-chips">
+            <div v-for="q in qualityList(designResult.quality_metrics)"
+              :key="q.key" class="q-chip">
+              <span class="q-label">{{ q.label }}</span>
+              <span class="q-value">{{ q.value }}</span>
+            </div>
+          </div>
+
+          <h4 class="result-sub">{{ t('deepLearning.paramTableTitle') }}</h4>
+          <div class="param-grid">
+            <div v-for="(v, k) in designResult.parameters" :key="k" class="param-item">
+              <span class="p-name">{{ t(`deepLearning.paramNames.${k}`) }}</span>
+              <span class="p-value">{{ v }} {{ paramUnit(k) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 造梦设计：3 个创新变体 -->
+        <div v-if="dreamResults.length" class="dream-results">
+          <div v-for="(d, i) in dreamResults" :key="d.design_id" class="dream-card">
+            <div class="dream-card-head">
+              <span class="dream-name">{{ t('deepLearning.variantLabel', { n: i + 1 }) }}</span>
+              <span class="dream-creativity">
+                {{ t('deepLearning.creativityScore') }} <b>{{ d.creativity_score }}</b></span>
+            </div>
+            <div class="dream-tags">
+              <el-tag size="small" effect="dark" type="success">
+                {{ t(`deepLearning.carTypes.${d.car_type}`) }}</el-tag>
+              <el-tag size="small" effect="dark" type="info">
+                {{ t(`deepLearning.styleNames.${d.style}`) }}</el-tag>
+              <span class="dream-score">
+                {{ t('deepLearning.qm.overall_score') }} {{ d.quality_metrics?.overall_score }}</span>
+            </div>
+            <div class="dream-params">
+              {{ t('deepLearning.paramNames.overall_length') }} {{ d.parameters?.overall_length }}mm ·
+              {{ t('deepLearning.paramNames.overall_height') }} {{ d.parameters?.overall_height }}mm ·
+              {{ t('deepLearning.paramNames.wheel_base') }} {{ d.parameters?.wheel_base }}mm
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -393,15 +493,10 @@ const submitTrainingReview = async (task) => {
 }
 
 const startTrain = async () => {
-  // 身份验证闸口：后端 /ai/train 强制 JWT 校验，未登录时引导登录并回跳本页
+  // 身份验证闸口：模型生成（云端训练）需登录。
+  // 游客触发时弹全局友好登录引导，不强制跳转
   if (!auth.isAuthenticated) {
-    try {
-      await ElMessageBox.confirm(
-        t('deepLearning.loginRequired'), t('deepLearning.loginRequiredTitle'),
-        { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'warning' }
-      )
-    } catch { return }
-    router.push({ path: '/login', query: { redirect: '/deep-learning' } })
+    window.dispatchEvent(new CustomEvent('evoai:auth-required'))
     return
   }
   starting.value = true
@@ -453,10 +548,89 @@ const formatDate = (iso) => {
     d.getDate()).padStart(2, '0')}`
 }
 
-const startFeature = (key) => {
-  const feature = features.find(f => f.key === key)
-  const name = feature ? t(feature.titleKey) : key
-  ElMessage.info(t('deepLearning.starting', { name }))
+// ── AI 创意工具：真实端点执行与结果展示 ──
+// 修复：原实现仅弹出"正在启动"提示，未调用任何 API 也无结果渲染。
+// 现对接后端 POST /ai/generate-design（torch 实算），在对话框中展示返回数据。
+const featureDialogVisible = ref(false)
+const activeFeature = ref(null)
+const featureRunning = ref(false)
+const featureError = ref('')
+const featureForm = reactive({ car_type: 'sedan', style: 'elegant', brand: '' })
+const designResult = ref(null)   // 风格迁移 / 草图转3D：单一生成结果
+const dreamResults = ref([])     // 造梦设计：3 个创新变体
+// 元信息下拉源（后端不可用时保留内置默认，与 training.py 的 PARAM_ORDER/STYLE_KEYS 对齐）
+const metaCarTypes = ref(['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup'])
+const metaStyles = ref(['modern', 'elegant', 'sporty', 'luxury', 'classic', 'futuristic'])
+const metaBrands = ref([])
+let metaLoaded = false
+
+const loadFeatureMeta = async () => {
+  if (metaLoaded) return
+  try {
+    const [ct, st, br] = await Promise.all([
+      aiAPI.getCarTypes(), aiAPI.getStyles(), aiAPI.getBrands()
+    ])
+    if (ct.data.car_types?.length) metaCarTypes.value = ct.data.car_types.map(c => c.key)
+    if (st.data.styles?.length) metaStyles.value = st.data.styles
+    metaBrands.value = br.data.brands || []
+    metaLoaded = true
+  } catch { /* 元信息加载失败时使用内置默认值 */ }
+}
+
+const paramUnit = (k) => (k.includes('angle') ? '°' : 'mm')
+
+const QM_KEYS = [
+  'overall_score', 'g2_continuity', 'curvature_uniformity', 'tangent_continuity',
+  'dimension_consistency', 'aerodynamic_score', 'manufacturability_score',
+  'drag_coefficient'
+]
+const qualityList = (qm) => QM_KEYS
+  .filter(k => qm && qm[k] != null)
+  .map(k => ({ key: k, label: t(`deepLearning.qm.${k}`), value: qm[k] }))
+
+const startFeature = async (key) => {
+  // 模型生成类操作需登录：游客触发全局登录引导弹窗（不强制跳转）
+  if (!auth.isAuthenticated) {
+    window.dispatchEvent(new CustomEvent('evoai:auth-required'))
+    return
+  }
+  activeFeature.value = features.find(f => f.key === key) || null
+  designResult.value = null
+  dreamResults.value = []
+  featureError.value = ''
+  featureDialogVisible.value = true
+  await loadFeatureMeta()
+  await runFeature()
+}
+
+const runFeature = async () => {
+  if (!activeFeature.value || featureRunning.value) return
+  featureRunning.value = true
+  featureError.value = ''
+  try {
+    const key = activeFeature.value.key
+    if (key === 'dream-design') {
+      // 梦境式探索：随机车型 × 随机风格，并行生成 3 个创新变体
+      const pick = (arr) => arr[Math.floor(Math.random() * arr.length)]
+      const jobs = [0, 1, 2].map(() => aiAPI.generateDesign({
+        car_type: pick(metaCarTypes.value), style: pick(metaStyles.value)
+      }))
+      dreamResults.value = (await Promise.all(jobs)).map(r => r.data)
+      designResult.value = null
+    } else {
+      // 风格迁移：按所选风格/品牌偏移；草图转3D：以中性现代风格生成 3D 曲面参数
+      const style = key === 'style-transfer' ? featureForm.style : 'modern'
+      const payload = { car_type: featureForm.car_type, style }
+      if (key === 'style-transfer' && featureForm.brand) payload.brand = featureForm.brand
+      const { data } = await aiAPI.generateDesign(payload)
+      designResult.value = data
+      dreamResults.value = []
+    }
+  } catch (e) {
+    featureError.value = e.response?.data?.detail || t('deepLearning.featureFailed')
+  } finally {
+    featureRunning.value = false
+  }
 }
 
 onMounted(async () => {
@@ -794,9 +968,109 @@ onUnmounted(stopPolling)
   border-color: var(--accent);
 }
 
+/* ===== 创意工具结果对话框 ===== */
+.feature-dialog :deep(.el-dialog__body) { padding-top: 8px; }
+
+.feature-config {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.feature-form { flex: 1; }
+.feature-form :deep(.el-form-item) { margin-bottom: 8px; margin-right: 14px; }
+.cfg-select { width: 160px; }
+.dream-hint { margin: 0; font-size: 13px; color: var(--text-muted); flex: 1; line-height: 1.7; }
+.run-btn { align-self: flex-start; }
+.feature-error { margin: 10px 0; }
+
+.result-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 2px;
+}
+.dna-chip { font-size: 12px; color: var(--accent); }
+
+.result-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 16px 0 8px;
+}
+
+.quality-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.q-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.q-label { font-size: 11px; color: var(--text-muted); }
+.q-value { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 16px;
+}
+
+.param-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+}
+.p-name { color: var(--text-muted); }
+.p-value { color: var(--text-primary); font-weight: 600; }
+
+.dream-results {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.dream-card {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dream-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dream-name { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+.dream-creativity { font-size: 12px; color: #c084fc; }
+.dream-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dream-score { font-size: 12px; color: var(--text-muted); }
+.dream-params { font-size: 11px; color: var(--text-muted); line-height: 1.7; }
+
 @media (max-width: 900px) {
   .monitor-layout { grid-template-columns: 1fr; }
   .config-panel { border-right: none; padding-right: 0; }
   .features-grid { grid-template-columns: 1fr; }
+  .quality-chips { grid-template-columns: repeat(2, 1fr); }
+  .param-grid { grid-template-columns: 1fr; }
+  .dream-results { grid-template-columns: 1fr; }
 }
 </style>
