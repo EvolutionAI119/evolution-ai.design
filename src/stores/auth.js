@@ -12,7 +12,16 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAuthenticated: (state) => !!state.token
+    isAuthenticated: (state) => !!state.token,
+    // 当前角色：未登录为 guest；后端返回的 role 为权威字段
+    role: (state) => state.user?.role || 'guest',
+    // 管理员（admin / superadmin），兼容历史 is_admin 标记
+    isAdmin: (state) => {
+      const role = state.user?.role
+      return role === 'admin' || role === 'superadmin' ||
+        (!role && !!state.user?.is_admin)
+    },
+    isSuperadmin: (state) => state.user?.role === 'superadmin'
   },
 
   actions: {

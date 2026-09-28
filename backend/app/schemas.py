@@ -22,6 +22,8 @@ class ProjectUpdate(ProjectBase):
 class ProjectResponse(ProjectBase):
     id: int
     status: str
+    # 项目属主 ID（游客期/历史项目可能为空）
+    user_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 

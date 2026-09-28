@@ -419,4 +419,22 @@ export const llmAPI = {
   listProviders: () => api.get('/llm/providers')
 }
 
+// 分级权限 · 管理后台 API
+// - admin 可用：users / loginRecords（排查问题、查看登录记录）
+// - superadmin 可用：账户修复（启停/重置密码/角色）、审计日志、后端错误日志
+export const adminAPI = {
+  users: () => api.get('/admin/users'),
+  loginRecords: (params = {}) => api.get('/admin/login-records', { params }),
+  setActive: (userId, isActive) =>
+    api.post(`/admin/users/${userId}/active`, { is_active: isActive }),
+  resetPassword: (userId, newPassword) =>
+    api.post(`/admin/users/${userId}/reset-password`, { new_password: newPassword }),
+  setRole: (userId, role) =>
+    api.post(`/admin/users/${userId}/role`, { role }),
+  auditLogs: (limit = 100) =>
+    api.get('/admin/audit-logs', { params: { limit } }),
+  backendErrors: (lines = 200) =>
+    api.get('/admin/backend-errors', { params: { lines } })
+}
+
 export default api

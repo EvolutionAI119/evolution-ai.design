@@ -98,15 +98,33 @@
       </el-container>
     </el-container>
   </div>
+
+  <!-- 全局登录引导：游客触发「项目工作 / 模型生成」时友好提示，不强制跳转 -->
+  <el-dialog
+    v-model="loginPromptVisible"
+    :title="t('auth.loginRequiredTitle')"
+    width="380px"
+    align-center
+  >
+    <div class="login-prompt-body">
+      <el-icon class="login-prompt-icon"><Lock /></el-icon>
+      <p>{{ loginPromptText }}</p>
+    </div>
+    <template #footer>
+      <el-button @click="loginPromptVisible = false">{{ t('auth.maybeLater') }}</el-button>
+      <el-button type="primary" @click="goLoginFromPrompt">{{ t('auth.login') }}</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
   Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton, QuestionFilled,
+  Lock, Setting,
 } from '@element-plus/icons-vue'
 // Element Plus 内置语言包
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
@@ -136,12 +154,33 @@ const userInitial = computed(() => {
 
 const goLogin = () => router.push('/login')
 
+// ── 全局登录引导弹窗 ──────────────────────────
+// 游客在任意页面触发需登录动作时，api.js/业务页派发 evoai:auth-required
+// 事件，这里统一展示友好引导（可携带 detail.message 定制文案）。
+const loginPromptVisible = ref(false)
+const loginPromptMessage = ref('')
+const loginPromptText = computed(() =>
+  loginPromptMessage.value || t('auth.loginRequiredBody'))
+
+const onAuthRequired = (event) => {
+  loginPromptMessage.value = event?.detail?.message || ''
+  loginPromptVisible.value = true
+}
+
+const goLoginFromPrompt = () => {
+  loginPromptVisible.value = false
+  const redirect = isLoginRoute.value ? '/' : route.fullPath
+  router.push({ path: '/login', query: redirect !== '/' ? { redirect } : {} })
+}
+
 const onUserCommand = (command) => {
   if (command === 'account') {
     router.push('/account')
   } else if (command === 'logout') {
     auth.logout()
-    router.replace('/login')
+    // 退出后留在当前页、回到游客模式；
+    // 仅当当前页要求登录（如账户设置）时回首页，避免守卫弹回登录页
+    if (route.meta.requiresAuth) router.replace('/')
   }
 }
 
@@ -172,9 +211,15 @@ onMounted(() => {
   if (auth.token && !auth.user) {
     auth.fetchMe().catch(() => {})
   }
+  // 全局登录引导事件（api.js 401 拦截与业务页动作拦截共用）
+  window.addEventListener('evoai:auth-required', onAuthRequired)
 })
 
-const menuGroups = [
+onBeforeUnmount(() => {
+  window.removeEventListener('evoai:auth-required', onAuthRequired)
+})
+
+const baseMenuGroups = [
   {
     labelKey: '',
     items: [
@@ -206,12 +251,26 @@ const menuGroups = [
   }
 ]
 
-const allMenuItems = menuGroups.flatMap(g => g.items)
+// 管理后台入口仅对管理员（admin / superadmin）显示
+const menuGroups = computed(() => {
+  if (!auth.isAdmin) return baseMenuGroups
+  return [
+    ...baseMenuGroups,
+    {
+      labelKey: 'menu.groupAdmin',
+      items: [
+        { path: '/admin', nameKey: 'menu.admin', icon: Setting }
+      ]
+    }
+  ]
+})
+
+const allMenuItems = computed(() => menuGroups.value.flatMap(g => g.items))
 
 const activeMenu = computed(() => router.currentRoute.value.path)
 
 const currentPageName = computed(() => {
-  const item = allMenuItems.find(m => m.path === router.currentRoute.value.path)
+  const item = allMenuItems.value.find(m => m.path === router.currentRoute.value.path)
   return item ? t(item.nameKey) : t('menu.aiDesigner')
 })
 </script>
@@ -498,5 +557,25 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   transition: background 0.3s;
+}
+
+/* 全局登录引导弹窗 */
+.login-prompt-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.login-prompt-icon {
+  font-size: 26px;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.login-prompt-body p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
 }
 </style>

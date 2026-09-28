@@ -18,12 +18,16 @@ class Project(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     status = Column(String(20), default="active")
+    # 项目属主：创建项目需登录，普通用户仅能修改/删除自己的项目
+    # （历史项目/游客期创建的项目 user_id 为空，管理员可处理）
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     models = relationship("ModelFile", back_populates="project")
     workflows = relationship("Workflow", back_populates="project")
     reports = relationship("QualityReport", back_populates="project")
+    owner = relationship("User", foreign_keys=[user_id])
 
 
 class ModelFile(Base):
@@ -134,10 +138,47 @@ class User(Base):
     wechat_openid = Column(String(64), unique=True, index=True, nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    # 分级权限角色（权威字段）：
+    #   user       普通用户（项目工作 / 模型生成）
+    #   admin      管理员（排查问题 / 查看登录记录）
+    #   superadmin 超级管理员（账户修复 / 后端错误与 BUG 调试）
+    # is_admin 保留以兼容既有代码：role 为 admin/superadmin 时视为管理员
+    role = Column(String(20), default="user", nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     api_keys = relationship("ApiKey", back_populates="user",
                             cascade="all, delete-orphan")
+
+
+class LoginRecord(Base):
+    """登录记录：每次登录尝试（成功/失败）落地，供管理员排查与审计。"""
+    __tablename__ = "login_records"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    email = Column(String(255), index=True)
+    success = Column(Boolean, default=False, index=True)
+    # 失败原因：bad_credentials / disabled / missing_code / network ...
+    reason = Column(String(40), nullable=True)
+    # 登录方式：password / mp / wechat
+    method = Column(String(20), default="password")
+    ip = Column(String(64), nullable=True)
+    user_agent = Column(String(300), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class AdminAuditLog(Base):
+    """管理员/超级管理员敏感操作审计日志（详细、可追溯）。"""
+    __tablename__ = "admin_audit_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"), index=True)
+    # 操作动作：set_active / reset_password / set_role ...
+    action = Column(String(40), index=True)
+    target_type = Column(String(30), default="user")
+    target_id = Column(Integer, nullable=True)
+    # 操作详情 JSON（不含明文密码等敏感数据）
+    detail_json = Column(Text, default="{}")
+    ip = Column(String(64), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
 class ApiKey(Base):
@@ -188,6 +229,7 @@ def init_db():
     """创建所有表"""
     Base.metadata.create_all(bind=engine)
     _migrate_wechat_columns()
+    _migrate_role_and_project_owner()
 
 
 def _migrate_wechat_columns():
@@ -202,6 +244,39 @@ def _migrate_wechat_columns():
             conn.execute(text("ALTER TABLE users ADD COLUMN wechat_unionid VARCHAR(64)"))
         if "wechat_openid" not in existing:
             conn.execute(text("ALTER TABLE users ADD COLUMN wechat_openid VARCHAR(64)"))
+
+
+def _migrate_role_and_project_owner():
+    """分级权限升级迁移（SQLite 简化版）：
+
+    1. users.role 补列，并按 is_admin 回填：
+       is_admin=1 → 'admin'，其余 → 'user'
+    2. projects.user_id 补列（项目属主，历史项目留空）
+    """
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+
+    if "users" in tables:
+        user_cols = {col["name"] for col in inspector.get_columns("users")}
+        with engine.begin() as conn:
+            if "role" not in user_cols:
+                conn.execute(text(
+                    "ALTER TABLE users ADD COLUMN role VARCHAR(20) "
+                    "NOT NULL DEFAULT 'user'"
+                ))
+                # 历史管理员账户提升为 admin 角色
+                conn.execute(text(
+                    "UPDATE users SET role='admin' WHERE is_admin=1"
+                ))
+
+    if "projects" in tables:
+        proj_cols = {col["name"] for col in inspector.get_columns("projects")}
+        if "user_id" not in proj_cols:
+            with engine.begin() as conn:
+                conn.execute(text(
+                    "ALTER TABLE projects ADD COLUMN user_id INTEGER"
+                ))
 
 
 def get_db():

@@ -5,7 +5,7 @@
         <h2 class="page-title">{{ t('projects.title') }}</h2>
         <p class="page-subtitle">{{ t('projects.subtitle') }}</p>
       </div>
-      <el-button type="primary" class="btn-primary" @click="showCreateDialog = true">
+      <el-button type="primary" class="btn-primary" @click="openCreateDialog">
         <el-icon><Plus /></el-icon>
         <span>{{ t('projects.newProject') }}</span>
       </el-button>
@@ -156,12 +156,23 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus, Search, FolderOpened, Clock, Picture, Upload, Delete, ArrowUp, ArrowDown, RefreshLeft, Warning, Refresh } from '@element-plus/icons-vue'
 import { useProjectStore } from '../stores/project.js'
+import { useAuthStore } from '../stores/auth.js'
 import { mockProjects } from '../data/mockProjects.js'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const fileInputRef = ref(null)
 const projectStore = useProjectStore()
+const auth = useAuthStore()
+
+// 「新建项目」属于项目工作：游客触发时弹友好登录引导，不强制跳转
+const openCreateDialog = () => {
+  if (!auth.isAuthenticated) {
+    window.dispatchEvent(new CustomEvent('evoai:auth-required'))
+    return
+  }
+  showCreateDialog.value = true
+}
 
 const useMockFallback = ref(false)
 

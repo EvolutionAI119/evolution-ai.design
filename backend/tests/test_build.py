@@ -15,6 +15,17 @@ def setup():
     yield
 
 
+@pytest.fixture(autouse=True)
+def _auth_header():
+    """构建类端点需登录：以演示账户注入 JWT（role=user）。"""
+    r = client.post("/api/v1/auth/login", json={
+        "email": "demo@evolution-ai.design", "password": "demo123456"})
+    assert r.status_code == 200, r.text
+    client.headers["Authorization"] = f"Bearer {r.json()['access_token']}"
+    yield
+    client.headers.pop("Authorization", None)
+
+
 def _create_project() -> int:
     resp = client.post("/api/v1/projects/", json={"name": "Build Test Project"})
     assert resp.status_code == 201

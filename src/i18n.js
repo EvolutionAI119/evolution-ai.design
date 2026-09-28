@@ -16,6 +16,7 @@ const zh = {
     deepLearning: '深度学习设计器', quality: '质量检查', deliver: '数据交付', demo: 'DEMO 演示',
     account: '账户设置', help: '帮助中心',
     groupDesign: '设计', groupWorkflow: '工作流',
+    groupAdmin: '管理', admin: '管理后台',
     lightMode: '切换到浅色模式', darkMode: '切换到深色模式', language: '语言'
   },
   dashboard: {
@@ -417,7 +418,29 @@ const zh = {
     reviewRetry: '重试接入',
     reviewBanner: '已接入预设审核工作流（合规性审核 + 质量审核）',
     reviewView: '查看项目',
-    featuresTitle: 'AI 创意工具'
+    featuresTitle: 'AI 创意工具',
+    // ===== AI 创意工具：执行与结果展示 =====
+    carType: '车型', styleLabel: '设计风格', brandLabel: '品牌基因',
+    brandNone: '不指定品牌', featureRun: '开始生成', featureFailed: '功能执行失败',
+    paramTableTitle: '造型参数（生成结果）', qualityTitle: '质量评估',
+    creativityScore: '创意度', brandDnaMatch: '品牌 DNA 匹配',
+    dreamHint: '梦境式探索将随机组合车型与设计风格，并行生成 3 个创新设计变体。',
+    variantLabel: '变体 {n}',
+    carTypes: { sedan: '三厢轿车', suv: 'SUV', coupe: '双门轿跑', sport: '跑车', mpv: 'MPV', pickup: '皮卡' },
+    styleNames: { modern: '现代', elegant: '优雅', sporty: '运动', luxury: '豪华', classic: '经典', futuristic: '未来' },
+    paramNames: {
+      overall_length: '整车长度', overall_width: '整车宽度', overall_height: '整车高度',
+      wheel_base: '轴距', track_width: '轮距', ground_clearance: '离地间隙',
+      hood_length: '发动机盖长度', roof_height: '车顶高度', wheel_diameter: '车轮直径',
+      windshield_angle: '前风挡倾角', rear_window_angle: '后风挡倾角',
+      rear_slant_angle: '尾部溜背角', front_overhang: '前悬', rear_overhang: '后悬'
+    },
+    qm: {
+      overall_score: '综合评分', g2_continuity: 'G2 连续性', curvature_uniformity: '曲率均匀性',
+      tangent_continuity: '切线连续性', dimension_consistency: '尺寸一致性',
+      aerodynamic_score: '空气动力学', manufacturability_score: '制造可行性',
+      drag_coefficient: '风阻系数'
+    }
   },
   common: {
     ok: '确定', cancel: '取消', delete: '删除', edit: '编辑', detail: '详情', search: '搜索', filter: '筛选',
@@ -607,7 +630,10 @@ const zh = {
     mpScanHint: '请使用微信扫描二维码，并在手机上确认登录',
     mpExpired: '二维码已过期，请重新点击登录',
     mpSuccess: '公众号登录成功',
-    mpUnavailable: '公众号登录未配置：可在 mp.weixin.qq.com 申请免费测试号，然后设置 MP_APPID / MP_SECRET'
+    mpUnavailable: '公众号登录未配置：可在 mp.weixin.qq.com 申请免费测试号，然后设置 MP_APPID / MP_SECRET',
+    loginRequiredTitle: '登录后继续',
+    loginRequiredBody: '项目工作与模型生成需要登录账号，登录后将安全保存你的 Token 与项目成果。',
+    maybeLater: '暂不登录'
   },
   account: {
     title: '账户设置',
@@ -626,6 +652,27 @@ const zh = {
     deleteConfirm: '确定删除 {name} 的 API Key 吗？删除后相关功能将不可用',
     deleteSuccess: 'Token 已删除', deleteFailed: '删除失败'
   },
+  admin: {
+    title: '管理后台',
+    subtitle: '系统排查 · 登录记录 · 账户修复 · 后端错误',
+    roleUser: '普通用户', roleAdmin: '管理员', roleSuperadmin: '超级管理员',
+    tabLoginRecords: '登录记录', tabUsers: '用户管理',
+    tabBackendErrors: '后端错误', tabAuditLogs: '审计日志',
+    filterEmail: '按邮箱筛选', search: '查询', refresh: '刷新',
+    colTime: '时间', colEmail: '邮箱', colResult: '结果',
+    resultSuccess: '成功', resultFail: '失败',
+    colReason: '原因', colMethod: '方式', colIp: 'IP 地址',
+    colUsername: '用户名', colRole: '角色', colStatus: '状态',
+    statusActive: '正常', statusDisabled: '停用', colActions: '操作',
+    resetPassword: '重置密码', resetPasswordTitle: '重置用户密码',
+    newPasswordPlaceholder: '输入新密码（至少 6 位）',
+    cancel: '取消', confirm: '确定',
+    readOnlyHint: '当前为管理员账号：仅可查看；账户修复需超级管理员。',
+    loadFailed: '加载数据失败', updateOk: '操作成功', updateFailed: '操作失败',
+    passwordTooShort: '新密码至少 6 位',
+    colAdminId: '管理员 ID', colAction: '动作',
+    colTargetId: '目标 ID', colDetail: '详情'
+  },
 }
 
 // 英文翻译
@@ -643,6 +690,7 @@ const en = {
     deepLearning: 'Deep Learning', quality: 'Quality', deliver: 'Deliver', demo: 'DEMO',
     account: 'Account', help: 'Help Center',
     groupDesign: 'Design', groupWorkflow: 'Workflow',
+    groupAdmin: 'Admin', admin: 'Admin Console',
     lightMode: 'Switch to light mode', darkMode: 'Switch to dark mode', language: 'Language'
   },
   dashboard: {
@@ -1044,7 +1092,29 @@ const en = {
     reviewRetry: 'Retry',
     reviewBanner: 'Submitted to the preset review workflow (Compliance + Quality)',
     reviewView: 'View project',
-    featuresTitle: 'AI Creative Tools'
+    featuresTitle: 'AI Creative Tools',
+    // ===== AI creative tools: run & result display =====
+    carType: 'Car type', styleLabel: 'Design style', brandLabel: 'Brand DNA',
+    brandNone: 'No brand', featureRun: 'Generate', featureFailed: 'Feature execution failed',
+    paramTableTitle: 'Styling parameters (result)', qualityTitle: 'Quality metrics',
+    creativityScore: 'Creativity', brandDnaMatch: 'Brand DNA match',
+    dreamHint: 'Dream exploration randomly combines car types and styles, generating 3 innovative variants in parallel.',
+    variantLabel: 'Variant {n}',
+    carTypes: { sedan: 'Sedan', suv: 'SUV', coupe: 'Coupe', sport: 'Sports car', mpv: 'MPV', pickup: 'Pickup' },
+    styleNames: { modern: 'Modern', elegant: 'Elegant', sporty: 'Sporty', luxury: 'Luxury', classic: 'Classic', futuristic: 'Futuristic' },
+    paramNames: {
+      overall_length: 'Overall length', overall_width: 'Overall width', overall_height: 'Overall height',
+      wheel_base: 'Wheelbase', track_width: 'Track width', ground_clearance: 'Ground clearance',
+      hood_length: 'Hood length', roof_height: 'Roof height', wheel_diameter: 'Wheel diameter',
+      windshield_angle: 'Windshield angle', rear_window_angle: 'Rear window angle',
+      rear_slant_angle: 'Rear slant angle', front_overhang: 'Front overhang', rear_overhang: 'Rear overhang'
+    },
+    qm: {
+      overall_score: 'Overall', g2_continuity: 'G2 continuity', curvature_uniformity: 'Curvature uniformity',
+      tangent_continuity: 'Tangent continuity', dimension_consistency: 'Dimension consistency',
+      aerodynamic_score: 'Aerodynamics', manufacturability_score: 'Manufacturability',
+      drag_coefficient: 'Drag coefficient'
+    }
   },
   common: {
     ok: 'OK', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', detail: 'Detail', search: 'Search', filter: 'Filter',
@@ -1245,7 +1315,10 @@ const en = {
     mpScanHint: 'Scan the QR code with WeChat and confirm on your phone',
     mpExpired: 'QR code expired, please click sign-in again',
     mpSuccess: 'Signed in via Official Account',
-    mpUnavailable: 'Official Account sign-in not configured: apply a free sandbox account at mp.weixin.qq.com, then set MP_APPID / MP_SECRET'
+    mpUnavailable: 'Official Account sign-in not configured: apply a free sandbox account at mp.weixin.qq.com, then set MP_APPID / MP_SECRET',
+    loginRequiredTitle: 'Sign in to continue',
+    loginRequiredBody: 'Project work and model generation require an account. Your Token and project work will be saved securely after signing in.',
+    maybeLater: 'Maybe later'
   },
   account: {
     title: 'Account Settings',
@@ -1263,6 +1336,27 @@ const en = {
     deleteTitle: 'Confirm deletion',
     deleteConfirm: 'Delete the API key for {name}? Related features will stop working',
     deleteSuccess: 'Token deleted', deleteFailed: 'Failed to delete token'
+  },
+  admin: {
+    title: 'Admin Console',
+    subtitle: 'Troubleshooting · Login records · Account repair · Backend errors',
+    roleUser: 'Member', roleAdmin: 'Administrator', roleSuperadmin: 'Super Administrator',
+    tabLoginRecords: 'Login Records', tabUsers: 'Users',
+    tabBackendErrors: 'Backend Errors', tabAuditLogs: 'Audit Logs',
+    filterEmail: 'Filter by email', search: 'Search', refresh: 'Refresh',
+    colTime: 'Time', colEmail: 'Email', colResult: 'Result',
+    resultSuccess: 'Success', resultFail: 'Failed',
+    colReason: 'Reason', colMethod: 'Method', colIp: 'IP Address',
+    colUsername: 'Username', colRole: 'Role', colStatus: 'Status',
+    statusActive: 'Active', statusDisabled: 'Disabled', colActions: 'Actions',
+    resetPassword: 'Reset Password', resetPasswordTitle: 'Reset user password',
+    newPasswordPlaceholder: 'Enter new password (min 6 chars)',
+    cancel: 'Cancel', confirm: 'Confirm',
+    readOnlyHint: 'Signed in as administrator: view only. Account repair requires a super administrator.',
+    loadFailed: 'Failed to load data', updateOk: 'Operation succeeded', updateFailed: 'Operation failed',
+    passwordTooShort: 'New password must be at least 6 characters',
+    colAdminId: 'Admin ID', colAction: 'Action',
+    colTargetId: 'Target ID', colDetail: 'Detail'
   },
 }
 

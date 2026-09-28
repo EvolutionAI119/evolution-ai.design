@@ -1,6 +1,8 @@
 """认证路由：用户注册 / 登录(JWT) / 当前用户 / API Key 管理 / 微信扫码登录"""
 from __future__ import annotations
 
+import json
+import logging
 import re
 import secrets
 import time
@@ -15,9 +17,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..config import settings
-from ..database import ApiKey, User, get_db
-from ..security import (create_access_token, decrypt_api_key, encrypt_api_key,
-                        get_current_user, hash_password, verify_password)
+from ..database import ApiKey, LoginRecord, User, get_db
+from ..security import (ROLE_USER, create_access_token, decrypt_api_key,
+                        encrypt_api_key, get_current_user, hash_password,
+                        user_is_admin, verify_password)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["用户认证"])
 keys_router = APIRouter(prefix="/api/v1/api-keys", tags=["API Key 管理"])
@@ -44,6 +47,7 @@ class UserInfo(BaseModel):
     email: str
     username: str
     is_admin: bool
+    role: str = ROLE_USER
     created_at: Optional[datetime] = None
 
 
@@ -73,13 +77,44 @@ def _mask(key: str) -> str:
 
 def _to_user_info(u: User) -> UserInfo:
     return UserInfo(id=u.id, email=u.email, username=u.username,
-                    is_admin=u.is_admin, created_at=u.created_at)
+                    is_admin=user_is_admin(u),
+                    role=getattr(u, "role", ROLE_USER) or ROLE_USER,
+                    created_at=u.created_at)
+
+
+def _client_ip(request: Request) -> str:
+    """获取客户端 IP（兼容反向代理 X-Forwarded-For）。"""
+    xff = request.headers.get("x-forwarded-for", "").strip()
+    if xff:
+        return xff.split(",")[0].strip()[:64]
+    return (request.client.host if request.client else "")[:64]
+
+
+def record_login(db: Session, *, email: str, user: Optional[User],
+                 success: bool, reason: Optional[str], method: str,
+                 request: Request) -> None:
+    """写入一条登录记录（成功/失败均记录）。"""
+    try:
+        db.add(LoginRecord(
+            user_id=user.id if user else None,
+            email=email[:255],
+            success=success,
+            reason=reason,
+            method=method,
+            ip=_client_ip(request),
+            user_agent=(request.headers.get("user-agent", "") or "")[:300],
+        ))
+        db.commit()
+    except Exception:  # 登录记录失败不影响登录主流程
+        db.rollback()
+        logging.getLogger("evolution").warning(
+            "写入登录记录失败: %s", reason, exc_info=True)
 
 
 # ── 注册 / 登录 / 当前用户 ─────────────────────
 
 @router.post("/register", response_model=TokenResponse)
-def register(req: RegisterRequest, db: Session = Depends(get_db)):
+def register(req: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     email = req.email.strip().lower()
     if not EMAIL_RE.match(email):
         raise HTTPException(status_code=422, detail="邮箱格式不正确")
@@ -95,24 +130,35 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    from ..config import settings
-    token = create_access_token({"sub": str(user.id), "email": user.email})
+    record_login(db, email=email, user=user, success=True,
+                 reason="register", method="password", request=request)
+
+    token = create_access_token({"sub": str(user.id), "email": user.email,
+                                 "role": user.role})
     return TokenResponse(access_token=token,
                          expires_in=settings.JWT_EXPIRE_MINUTES * 60,
                          user=_to_user_info(user))
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
     email = req.email.strip().lower()
     user = db.query(User).filter(User.email == email).first()
     if user is None or not verify_password(req.password, user.password_hash):
+        record_login(db, email=email, user=user, success=False,
+                     reason="bad_credentials", method="password",
+                     request=request)
         raise HTTPException(status_code=401, detail="邮箱或密码错误")
     if not user.is_active:
+        record_login(db, email=email, user=user, success=False,
+                     reason="disabled", method="password", request=request)
         raise HTTPException(status_code=403, detail="账户已被停用")
 
-    from ..config import settings
-    token = create_access_token({"sub": str(user.id), "email": user.email})
+    record_login(db, email=email, user=user, success=True, reason=None,
+                 method="password", request=request)
+
+    token = create_access_token({"sub": str(user.id), "email": user.email,
+                                 "role": getattr(user, "role", ROLE_USER)})
     return TokenResponse(access_token=token,
                          expires_in=settings.JWT_EXPIRE_MINUTES * 60,
                          user=_to_user_info(user))
@@ -263,7 +309,7 @@ def _wechat_popup_html(title: str, message: str, payload_js: str) -> HTMLRespons
 
 
 @router.get("/wechat/callback")
-async def wechat_callback(code: str = "", state: str = "",
+async def wechat_callback(request: Request, code: str = "", state: str = "",
                           db: Session = Depends(get_db)):
     """微信回调：code 换 access_token → 拉取用户信息 → 绑定/创建用户 → 发 JWT。"""
     if not _wechat_enabled():
@@ -330,8 +376,11 @@ async def wechat_callback(code: str = "", state: str = "",
     db.commit()
     db.refresh(user)
 
-    token = create_access_token({"sub": str(user.id), "email": user.email})
-    import json
+    record_login(db, email=user.email, user=user, success=True, reason=None,
+                 method="wechat", request=request)
+
+    token = create_access_token({"sub": str(user.id), "email": user.email,
+                                 "role": getattr(user, "role", ROLE_USER)})
     payload = json.dumps({
         "type": "wechat_auth", "ok": True,
         "token": token, "user": _to_user_info(user).model_dump(mode="json"),
@@ -343,14 +392,187 @@ async def wechat_callback(code: str = "", state: str = "",
 # 授权页地址与开放平台扫码不同：connect/oauth2/authorize
 _MP_AUTHORIZE_URL = "https://open.weixin.qq.com/connect/oauth2/authorize"
 # code 换 token / 拉取用户信息的接口与开放平台相同（sns/oauth2/*）
-_mp_states: dict[str, float] = {}
-# 轮询结果存储：state -> {"result": dict, "expire": 时间戳}
-# 回调完成后落地，供 PC 端 /mp/poll 一次性读走（PC 扫码 + 轮询登录流程）
-_mp_results: dict[str, dict] = {}
-# 前端登录会话票据：ticket -> {"state": str, "expire": 时间戳}
-# 同一浏览器会话内多次点击/开关二维码均复用同一票据，
-# 手机扫码结果按 state 落地后 PC 按 ticket 必能取到，杜绝会话错配
-_mp_tickets: dict[str, dict] = {}
+
+# 跨设备状态（state / ticket / result）存储有效期：10 分钟
+_MP_TTL_SECONDS = 600
+_MP_KEY_PREFIX = "evoai:mp:"
+# 以下三个进程内字典仅作 Redis 不可用时的兜底后端
+_mp_states: dict[str, float] = {}   # state -> 过期时间戳
+_mp_results: dict[str, dict] = {}   # state -> {"result": dict, "expire": 时间戳}
+_mp_tickets: dict[str, dict] = {}   # ticket -> {"state": str, "expire": 时间戳}
+
+logger = logging.getLogger(__name__)
+
+
+class _MpLoginStore:
+    """公众号登录三类跨设备状态的存储封装。
+
+    历史实现只存进程内存，后端重启（StatReload / 重启脚本 / 多 worker）
+    后全部丢失，表现为「手机显示授权成功，PC 却轮询不到结果」。
+    现改为 Redis 优先（键自带 TTL，重启不丢、多进程共享），
+    Redis 不可用或单次操作失败时透明回落进程内存。
+    """
+
+    def __init__(self) -> None:
+        self._redis = None
+        self._redis_tried = False
+
+    # ---------- Redis 连接（懒初始化，只尝试一次） ----------
+
+    def _client(self):
+        if self._redis is not None:
+            return self._redis
+        if self._redis_tried:
+            return None
+        self._redis_tried = True
+        if not getattr(settings, "SESSION_USE_REDIS", False):
+            return None
+        try:
+            import redis  # 延迟导入：未安装 redis 包时走内存兜底
+            client = redis.Redis.from_url(
+                settings.SESSION_REDIS_URL,
+                socket_timeout=2.0,
+                socket_connect_timeout=2.0,
+            )
+            client.ping()
+            self._redis = client
+            logger.info("[MP登录] Redis 状态存储就绪，授权流程重启不丢")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(f"[MP登录] Redis 不可用，降级进程内存：{exc}")
+            self._redis = None
+        return self._redis
+
+    @staticmethod
+    def _k(kind: str, key: str) -> str:
+        return f"{_MP_KEY_PREFIX}{kind}:{key}"
+
+    # ---------- state（待扫码授权状态） ----------
+
+    def save_state(self, state: str) -> None:
+        """登记待扫码 state（10 分钟有效）。"""
+        _mp_states[state] = time.time() + _MP_TTL_SECONDS
+        client = self._client()
+        if client is not None:
+            try:
+                client.set(self._k("state", state), "1", ex=_MP_TTL_SECONDS)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis SET state 失败：{exc}")
+
+    def pop_state(self, state: str) -> bool:
+        """一次性消费 state：存在返回 True（回调校验用）。"""
+        mem_hit = _mp_states.pop(state, None) is not None
+        client = self._client()
+        if client is not None:
+            try:
+                # Redis 3.0 无 GETDEL，DEL 返回被删键数
+                return bool(client.delete(self._k("state", state))) or mem_hit
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis DEL state 失败：{exc}")
+        return mem_hit
+
+    def state_alive(self, state: str) -> bool:
+        """state 是否仍在等待扫码（未过期）。"""
+        if _mp_states.get(state, 0) > time.time():
+            return True
+        client = self._client()
+        if client is not None:
+            try:
+                return bool(client.exists(self._k("state", state)))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis EXISTS state 失败：{exc}")
+        return False
+
+    # ---------- ticket（前端会话票据 → state） ----------
+
+    def save_ticket(self, ticket: str, state: str) -> None:
+        """绑定前端会话票据 → state（10 分钟有效）。"""
+        _mp_tickets[ticket] = {
+            "state": state, "expire": time.time() + _MP_TTL_SECONDS,
+        }
+        client = self._client()
+        if client is not None:
+            try:
+                payload = json.dumps({"state": state}).encode("utf-8")
+                client.set(self._k("ticket", ticket), payload,
+                          ex=_MP_TTL_SECONDS)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis SET ticket 失败：{exc}")
+
+    def get_ticket(self, ticket: str) -> Optional[dict]:
+        """读取票据条目 {"state","expire"}，不存在返回 None。"""
+        client = self._client()
+        if client is not None:
+            try:
+                key = self._k("ticket", ticket)
+                pipe = client.pipeline()
+                pipe.get(key)
+                pipe.ttl(key)
+                raw, ttl = pipe.execute()
+                if raw is not None:
+                    data = json.loads(raw.decode("utf-8"))
+                    remain = ttl if isinstance(ttl, int) and ttl > 0 else 0
+                    return {"state": data["state"],
+                            "expire": time.time() + remain}
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis GET ticket 失败：{exc}")
+        entry = _mp_tickets.get(ticket)
+        return dict(entry) if entry else None
+
+    def drop_ticket(self, ticket: str) -> None:
+        """删除票据（轮询过期时用）。"""
+        _mp_tickets.pop(ticket, None)
+        client = self._client()
+        if client is not None:
+            try:
+                client.delete(self._k("ticket", ticket))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis DEL ticket 失败：{exc}")
+
+    # ---------- result（回调落地的登录结果） ----------
+
+    def save_result(self, state: str, result: dict) -> None:
+        """落地手机端授权结果，供 PC 轮询一次性读走（10 分钟有效）。"""
+        _mp_results[state] = {
+            "result": result, "expire": time.time() + _MP_TTL_SECONDS,
+        }
+        client = self._client()
+        if client is not None:
+            try:
+                payload = json.dumps(result, ensure_ascii=False).encode("utf-8")
+                client.set(self._k("result", state), payload,
+                          ex=_MP_TTL_SECONDS)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis SET result 失败：{exc}")
+
+    def pop_result(self, state: str) -> Optional[dict]:
+        """读取并消费授权结果，不存在返回 None。"""
+        # 内存副本始终同步消费，避免 Redis 命中后内存残留导致重复 done
+        mem_entry = _mp_results.pop(state, None)
+        client = self._client()
+        if client is not None:
+            try:
+                key = self._k("result", state)
+                pipe = client.pipeline()
+                pipe.get(key)
+                pipe.delete(key)
+                raw, _deleted = pipe.execute()
+                if raw is not None:
+                    return json.loads(raw.decode("utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"[MP登录] Redis GET result 失败：{exc}")
+        return mem_entry["result"] if mem_entry else None
+
+    # ---------- 兜底内存的过期清理（Redis 键由 TTL 自动过期） ----------
+
+    def cleanup(self) -> None:
+        for k in [k for k, exp in _mp_states.items() if exp < time.time()]:
+            _mp_states.pop(k, None)
+        for k in [k for k, v in _mp_results.items()
+                  if v["expire"] < time.time()]:
+            _mp_results.pop(k, None)
+
+
+_mp_store = _MpLoginStore()
 
 
 def _mp_enabled() -> bool:
@@ -360,12 +582,6 @@ def _mp_enabled() -> bool:
 def _mp_redirect_uri() -> str:
     return (settings.MP_REDIRECT_URI
             or "http://127.0.0.1:8000/api/v1/auth/mp/callback")
-
-
-def _cleanup_mp_states() -> None:
-    now = time.time()
-    for k in [k for k, exp in _mp_states.items() if exp < now]:
-        _mp_states.pop(k, None)
 
 
 @router.get("/mp/authorize")
@@ -379,20 +595,19 @@ def mp_authorize(ticket: str = ""):
         raise HTTPException(status_code=503,
                             detail="公众号登录未配置：请在 .env 中设置 "
                                    "MP_APPID / MP_SECRET（可用免费测试号）")
-    now = time.time()
-    _cleanup_mp_states()
-    ticket_entry = _mp_tickets.get(ticket) if ticket else None
-    # 复用条件：票据存在、未过期、其 state 仍在等待扫码
-    if (ticket_entry and ticket_entry["expire"] > now
-            and ticket_entry["state"] in _mp_states):
+    _mp_store.cleanup()
+    ticket_entry = _mp_store.get_ticket(ticket) if ticket else None
+    # 复用条件：票据存在且其 state 仍在等待扫码
+    if ticket_entry and _mp_store.state_alive(ticket_entry["state"]):
         state = ticket_entry["state"]
-        _mp_states[state] = now + 600
-        ticket_entry["expire"] = now + 600
+        # 续期 state 与票据，保证慢扫码也能完成
+        _mp_store.save_state(state)
+        _mp_store.save_ticket(ticket, state)
     else:
         state = secrets.token_urlsafe(16)
-        _mp_states[state] = now + 600
+        _mp_store.save_state(state)
         ticket = ticket or secrets.token_urlsafe(16)
-        _mp_tickets[ticket] = {"state": state, "expire": now + 600}
+        _mp_store.save_ticket(ticket, state)
     url = (
         f"{_MP_AUTHORIZE_URL}?appid={settings.MP_APPID}"
         f"&redirect_uri={quote(_mp_redirect_uri(), safe='')}"
@@ -405,7 +620,7 @@ def mp_authorize(ticket: str = ""):
 def _mp_finish(state: str, result: dict) -> None:
     """回调完成后落地结果，供 PC 端轮询一次性读走（10 分钟有效）。"""
     if state:
-        _mp_results[state] = {"result": result, "expire": time.time() + 600}
+        _mp_store.save_result(state, result)
 
 
 @router.get("/mp/poll")
@@ -414,20 +629,19 @@ def mp_poll_by_ticket(ticket: str = ""):
     if not ticket:
         raise HTTPException(status_code=400, detail="缺少 ticket 参数")
     now = time.time()
-    for k in [k for k, v in _mp_results.items() if v["expire"] < now]:
-        _mp_results.pop(k, None)
-    entry = _mp_tickets.get(ticket)
+    _mp_store.cleanup()
+    entry = _mp_store.get_ticket(ticket)
     if not entry:
         return {"status": "expired"}
     state = entry["state"]
     # 已完成：结果一次性读走
-    done = _mp_results.pop(state, None)
-    if done:
-        return {"status": "done", "result": done["result"]}
+    result = _mp_store.pop_result(state)
+    if result is not None:
+        return {"status": "done", "result": result}
     # 等待扫码
-    if entry["expire"] > now and _mp_states.get(state, 0) > now:
+    if entry["expire"] > now and _mp_store.state_alive(state):
         return {"status": "pending"}
-    _mp_tickets.pop(ticket, None)
+    _mp_store.drop_ticket(ticket)
     return {"status": "expired"}
 
 
@@ -438,12 +652,12 @@ async def mp_callback(request: Request, code: str = "", state: str = "",
     if not _mp_enabled():
         raise HTTPException(status_code=503, detail="公众号登录未配置")
 
-    _cleanup_mp_states()
+    _mp_store.cleanup()
     if not code:
         _mp_finish(state, {"type": "mp_auth", "ok": False, "error": "missing_code"})
         return _wechat_popup_html("公众号登录失败", "缺少授权码 code",
                                   '{"type":"mp_auth","ok":false,"error":"missing_code"}')
-    if not state or _mp_states.pop(state, None) is None:
+    if not state or not _mp_store.pop_state(state):
         return _wechat_popup_html("公众号登录失败", "state 无效或已过期",
                                   '{"type":"mp_auth","ok":false,"error":"invalid_state"}')
 
@@ -503,8 +717,11 @@ async def mp_callback(request: Request, code: str = "", state: str = "",
     db.commit()
     db.refresh(user)
 
-    token = create_access_token({"sub": str(user.id), "email": user.email})
-    import json
+    record_login(db, email=user.email, user=user, success=True, reason=None,
+                 method="mp", request=request)
+
+    token = create_access_token({"sub": str(user.id), "email": user.email,
+                                 "role": getattr(user, "role", ROLE_USER)})
     result = {
         "type": "mp_auth", "ok": True,
         "token": token, "user": _to_user_info(user).model_dump(mode="json"),

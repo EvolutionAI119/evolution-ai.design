@@ -495,6 +495,7 @@ import Car2D from '../components/Car2D.vue'
 import { carTypes, brands, bodyColors } from '../config/carPresets'
 import { carAPI, buildAPI, aiAPI } from '../api'
 import { useDesignerStore } from '../stores/designer'
+import { useAuthStore } from '../stores/auth'
 import { generateCarSvg, generatePlaceholderSvg, getModelInitials } from '../utils/imageGenerator.js'
 import {
   normalizeCarImageUrl,
@@ -508,6 +509,7 @@ import {
 } from '../utils/carImageManager.js'
 
 const designer = useDesignerStore()
+const auth = useAuthStore()
 const { t } = useI18n({ useScope: 'global' })
 const { carType, brand, selectedModel, selectedColor, params, generating } = storeToRefs(designer)
 
@@ -699,6 +701,11 @@ const preloadAllImages = async () => {
 }
 
 const generateCar = async () => {
+  // 模型生成服务需登录：游客触发时弹友好登录引导，不强制跳转
+  if (!auth.isAuthenticated) {
+    window.dispatchEvent(new CustomEvent('evoai:auth-required'))
+    return
+  }
   designer.setGenerating(true)
   try {
     const response = await carAPI.generate({

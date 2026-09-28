@@ -23,6 +23,23 @@ from .config import settings
 from .database import User, get_db
 
 # =========================================================================
+# 分级权限角色常量
+# =========================================================================
+ROLE_USER = "user"             # 普通用户：项目工作 / 模型生成
+ROLE_ADMIN = "admin"           # 管理员：排查问题 / 查看登录记录
+ROLE_SUPERADMIN = "superadmin"  # 超级管理员：账户修复 / 后端错误与 BUG 调试
+
+# 可视为管理员的角色集合（is_admin 兼容判断）
+ADMIN_ROLES = (ROLE_ADMIN, ROLE_SUPERADMIN)
+
+
+def user_is_admin(user: User) -> bool:
+    """用户是否具备管理员身份（兼容历史 is_admin 列）。"""
+    return getattr(user, "role", ROLE_USER) in ADMIN_ROLES or bool(
+        getattr(user, "is_admin", False)
+    )
+
+# =========================================================================
 # 密码哈希（PBKDF2-HMAC-SHA256，标准库实现）
 # =========================================================================
 _PBKDF2_ITERATIONS = 240_000
@@ -145,6 +162,43 @@ def get_optional_user(
     if user_id is None:
         return None
     return db.query(User).filter(User.id == int(user_id)).first()
+
+
+# =========================================================================
+# 角色级访问控制（RBAC 依赖工厂）
+# =========================================================================
+
+def require_roles(*roles: str):
+    """生成「仅允许指定角色」的 FastAPI 依赖。
+
+    用法：``current: User = Depends(require_roles(ROLE_ADMIN))``
+    未登录 → 401；已登录但角色不符 → 403。
+    """
+    allowed = set(roles)
+
+    def _checker(current: User = Depends(get_current_user)) -> User:
+        # 兼容历史 is_admin=True 的账户：其角色至少按 admin 对待
+        effective_role = getattr(current, "role", ROLE_USER)
+        if effective_role not in allowed:
+            if (ROLE_ADMIN in allowed
+                    and bool(getattr(current, "is_admin", False))):
+                return current
+            raise HTTPException(status_code=403, detail="权限不足")
+        return current
+
+    return _checker
+
+
+def require_admin(current: User = Depends(get_current_user)) -> User:
+    """要求管理员身份（admin / superadmin）。"""
+    return require_roles(*ADMIN_ROLES)(current)
+
+
+def require_superadmin(current: User = Depends(get_current_user)) -> User:
+    """要求超级管理员身份。"""
+    if getattr(current, "role", ROLE_USER) != ROLE_SUPERADMIN:
+        raise HTTPException(status_code=403, detail="需要超级管理员权限")
+    return current
 
 
 def get_user_api_key(db: Session, user: Optional[User], provider: str) -> Optional[str]:

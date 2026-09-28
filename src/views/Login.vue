@@ -291,9 +291,18 @@ onMounted(async () => {
     showWechatLogin.value = !!data.wechat_qr
     showMpLogin.value = !!data.mp_oauth
   } catch {
-    // 探测失败时保守处理：都不显示，避免点击报"未配置"
-    showWechatLogin.value = false
-    showMpLogin.value = false
+    // 首次探测失败（后端重启 / 瞬时网络抖动）：等待 1.5s 重试一次，
+    // 避免公众号入口在整个会话内被静默隐藏
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const { data } = await authAPI.methods()
+      showWechatLogin.value = !!data.wechat_qr
+      showMpLogin.value = !!data.mp_oauth
+    } catch {
+      // 重试仍失败时保守处理：都不显示，避免点击报"未配置"
+      showWechatLogin.value = false
+      showMpLogin.value = false
+    }
   }
 })
 

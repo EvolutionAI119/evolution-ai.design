@@ -17,6 +17,9 @@ env/
 *.db
 *.sqlite3
 
+# Logs（后端错误日志）
+logs/
+
 # IDE
 .idea/
 .vscode/

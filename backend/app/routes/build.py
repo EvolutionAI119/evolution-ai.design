@@ -1,4 +1,8 @@
-"""模型构建/重建API路由（全数据库持久化）"""
+"""模型构建/重建API路由（全数据库持久化）
+
+分级权限：GET 状态/缓存游客公开；构建/重建/批量/清缓存属于模型生成服务，
+需登录且仅能操作自己项目下的模型（管理员可代为处理）。
+"""
 import time
 import json
 from datetime import datetime
@@ -6,22 +10,31 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
-from ..database import get_db, ModelFile, Project, ParameterSet
+from ..database import get_db, ModelFile, Project, ParameterSet, User
 from ..car_generator import NURBSCarBodyGenerator as CarBodyGenerator
 from ..schemas import ModelBuildRequest, ModelRebuildRequest, ModelBuildResponse
 from ..config import settings
+from ..security import get_current_user, user_is_admin
 
 router = APIRouter(prefix="/api/v1/build", tags=["模型构建"])
 
 
+def _can_manage(user: User, project: Project) -> bool:
+    return project.user_id == user.id or user_is_admin(user)
+
+
 @router.post("/", response_model=ModelBuildResponse)
-async def build_model(request: ModelBuildRequest, db: Session = Depends(get_db)):
+async def build_model(request: ModelBuildRequest,
+                      current: User = Depends(get_current_user),
+                      db: Session = Depends(get_db)):
     """从参数构建新模型"""
     try:
         start = time.time()
         project = db.query(Project).filter(Project.id == request.project_id).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+        if not _can_manage(current, project):
+            raise HTTPException(status_code=403, detail="无权在他人的项目下构建模型")
         generator = CarBodyGenerator()
         car = generator.generate_complete_car()
         params_data = request.params or {}
@@ -53,13 +66,18 @@ async def build_model(request: ModelBuildRequest, db: Session = Depends(get_db))
 
 
 @router.post("/rebuild", response_model=ModelBuildResponse)
-async def rebuild_model(request: ModelRebuildRequest, db: Session = Depends(get_db)):
+async def rebuild_model(request: ModelRebuildRequest,
+                        current: User = Depends(get_current_user),
+                        db: Session = Depends(get_db)):
     """重建已有模型（支持参数覆盖和部分重建）"""
     try:
         start = time.time()
         model = db.query(ModelFile).filter(ModelFile.id == request.model_id).first()
         if not model:
             raise HTTPException(status_code=404, detail="Model not found")
+        project = db.query(Project).filter(Project.id == model.project_id).first()
+        if not project or not _can_manage(current, project):
+            raise HTTPException(status_code=403, detail="无权重建他人项目下的模型")
         generator = CarBodyGenerator()
         if request.rebuild_components:
             # 部分重建：从数据库读取现有 car_data
@@ -102,13 +120,19 @@ async def rebuild_model(request: ModelRebuildRequest, db: Session = Depends(get_
 
 
 @router.post("/batch")
-async def batch_build(project_ids: List[int], db: Session = Depends(get_db)):
+async def batch_build(project_ids: List[int],
+                      current: User = Depends(get_current_user),
+                      db: Session = Depends(get_db)):
     """批量构建模型"""
     results = []
     for project_id in project_ids:
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
             results.append({"project_id": project_id, "status": "error", "detail": "Project not found"})
+            continue
+        if not _can_manage(current, project):
+            results.append({"project_id": project_id, "status": "forbidden",
+                            "detail": "无权在他人的项目下构建模型"})
             continue
         try:
             start = time.time()
@@ -139,13 +163,18 @@ async def get_build_cache(db: Session = Depends(get_db)):
 
 
 @router.delete("/cache/{model_id}")
-async def clear_build_cache(model_id: int, db: Session = Depends(get_db)):
+async def clear_build_cache(model_id: int,
+                            current: User = Depends(get_current_user),
+                            db: Session = Depends(get_db)):
     """清除指定模型的构建缓存"""
     model = db.query(ModelFile).filter(ModelFile.id == model_id).first()
     if not model:
         raise HTTPException(status_code=404, detail="Model not found")
     if not model.car_data_json:
         raise HTTPException(status_code=404, detail="Model not found in cache")
+    project = db.query(Project).filter(Project.id == model.project_id).first()
+    if not project or not _can_manage(current, project):
+        raise HTTPException(status_code=403, detail="无权操作他人项目下的模型")
     model.car_data_json = None
     db.commit()
     return {"success": True, "message": f"Cache for model {model_id} cleared"}

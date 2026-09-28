@@ -198,7 +198,8 @@ const removeKey = async (provider) => {
 
 const handleLogout = () => {
   auth.logout()
-  router.replace('/login')
+  // 账户页要求登录：退出后回首页，以游客模式继续浏览
+  router.replace('/')
 }
 
 onMounted(async () => {

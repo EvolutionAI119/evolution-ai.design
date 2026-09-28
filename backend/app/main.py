@@ -17,6 +17,9 @@
 from __future__ import annotations
 
 import json
+import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Iterable, Optional
 
 from fastapi import FastAPI, Request, status
@@ -30,9 +33,39 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from .config import settings
 from .database import init_db
 from .routes import (
-    ai, auth, bayes, build, car, export, import_export, llm_proxy, model, modify,
-    project, quality, training, texture, variant, workflow,
+    admin, ai, auth, bayes, build, car, export, import_export, llm_proxy,
+    model, modify, project, quality, training, texture, variant, workflow,
 )
+
+
+# 后端错误日志：backend/logs/backend-error.log（与 routes/admin.py 读取路径一致）
+_ERROR_LOG_PATH = Path(__file__).resolve().parents[1] / "logs" / "backend-error.log"
+_error_logging_ready = False
+
+
+def _setup_error_logging() -> None:
+    """挂载 ERROR 级滚动文件 handler（幂等，reload 多进程下也安全）。
+
+    超级管理员可通过 /api/v1/admin/backend-errors 读取该文件排查 BUG。
+    """
+    global _error_logging_ready
+    if _error_logging_ready:
+        return
+    _ERROR_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    handler = RotatingFileHandler(
+        _ERROR_LOG_PATH, maxBytes=5 * 1024 * 1024,
+        backupCount=3, encoding="utf-8",
+    )
+    handler.setLevel(logging.ERROR)
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+    ))
+    root = logging.getLogger()
+    root.addHandler(handler)
+    # 确保 ERROR 会被文件 handler 落盘（不抬高控制台输出级别）
+    if root.level == logging.NOTSET or root.level > logging.ERROR:
+        root.setLevel(logging.ERROR)
+    _error_logging_ready = True
 
 
 # =========================================================================
@@ -272,6 +305,7 @@ def _apply_cors_on_error_response(request: Request, response: Response) -> Respo
 
 
 def create_app() -> FastAPI:
+    _setup_error_logging()
     app = FastAPI(
         title="EVOLUTION AI - 汽车A级曲面开发平台",
         description="基于NURBS引擎的汽车A级曲面开发全流程解决方案",
@@ -320,12 +354,19 @@ def create_app() -> FastAPI:
     app.include_router(bayes.router, tags=["贝叶斯优化"])
     app.include_router(import_export.router, tags=["导入改参导出"])
     app.include_router(texture.router, tags=["参数化纹理设计"])
+    app.include_router(admin.router)
 
     # =====================================================================
     # 异常处理器：兜底补上 CORS 头（CORSMiddleware 对 404/405/校验失败可能没生效）
     # =====================================================================
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> Response:
+        # 500（含路由内部 except 后手动转换的 500）统一落错误日志，
+        # 保证超级管理员能在「后端错误」中看到全部服务端错误
+        if exc.status_code == 500:
+            logging.getLogger("evolution").error(
+                "HTTP 500 on %s %s: %s", request.method,
+                request.url.path, exc.detail)
         body = {"detail": exc.detail}
         hdrs = dict(exc.headers or {})
         # 405 规范要求携带 Allow 头
@@ -347,6 +388,10 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> Response:
+        # 完整堆栈写入错误日志文件，供超级管理员排查 BUG
+        logging.getLogger("evolution").exception(
+            "Unhandled error on %s %s", request.method,
+            request.url.path, exc_info=exc)
         # 500 绝对不能暴露堆栈；生产只给一条通用 detail
         detail = "Internal Server Error"
         if settings.DEBUG:

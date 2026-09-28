@@ -1,11 +1,16 @@
-"""车身生成API路由"""
+"""车身生成API路由
+
+分级权限：GET 元数据游客公开；生成/重新生成/导出属于模型生成服务，需登录。
+"""
 import time
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 
 from ..car_generator import NURBSCarBodyGenerator as CarBodyGenerator
+from ..database import User
 from ..schemas import (CarGenerateRequest, CarComponentGenerateRequest,
                        CarComponentResponse, CarCompleteResponse)
+from ..security import get_current_user
 
 router = APIRouter(prefix="/api/v1/car", tags=["车身生成"])
 
@@ -42,7 +47,8 @@ ALL_COMPONENTS = (list(_SIMPLE_COMPONENTS) + list(_SIDE_COMPONENTS)
 
 
 @router.post("/generate", response_model=CarCompleteResponse)
-async def generate_complete_car(request: CarGenerateRequest):
+async def generate_complete_car(request: CarGenerateRequest,
+                                current: User = Depends(get_current_user)):
     """生成完整车身模型"""
     try:
         start = time.time()
@@ -56,7 +62,8 @@ async def generate_complete_car(request: CarGenerateRequest):
 
 
 @router.post("/generate/component", response_model=CarComponentResponse)
-async def generate_component(request: CarComponentGenerateRequest):
+async def generate_component(request: CarComponentGenerateRequest,
+                             current: User = Depends(get_current_user)):
     """生成单个车身部件"""
     try:
         gen = _get_generator()
@@ -103,7 +110,8 @@ async def get_car_parameters():
 
 
 @router.post("/regenerate", response_model=CarCompleteResponse)
-async def regenerate_car(request: CarGenerateRequest):
+async def regenerate_car(request: CarGenerateRequest,
+                         current: User = Depends(get_current_user)):
     """用新参数重新生成车身"""
     try:
         global _generator
@@ -117,7 +125,8 @@ async def regenerate_car(request: CarGenerateRequest):
 
 
 @router.post("/export")
-async def export_car_data(request: CarGenerateRequest):
+async def export_car_data(request: CarGenerateRequest,
+                          current: User = Depends(get_current_user)):
     """导出完整车身数据为JSON"""
     try:
         car = _get_generator().export_car_data()

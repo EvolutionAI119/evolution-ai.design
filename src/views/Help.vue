@@ -88,15 +88,10 @@
         <p>{{ pick(ui.manualIntro) }}</p>
       </div>
 
-      <!-- 50/50 左右布局（参考 3D Knowledge Graph）：左栏导览（sticky），右栏模块手册 -->
+      <!-- 上区：理论闭环 | 实践指南 并排各占 50%；下区：模块手册 5 列 × 2 行 -->
       <div class="manual-body">
-        <!-- 左栏：理论闭环 / 实践指南 tab 切换；sticky 吸附，右栏滚动时左栏不留空白 -->
-        <div class="manual-left">
-          <div class="manual-subtabs">
-            <button class="subtab" :class="{ active: manualSubTab === 'cycle' }" @click="manualSubTab = 'cycle'">🔄 {{ pick(ui.subtabCycle) }}</button>
-            <button class="subtab" :class="{ active: manualSubTab === 'practice' }" @click="manualSubTab = 'practice'">🎯 {{ pick(ui.subtabPractice) }}</button>
-          </div>
-          <div v-show="manualSubTab === 'cycle'" class="cycle-section">
+        <div class="manual-top">
+          <div class="cycle-section">
             <div class="cycle-title">{{ pick(ui.cycleTitle) }}</div>
             <div class="cycle-desc">{{ pick(ui.cycleDesc) }}</div>
             <div class="cycle-diagram">
@@ -134,8 +129,8 @@
             </div>
           </div>
 
-          <!-- 实践指南：理论→行动映射（tab 切换显示） -->
-          <div v-show="manualSubTab === 'practice'" class="practice-guide">
+          <!-- 实践指南：理论→行动映射 -->
+          <div class="practice-guide">
             <h3 class="pg-title">{{ pick(ui.practiceTitle) }}</h3>
             <p class="pg-sub">{{ pick(ui.practiceSub) }}</p>
             <div class="pg-grid">
@@ -151,7 +146,7 @@
           </div>
         </div>
 
-        <!-- 右栏：模块手册（点击卡片跳转到对应模块页面） -->
+        <!-- 下区：模块手册网格（点击卡片跳转到对应模块页面） -->
         <div class="module-grid">
         <div class="module-card" v-for="m in manualModules" :key="m.id" :style="{ '--accent': m.accent }"
              @click="goModule(m)" :title="pick(ui.openModule)">
@@ -552,8 +547,6 @@ const ui = {
   practiceTitle: { en: 'From Theory to Action — Practice Guide', zh: '从理论到行动 — 实践指南' },
   practiceSub: { en: 'Each principle maps to a concrete action you can take today.',
                  zh: '每一条原则都对应一个今天就能执行的具体动作。' },
-  subtabCycle: { en: 'Theory Cycle', zh: '理论闭环' },
-  subtabPractice: { en: 'Practice Guide', zh: '实践指南' },
   openModule: { en: 'Open this module', zh: '进入该模块' },
   tip: { en: 'Tip', zh: '提示' },
   systemTitle: { en: 'Documentation System', zh: '文档体系' },
@@ -562,7 +555,6 @@ const ui = {
 }
 
 const activeTab = ref('graph')
-const manualSubTab = ref('cycle')        // Module Manual 左栏：cycle 理论闭环 | practice 实践指南
 const router = useRouter()
 // 点击模块卡片跳转到对应模块页面（Help Center 自身除外，留在当前页）
 const goModule = (m) => {
@@ -1334,24 +1326,17 @@ onBeforeUnmount(() => {
 .feat-bullet { color: var(--accent); }
 .module-tip { font-size: 11px; color: var(--text-muted); background: var(--accent-bg); padding: 6px 9px; border-radius: 6px; margin-top: 8px; line-height: 1.5; }
 
-/* ===== Module Manual 50/50 布局（参考 3D Knowledge Graph）：左栏导览 sticky，右栏手册 ===== */
-.manual-body { display: flex; gap: 16px; align-items: flex-start; }
-.manual-left { flex: 1 1 0; min-width: 0; position: sticky; top: 12px; }
-.manual-body .module-grid { flex: 1 1 0; min-width: 0; grid-template-columns: repeat(2, 1fr); align-content: start; }
-.manual-body .cycle-section { margin-bottom: 0; }
-.manual-body .practice-guide { margin-top: 0; }
-
-/* 左栏内 tab 切换（理论闭环 / 实践指南） */
-.manual-subtabs { display: flex; gap: 8px; margin-bottom: 12px; }
-.subtab {
-  flex: 1; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color);
-  background: var(--bg-card); color: var(--text-muted); font-size: 12.5px; font-weight: 600;
-  cursor: pointer; transition: all .2s;
+/* ===== Module Manual：上区 理论闭环|实践指南 并排各 50%，下区 模块手册 5列×2行 ===== */
+.manual-body { display: flex; flex-direction: column; gap: 16px; }
+.manual-top { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.manual-top .cycle-section { margin-bottom: 0; height: 100%; }
+/* 实践指南补面板底，使左右两模块边界清晰、视觉成对 */
+.manual-top .practice-guide {
+  margin-top: 0; height: 100%;
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
+  padding: 16px 18px;
 }
-.subtab:hover { border-color: #4ade80; color: var(--text-primary); }
-.subtab.active {
-  background: rgba(74, 222, 128, 0.12); border-color: #4ade80; color: #4ade80;
-}
+.manual-body .module-grid { grid-template-columns: repeat(5, 1fr); }
 
 /* ===== 闭环图 ===== */
 .cycle-section {
@@ -1360,7 +1345,7 @@ onBeforeUnmount(() => {
 }
 .cycle-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; color: var(--text-primary); }
 .cycle-desc { font-size: 12px; color: var(--text-muted); max-width: 720px; margin: 0 auto 10px; line-height: 1.6; }
-.cycle-diagram { display: flex; justify-content: center; }
+.cycle-diagram { display: flex; justify-content: center; align-items: center; flex: 1; }
 .cycle-svg { width: 100%; max-width: 560px; height: auto; }
 
 /* ===== 模块迷你流程图 ===== */
@@ -1396,13 +1381,20 @@ onBeforeUnmount(() => {
 .pg-arrow { margin: 0 5px; color: var(--text-muted); }
 .pg-action { color: var(--text-secondary); }
 
+/* 响应式：中屏模块 3 列、上区保持并排；窄屏全部单列/两列 */
+@media (max-width: 1500px) {
+  .manual-body .module-grid { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 1100px) {
   .graph-panel { grid-template-columns: 1fr; }
   .principle-row { grid-template-columns: 1fr; }
   .pg-grid { grid-template-columns: 1fr; }
-  /* 窄屏回退：Module Manual 恢复单列堆叠，左栏取消吸附 */
-  .manual-body { flex-direction: column; }
-  .manual-left { position: static; width: 100%; }
+  /* 窄屏回退：上区两模块改上下堆叠，模块卡 2 列 */
+  .manual-top { grid-template-columns: 1fr; }
+  .manual-body .module-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .manual-body .module-grid { grid-template-columns: 1fr; }
 }
 
 /* ===== 文档体系 ===== */

@@ -111,3 +111,52 @@ describe('logout', () => {
     expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
   })
 })
+
+describe('分级角色 getters', () => {
+  const loginWith = async (user) => {
+    authAPI.login.mockResolvedValue({
+      data: { access_token: fakeToken, user }
+    })
+    const auth = useAuthStore()
+    await auth.login('a@b.com', 'pass123')
+    return auth
+  }
+
+  it('游客（未登录）：role=guest，非管理员', () => {
+    const auth = useAuthStore()
+    expect(auth.role).toBe('guest')
+    expect(auth.isAdmin).toBe(false)
+    expect(auth.isSuperadmin).toBe(false)
+  })
+
+  it('普通用户：role=user，非管理员', async () => {
+    const auth = await loginWith(
+      { id: 2, email: 'u@b.com', username: 'U', role: 'user' })
+    expect(auth.role).toBe('user')
+    expect(auth.isAdmin).toBe(false)
+    expect(auth.isSuperadmin).toBe(false)
+  })
+
+  it('管理员：role=admin，isAdmin 为 true', async () => {
+    const auth = await loginWith(
+      { id: 3, email: 'ad@b.com', username: 'AD', role: 'admin' })
+    expect(auth.role).toBe('admin')
+    expect(auth.isAdmin).toBe(true)
+    expect(auth.isSuperadmin).toBe(false)
+  })
+
+  it('超级管理员：role=superadmin，isAdmin/isSuperadmin 均为 true', async () => {
+    const auth = await loginWith(
+      { id: 4, email: 'su@b.com', username: 'SU', role: 'superadmin' })
+    expect(auth.role).toBe('superadmin')
+    expect(auth.isAdmin).toBe(true)
+    expect(auth.isSuperadmin).toBe(true)
+  })
+
+  it('兼容旧数据：仅有 is_admin 标记时按管理员对待', async () => {
+    const auth = await loginWith(
+      { id: 5, email: 'legacy@b.com', username: 'L', is_admin: true })
+    expect(auth.isAdmin).toBe(true)
+    expect(auth.isSuperadmin).toBe(false)
+  })
+})
