@@ -8,7 +8,8 @@ vi.mock('../views/Login.vue', () => ({ default: { name: 'Login', render: () => n
 vi.mock('../views/Admin.vue', () => ({ default: { name: 'Admin', render: () => null } }))
 // 网络层与全局消息不真正执行
 vi.mock('../api', () => ({
-  authAPI: { login: vi.fn(), register: vi.fn(), me: vi.fn() }
+  authAPI: { login: vi.fn(), register: vi.fn(), me: vi.fn() },
+  setApiToken: vi.fn()
 }))
 vi.mock('element-plus', () => ({ ElMessage: { warning: vi.fn() } }))
 

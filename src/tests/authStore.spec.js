@@ -8,13 +8,12 @@ vi.mock('../api', () => ({
     login: vi.fn(),
     register: vi.fn(),
     me: vi.fn()
-  }
+  },
+  setApiToken: vi.fn()
 }))
 
 import { authAPI } from '../api'
 import { useAuthStore } from '../stores/auth'
-
-const TOKEN_KEY = 'evoai_token'
 
 const fakeUser = { id: 1, email: 'a@b.com', username: '测试', is_admin: false }
 const fakeToken = 'jwt-token-123'
@@ -32,11 +31,11 @@ describe('初始状态', () => {
     expect(auth.user).toBeNull()
   })
 
-  it('本地已有 token 时自动恢复认证态', () => {
-    localStorage.setItem(TOKEN_KEY, 'persisted-jwt')
+  it('不读取任何持久化凭据：localStorage 残留同名键也不恢复登录态', () => {
+    localStorage.setItem('evoai_token', 'stale-jwt')
     const auth = useAuthStore()
-    expect(auth.isAuthenticated).toBe(true)
-    expect(auth.token).toBe('persisted-jwt')
+    expect(auth.isAuthenticated).toBe(false)
+    expect(auth.token).toBe('')
   })
 })
 
@@ -51,10 +50,11 @@ describe('login / register', () => {
     expect(data.access_token).toBe(fakeToken)
     expect(auth.isAuthenticated).toBe(true)
     expect(auth.user).toEqual(fakeUser)
-    expect(localStorage.getItem(TOKEN_KEY)).toBe(fakeToken)
+    // 登录态仅存内存，不写入 localStorage
+    expect(localStorage.getItem('evoai_token')).toBeNull()
   })
 
-  it('register 成功：同样持久化登录态', async () => {
+  it('register 成功：登录态写入内存且不持久化', async () => {
     authAPI.register.mockResolvedValue({
       data: { access_token: fakeToken, user: fakeUser }
     })
@@ -62,7 +62,7 @@ describe('login / register', () => {
     await auth.register('a@b.com', '测试', 'pass123')
 
     expect(auth.isAuthenticated).toBe(true)
-    expect(localStorage.getItem(TOKEN_KEY)).toBe(fakeToken)
+    expect(localStorage.getItem('evoai_token')).toBeNull()
   })
 })
 
@@ -92,7 +92,7 @@ describe('fetchMe', () => {
     await expect(auth.fetchMe()).rejects.toThrow('401 Unauthorized')
     expect(auth.isAuthenticated).toBe(false)
     expect(auth.user).toBeNull()
-    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(localStorage.getItem('evoai_token')).toBeNull()
   })
 })
 
@@ -108,7 +108,7 @@ describe('logout', () => {
     expect(auth.isAuthenticated).toBe(false)
     expect(auth.token).toBe('')
     expect(auth.user).toBeNull()
-    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(localStorage.getItem('evoai_token')).toBeNull()
   })
 })
 

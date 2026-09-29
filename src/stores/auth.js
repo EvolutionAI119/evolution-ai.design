@@ -1,12 +1,11 @@
-// 用户认证状态：JWT 持久化 + 当前用户信息
+// 用户认证状态：登录态仅存内存（会话级），不写入 localStorage，
+// 刷新页面或重开浏览器后一律回到游客态，不自动应用任何历史凭据
 import { defineStore } from 'pinia'
-import { authAPI } from '../api'
-
-const TOKEN_KEY = 'evoai_token'
+import { authAPI, setApiToken } from '../api'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: localStorage.getItem(TOKEN_KEY) || '',
+    token: '',
     user: null,
     loading: false
   }),
@@ -26,12 +25,9 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     setToken(token) {
+      // 仅更新内存状态与请求拦截器所用的内存令牌，不做任何持久化
       this.token = token
-      if (token) {
-        localStorage.setItem(TOKEN_KEY, token)
-      } else {
-        localStorage.removeItem(TOKEN_KEY)
-      }
+      setApiToken(token)
     },
 
     async login(email, password) {

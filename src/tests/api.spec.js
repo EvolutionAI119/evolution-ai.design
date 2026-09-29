@@ -4,16 +4,15 @@
 // 从而断言 method/url/请求体以及 Authorization 头；错误路径模拟上游 401。
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import api, {
-  aiAPI, apiKeyAPI, authAPI, bayesAPI, llmAPI, modifyAPI
+  aiAPI, apiKeyAPI, authAPI, bayesAPI, llmAPI, modifyAPI, setApiToken
 } from '../api'
-
-const TOKEN_KEY = 'evoai_token'
 
 describe('API 路径与后端路由契约', () => {
   let captured
 
   beforeEach(() => {
     localStorage.clear()
+    setApiToken('')
     window.location.hash = '#/'
     captured = null
     // 成功适配器：记录最终配置并返回标准成功响应
@@ -142,10 +141,11 @@ describe('API 路径与后端路由契约', () => {
 describe('JWT 请求拦截器', () => {
   beforeEach(() => {
     localStorage.clear()
+    setApiToken('')
   })
 
-  it('本地存在 token 时自动注入 Authorization 头', async () => {
-    localStorage.setItem(TOKEN_KEY, 'jwt-abc')
+  it('内存中存在令牌时自动注入 Authorization 头', async () => {
+    setApiToken('jwt-abc')
     let seen
     api.defaults.adapter = vi.fn(async (config) => {
       seen = config
@@ -153,6 +153,8 @@ describe('JWT 请求拦截器', () => {
     })
     await authAPI.me()
     expect(seen.headers.Authorization).toBe('Bearer jwt-abc')
+    // 不写入任何持久存储
+    expect(localStorage.length).toBe(0)
   })
 
   it('无 token 时不注入 Authorization 头', async () => {
@@ -183,19 +185,28 @@ describe('401 响应统一处理', () => {
 
   beforeEach(() => {
     localStorage.clear()
+    setApiToken('')
   })
 
   it('非认证端点 401：清除 token 并广播登录事件（游客可继续浏览，不强制跳转）', async () => {
-    localStorage.setItem(TOKEN_KEY, 'jwt-expired')
+    setApiToken('jwt-expired')
     window.location.hash = '#/deep-learning'
     let prompted = false
     window.addEventListener('evoai:auth-required', () => { prompted = true }, { once: true })
     api.defaults.adapter = unauthorizedAdapter('/ai/tasks')
 
     await expect(aiAPI.listTasks()).rejects.toBeTruthy()
-    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
     expect(prompted).toBe(true)
     expect(window.location.hash).toBe('#/deep-learning')
+
+    // 内存令牌已清除：后续请求不再携带 Authorization
+    let seen
+    api.defaults.adapter = vi.fn(async (config) => {
+      seen = config
+      return { data: [], status: 200, statusText: 'OK', headers: {}, config }
+    })
+    await aiAPI.listTasks()
+    expect(seen.headers.Authorization).toBeUndefined()
   })
 
   it('登录接口本身 401：保留现场，不跳转', async () => {

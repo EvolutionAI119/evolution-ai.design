@@ -41,7 +41,9 @@ const router = createRouter({
 // 仅当路由显式声明 meta.requiresAuth 时才要求登录（如账户设置/管理后台），
 // meta.requiresAdmin 时额外校验管理员角色（防止越权访问）。
 router.beforeEach(async (to) => {
-  const token = localStorage.getItem('evoai_token')
+  // 登录态仅存内存（会话级），从 store 读取；不再读取 localStorage
+  const auth = useAuthStore()
+  const token = auth.token
   if (to.meta.requiresAuth && !token) {
     return {
       name: 'Login',
@@ -49,7 +51,6 @@ router.beforeEach(async (to) => {
     }
   }
   if (to.meta.requiresAdmin) {
-    const auth = useAuthStore()
     // 页面刷新后 user 可能尚未加载：先拉取当前用户再判定角色
     if (token && !auth.user) {
       try {

@@ -7,12 +7,17 @@ const api = axios.create({
   timeout: 60000
 })
 
+// 登录令牌仅保存在内存（会话级）：刷新页面即回到游客态，
+// 不再向 localStorage 等持久存储写入任何身份验证凭据
+let authToken = ''
+export const setApiToken = (t) => { authToken = t || '' }
+
 // 请求拦截器：JWT 注入 + 记录请求开始时间和详细信息
 api.interceptors.request.use(
   config => {
     config.metadata = { startTime: Date.now() }
     // 自动携带 JWT（登录/注册等公开接口也可携带，不影响）
-    const token = localStorage.getItem('evoai_token')
+    const token = authToken
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -67,8 +72,8 @@ api.interceptors.response.use(
     const isAuthEndpoint = typeof config?.url === 'string' &&
       config.url.startsWith('/auth/')
     if (response?.status === 401 && !isAuthEndpoint && !config?.skipAuthPrompt) {
-      // 令牌失效时清除本地登录态（回到游客身份）
-      localStorage.removeItem('evoai_token')
+      // 令牌失效时清除内存中的登录态（回到游客身份）
+      authToken = ''
       window.dispatchEvent(new CustomEvent('evoai:auth-required'))
     }
     return Promise.reject(error)

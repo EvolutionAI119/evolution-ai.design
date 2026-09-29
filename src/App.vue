@@ -207,10 +207,7 @@ onMounted(() => {
     document.documentElement.classList.add('light-theme')
   }
   document.documentElement.setAttribute('lang', locale.value === 'zh' ? 'zh-CN' : 'en')
-  // 本地有令牌时拉取用户信息（失效则保持未登录态）
-  if (auth.token && !auth.user) {
-    auth.fetchMe().catch(() => {})
-  }
+  // 登录态仅存内存（会话级），页面打开时不恢复任何历史凭据
   // 全局登录引导事件（api.js 401 拦截与业务页动作拦截共用）
   window.addEventListener('evoai:auth-required', onAuthRequired)
 })

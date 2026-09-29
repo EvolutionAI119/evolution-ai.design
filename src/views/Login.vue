@@ -316,16 +316,15 @@ let mpPollTimer = null
 // 微信内置浏览器内直接跳转授权页（PC 浏览器打不开公众号授权页）
 const isWechatBrowser = /MicroMessenger/i.test(navigator.userAgent)
 
-// 登录会话票据：同一会话内多次点击/开关二维码均复用，
-// 保证手机扫码结果与 PC 轮询始终对应，不会错配
-const MP_TICKET_KEY = 'evoai_mp_ticket'
+// 登录会话票据：仅保存在内存（会话级），同一次页面会话内多次点击/开关二维码均复用，
+// 保证手机扫码结果与 PC 轮询始终对应；不写入 sessionStorage/localStorage，
+// 刷新或重开页面后重新生成，不遗留任何身份验证相关数据
+let mpTicketSeed = ''
 const getMpTicket = () => {
-  let tk = sessionStorage.getItem(MP_TICKET_KEY)
-  if (!tk) {
-    tk = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
-    sessionStorage.setItem(MP_TICKET_KEY, tk)
+  if (!mpTicketSeed) {
+    mpTicketSeed = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
   }
-  return tk
+  return mpTicketSeed
 }
 const mpTicket = ref(getMpTicket())
 
