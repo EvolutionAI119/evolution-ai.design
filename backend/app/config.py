@@ -118,6 +118,14 @@ class Settings(BaseSettings):
     #   静态 /i18n/config 等可后续按路由微调
     SEC_HEADER_CC_API: str = "no-store, no-cache, must-revalidate, max-age=0"
 
+    # ============ API 限流（slowapi，按客户端 IP） ============
+    # 总开关：pytest / 本地调试可置 false 整体禁用（环境变量优先级高于 .env）
+    RATE_LIMIT_ENABLED: bool = True
+    # 登录/注册：防口令爆破与批量注册
+    RATE_LIMIT_AUTH: str = "10/minute"
+    # LLM 代理转发（chat/embeddings/images）：防滥用刷量
+    RATE_LIMIT_AI: str = "10/minute"
+
     @property
     def allowed_extensions_list(self):
         return [e.strip() for e in self.ALLOWED_EXTENSIONS.split(",")]
@@ -149,6 +157,12 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"生产环境 SECRET_KEY 长度至少 {_MIN_PROD_SECRET_LEN} 位，"
                     f"当前仅 {len(self.SECRET_KEY)} 位"
+                )
+            # DEBUG=true 时 CORS 回退为任意 Origin、500 响应暴露异常细节，生产必须关闭
+            if self.DEBUG:
+                raise ValueError(
+                    "生产环境必须设置 DEBUG=false：DEBUG 开启时 CORS 放行任意 Origin，"
+                    "且 500 响应会暴露异常堆栈"
                 )
         return self
 

@@ -19,10 +19,25 @@ def test_production_rejects_short_key():
 
 
 def test_production_accepts_strong_key():
-    # 生产环境合规密钥：正常加载
+    # 生产环境合规密钥 + 关闭 DEBUG：正常加载
     strong = "x" * 40
-    s = Settings(ENVIRONMENT="production", SECRET_KEY=strong)
+    s = Settings(ENVIRONMENT="production", SECRET_KEY=strong, DEBUG=False)
     assert s.SECRET_KEY == strong
+
+
+def test_production_rejects_debug_enabled():
+    # 生产环境 DEBUG=true：CORS 回退为任意 Origin、500 暴露异常细节 → 拒绝启动
+    strong = "x" * 40
+    with pytest.raises(ValidationError) as exc:
+        Settings(ENVIRONMENT="production", SECRET_KEY=strong, DEBUG=True)
+    assert "DEBUG" in str(exc.value)
+
+
+def test_production_requires_disabling_debug_even_with_default_key():
+    # DEBUG 校验与 SECRET_KEY 校验独立生效：DEBUG=true 时无论密钥如何都拒绝
+    with pytest.raises(ValidationError) as exc:
+        Settings(ENVIRONMENT="production", DEBUG=True)
+    assert "DEBUG" in str(exc.value)
 
 
 def test_development_allows_default_key():

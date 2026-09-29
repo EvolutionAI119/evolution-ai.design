@@ -25,7 +25,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..database import get_db
+from ..rate_limit import limit
 from ..security import get_optional_user, get_user_api_key
 
 router = APIRouter(prefix="/api/v1/llm", tags=["LLM 模型代理"])
@@ -214,6 +216,7 @@ def list_providers(
 # ── 对话补全 ──────────────────────────────────────────
 
 @router.post("/{provider}/chat/completions")
+@limit(settings.RATE_LIMIT_AI)
 async def chat_completions(
     provider: str, request: Request,
     db: Session = Depends(get_db),
@@ -225,6 +228,7 @@ async def chat_completions(
 # ── 向量嵌入 ──────────────────────────────────────────
 
 @router.post("/{provider}/embeddings")
+@limit(settings.RATE_LIMIT_AI)
 async def embeddings(
     provider: str, request: Request,
     db: Session = Depends(get_db),
@@ -236,6 +240,7 @@ async def embeddings(
 # ── 文生图 ────────────────────────────────────────────
 
 @router.post("/{provider}/images/generations")
+@limit(settings.RATE_LIMIT_AI)
 async def images_generations(
     provider: str, request: Request,
     db: Session = Depends(get_db),

@@ -1,4 +1,10 @@
 """pytest共享fixtures"""
+import os
+
+# 限流按客户端 IP 累计计数，TestClient 固定同一 IP 会互相干扰触发 429；
+# 必须在导入 app.main 之前禁用（环境变量优先级高于 .env）
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+
 import pytest
 from fastapi.testclient import TestClient
 

@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import ApiKey, LoginRecord, User, get_db
+from ..rate_limit import limit
 from ..security import (ROLE_USER, create_access_token, decrypt_api_key,
                         encrypt_api_key, get_current_user, hash_password,
                         user_is_admin, verify_password)
@@ -114,6 +115,7 @@ def record_login(db: Session, *, email: str, user: Optional[User],
 # ── 注册 / 登录 / 当前用户 ─────────────────────
 
 @router.post("/register", response_model=TokenResponse)
+@limit(settings.RATE_LIMIT_AUTH)
 def register(req: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     email = req.email.strip().lower()
     if not EMAIL_RE.match(email):
@@ -141,6 +143,7 @@ def register(req: RegisterRequest, request: Request, db: Session = Depends(get_d
 
 
 @router.post("/login", response_model=TokenResponse)
+@limit(settings.RATE_LIMIT_AUTH)
 def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
     email = req.email.strip().lower()
     user = db.query(User).filter(User.email == email).first()

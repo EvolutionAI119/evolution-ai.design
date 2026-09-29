@@ -17,6 +17,8 @@ Pillow>=10.0.0
 # 会话持久化（可选）。Windows 上常见 Redis 3.0.504，请用 redis-py < 4.0
 # 以避免 "unknown command HELLO"。未安装时自动降级到内存。
 redis>=3.5.3,<4.0.0
+# API 限流：登录/注册防爆破、LLM 代理防刷量（Phase 5a 安全加固）
+slowapi==0.1.9
 # CLIP 语义特征提取（可选，约 600MB）。未安装时纹样分析自动降级为纯几何特征。
 # 注意：transformers 4.57+ 拒绝用 torch<2.6 加载 .bin 权重（CVE-2025-32434），
 # 需将 openai/clip-vit-base-patch32 的权重转为 safetensors 放入 HF 缓存。

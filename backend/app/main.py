@@ -26,12 +26,15 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import settings
 from .database import init_db
+from .rate_limit import limiter
 from .routes import (
     admin, ai, auth, bayes, build, car, export, import_export, llm_proxy,
     model, modify, project, quality, training, texture, variant, workflow,
@@ -314,6 +317,10 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
+    # -- API 限流（slowapi）：登录/注册防爆破、LLM 代理防刷量（按客户端 IP） --
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
     # -- 安全响应头中间件（先注册 = 放在 ASGI 栈更里层；Starlette middleware 是倒序包裹） --
     app.add_middleware(SecurityHeadersMiddleware, s=settings)
 
@@ -330,7 +337,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=_cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
         allow_headers=["*"],
         expose_headers=["Content-Disposition", "ETag", "X-Session-Id", "X-Request-Id"],
         max_age=600,
