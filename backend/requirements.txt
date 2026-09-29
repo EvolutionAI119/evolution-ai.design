@@ -19,6 +19,10 @@ Pillow>=10.0.0
 redis>=3.5.3,<4.0.0
 # API 限流：登录/注册防爆破、LLM 代理防刷量（Phase 5a 安全加固）
 slowapi==0.1.9
+# PostgreSQL 生产数据库驱动（psycopg 3，连接串前缀 postgresql+psycopg://）
+# 与 schema 版本化迁移工具；SQLite 本地开发仍为零依赖默认
+psycopg[binary]>=3.1.0
+alembic>=1.13.0
 # CLIP 语义特征提取（可选，约 600MB）。未安装时纹样分析自动降级为纯几何特征。
 # 注意：transformers 4.57+ 拒绝用 torch<2.6 加载 .bin 权重（CVE-2025-32434），
 # 需将 openai/clip-vit-base-patch32 的权重转为 safetensors 放入 HF 缓存。

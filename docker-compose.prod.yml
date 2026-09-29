@@ -1,0 +1,44 @@
+# =====================================================================
+# EVOLUTION AI - 生产 TLS overlay（叠加在 docker-compose.yml 之上）
+#
+# 用法：
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 首次签发证书（standalone 模式，需先停 nginx 释放 80 端口）：
+#   docker compose stop nginx
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm certbot \
+#       certonly --standalone \
+#       -d evolution-ai.design -d www.evolution-ai.design \
+#       --email evolution-ai@embodied.systems --agree-tos --no-eff-email
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d nginx
+#
+# 续期（建议每 60 天；certbot 卷内 90 天有效期）：
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm certbot renew
+#   docker compose exec nginx nginx -s reload
+#
+# 注意：certbot/ 目录含证书私钥，已被 .gitignore 排除，严禁提交入库
+# =====================================================================
+
+services:
+  nginx:
+    ports:
+      - "443:443"
+    volumes:
+      # 覆盖 HTTP 配置为 TLS 版本（同挂载点，overlay 合并生效）
+      - ./nginx/nginx-tls.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+
+  backend:
+    environment:
+      # HTTPS 部署启用 HSTS（浏览器强制一年内走 HTTPS）
+      SEC_HEADER_HSTS_MAX_AGE: 31536000
+
+  # 证书管理工具服务：默认不随栈启动（profiles: tools），按需 run --rm 调用
+  certbot:
+    image: certbot/certbot:latest
+    container_name: evolution-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    profiles: ["tools"]

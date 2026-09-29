@@ -6,7 +6,20 @@ from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
 from .config import settings
 
-engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
+_DB_URL = settings.DATABASE_URL
+
+if _DB_URL.startswith("sqlite"):
+    # SQLite（本地开发/测试默认）：check_same_thread=False 允许 FastAPI 线程池跨线程复用连接
+    engine = create_engine(_DB_URL, connect_args={"check_same_thread": False})
+else:
+    # PostgreSQL 等网络数据库：固定大小连接池 + 取用前预检（避免拿到服务端已断开的死连接）
+    engine = create_engine(
+        _DB_URL,
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True,
+        pool_recycle=3600,
+    )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

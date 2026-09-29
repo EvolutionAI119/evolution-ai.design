@@ -60,4 +60,10 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3     CMD c
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
+# 非 root 运行（uid/gid 1000，兼容宿主机 volume / bind mount 权限）：
+# 最小权限原则，容器被攻破时无法获得 root
+RUN groupadd -g 1000 evolution && useradd -r -u 1000 -g evolution evolution \
+    && chown -R evolution:evolution /app /docker-entrypoint.sh
+USER evolution
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
