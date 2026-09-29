@@ -67,9 +67,9 @@ const zh = {
     colorEmeraldGreen: '翡翠绿', colorAmberGold: '琥珀金', colorChampagneGold: '香槟金',
     colorPearlWhite: '珍珠白', colorObsidianBlack: '曜石黑', colorIndigoBlue: '靛青蓝',
     colorRosePink: '玫瑰粉', colorDeepSeaGreen: '深海绿', colorLavaOrange: '熔岩橙',
-    carSedan: '轿车 Sedan', carSedanDesc: '经典三厢', carSuv: 'SUV', carSuvDesc: '运动型多用途',
-    carCoupe: '轿跑 Coupe', carCoupeDesc: '溜背双门', carMpv: 'MPV', carMpvDesc: '多用途商务',
-    carSport: '跑车 Sport', carSportDesc: '低趴竞速', carPickup: '皮卡 Pickup', carPickupDesc: '客货两用',
+    carSedan: '轿车', carSedanDesc: '经典三厢', carSuv: 'SUV', carSuvDesc: '运动型多用途',
+    carCoupe: '轿跑', carCoupeDesc: '溜背双门', carMpv: 'MPV', carMpvDesc: '多用途商务',
+    carSport: '跑车', carSportDesc: '低趴竞速', carPickup: '皮卡', carPickupDesc: '客货两用',
     compHood: '发动机盖', compRoof: '车顶', compDoor: '车门', compFender: '翼子板',
     compTrunk: '后备箱', compWindshield: '挡风玻璃', compBumper: '保险杠', compWheelCover: '车轮罩',
     // ===== Designer 页面 i18n 补充键 =====
