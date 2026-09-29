@@ -35,7 +35,7 @@ The platform also hosts:
 ## 3. Core Usage Scenarios (End-to-End)
 
 <figure class="doc-figure">
-  <img src="docs/images/product-journey.svg" alt="End-to-end journey" loading="lazy">
+  <img src="docs/images/en/product-journey.svg" alt="End-to-end journey" loading="lazy">
   <figcaption><strong>Fig. 3-1 End-to-end journey: guest experience → sign-up unlock → creation and optimization → review and delivery</strong>How to read: Three role swimlanes with a serpentine line — guests browse with zero friction; the amber node fires the login prompt on write actions; blue nodes are user creation flows; green is admin review and delivery, purple is operations. The right panel lists six journey principles.</figcaption>
 </figure>
 

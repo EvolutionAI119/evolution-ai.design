@@ -26,7 +26,7 @@
 ## 2. Three-Layer Automated Testing
 
 <figure class="doc-figure">
-  <img src="docs/images/validation-metrics.svg" alt="Three-layer test suite scale and pass rate" loading="lazy">
+  <img src="docs/images/en/validation-metrics.svg" alt="Three-layer test suite scale and pass rate" loading="lazy">
   <figcaption><strong>Fig. 2-1 Three-layer test suite scale and pass rate (489 cases, all passing)</strong>How to read: Bars show per-layer scale — 200 algorithm, 178 backend, 111 frontend, 5 one-stop self-check — 489 cases all passing with zero failures and skips; right badges add the Bayes convergence check and the doc-code audit.</figcaption>
 </figure>
 

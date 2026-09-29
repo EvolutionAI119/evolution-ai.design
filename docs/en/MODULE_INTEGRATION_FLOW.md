@@ -16,7 +16,7 @@ Design principles: minimal credential exposure (the Token lives only in frontend
 ## 2. Module Correlation Map
 
 <figure class="doc-figure">
-  <img src="docs/images/integration-flow.svg" alt="Integration map with review state machine" loading="lazy">
+  <img src="docs/images/en/integration-flow.svg" alt="Integration map with review state machine" loading="lazy">
   <figcaption><strong>Fig. 2-1 Integration map: authentication → token training → workflow review, with the review state machine</strong>How to read: The top row chains modules A (authentication), B (token training) and C (workflow review) via JWT and submission packages; below is the review state machine (Draft → InReview → Approved, Rejected looping back in red). The bottom strip notes all three gates live in backend dependency injection.</figcaption>
 </figure>
 

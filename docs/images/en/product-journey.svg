@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="ar15" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="418" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Core User Journey: Guest → Creator → Delivery</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">End-to-End User Journey</text>
+
+  <!-- Role lane labels -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="40" y="60" width="120" height="26" rx="13" fill="#131B29" stroke="#64748B"/>
+    <text x="100" y="77" fill="#CBD5E1">Guest</text>
+    <rect x="40" y="176" width="120" height="26" rx="13" fill="#12293D" stroke="#38BDF8"/>
+    <text x="100" y="193" fill="#7DD3FC">User</text>
+    <rect x="40" y="292" width="120" height="26" rx="13" fill="#0F241C" stroke="#34D399"/>
+    <text x="100" y="309" fill="#6EE7B7">Admin/System</text>
+  </g>
+  <line x1="170" y1="73" x2="920" y2="73" stroke="#1E2A3A" stroke-dasharray="3 4"/>
+  <line x1="170" y1="189" x2="920" y2="189" stroke="#1E2A3A" stroke-dasharray="3 4"/>
+  <line x1="170" y1="305" x2="920" y2="305" stroke="#1E2A3A" stroke-dasharray="3 4"/>
+
+  <!-- Step nodes -->
+  <g text-anchor="middle" font-size="11.5">
+    <!-- Guest: browse / login prompt -->
+    <rect x="210" y="92" width="130" height="64" rx="10" fill="#131B29" stroke="#2A3A52"/>
+    <text x="275" y="116" fill="#CBD5E1" font-weight="600">Browse &amp; explore</text>
+    <text x="275" y="136" fill="#64748B" font-size="10">KB / examples / 3D preview</text>
+
+    <rect x="390" y="92" width="130" height="64" rx="10" fill="#131B29" stroke="#FBBF24"/>
+    <text x="455" y="116" fill="#FCD34D" font-weight="600">Login prompt</text>
+    <text x="455" y="136" fill="#64748B" font-size="10">create/generate → dialog</text>
+
+    <!-- User: signup → model → tune → iterate -->
+    <rect x="570" y="112" width="120" height="60" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="630" y="136" fill="#7DD3FC" font-weight="600">Sign up / in</text>
+    <text x="630" y="154" fill="#64748B" font-size="10">JWT in-memory session</text>
+
+    <rect x="210" y="208" width="130" height="64" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="275" y="232" fill="#7DD3FC" font-weight="600">Parametric modeling</text>
+    <text x="275" y="252" fill="#64748B" font-size="10">14 dims → NURBS surface</text>
+
+    <rect x="390" y="208" width="130" height="64" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="455" y="232" fill="#7DD3FC" font-weight="600">AI creative tools</text>
+    <text x="455" y="252" fill="#64748B" font-size="10">style / sketch3D / dream</text>
+
+    <rect x="570" y="208" width="120" height="64" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="630" y="232" fill="#7DD3FC" font-weight="600">Bayes tuning</text>
+    <text x="630" y="252" fill="#64748B" font-size="10">closed-loop score gains</text>
+
+    <!-- Admin: review / delivery -->
+    <rect x="210" y="324" width="130" height="64" rx="10" fill="#0F241C" stroke="#34D399"/>
+    <text x="275" y="348" fill="#6EE7B7" font-weight="600">Workflow review</text>
+    <text x="275" y="368" fill="#64748B" font-size="10">compliance + quality</text>
+
+    <rect x="390" y="324" width="130" height="64" rx="10" fill="#0F241C" stroke="#34D399"/>
+    <text x="455" y="348" fill="#6EE7B7" font-weight="600">Data delivery</text>
+    <text x="455" y="368" fill="#64748B" font-size="10">STEP/IGS + QC report</text>
+
+    <rect x="570" y="324" width="120" height="64" rx="10" fill="#1A1230" stroke="#A78BFA"/>
+    <text x="630" y="348" fill="#C4B5FD" font-weight="600">Ops backend</text>
+    <text x="630" y="368" fill="#64748B" font-size="10">logins / error triage</text>
+  </g>
+
+  <!-- Journey arrows (serpentine) -->
+  <path d="M340 124 L 386 124" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M520 124 C 550 124, 550 142, 566 142" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M630 176 L 630 204 L 694 204 L 694 240 L 694 240" fill="none" stroke="#34D399" stroke-width="0"/>
+  <path d="M630 176 C 630 208, 700 190, 694 238" fill="none" stroke="#34D399" stroke-width="0"/>
+  <path d="M566 240 L 524 240" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M386 240 L 344 240" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M275 276 L 275 320" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <text x="293" y="300" fill="#64748B" font-size="10">Submit for review</text>
+  <path d="M340 356 L 386 356" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+
+  <!-- Login prompt vertical hint -->
+  <path d="M455 160 L 455 204" fill="none" stroke="#FBBF24" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arY)"/>
+  <defs><marker id="arY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#FBBF24"/></marker></defs>
+  <text x="470" y="186" fill="#FBBF24" font-size="10">Sign-up unlocks creation</text>
+
+  <!-- Right value notes -->
+  <g>
+    <rect x="724" y="92" width="200" height="296" rx="12" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="824" y="118" fill="#E2E8F0" font-size="13" font-weight="700" text-anchor="middle">Journey principles</text>
+    <g font-size="11" fill="#94A3B8">
+      <circle cx="746" cy="146" r="2.5" fill="#FBBF24"/><text x="758" y="150">Zero friction: experience first</text>
+      <circle cx="746" cy="176" r="2.5" fill="#38BDF8"/><text x="758" y="180">Auth gates writes only</text>
+      <circle cx="746" cy="206" r="2.5" fill="#38BDF8"/><text x="758" y="210">Token in-memory only</text>
+      <circle cx="746" cy="236" r="2.5" fill="#34D399"/><text x="758" y="240">Creation stays in browser</text>
+      <circle cx="746" cy="266" r="2.5" fill="#34D399"/><text x="758" y="270">Full QC chain on outputs</text>
+      <circle cx="746" cy="296" r="2.5" fill="#A78BFA"/><text x="758" y="300">Ops visible &amp; auditable</text>
+    </g>
+    <text x="824" y="340" fill="#475569" font-size="10" text-anchor="middle">Maps to 4-level RBAC</text>
+    <text x="824" y="360" fill="#475569" font-size="10" text-anchor="middle">see Module Integration §5</text>
+  </g>
+
+  <text x="40" y="408" fill="#64748B" font-size="11.5">How to read: the main line snakes left-to-right, top-to-bottom; amber nodes mark the guest→user conversion, green nodes are system/admin delivery &amp; ops.</text>
+</svg>

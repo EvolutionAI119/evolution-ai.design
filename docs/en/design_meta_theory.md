@@ -57,7 +57,7 @@ Zhang Zongdeng proposes that design-studies meta-theory contains three levels fo
 ## II. Extending the Original Framework — From 5 to 10 Dimensions
 
 <figure class="doc-figure">
-  <img src="docs/images/meta-10dims.svg" alt="Mapping from 5 to 10 dimensions" loading="lazy">
+  <img src="docs/images/en/meta-10dims.svg" alt="Mapping from 5 to 10 dimensions" loading="lazy">
   <figcaption><strong>Fig. 2-1 Mapping from the original 5 dimensions to the extended 10 dimensions</strong>How to read: The left column lists the original five dimensions (grey); the right column shows the meta-theoretical additions (green). Read row by row: inherited items keep their original semantics while new ones are derived from the philosophical, mathematical and intelligent roots, upgrading an experience system into a derivable one.</figcaption>
 </figure>
 
@@ -150,7 +150,7 @@ Centered on "the meta-theory of the automotive styling development methodology,"
 ## III. The Overall Architecture of the Knowledge System
 
 <figure class="doc-figure">
-  <img src="docs/images/meta-architecture.svg" alt="Three layers plus one resource library" loading="lazy">
+  <img src="docs/images/en/meta-architecture.svg" alt="Three layers plus one resource library" loading="lazy">
   <figcaption><strong>Fig. 3-1 Overall architecture of the knowledge system: three layers plus one resource library</strong>How to read: Three bands top-down: philosophy (why), methodology (how) and engineering (with what), above a dashed academic resource library; the right arrow shows practice feeding back into theory. Chips inside each band list its core components.</figcaption>
 </figure>
 

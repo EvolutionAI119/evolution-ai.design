@@ -23,7 +23,7 @@
 ## 1. Core Idea: The Paradigm Leap from Hand Sketching to Parameters
 
 <figure class="doc-figure">
-  <img src="docs/images/phil-paradigm-shift.svg" alt="Paradigm shift in three stages" loading="lazy">
+  <img src="docs/images/en/phil-paradigm-shift.svg" alt="Paradigm shift in three stages" loading="lazy">
   <figcaption><strong>Fig. 1-1 Paradigm shift: from analog craft to parametric CAD to AI-driven generation</strong>How to read: Three era cards progress along the timeline: analog craft relied on personal experience with low reproducibility; parametric CAD made dimensions explicit and traceable with day-level cycles; the AI era (this platform) explores the parameter space automatically and compresses each iteration to minutes. The bottom strip states the paradigm core: design expression migrates from analog experience to parameters + algorithms.</figcaption>
 </figure>
 
@@ -68,7 +68,7 @@ The four-layer philosophical architecture of v3.0 expands, in the platform era, 
 ## 2. Technical Framework: Form · Logic · Mathematics
 
 <figure class="doc-figure">
-  <img src="docs/images/phil-form-logic-math.svg" alt="Form–Logic–Mathematics three-layer framework" loading="lazy">
+  <img src="docs/images/en/phil-form-logic-math.svg" alt="Form–Logic–Mathematics three-layer framework" loading="lazy">
   <figcaption><strong>Fig. 2-1 The Form–Logic–Mathematics three-layer framework with bidirectional closure</strong>How to read: Read top-down: the purple Form layer holds visible aesthetic expression; the blue Logic layer translates each aesthetic decision into parameter constraints and hardpoints; the green Mathematics layer carries the NURBS / differential-geometry / Bayes foundation. The right arrows stress a closed loop, not one-way translation: intent flows down as constraints, mathematical optima feed back as form.</figcaption>
 </figure>
 
@@ -98,7 +98,7 @@ The 22 parameters cover primary dimensions, section lengths, ground clearance, s
 ## 3. Philosophical Roots: Observe · Constrain · Generate · Evolve
 
 <figure class="doc-figure">
-  <img src="docs/images/phil-ocge-loop.svg" alt="Observe–Constrain–Generate–Evolve loop" loading="lazy">
+  <img src="docs/images/en/phil-ocge-loop.svg" alt="Observe–Constrain–Generate–Evolve loop" loading="lazy">
   <figcaption><strong>Fig. 3-1 The Observe–Constrain–Generate–Evolve loop mapped to platform modules</strong>How to read: Four nodes cycle clockwise — Observe (multi-source input), Constrain (distill into computable boundaries), Generate (batch candidates within constraints), Evolve (evaluation feeds the next round); the center notes each loop yields a better legal solution. The right column maps the four stages to platform modules one by one.</figcaption>
 </figure>
 
@@ -158,7 +158,7 @@ Philosophy and styling are not sequenced as "first settle philosophy, then do st
 ## 5. Engineering Practice: The End-to-End Class-A Surface Loop
 
 <figure class="doc-figure">
-  <img src="docs/images/phil-closedloop.svg" alt="End-to-end Class-A loop" loading="lazy">
+  <img src="docs/images/en/phil-closedloop.svg" alt="End-to-end Class-A loop" loading="lazy">
   <figcaption><strong>Fig. 5-1 End-to-end Class-A loop: parameters → NURBS generation → quality evaluation → Bayesian optimization</strong>How to read: The horizontal chain runs parameters → NURBS generation → quality evaluation → Bayesian optimization; the purple dashed loop writes suggested parameters back for the next round. Bottom strips list per-loop latency (seconds), typical convergence (20–40 rounds) and the human-machine split.</figcaption>
 </figure>
 

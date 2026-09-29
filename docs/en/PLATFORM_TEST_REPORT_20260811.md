@@ -10,7 +10,7 @@
 - Backend proxy: Vite maps `/api/v1` → `http://localhost:8000`
 
 <figure class="doc-figure">
-  <img src="docs/images/test-pyramid.svg" alt="Platform test pyramid" loading="lazy">
+  <img src="docs/images/en/test-pyramid.svg" alt="Platform test pyramid" loading="lazy">
   <figcaption><strong>Fig. 1 Platform test pyramid: four verification layers and layering principles</strong>How to read: The pyramid stacks bottom-up 200 algorithm unit tests, 111 frontend components, 178 backend integrations and a slim E2E layer — lower layers are faster and steadier, upper ones highest-value; right panel lists layering rules; bottom badges: 489/489 passing and full LLM benchmark hits.</figcaption>
 </figure>
 

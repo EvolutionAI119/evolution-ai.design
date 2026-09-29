@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="ar7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+    <marker id="ar7r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#F87171"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="418" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Methodology Overview: Five-Stage Pipeline &amp; SOP Gates</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Stage-Gate Development Pipeline</text>
+
+  <!-- Main timeline -->
+  <line x1="60" y1="210" x2="910" y2="210" stroke="#1E2A3A" stroke-width="3"/>
+
+  <!-- Stage nodes -->
+  <g text-anchor="middle">
+    <g>
+      <circle cx="110" cy="210" r="26" fill="#12293D" stroke="#38BDF8" stroke-width="2"/>
+      <text x="110" y="216" fill="#7DD3FC" font-size="15" font-weight="700">Ⅰ</text>
+      <text x="110" y="168" fill="#E2E8F0" font-size="13.5" font-weight="600">Insight</text>
+      <text x="110" y="186" fill="#64748B" font-size="10.5">Insight</text>
+      <g font-size="10.5" fill="#94A3B8" text-anchor="start">
+        <text x="60" y="256">· User &amp; market insight</text>
+        <text x="60" y="274">· Brand DNA extraction</text>
+        <text x="60" y="292">· Hardpoints &amp; regulations</text>
+      </g>
+    </g>
+    <g>
+      <circle cx="290" cy="210" r="26" fill="#1A1230" stroke="#A78BFA" stroke-width="2"/>
+      <text x="290" y="216" fill="#C4B5FD" font-size="15" font-weight="700">Ⅱ</text>
+      <text x="290" y="168" fill="#E2E8F0" font-size="13.5" font-weight="600">Concept</text>
+      <text x="290" y="186" fill="#64748B" font-size="10.5">Concept</text>
+      <g font-size="10.5" fill="#94A3B8" text-anchor="start">
+        <text x="240" y="256">· Moodboards</text>
+        <text x="240" y="274">· 2D sketch shortlist</text>
+        <text x="240" y="292">· Proportion &amp; stance lock</text>
+      </g>
+    </g>
+    <g>
+      <circle cx="470" cy="210" r="26" fill="#0F241C" stroke="#34D399" stroke-width="2.2"/>
+      <text x="470" y="216" fill="#6EE7B7" font-size="15" font-weight="700">Ⅲ</text>
+      <text x="470" y="168" fill="#E2E8F0" font-size="13.5" font-weight="600">Digital</text>
+      <text x="470" y="186" fill="#64748B" font-size="10.5">Digital</text>
+      <g font-size="10.5" fill="#94A3B8" text-anchor="start">
+        <text x="420" y="256">· Parametric NURBS modeling</text>
+        <text x="420" y="274">· Auto surface generation</text>
+        <text x="420" y="292">· Brand-DNA match check</text>
+      </g>
+    </g>
+    <g>
+      <circle cx="650" cy="210" r="26" fill="#2A1A0E" stroke="#FBBF24" stroke-width="2"/>
+      <text x="650" y="216" fill="#FCD34D" font-size="15" font-weight="700">Ⅳ</text>
+      <text x="650" y="168" fill="#E2E8F0" font-size="13.5" font-weight="600">Validation</text>
+      <text x="650" y="186" fill="#64748B" font-size="10.5">Validation</text>
+      <g font-size="10.5" fill="#94A3B8" text-anchor="start">
+        <text x="600" y="256">· G2/curvature QA</text>
+        <text x="600" y="274">· Multi-round Bayes tuning</text>
+        <text x="600" y="292">· Variant review</text>
+      </g>
+    </g>
+    <g>
+      <circle cx="830" cy="210" r="26" fill="#0E1E2E" stroke="#38BDF8" stroke-width="2"/>
+      <text x="830" y="216" fill="#7DD3FC" font-size="15" font-weight="700">Ⅴ</text>
+      <text x="830" y="168" fill="#E2E8F0" font-size="13.5" font-weight="600">Deliver</text>
+      <text x="830" y="186" fill="#64748B" font-size="10.5">Deliver</text>
+      <g font-size="10.5" fill="#94A3B8" text-anchor="start">
+        <text x="780" y="256">· STEP/IGS handoff</text>
+        <text x="780" y="274">· QC report archiving</text>
+        <text x="780" y="292">· Workflow sign-off</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Stage arrows -->
+  <line x1="140" y1="210" x2="260" y2="210" stroke="#34D399" stroke-width="2" marker-end="url(#ar7)"/>
+  <line x1="320" y1="210" x2="440" y2="210" stroke="#34D399" stroke-width="2" marker-end="url(#ar7)"/>
+  <line x1="500" y1="210" x2="620" y2="210" stroke="#34D399" stroke-width="2" marker-end="url(#ar7)"/>
+  <line x1="680" y1="210" x2="800" y2="210" stroke="#34D399" stroke-width="2" marker-end="url(#ar7)"/>
+
+  <!-- Gate diamonds -->
+  <g text-anchor="middle">
+    <g transform="translate(200,140)">
+      <rect x="-13" y="-13" width="26" height="26" transform="rotate(45)" fill="#0B101A" stroke="#FBBF24" stroke-width="1.6"/>
+      <text y="4.5" fill="#FCD34D" font-size="11" font-weight="700">G1</text>
+      <text y="-24" fill="#94A3B8" font-size="10.5">Hardpoint Gate</text>
+    </g>
+    <g transform="translate(380,140)">
+      <rect x="-13" y="-13" width="26" height="26" transform="rotate(45)" fill="#0B101A" stroke="#FBBF24" stroke-width="1.6"/>
+      <text y="4.5" fill="#FCD34D" font-size="11" font-weight="700">G2</text>
+      <text y="-24" fill="#94A3B8" font-size="10.5">Theme Gate</text>
+    </g>
+    <g transform="translate(560,140)">
+      <rect x="-13" y="-13" width="26" height="26" transform="rotate(45)" fill="#0B101A" stroke="#FBBF24" stroke-width="1.6"/>
+      <text y="4.5" fill="#FCD34D" font-size="11" font-weight="700">G3</text>
+      <text y="-24" fill="#94A3B8" font-size="10.5">Class-A Gate</text>
+    </g>
+    <g transform="translate(740,140)">
+      <rect x="-13" y="-13" width="26" height="26" transform="rotate(45)" fill="#0B101A" stroke="#FBBF24" stroke-width="1.6"/>
+      <text y="4.5" fill="#FCD34D" font-size="11" font-weight="700">G4</text>
+      <text y="-24" fill="#94A3B8" font-size="10.5">Release Gate</text>
+    </g>
+  </g>
+
+  <!-- Fail loop -->
+  <path d="M200 156 L 200 330 L 470 330 L 470 240" fill="none" stroke="#F87171" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar7r)"/>
+  <text x="335" y="349" fill="#F87171" font-size="10.5" text-anchor="middle">Gate failed → fall back one stage (scores &amp; defects feed the Bayes engine)</text>
+
+  <text x="40" y="392" fill="#64748B" font-size="11.5">How to read: five stages map to Project → Designer → QC Report → Workflow Review pages; gates G1–G4 are mandatory SOP checkpoints — no pass, no advance.</text>
+</svg>
