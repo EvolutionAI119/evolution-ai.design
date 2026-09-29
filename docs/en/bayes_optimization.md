@@ -16,7 +16,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/paper-bayes-engine.svg" alt="Bayesian optimization loop" loading="lazy">
-  <figcaption>Fig. 1-1 Bayesian optimization loop: GP surrogate (left) and the five-step iteration (right)</figcaption>
+  <figcaption><strong>Fig. 1-1 Bayesian optimization loop: GP surrogate (left) and the five-step iteration (right)</strong>How to read: Left chart: amber dots are evaluated samples, the green curve the posterior mean, the shaded band ±σ uncertainty, and the pink dashed line the EI maximum; right boxes give the five-step loop (DOE → real evaluation → surrogate update → EI → suggestion). The inset shows monotone convergence within 20–40 rounds.</figcaption>
 </figure>
 
 **Loop (suggest → evaluate → observe → converge → export)**:

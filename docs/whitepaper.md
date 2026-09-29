@@ -61,7 +61,7 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 
 <figure class="doc-figure">
   <img src="docs/images/product-journey.svg" alt="端到端用户旅程" loading="lazy">
-  <figcaption>图 3-1 ｜ 端到端用户旅程：游客 → 创作者 → 交付（对应四级 RBAC）</figcaption>
+  <figcaption><strong>图 3-1 ｜ 端到端用户旅程：游客 → 创作者 → 交付（对应四级 RBAC）</strong>读图：三条角色泳道（游客/普通用户/管理员）与蛇形主线——游客可自由浏览体验，触发写操作时由琥珀色节点弹出登录引导；注册后依次解锁参数建模、AI 创意工具与贝叶斯寻优；绿色行是管理员承接的工作流审核与数据交付，紫色为后台运维。右侧栏列出旅程设计的六条原则。</figcaption>
 </figure>
 
 ### 3.1 五类用户与价值
@@ -148,7 +148,7 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 
 <figure class="doc-figure">
   <img src="docs/images/whitepaper-arch.svg" alt="平台四层一通道技术架构" loading="lazy">
-  <figcaption>图 5-1 ｜ 平台四层一通道技术架构总览</figcaption>
+  <figcaption><strong>图 5-1 ｜ 平台四层一通道技术架构总览</strong>读图：四层自上而下为前端层（Vue 3 SPA）、后端服务层（FastAPI，15 路由 + RBAC）、算法层（可独立运行的 algorithm_model）、数据层（SQLite/文件/Redis/知识库 JSON），层间标注调用方式（HTTP/函数调用/ORM）；右侧部署通道覆盖开发、生产、公网隧道与静态发布。分层原则：上层可依赖下层，下层不感知上层。</figcaption>
 </figure>
 
 ### 5.1 五层架构

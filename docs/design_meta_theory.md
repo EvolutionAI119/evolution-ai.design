@@ -58,7 +58,7 @@ Terence Love提出的设计理论元理论层级结构，为汽车造型设计�
 
 <figure class="doc-figure">
   <img src="docs/images/meta-10dims.svg" alt="元理论五维到十维映射" loading="lazy">
-  <figcaption>图 2-1 ｜ 元理论扩展：原 5 维度到 10 维度的映射关系</figcaption>
+  <figcaption><strong>图 2-1 ｜ 元理论扩展：原 5 维度到 10 维度的映射关系</strong>读图：左列为原 5 维度（灰），右列为元理论新增 5 项与学术资源索引层（绿）；读法为逐行配对——继承项保持原方法论语义，新增项由哲学—数理—智能三条根脉推导而出，共同把经验体系升级为可推导、可证伪的知识体系。</figcaption>
 </figure>
 
 思维导图以"汽车造型设计开发方法论元理论"为核心，从**设计开发流程、设计理念与风格、细节设计与技术创新、时间与资源规划、用户导向与关怀**五大维度展开。基于全网搜索，扩展为**十维度自主知识体系**：
@@ -151,7 +151,7 @@ Terence Love提出的设计理论元理论层级结构，为汽车造型设计�
 
 <figure class="doc-figure">
   <img src="docs/images/meta-architecture.svg" alt="三层一库知识体系架构" loading="lazy">
-  <figcaption>图 3-1 ｜ 自主知识体系「三层一库」总体架构</figcaption>
+  <figcaption><strong>图 3-1 ｜ 自主知识体系「三层一库」总体架构</strong>读图：三个彩色条带自上而下为哲学理论层（回答为什么）、方法论层（回答怎么做）、工程实践层（回答用什么落地），底部虚线带为持续更新的学术资源索引库；右侧箭头提示实践会自下而上反哺理论。每层内芯片列出该层核心组成。</figcaption>
 </figure>
 
 ### 3.1 三层架构图

@@ -24,7 +24,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/phil-paradigm-shift.svg" alt="造型范式跃迁三阶段" loading="lazy">
-  <figcaption>图 1-1 ｜ 造型范式跃迁：手绘时代 → 参数化时代 → AI 生成与演化时代</figcaption>
+  <figcaption><strong>图 1-1 ｜ 造型范式跃迁：手绘时代 → 参数化时代 → AI 生成与演化时代</strong>读图：三个时代卡片沿时间轴递进——手绘时代依赖个人经验、复现性低；参数化时代让尺寸显式可追溯、周期缩短至天级；AI 时代（本平台）在参数空间内自动探索并以质量指标驱动迭代，单轮周期压缩至分钟级。底部结论条点明范式核心：造型表达从「模拟经验」迁移为「参数 + 算法」。</figcaption>
 </figure>
 
 ### 1.1 范式革命
@@ -69,7 +69,7 @@ v3.0 的四层哲学架构，在平台时代扩展为承载 Web 协同与 AI 优
 
 <figure class="doc-figure">
   <img src="docs/images/phil-form-logic-math.svg" alt="形理数三层框架" loading="lazy">
-  <figcaption>图 2-1 ｜ 形 · 理 · 数三层表达体系与层间双向闭环</figcaption>
+  <figcaption><strong>图 2-1 ｜ 形 · 理 · 数三层表达体系与层间双向闭环</strong>读图：自上而下三层——紫色「形」层承载可见的美学表达（特征线/光影/姿态/品牌基因）；蓝色「理」层把每个审美决策落位为参数约束与硬点；绿色「数」层以 NURBS、微分几何、贝叶斯为数学基座。右侧双向箭头强调层间是闭环而非单向翻译：美学意图向下参数化，数学最优向上反哺造型。</figcaption>
 </figure>
 
 ### 2.1 形（Form）——美学表达
@@ -99,7 +99,7 @@ v3.0 的四层哲学架构，在平台时代扩展为承载 Web 协同与 AI 优
 
 <figure class="doc-figure">
   <img src="docs/images/phil-ocge-loop.svg" alt="观约生演循环" loading="lazy">
-  <figcaption>图 3-1 ｜ 观察—约束—生成—演化认知闭环及其平台模块映射</figcaption>
+  <figcaption><strong>图 3-1 ｜ 观察—约束—生成—演化认知闭环及其平台模块映射</strong>读图：四个节点沿圆环顺时针循环——观察（多源信息进入视野）→约束（蒸馏为可计算边界）→生成（约束内批量产出候选）→演化（评估反哺下一轮）；中心强调每轮迭代产出一版更优的合法方案。右侧栏给出四环节与平台模块（品牌知识库/参数校验器/生成管线/贝叶斯引擎）的一一对应。</figcaption>
 </figure>
 
 ### 3.1 跨文明的认知共鸣
@@ -159,7 +159,7 @@ v3.0 的四层哲学架构，在平台时代扩展为承载 Web 协同与 AI 优
 
 <figure class="doc-figure">
   <img src="docs/images/phil-closedloop.svg" alt="端到端闭环" loading="lazy">
-  <figcaption>图 5-1 ｜ A 级曲面端到端闭环：参数 → NURBS 生成 → 质量评估 → 贝叶斯优化</figcaption>
+  <figcaption><strong>图 5-1 ｜ A 级曲面端到端闭环：参数 → NURBS 生成 → 质量评估 → 贝叶斯优化</strong>读图：水平主链为参数向量、NURBS 生成、质量评估、贝叶斯优化四步，紫色虚线环表示建议参数回写进入下一轮；底部三个指标条给出闭环单轮耗时（秒级）、典型收敛轮次（20–40 轮）与人机分工（人定审美边界、机器探索最优）。</figcaption>
 </figure>
 
 ### 5.1 闭环结构

@@ -11,7 +11,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/test-pyramid.svg" alt="平台测试金字塔" loading="lazy">
-  <figcaption>图 1 ｜ 平台测试金字塔：四层验证体系与分层原则</figcaption>
+  <figcaption><strong>图 1 ｜ 平台测试金字塔：四层验证体系与分层原则</strong>读图：金字塔自下而上为算法单元 200、前端组件 111、后端集成 178 与 E2E 浏览器实测——越往下越快越稳，越往上价值密度越高；右侧列出分层原则（提交前全量跑、红灯禁止合入 main）；底部徽章汇总 489 例全通过与 LLM 基准全命中。</figcaption>
 </figure>
 
 ---

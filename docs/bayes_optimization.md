@@ -15,7 +15,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/paper-bayes-engine.svg" alt="贝叶斯优化闭环" loading="lazy">
-  <figcaption>图 1-1 ｜ 贝叶斯优化闭环：GP 代理模型（左）与五步迭代（右）</figcaption>
+  <figcaption><strong>图 1-1 ｜ 贝叶斯优化闭环：GP 代理模型（左）与五步迭代（右）</strong>读图：左图为高斯过程代理模型示意——琥珀点为已评估样本、绿线为后验均值、绿色阴影带为 ±σ 置信区（越宽越不确定）、粉色虚线标出 EI 采集函数最大的下一个采样点；右侧五步框为闭环流程（DOE 初始设计→真实评估→更新代理→EI 选点→建议输出），左下收敛轨迹显示最优评分单调不降、20–40 轮进入平台期。</figcaption>
 </figure>
 
 **闭环（建议 → 评估 → 回填 → 收敛 → 导出）**：

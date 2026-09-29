@@ -11,7 +11,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/method-pipeline.svg" alt="Five-stage pipeline with stage gates" loading="lazy">
-  <figcaption>Fig. 1-1 Five-stage pipeline with G1–G4 stage gates (failed gates loop back for revision)</figcaption>
+  <figcaption><strong>Fig. 1-1 Five-stage pipeline with G1–G4 stage gates (failed gates loop back for revision)</strong>How to read: The main axis shows five stages with four amber diamond gates G1–G4; the red dashed line marks fallback for revision when a gate fails, writing defects back to the Bayes engine. Key activities under each stage mirror the platform page flow.</figcaption>
 </figure>
 
 ### 1.1 One Claim

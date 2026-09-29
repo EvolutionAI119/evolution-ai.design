@@ -61,7 +61,7 @@ Unify design intent and engineering hard points through a **parameter space**; a
 
 <figure class="doc-figure">
   <img src="docs/images/product-journey.svg" alt="End-to-end user journey" loading="lazy">
-  <figcaption>Fig. 3-1 End-to-end user journey: guest → creator → delivery (aligned with the four-level RBAC)</figcaption>
+  <figcaption><strong>Fig. 3-1 End-to-end user journey: guest → creator → delivery (aligned with the four-level RBAC)</strong>How to read: Three role swimlanes and a serpentine main line — guests browse freely while write actions trigger the amber login prompt; signing up unlocks parametric modeling, AI tools and Bayesian tuning; the green row is admin-owned review and delivery, purple is operations. The right panel lists six journey design principles.</figcaption>
 </figure>
 
 ### 3.1 Five User Types and Their Value
@@ -148,7 +148,7 @@ Unify design intent and engineering hard points through a **parameter space**; a
 
 <figure class="doc-figure">
   <img src="docs/images/whitepaper-arch.svg" alt="Platform architecture: four layers and the deployment channel" loading="lazy">
-  <figcaption>Fig. 5-1 Platform architecture: four layers and the deployment channel</figcaption>
+  <figcaption><strong>Fig. 5-1 Platform architecture: four layers and the deployment channel</strong>How to read: Four layers top-down (Vue 3 frontend, FastAPI backend, standalone algorithm layer, data layer) with call types annotated between layers; the right channel covers development, production, public tunnel and static publishing. Layering rule: upper layers depend on lower ones, never the reverse.</figcaption>
 </figure>
 
 ### 5.1 Five-Layer Architecture

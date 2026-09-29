@@ -9,7 +9,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/whitepaper-arch.svg" alt="平台四层一通道架构总览" loading="lazy">
-  <figcaption>图 1-1 ｜ 平台四层一通道架构总览（前端/后端/算法/数据 + 部署通道）</figcaption>
+  <figcaption><strong>图 1-1 ｜ 平台四层一通道架构总览（前端/后端/算法/数据 + 部署通道）</strong>读图：读图方式同架构总览——四层自上而下（前端/后端/算法/数据）逐层标注调用协议，右侧部署通道列出开发态、生产态、公网隧道与静态发布四条路径；关键约束是算法层零框架依赖，可脱离平台独立运行与测试。</figcaption>
 </figure>
 
 平台采用五层分层架构：
@@ -167,7 +167,7 @@ ModelFile 1—N ModelVariant（含自引用 parent）；User 1—N ApiKey。
 
 <figure class="doc-figure">
   <img src="docs/images/arch-dataflow.svg" alt="车身生成请求数据流" loading="lazy">
-  <figcaption>图 6-1 ｜ 一次「车身生成」请求的完整数据流（含异常分支）</figcaption>
+  <figcaption><strong>图 6-1 ｜ 一次「车身生成」请求的完整数据流（含异常分支）</strong>读图：三条泳道分别为浏览器、后端、算法与数据；蓝色实线为正常链路（①HTTPS→②鉴权/校验→③编排→④求值→⑤200 OK 回传并重建 3D 场景）；红色虚线为 401 异常分支——未登录请求不会触达算法层，直接转为全局登录引导。</figcaption>
 </figure>
 
 ### 6.1 AI 参数化设计闭环

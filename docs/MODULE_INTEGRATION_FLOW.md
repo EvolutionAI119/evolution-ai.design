@@ -17,7 +17,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/integration-flow.svg" alt="模块集成地图与审核状态机" loading="lazy">
-  <figcaption>图 2-1 ｜ 登录认证 → Token 训练 → 工作流审核的模块集成地图与审核状态机</figcaption>
+  <figcaption><strong>图 2-1 ｜ 登录认证 → Token 训练 → 工作流审核的模块集成地图与审核状态机</strong>读图：上排 A 登录认证、B Token 训练、C 工作流审核三模块经 JWT 与成果包串联；下部为审核状态机（Draft→InReview→Approved，Rejected 经红色虚线回退 InReview 修订）；底部条说明三级闸口（能不能进/是谁在训练/谁可审）全部落在后端依赖注入层，前端仅做体验引导。</figcaption>
 </figure>
 
 ```

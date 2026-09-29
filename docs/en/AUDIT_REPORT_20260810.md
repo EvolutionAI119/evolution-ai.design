@@ -166,7 +166,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/validation-metrics.svg" alt="Key metrics at audit time" loading="lazy">
-  <figcaption>Fig. 4-1 Key metrics at audit time: three-layer test scale and pass rate</figcaption>
+  <figcaption><strong>Fig. 4-1 Key metrics at audit time: three-layer test scale and pass rate</strong>How to read: Bars snapshot the audit-time test scale — 200 algorithm / 178 backend / 111 frontend / 5 self-check, 489 cases all passing; right badges correspond to the audit conclusion of a consistent fact baseline.</figcaption>
 </figure>
 
 | Metric | Status | Note |

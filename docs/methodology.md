@@ -11,7 +11,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/method-pipeline.svg" alt="五阶段开发流水线与门禁" loading="lazy">
-  <figcaption>图 1-1 ｜ 五阶段开发流水线与 G1–G4 门禁（未通过即回退修订）</figcaption>
+  <figcaption><strong>图 1-1 ｜ 五阶段开发流水线与 G1–G4 门禁（未通过即回退修订）</strong>读图：水平主轴为五阶段（洞察定义→概念草图→数字建模→虚拟验证→工程交付），轴上四个琥珀菱形是 G1–G4 强制门禁；红色虚线表示门禁未通过时回退上一阶段修订，并把缺陷写回贝叶斯引擎。每阶段下方列出关键活动，与平台「项目→设计器→质量报告→工作流审核」页面动线一一对应。</figcaption>
 </figure>
 
 ### 1.1 一个主张

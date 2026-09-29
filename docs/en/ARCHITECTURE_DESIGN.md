@@ -9,7 +9,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/whitepaper-arch.svg" alt="Platform architecture overview" loading="lazy">
-  <figcaption>Fig. 1-1 Platform architecture overview: frontend / backend / algorithm / data layers plus deployment channel</figcaption>
+  <figcaption><strong>Fig. 1-1 Platform architecture overview: frontend / backend / algorithm / data layers plus deployment channel</strong>How to read: Read as an architecture overview — four layers annotated with inter-layer call protocols, and a deployment channel listing dev, production, tunnel and static publishing; the algorithm layer has zero framework dependencies and can run standalone.</figcaption>
 </figure>
 
 The platform uses a five-layer architecture:
@@ -167,7 +167,7 @@ ModelFile 1–N ModelVariant (with self-referencing parent); User 1–N ApiKey.
 
 <figure class="doc-figure">
   <img src="docs/images/arch-dataflow.svg" alt="Car-generation request data flow" loading="lazy">
-  <figcaption>Fig. 6-1 Complete data flow of a car-generation request (including error branches)</figcaption>
+  <figcaption><strong>Fig. 6-1 Complete data flow of a car-generation request (including error branches)</strong>How to read: Three swimlanes (browser, backend, algorithm/data); blue solid arrows trace the happy path ①HTTPS → ②auth/validation → ③orchestration → ④evaluation → ⑤200 OK; the red dashed branch shows 401s never reach the algorithm layer and turn into the global login prompt.</figcaption>
 </figure>
 
 ### 6.1 The AI Parameterized-Design Loop

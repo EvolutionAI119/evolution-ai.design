@@ -13,7 +13,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/api-lifecycle.svg" alt="API 请求生命周期八步" loading="lazy">
-  <figcaption>图 1 ｜ API 请求生命周期八步：axios → CORS → 安全头 → 路由 → 鉴权 → 校验 → 业务 → 响应</figcaption>
+  <figcaption><strong>图 1 ｜ API 请求生命周期八步：axios → CORS → 安全头 → 路由 → 鉴权 → 校验 → 业务 → 响应</strong>读图：上排 ①–④ 为请求进入（axios 实例→CORS 网关→安全头中间件→路由匹配），下排 ⑤–⑧ 为处理与返回（依赖注入鉴权→Pydantic 校验→业务处理→统一响应）；底部红色虚线为统一异常通道——任意一步抛错都经统一处理器返回结构化错误，500 级同时写入 backend-error.log 供超管排查。</figcaption>
 </figure>
 
 ---

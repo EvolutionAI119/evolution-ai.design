@@ -24,7 +24,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/phil-paradigm-shift.svg" alt="Paradigm shift in three stages" loading="lazy">
-  <figcaption>Fig. 1-1 Paradigm shift: from analog craft to parametric CAD to AI-driven generation</figcaption>
+  <figcaption><strong>Fig. 1-1 Paradigm shift: from analog craft to parametric CAD to AI-driven generation</strong>How to read: Three era cards progress along the timeline: analog craft relied on personal experience with low reproducibility; parametric CAD made dimensions explicit and traceable with day-level cycles; the AI era (this platform) explores the parameter space automatically and compresses each iteration to minutes. The bottom strip states the paradigm core: design expression migrates from analog experience to parameters + algorithms.</figcaption>
 </figure>
 
 ### 1.1 The Paradigm Revolution
@@ -69,7 +69,7 @@ The four-layer philosophical architecture of v3.0 expands, in the platform era, 
 
 <figure class="doc-figure">
   <img src="docs/images/phil-form-logic-math.svg" alt="Form–Logic–Mathematics three-layer framework" loading="lazy">
-  <figcaption>Fig. 2-1 The Form–Logic–Mathematics three-layer framework with bidirectional closure</figcaption>
+  <figcaption><strong>Fig. 2-1 The Form–Logic–Mathematics three-layer framework with bidirectional closure</strong>How to read: Read top-down: the purple Form layer holds visible aesthetic expression; the blue Logic layer translates each aesthetic decision into parameter constraints and hardpoints; the green Mathematics layer carries the NURBS / differential-geometry / Bayes foundation. The right arrows stress a closed loop, not one-way translation: intent flows down as constraints, mathematical optima feed back as form.</figcaption>
 </figure>
 
 ### 2.1 Form — Aesthetic Expression
@@ -99,7 +99,7 @@ The 22 parameters cover primary dimensions, section lengths, ground clearance, s
 
 <figure class="doc-figure">
   <img src="docs/images/phil-ocge-loop.svg" alt="Observe–Constrain–Generate–Evolve loop" loading="lazy">
-  <figcaption>Fig. 3-1 The Observe–Constrain–Generate–Evolve loop mapped to platform modules</figcaption>
+  <figcaption><strong>Fig. 3-1 The Observe–Constrain–Generate–Evolve loop mapped to platform modules</strong>How to read: Four nodes cycle clockwise — Observe (multi-source input), Constrain (distill into computable boundaries), Generate (batch candidates within constraints), Evolve (evaluation feeds the next round); the center notes each loop yields a better legal solution. The right column maps the four stages to platform modules one by one.</figcaption>
 </figure>
 
 ### 3.1 Cross-Civilization Cognitive Resonance
@@ -159,7 +159,7 @@ Philosophy and styling are not sequenced as "first settle philosophy, then do st
 
 <figure class="doc-figure">
   <img src="docs/images/phil-closedloop.svg" alt="End-to-end Class-A loop" loading="lazy">
-  <figcaption>Fig. 5-1 End-to-end Class-A loop: parameters → NURBS generation → quality evaluation → Bayesian optimization</figcaption>
+  <figcaption><strong>Fig. 5-1 End-to-end Class-A loop: parameters → NURBS generation → quality evaluation → Bayesian optimization</strong>How to read: The horizontal chain runs parameters → NURBS generation → quality evaluation → Bayesian optimization; the purple dashed loop writes suggested parameters back for the next round. Bottom strips list per-loop latency (seconds), typical convergence (20–40 rounds) and the human-machine split.</figcaption>
 </figure>
 
 ### 5.1 Loop Structure

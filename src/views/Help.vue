@@ -64,7 +64,7 @@
         </div>
         <p class="detail-summary">{{ pick(selectedDoc.summary) }}</p>
         <!-- 文档始终以 HTML 内联呈现，不提供文件类型选择 -->
-        <div class="detail-content">
+        <div class="detail-content" @click="onDocContentClick">
           <div v-if="loadingContent" class="loading">{{ pick(ui.loading) }}</div>
           <div v-else class="markdown-body" v-html="renderedContent"></div>
         </div>
@@ -211,6 +211,15 @@
         </div>
       </div>
     </div>
+    <!-- 插图灯箱：点击 doc-figure 内图片全屏预览（遮罩/Esc/按钮均可关闭） -->
+    <Teleport to="body">
+      <div v-if="lightbox" class="doc-lightbox" @click="closeLightbox">
+        <img :src="lightbox.src" :alt="lightbox.alt" @click.stop>
+        <div v-if="lightbox.caption" class="doc-lightbox-caption">{{ lightbox.caption }}</div>
+        <div class="doc-lightbox-hint">{{ pick(ui.zoomClose) }}</div>
+        <button class="doc-lightbox-close" @click.stop="closeLightbox">✕</button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -535,6 +544,8 @@ const ui = {
   autoRotate: { en: 'Auto Rotate', zh: '自动旋转' },
   legend: { en: 'Legend', zh: '图例' },
   loading: { en: 'Loading…', zh: '加载中…' },
+  zoomHint: { en: 'Click to zoom', zh: '点击放大查看' },
+  zoomClose: { en: 'Click anywhere or press Esc to close', zh: '点击任意处或按 Esc 关闭' },
   selectHint: { en: 'Select a document', zh: '选择文档' },
   selectHintDesc: { en: 'Click any node in the 3D graph or pick from the list below to read the full document.',
                     zh: '点击 3D 图谱中的任意节点，或从下方列表选择以阅读全文。' },
@@ -1025,8 +1036,34 @@ const renderedContent = computed(() => {
   const src = (docContent.value && contentLocale.value === want)
     ? docContent.value
     : fallbackPage(selectedDoc.value)
-  return md.render(stripFrontmatter(src))
+  let html = md.render(stripFrontmatter(src))
+  // 插图交互提示：为每张图注入 title（alt 描述 + 当前语言的放大提示）
+  const hint = locale.value === 'zh' ? '点击放大查看' : 'Click to zoom'
+  html = html.replace(/<img([^>]*?)\balt="([^"]*)"([^>]*)>/g,
+    (_m, pre, alt, post) => `<img${pre}alt="${alt}" title="${alt} · ${hint}"${post}>`)
+  return html
 })
+
+// —— 插图灯箱：点击 doc-figure 内图片放大预览，Esc/遮罩/按钮关闭 ——
+const lightbox = ref(null)
+const onDocContentClick = (e) => {
+  const img = e.target.closest?.('.doc-figure img')
+  if (!img) return
+  const fig = img.closest('.doc-figure')
+  lightbox.value = {
+    src: img.getAttribute('src'),
+    alt: img.alt || '',
+    caption: fig?.querySelector('figcaption')?.textContent?.trim() || img.alt || ''
+  }
+}
+const closeLightbox = () => { lightbox.value = null }
+const onDocKeydown = (e) => { if (e.key === 'Escape') closeLightbox() }
+onMounted(() => window.addEventListener('keydown', onDocKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onDocKeydown)
+  document.body.style.overflow = ''
+})
+watch(lightbox, (v) => { document.body.style.overflow = v ? 'hidden' : '' })
 
 const selectDoc = async (d) => {
   selectedDoc.value = d
@@ -1284,15 +1321,47 @@ onBeforeUnmount(() => {
 /* markdown 渲染样式（v-html 内容无 scoped 属性，子元素必须用 :deep 穿透） */
 .markdown-body { line-height: 1.7; font-size: 12px; }
 /* 文档插图：统一居中、圆角描边与图注 */
-.markdown-body :deep(.doc-figure) { margin: 16px 0 10px; }
+.markdown-body :deep(.doc-figure) { margin: 16px 0 10px; position: relative; }
 .markdown-body :deep(.doc-figure img) {
   display: block; max-width: 100%; height: auto; margin: 0 auto;
   border: 1px solid #1E2A3A; border-radius: 10px; background: #0F1622;
+  cursor: zoom-in; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.markdown-body :deep(.doc-figure:hover img) {
+  border-color: #34D399AA; box-shadow: 0 6px 24px rgba(52, 211, 153, .12);
 }
 .markdown-body :deep(.doc-figure figcaption) {
   text-align: center; font-size: 11px; color: var(--text-muted);
-  margin-top: 7px; letter-spacing: .3px;
+  margin-top: 7px; letter-spacing: .3px; max-width: 94%;
+  margin-left: auto; margin-right: auto;
 }
+.markdown-body :deep(.doc-figure figcaption strong) {
+  color: var(--text-secondary, #CBD5E1); font-weight: 600;
+}
+/* 插图灯箱：全屏遮罩 + 居中大图 + 图注 + 关闭提示 */
+.doc-lightbox {
+  position: fixed; inset: 0; z-index: 2200;
+  background: rgba(4, 8, 14, .92); backdrop-filter: blur(6px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 28px; cursor: zoom-out; animation: lightbox-in .18s ease;
+}
+@keyframes lightbox-in { from { opacity: 0; } to { opacity: 1; } }
+.doc-lightbox img {
+  max-width: min(1080px, 94vw); max-height: 80vh; height: auto;
+  border: 1px solid #2A3A52; border-radius: 12px; background: #0F1622;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .55); cursor: default;
+}
+.doc-lightbox-caption {
+  margin-top: 14px; max-width: min(900px, 90vw); text-align: center;
+  font-size: 12.5px; line-height: 1.65; color: #CBD5E1;
+}
+.doc-lightbox-hint { margin-top: 8px; font-size: 11px; color: #64748B; }
+.doc-lightbox-close {
+  position: absolute; top: 18px; right: 22px; width: 36px; height: 36px;
+  border-radius: 50%; border: 1px solid #2A3A52; background: #0F1622;
+  color: #94A3B8; font-size: 15px; cursor: pointer; transition: all .15s ease;
+}
+.doc-lightbox-close:hover { color: #E2E8F0; border-color: #34D399; }
 .markdown-body :deep(h1) { font-size: 16px; border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin: 14px 0 8px; }
 .markdown-body :deep(h2) { font-size: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 3px; margin: 12px 0 6px; }
 .markdown-body :deep(h3) { font-size: 13px; margin: 10px 0 5px; }

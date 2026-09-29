@@ -166,7 +166,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/validation-metrics.svg" alt="审计时点三层测试指标" loading="lazy">
-  <figcaption>图 4-1 ｜ 审计时点关键指标：三层测试规模与通过率</figcaption>
+  <figcaption><strong>图 4-1 ｜ 审计时点关键指标：三层测试规模与通过率</strong>读图：柱状图为审计时点的三层测试快照——算法 200 / 后端 178 / 前端 111 / 自检 5，489 例全通过；右侧徽章为收敛验证与文档核对结论，对应审计结论「事实基线一致」。</figcaption>
 </figure>
 
 | 指标 | 状态 | 说明 |

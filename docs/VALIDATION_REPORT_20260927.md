@@ -27,7 +27,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/validation-metrics.svg" alt="三层测试规模与通过率" loading="lazy">
-  <figcaption>图 2-1 ｜ 三层自动化测试规模与通过率（489 用例全通过）</figcaption>
+  <figcaption><strong>图 2-1 ｜ 三层自动化测试规模与通过率（489 用例全通过）</strong>读图：柱状图给出各层用例规模——算法层 200、后端集成 178、前端组件 111、一站式自检 5，合计 489 例全通过（0 失败 0 跳过）；右侧徽章补充贝叶斯收敛验证与文档-源码核对两项结论。横轴为用例数，柱色全绿代表全部通过。</figcaption>
 </figure>
 
 ### 2.1 结果总表

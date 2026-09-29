@@ -13,7 +13,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/api-lifecycle.svg" alt="API request lifecycle in eight steps" loading="lazy">
-  <figcaption>Fig. 1 API request lifecycle in eight steps: axios → CORS → security headers → routing → auth → validation → business → response</figcaption>
+  <figcaption><strong>Fig. 1 API request lifecycle in eight steps: axios → CORS → security headers → routing → auth → validation → business → response</strong>How to read: The top row (①–④) covers request entry; the bottom row (⑤–⑧) covers processing and response. The red dashed line is the unified error channel: any failure returns a structured error, with 5xx also logged to backend-error.log.</figcaption>
 </figure>
 
 ---

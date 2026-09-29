@@ -37,7 +37,7 @@ EVOLUTION AI 是面向汽车造型开发的 AI 平台，目标是实现
 
 <figure class="doc-figure">
   <img src="docs/images/product-journey.svg" alt="核心场景端到端旅程" loading="lazy">
-  <figcaption>图 3-1 ｜ 核心场景端到端旅程：游客体验 → 注册解锁 → 创作优化 → 审核交付</figcaption>
+  <figcaption><strong>图 3-1 ｜ 核心场景端到端旅程：游客体验 → 注册解锁 → 创作优化 → 审核交付</strong>读图：三条角色泳道与蛇形主线展示完整旅程——游客零门槛浏览，触发写操作时弹出登录引导（琥珀节点）；注册后解锁参数建模、AI 创意工具、贝叶斯寻优（蓝色节点）；管理员承接工作流审核与数据交付（绿色节点）与后台运维（紫色节点）。右侧栏列出旅程设计六原则。</figcaption>
 </figure>
 
 1. **参数化概念设计**：在 Designer 选择车型/风格与参数 → 生成 3D 整车 →

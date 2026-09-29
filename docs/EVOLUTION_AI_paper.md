@@ -176,7 +176,7 @@ premises.
 
 <figure class="doc-figure">
   <img src="docs/images/whitepaper-arch.svg" alt="Platform four-layer architecture with deployment channel" loading="lazy">
-  <figcaption>Figure 3-1 ｜ System architecture: four layers (frontend / backend / algorithm / data) and the deployment channel</figcaption>
+  <figcaption><strong>Figure 3-1 ｜ System architecture: four layers (frontend / backend / algorithm / data) and the deployment channel</strong>How to read: four layers top-down — Vue 3 SPA frontend, FastAPI backend (15 routers + RBAC), the standalone algorithm_model layer, and the data layer (SQLite/files/Redis/knowledge JSON) — with call types annotated between layers; the right channel covers development, production, tunnel and static publishing. Layering rule: upper layers may depend on lower ones, never the reverse.</figcaption>
 </figure>
 
 EVOLUTION AI is organized as five layers (Figure 1, conceptual).
@@ -229,7 +229,7 @@ HTTP layer.
 
 <figure class="doc-figure">
   <img src="docs/images/paper-nurbs-pipeline.svg" alt="Class-A surface pipeline" loading="lazy">
-  <figcaption>Figure 4-1 ｜ Class-A pipeline: control net → surface lofting → G0/G1/G2 continuity verification</figcaption>
+  <figcaption><strong>Figure 4-1 ｜ Class-A pipeline: control net → surface lofting → G0/G1/G2 continuity verification</strong>How to read: three panels left to right — the control net (blue dots are de Boor control points, re-arranged by design parameters), surface lofting (semantic patches skinned with G2-enforced boundaries), and the continuity spectrum (G0 position / G1 tangent / G2 curvature, green = Class-A bar). The bottom strip lists why NURBS over meshes: analytic precision, parametric drive, industrial compatibility.</figcaption>
 </figure>
 
 ### 4.1 Parameterization
@@ -311,7 +311,7 @@ quality apparatus as a single evaluable function.
 
 <figure class="doc-figure">
   <img src="docs/images/paper-bayes-engine.svg" alt="Bayesian optimization loop with GP surrogate" loading="lazy">
-  <figcaption>Figure 5-1 ｜ Bayesian optimization loop with GP surrogate: observed samples, posterior mean ±σ, and EI acquisition maximum</figcaption>
+  <figcaption><strong>Figure 5-1 ｜ Bayesian optimization loop with GP surrogate: observed samples, posterior mean ±σ, and EI acquisition maximum</strong>How to read: left chart shows the GP surrogate — amber dots are evaluated samples, the green curve the posterior mean, the shaded band ±σ uncertainty (wider = less certain), and the pink dashed line the EI maximum (next sample point); right boxes give the five-step loop (DOE → real evaluation → surrogate update → EI selection → suggestion). The inset convergence curve shows monotone improvement stabilizing within 20–40 rounds.</figcaption>
 </figure>
 
 ### 5.1 The Styling Search Space
