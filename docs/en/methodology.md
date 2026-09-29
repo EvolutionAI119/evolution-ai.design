@@ -9,6 +9,11 @@
 
 ## 1. The Methodological Overview
 
+<figure class="doc-figure">
+  <img src="docs/images/method-pipeline.svg" alt="Five-stage pipeline with stage gates" loading="lazy">
+  <figcaption>Fig. 1-1 Five-stage pipeline with G1–G4 stage gates (failed gates loop back for revision)</figcaption>
+</figure>
+
 ### 1.1 One Claim
 
 **From one sentence to a 3D full vehicle**: the essence of styling development is to take a vague conceptual intent and, through constrained generation and quantifiable evaluation, converge it step by step into precise, engineering-deliverable geometry.

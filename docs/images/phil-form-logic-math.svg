@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#38BDF8"/>
+    </marker>
+    <marker id="ar2g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="428" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">技术框架：形 · 理 · 数（Form–Logic–Mathematics）</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">三层自洽表达体系</text>
+
+  <!-- 层一：形 -->
+  <g>
+    <rect x="40" y="60" width="640" height="96" rx="12" fill="#1A1230" stroke="#A78BFA" stroke-width="1.2"/>
+    <text x="64" y="94" fill="#A78BFA" font-size="17" font-weight="700">形 · Form</text>
+    <text x="150" y="94" fill="#94A3B8" font-size="12">—— 可见的美学表达层</text>
+    <g font-size="12" fill="#C4B5FD">
+      <rect x="64" y="108" width="118" height="30" rx="8" fill="#241A40"/><text x="123" y="127" text-anchor="middle">曲面特征线</text>
+      <rect x="192" y="108" width="118" height="30" rx="8" fill="#241A40"/><text x="251" y="127" text-anchor="middle">型面光影关系</text>
+      <rect x="320" y="108" width="118" height="30" rx="8" fill="#241A40"/><text x="379" y="127" text-anchor="middle">姿态与比例</text>
+      <rect x="448" y="108" width="118" height="30" rx="8" fill="#241A40"/><text x="507" y="127" text-anchor="middle">品牌识别基因</text>
+    </g>
+    <text x="640" y="127" fill="#64748B" font-size="11">→ 渲染/3D 预览</text>
+  </g>
+
+  <!-- 层二：理 -->
+  <g>
+    <rect x="40" y="172" width="640" height="96" rx="12" fill="#0E1E2E" stroke="#38BDF8" stroke-width="1.2"/>
+    <text x="64" y="206" fill="#38BDF8" font-size="17" font-weight="700">理 · Logic</text>
+    <text x="156" y="206" fill="#94A3B8" font-size="12">—— 参数化约束与造型逻辑层</text>
+    <g font-size="12" fill="#7DD3FC">
+      <rect x="64" y="220" width="118" height="30" rx="8" fill="#12293D"/><text x="123" y="239" text-anchor="middle">整车尺寸参数</text>
+      <rect x="192" y="220" width="118" height="30" rx="8" fill="#12293D"/><text x="251" y="239" text-anchor="middle">比例约束规则</text>
+      <rect x="320" y="220" width="118" height="30" rx="8" fill="#12293D"/><text x="379" y="239" text-anchor="middle">特征线拓扑</text>
+      <rect x="448" y="220" width="118" height="30" rx="8" fill="#12293D"/><text x="507" y="239" text-anchor="middle">工程硬点</text>
+    </g>
+    <text x="640" y="239" fill="#64748B" font-size="11">→ 参数校验</text>
+  </g>
+
+  <!-- 层三：数 -->
+  <g>
+    <rect x="40" y="284" width="640" height="96" rx="12" fill="#0F241C" stroke="#34D399" stroke-width="1.4"/>
+    <text x="64" y="318" fill="#34D399" font-size="17" font-weight="700">数 · Mathematics</text>
+    <text x="212" y="318" fill="#94A3B8" font-size="12">—— 数学基座层（一切表达的最终形式）</text>
+    <g font-size="12" fill="#6EE7B7">
+      <rect x="64" y="332" width="130" height="30" rx="8" fill="#123528"/><text x="129" y="351" text-anchor="middle">NURBS 曲面数学</text>
+      <rect x="204" y="332" width="130" height="30" rx="8" fill="#123528"/><text x="269" y="351" text-anchor="middle">微分几何连续性</text>
+      <rect x="344" y="332" width="130" height="30" rx="8" fill="#123528"/><text x="409" y="351" text-anchor="middle">贝叶斯优化</text>
+      <rect x="484" y="332" width="130" height="30" rx="8" fill="#123528"/><text x="549" y="351" text-anchor="middle">深度学习评估</text>
+    </g>
+  </g>
+
+  <!-- 右侧：双向关系 -->
+  <g>
+    <rect x="706" y="60" width="224" height="320" rx="12" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="818" y="90" fill="#E2E8F0" font-size="13" font-weight="700" text-anchor="middle">层间关系</text>
+    <line x1="756" y1="112" x2="756" y2="352" stroke="#334155" stroke-width="1"/>
+    <path d="M782 128 C 830 150, 830 300, 782 340" fill="none" stroke="#38BDF8" stroke-width="2" marker-end="url(#ar2)"/>
+    <text x="836" y="228" fill="#7DD3FC" font-size="11.5" text-anchor="middle" transform="rotate(90 836 228)">自上而下：美学意图 → 参数化</text>
+    <path d="M742 340 C 694 300, 694 150, 742 128" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar2g)"/>
+    <text x="700" y="228" fill="#6EE7B7" font-size="11.5" text-anchor="middle" transform="rotate(-90 700 228)">自下而上：数学最优 → 造型</text>
+    <text x="818" y="368" fill="#64748B" font-size="10.5" text-anchor="middle">双向闭环 · 而非单向翻译</text>
+  </g>
+
+  <text x="40" y="408" fill="#64748B" font-size="11.5">读法：造型师的每一个审美决策都会落位为「理」层的一条约束；每条约束在「数」层拥有唯一的数学形式；任何数学变动都会即时反映回「形」层的光影与姿态。</text>
+</svg>

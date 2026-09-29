@@ -9,6 +9,11 @@
 
 ## 1. 方法论总纲
 
+<figure class="doc-figure">
+  <img src="docs/images/method-pipeline.svg" alt="五阶段开发流水线与门禁" loading="lazy">
+  <figcaption>图 1-1 ｜ 五阶段开发流水线与 G1–G4 门禁（未通过即回退修订）</figcaption>
+</figure>
+
 ### 1.1 一个主张
 
 **从一句话到 3D 整车**：造型开发的本质，是把模糊的概念意图，经过受约束的生成与可量化的评估，逐步收敛为工程可交付的精确几何。

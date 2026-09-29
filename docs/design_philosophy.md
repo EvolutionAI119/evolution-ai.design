@@ -22,6 +22,11 @@
 
 ## 1. 核心理念：从手绘到参数的范式跃迁
 
+<figure class="doc-figure">
+  <img src="docs/images/phil-paradigm-shift.svg" alt="造型范式跃迁三阶段" loading="lazy">
+  <figcaption>图 1-1 ｜ 造型范式跃迁：手绘时代 → 参数化时代 → AI 生成与演化时代</figcaption>
+</figure>
+
 ### 1.1 范式革命
 
 传统汽车造型由手绘驱动：设计师用线条勾勒轮廓，工程师逆向构造曲面。EVOLUTION AI 开创了参数驱动的范式：
@@ -62,6 +67,11 @@ v3.0 的四层哲学架构，在平台时代扩展为承载 Web 协同与 AI 优
 
 ## 2. 技术框架：形 · 理 · 数
 
+<figure class="doc-figure">
+  <img src="docs/images/phil-form-logic-math.svg" alt="形理数三层框架" loading="lazy">
+  <figcaption>图 2-1 ｜ 形 · 理 · 数三层表达体系与层间双向闭环</figcaption>
+</figure>
+
 ### 2.1 形（Form）——美学表达
 
 形态由参数化的特征结构定义：侧视剪影、腰线（车身上下分界、动态感来源）、肩线（上部折线、肌肉感）、车顶轮廓、前后造型（品牌识别与力量感）、轮拱（运动感）、温室线（优雅感）、底部门槛（稳重感）。
@@ -86,6 +96,11 @@ v3.0 的四层哲学架构，在平台时代扩展为承载 Web 协同与 AI 优
 ---
 
 ## 3. 哲学根基：观察 · 约束 · 生成 · 演化
+
+<figure class="doc-figure">
+  <img src="docs/images/phil-ocge-loop.svg" alt="观约生演循环" loading="lazy">
+  <figcaption>图 3-1 ｜ 观察—约束—生成—演化认知闭环及其平台模块映射</figcaption>
+</figure>
 
 ### 3.1 跨文明的认知共鸣
 
@@ -141,6 +156,11 @@ v3.0 的四层哲学架构，在平台时代扩展为承载 Web 协同与 AI 优
 ---
 
 ## 5. 工程实践：A 级曲面端到端闭环
+
+<figure class="doc-figure">
+  <img src="docs/images/phil-closedloop.svg" alt="端到端闭环" loading="lazy">
+  <figcaption>图 5-1 ｜ A 级曲面端到端闭环：参数 → NURBS 生成 → 质量评估 → 贝叶斯优化</figcaption>
+</figure>
 
 ### 5.1 闭环结构
 

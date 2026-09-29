@@ -1283,6 +1283,16 @@ onBeforeUnmount(() => {
 
 /* markdown 渲染样式（v-html 内容无 scoped 属性，子元素必须用 :deep 穿透） */
 .markdown-body { line-height: 1.7; font-size: 12px; }
+/* 文档插图：统一居中、圆角描边与图注 */
+.markdown-body :deep(.doc-figure) { margin: 16px 0 10px; }
+.markdown-body :deep(.doc-figure img) {
+  display: block; max-width: 100%; height: auto; margin: 0 auto;
+  border: 1px solid #1E2A3A; border-radius: 10px; background: #0F1622;
+}
+.markdown-body :deep(.doc-figure figcaption) {
+  text-align: center; font-size: 11px; color: var(--text-muted);
+  margin-top: 7px; letter-spacing: .3px;
+}
 .markdown-body :deep(h1) { font-size: 16px; border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin: 14px 0 8px; }
 .markdown-body :deep(h2) { font-size: 14px; border-bottom: 1px solid var(--border-color); padding-bottom: 3px; margin: 12px 0 6px; }
 .markdown-body :deep(h3) { font-size: 13px; margin: 10px 0 5px; }

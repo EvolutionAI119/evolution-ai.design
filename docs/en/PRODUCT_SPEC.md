@@ -34,6 +34,11 @@ The platform also hosts:
 
 ## 3. Core Usage Scenarios (End-to-End)
 
+<figure class="doc-figure">
+  <img src="docs/images/product-journey.svg" alt="End-to-end journey" loading="lazy">
+  <figcaption>Fig. 3-1 End-to-end journey: guest experience → sign-up unlock → creation and optimization → review and delivery</figcaption>
+</figure>
+
 1. **Parameterized concept design**: choose vehicle type/style/brand and parameters in Designer → generate a 3D full vehicle → cloud sample batch / quality evaluation / generative design / optimization → save variants and compare.
 2. **CAD import / re-param / export**: upload a CAD/model file in Deliver → parse parameters → modify with 3D preview → choose a format, export, download.
 3. **Quality-driven iteration**: start a quality check in Quality → review reports and history → return to the design side to adjust by score.

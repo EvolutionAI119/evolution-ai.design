@@ -11,6 +11,11 @@
 >
 > 交互式文档：后端运行时访问 `http://localhost:8000/docs`。
 
+<figure class="doc-figure">
+  <img src="docs/images/api-lifecycle.svg" alt="API 请求生命周期八步" loading="lazy">
+  <figcaption>图 1 ｜ API 请求生命周期八步：axios → CORS → 安全头 → 路由 → 鉴权 → 校验 → 业务 → 响应</figcaption>
+</figure>
+
 ---
 
 ## 1. 项目管理 — project.py（5）

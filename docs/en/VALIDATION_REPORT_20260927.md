@@ -25,6 +25,11 @@
 
 ## 2. Three-Layer Automated Testing
 
+<figure class="doc-figure">
+  <img src="docs/images/validation-metrics.svg" alt="Three-layer test suite scale and pass rate" loading="lazy">
+  <figcaption>Fig. 2-1 Three-layer test suite scale and pass rate (489 cases, all passing)</figcaption>
+</figure>
+
 ### 2.1 Results
 
 | Layer | Framework | Cases | Time | Scope |

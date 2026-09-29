@@ -9,6 +9,11 @@
 - LLM 推理服务: transformers + Qwen2.5-0.5B-Instruct (端口 11434)
 - 后端路由代理: Vite 配置 `/api/v1` → `http://localhost:8000`
 
+<figure class="doc-figure">
+  <img src="docs/images/test-pyramid.svg" alt="平台测试金字塔" loading="lazy">
+  <figcaption>图 1 ｜ 平台测试金字塔：四层验证体系与分层原则</figcaption>
+</figure>
+
 ---
 
 ## 1. 服务启动状态

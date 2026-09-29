@@ -14,6 +14,11 @@
 
 ## 1. How It Works — The Optimization Loop
 
+<figure class="doc-figure">
+  <img src="docs/images/paper-bayes-engine.svg" alt="Bayesian optimization loop" loading="lazy">
+  <figcaption>Fig. 1-1 Bayesian optimization loop: GP surrogate (left) and the five-step iteration (right)</figcaption>
+</figure>
+
 **Loop (suggest → evaluate → observe → converge → export)**:
 
 1. Create a session (parameter space, objective direction, acquisition function)

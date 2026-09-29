@@ -15,6 +15,11 @@ Design principles: minimal credential exposure (the Token lives only in frontend
 
 ## 2. Module Correlation Map
 
+<figure class="doc-figure">
+  <img src="docs/images/integration-flow.svg" alt="Integration map with review state machine" loading="lazy">
+  <figcaption>Fig. 2-1 Integration map: authentication → token training → workflow review, with the review state machine</figcaption>
+</figure>
+
 ```
 ┌─────────────┐  ①email+password ┌──────────────┐  ②issue JWT(7d) ┌──────────────────┐
 │  Login.vue  │─────────────────▶│ auth.py      │────────────────▶│ auth store        │

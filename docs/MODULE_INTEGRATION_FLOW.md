@@ -15,6 +15,11 @@
 
 ## 2. 模块功能关联地图
 
+<figure class="doc-figure">
+  <img src="docs/images/integration-flow.svg" alt="模块集成地图与审核状态机" loading="lazy">
+  <figcaption>图 2-1 ｜ 登录认证 → Token 训练 → 工作流审核的模块集成地图与审核状态机</figcaption>
+</figure>
+
 ```
 ┌─────────────┐  ①邮箱+密码   ┌──────────────┐  ②签发JWT(7天)  ┌──────────────────┐
 │  Login.vue  │─────────────▶│ auth.py      │───────────────▶ │ auth store        │

@@ -164,6 +164,11 @@
 
 ## 四、关键指标现状
 
+<figure class="doc-figure">
+  <img src="docs/images/validation-metrics.svg" alt="审计时点三层测试指标" loading="lazy">
+  <figcaption>图 4-1 ｜ 审计时点关键指标：三层测试规模与通过率</figcaption>
+</figure>
+
 | 指标 | 状态 | 说明 |
 |------|------|------|
 | 单元测试 | 201 / 201 通过 | 8 月 9 日最近一次全量运行 |

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+    <marker id="ar4b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#A78BFA"/>
+    </marker>
+    <linearGradient id="surf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#34D399" stop-opacity=".55"/><stop offset="1" stop-color="#38BDF8" stop-opacity=".35"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="958" height="398" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">工程实践：A 级曲面端到端闭环</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">End-to-End Class-A Loop</text>
+
+  <!-- 1 造型参数 -->
+  <g>
+    <rect x="34" y="86" width="180" height="120" rx="12" fill="#12293D" stroke="#38BDF8" stroke-width="1.3"/>
+    <text x="124" y="114" fill="#7DD3FC" font-size="14" font-weight="700" text-anchor="middle">① 造型参数向量</text>
+    <g font-size="11" fill="#94A3B8">
+      <text x="52" y="140">车长/轴距/轮距 …</text>
+      <text x="52" y="160">风挡角/溜背角 …</text>
+      <text x="52" y="180">14 维参数空间</text>
+    </g>
+    <rect x="52" y="188" width="144" height="4" rx="2" fill="#38BDF8" opacity=".4"/>
+  </g>
+
+  <!-- 2 NURBS 生成 -->
+  <g>
+    <rect x="258" y="86" width="200" height="120" rx="12" fill="#0F241C" stroke="#34D399" stroke-width="1.3"/>
+    <text x="358" y="114" fill="#6EE7B7" font-size="14" font-weight="700" text-anchor="middle">② NURBS 曲面生成</text>
+    <!-- 小曲面示意：控制网格 + 曲面 -->
+    <path d="M282 158 C 310 128, 350 168, 380 142 S 436 132, 448 150" fill="none" stroke="url(#surf)" stroke-width="10" stroke-linecap="round" opacity=".85"/>
+    <g fill="#34D399" opacity=".8">
+      <circle cx="282" cy="158" r="2.2"/><circle cx="316" cy="144" r="2.2"/><circle cx="352" cy="152" r="2.2"/><circle cx="388" cy="142" r="2.2"/><circle cx="420" cy="140" r="2.2"/>
+    </g>
+    <text x="358" y="188" fill="#94A3B8" font-size="11" text-anchor="middle">控制网格 → 节点矢量 → 曲面求值</text>
+  </g>
+
+  <!-- 3 质量评估 -->
+  <g>
+    <rect x="502" y="86" width="200" height="120" rx="12" fill="#1A1230" stroke="#A78BFA" stroke-width="1.3"/>
+    <text x="602" y="114" fill="#C4B5FD" font-size="14" font-weight="700" text-anchor="middle">③ 质量评估</text>
+    <g font-size="11" fill="#94A3B8">
+      <circle cx="518" cy="138" r="2" fill="#A78BFA"/><text x="528" y="142">G2 连续性 / 曲率均匀度</text>
+      <circle cx="518" cy="160" r="2" fill="#A78BFA"/><text x="528" y="164">尺寸一致性 / 制造可行性</text>
+      <circle cx="518" cy="182" r="2" fill="#A78BFA"/><text x="528" y="186">综合评分（0~100）</text>
+    </g>
+  </g>
+
+  <!-- 4 贝叶斯优化 -->
+  <g>
+    <rect x="746" y="86" width="180" height="120" rx="12" fill="#2A1A0E" stroke="#FBBF24" stroke-width="1.3"/>
+    <text x="836" y="114" fill="#FCD34D" font-size="14" font-weight="700" text-anchor="middle">④ 贝叶斯优化</text>
+    <g font-size="11" fill="#94A3B8">
+      <circle cx="762" cy="138" r="2" fill="#FBBF24"/><text x="772" y="142">高斯代理模型拟合</text>
+      <circle cx="762" cy="160" r="2" fill="#FBBF24"/><text x="772" y="164">EI 采集函数选点</text>
+      <circle cx="762" cy="182" r="2" fill="#FBBF24"/><text x="772" y="186">输出下一组建议参数</text>
+    </g>
+  </g>
+
+  <!-- 正向流 -->
+  <line x1="216" y1="146" x2="254" y2="146" stroke="#34D399" stroke-width="2" marker-end="url(#ar4)"/>
+  <line x1="460" y1="146" x2="498" y2="146" stroke="#34D399" stroke-width="2" marker-end="url(#ar4)"/>
+  <line x1="704" y1="146" x2="742" y2="146" stroke="#34D399" stroke-width="2" marker-end="url(#ar4)"/>
+  <text x="235" y="136" fill="#64748B" font-size="10.5" text-anchor="middle">求值</text>
+  <text x="479" y="136" fill="#64748B" font-size="10.5" text-anchor="middle">分析</text>
+  <text x="723" y="136" fill="#64748B" font-size="10.5" text-anchor="middle">评分</text>
+
+  <!-- 回写环路 -->
+  <path d="M836 210 L 836 286 L 124 286 L 124 210" fill="none" stroke="#A78BFA" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#ar4b)"/>
+  <rect x="392" y="270" width="176" height="32" rx="9" fill="#1A1230" stroke="#A78BFA"/>
+  <text x="480" y="291" fill="#C4B5FD" font-size="12" text-anchor="middle">建议参数回写 · 进入下一轮</text>
+
+  <!-- 底部指标带 -->
+  <g font-size="11.5" fill="#94A3B8">
+    <rect x="34" y="326" width="284" height="44" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="52" y="345" fill="#7DD3FC" font-weight="600">闭环单轮耗时</text><text x="52" y="362">秒级（本地算法层）</text>
+    <rect x="338" y="326" width="284" height="44" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="356" y="345" fill="#6EE7B7" font-weight="600">收敛轮次</text><text x="356" y="362">典型 20~40 轮（EI 采集）</text>
+    <rect x="642" y="326" width="284" height="44" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="660" y="345" fill="#C4B5FD" font-weight="600">人机分工</text><text x="660" y="362">人定审美边界 · 机器探索最优</text>
+  </g>
+</svg>

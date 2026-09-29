@@ -22,6 +22,11 @@
 
 ## 1. Core Idea: The Paradigm Leap from Hand Sketching to Parameters
 
+<figure class="doc-figure">
+  <img src="docs/images/phil-paradigm-shift.svg" alt="Paradigm shift in three stages" loading="lazy">
+  <figcaption>Fig. 1-1 Paradigm shift: from analog craft to parametric CAD to AI-driven generation</figcaption>
+</figure>
+
 ### 1.1 The Paradigm Revolution
 
 Traditional automotive styling was driven by hand sketching: designers outlined contours with lines, and engineers reverse-constructed surfaces. EVOLUTION AI inaugurated a parameter-driven paradigm:
@@ -62,6 +67,11 @@ The four-layer philosophical architecture of v3.0 expands, in the platform era, 
 
 ## 2. Technical Framework: Form · Logic · Mathematics
 
+<figure class="doc-figure">
+  <img src="docs/images/phil-form-logic-math.svg" alt="Form–Logic–Mathematics three-layer framework" loading="lazy">
+  <figcaption>Fig. 2-1 The Form–Logic–Mathematics three-layer framework with bidirectional closure</figcaption>
+</figure>
+
 ### 2.1 Form — Aesthetic Expression
 
 Form is defined by parameterized feature structures: the side silhouette, belt line (the upper/lower body division and source of dynamism), shoulder line (the upper crease conveying muscularity), roof contour, front and rear styling (brand identity and strength), wheel arches (sportiness), daylight opening line (elegance), and lower sill (solidity).
@@ -86,6 +96,11 @@ The 22 parameters cover primary dimensions, section lengths, ground clearance, s
 ---
 
 ## 3. Philosophical Roots: Observe · Constrain · Generate · Evolve
+
+<figure class="doc-figure">
+  <img src="docs/images/phil-ocge-loop.svg" alt="Observe–Constrain–Generate–Evolve loop" loading="lazy">
+  <figcaption>Fig. 3-1 The Observe–Constrain–Generate–Evolve loop mapped to platform modules</figcaption>
+</figure>
 
 ### 3.1 Cross-Civilization Cognitive Resonance
 
@@ -141,6 +156,11 @@ Philosophy and styling are not sequenced as "first settle philosophy, then do st
 ---
 
 ## 5. Engineering Practice: The End-to-End Class-A Surface Loop
+
+<figure class="doc-figure">
+  <img src="docs/images/phil-closedloop.svg" alt="End-to-end Class-A loop" loading="lazy">
+  <figcaption>Fig. 5-1 End-to-end Class-A loop: parameters → NURBS generation → quality evaluation → Bayesian optimization</figcaption>
+</figure>
 
 ### 5.1 Loop Structure
 

@@ -13,6 +13,11 @@
 
 ## 1. 工作原理与使用闭环
 
+<figure class="doc-figure">
+  <img src="docs/images/paper-bayes-engine.svg" alt="贝叶斯优化闭环" loading="lazy">
+  <figcaption>图 1-1 ｜ 贝叶斯优化闭环：GP 代理模型（左）与五步迭代（右）</figcaption>
+</figure>
+
 **闭环（建议 → 评估 → 回填 → 收敛 → 导出）**：
 
 1. 创建寻优会话（参数空间、目标方向、采集函数）

@@ -59,6 +59,11 @@ Unify design intent and engineering hard points through a **parameter space**; a
 
 ## 3. Platform Overview
 
+<figure class="doc-figure">
+  <img src="docs/images/product-journey.svg" alt="End-to-end user journey" loading="lazy">
+  <figcaption>Fig. 3-1 End-to-end user journey: guest → creator → delivery (aligned with the four-level RBAC)</figcaption>
+</figure>
+
 ### 3.1 Five User Types and Their Value
 
 | Role | Core need | Platform value |
@@ -140,6 +145,11 @@ Unify design intent and engineering hard points through a **parameter space**; a
 ---
 
 ## 5. Technical Architecture
+
+<figure class="doc-figure">
+  <img src="docs/images/whitepaper-arch.svg" alt="Platform architecture: four layers and the deployment channel" loading="lazy">
+  <figcaption>Fig. 5-1 Platform architecture: four layers and the deployment channel</figcaption>
+</figure>
 
 ### 5.1 Five-Layer Architecture
 

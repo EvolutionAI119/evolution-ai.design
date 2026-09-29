@@ -7,6 +7,11 @@
 
 ## 1. 总体架构
 
+<figure class="doc-figure">
+  <img src="docs/images/whitepaper-arch.svg" alt="平台四层一通道架构总览" loading="lazy">
+  <figcaption>图 1-1 ｜ 平台四层一通道架构总览（前端/后端/算法/数据 + 部署通道）</figcaption>
+</figure>
+
 平台采用五层分层架构：
 
 ```
@@ -159,6 +164,11 @@ ModelFile 1—N ModelVariant（含自引用 parent）；User 1—N ApiKey。
 ---
 
 ## 6. 关键数据流
+
+<figure class="doc-figure">
+  <img src="docs/images/arch-dataflow.svg" alt="车身生成请求数据流" loading="lazy">
+  <figcaption>图 6-1 ｜ 一次「车身生成」请求的完整数据流（含异常分支）</figcaption>
+</figure>
 
 ### 6.1 AI 参数化设计闭环
 

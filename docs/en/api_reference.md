@@ -11,6 +11,11 @@
 >
 > Interactive docs: `http://localhost:8000/docs` when the backend is running.
 
+<figure class="doc-figure">
+  <img src="docs/images/api-lifecycle.svg" alt="API request lifecycle in eight steps" loading="lazy">
+  <figcaption>Fig. 1 API request lifecycle in eight steps: axios → CORS → security headers → routing → auth → validation → business → response</figcaption>
+</figure>
+
 ---
 
 ## 1. Project Management — project.py (5)

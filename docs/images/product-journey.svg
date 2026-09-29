@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="ar15" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="418" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">核心使用场景：游客 → 创作者 → 交付的端到端旅程</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">End-to-End User Journey</text>
+
+  <!-- 角色泳道标签 -->
+  <g font-size="11" text-anchor="middle">
+    <rect x="40" y="60" width="120" height="26" rx="13" fill="#131B29" stroke="#64748B"/>
+    <text x="100" y="77" fill="#CBD5E1">游客 Guest</text>
+    <rect x="40" y="176" width="120" height="26" rx="13" fill="#12293D" stroke="#38BDF8"/>
+    <text x="100" y="193" fill="#7DD3FC">普通用户 User</text>
+    <rect x="40" y="292" width="120" height="26" rx="13" fill="#0F241C" stroke="#34D399"/>
+    <text x="100" y="309" fill="#6EE7B7">管理员/系统</text>
+  </g>
+  <line x1="170" y1="73" x2="920" y2="73" stroke="#1E2A3A" stroke-dasharray="3 4"/>
+  <line x1="170" y1="189" x2="920" y2="189" stroke="#1E2A3A" stroke-dasharray="3 4"/>
+  <line x1="170" y1="305" x2="920" y2="305" stroke="#1E2A3A" stroke-dasharray="3 4"/>
+
+  <!-- 步骤节点 -->
+  <g text-anchor="middle" font-size="11.5">
+    <!-- 游客：浏览/体验 -->
+    <rect x="210" y="92" width="130" height="64" rx="10" fill="#131B29" stroke="#2A3A52"/>
+    <text x="275" y="116" fill="#CBD5E1" font-weight="600">浏览与体验</text>
+    <text x="275" y="136" fill="#64748B" font-size="10">知识库/项目示例/3D 预览</text>
+
+    <rect x="390" y="92" width="130" height="64" rx="10" fill="#131B29" stroke="#FBBF24"/>
+    <text x="455" y="116" fill="#FCD34D" font-weight="600">触发登录引导</text>
+    <text x="455" y="136" fill="#64748B" font-size="10">新建项目/生成 → 弹窗引导</text>
+
+    <!-- 用户：注册→建模→优化→迭代 -->
+    <rect x="570" y="112" width="120" height="60" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="630" y="136" fill="#7DD3FC" font-weight="600">注册/登录</text>
+    <text x="630" y="154" fill="#64748B" font-size="10">JWT 内存会话</text>
+
+    <rect x="210" y="208" width="130" height="64" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="275" y="232" fill="#7DD3FC" font-weight="600">参数化建模</text>
+    <text x="275" y="252" fill="#64748B" font-size="10">14 维参数 → NURBS 曲面</text>
+
+    <rect x="390" y="208" width="130" height="64" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="455" y="232" fill="#7DD3FC" font-weight="600">AI 创意工具</text>
+    <text x="455" y="252" fill="#64748B" font-size="10">风格迁移/草图3D/造梦</text>
+
+    <rect x="570" y="208" width="120" height="64" rx="10" fill="#12293D" stroke="#38BDF8"/>
+    <text x="630" y="232" fill="#7DD3FC" font-weight="600">贝叶斯寻优</text>
+    <text x="630" y="252" fill="#64748B" font-size="10">质量评分闭环提升</text>
+
+    <!-- 管理员：审核/交付 -->
+    <rect x="210" y="324" width="130" height="64" rx="10" fill="#0F241C" stroke="#34D399"/>
+    <text x="275" y="348" fill="#6EE7B7" font-weight="600">工作流审核</text>
+    <text x="275" y="368" fill="#64748B" font-size="10">合规 + 质量双审</text>
+
+    <rect x="390" y="324" width="130" height="64" rx="10" fill="#0F241C" stroke="#34D399"/>
+    <text x="455" y="348" fill="#6EE7B7" font-weight="600">数据交付</text>
+    <text x="455" y="368" fill="#64748B" font-size="10">STEP/IGS + 质检报告</text>
+
+    <rect x="570" y="324" width="120" height="64" rx="10" fill="#1A1230" stroke="#A78BFA"/>
+    <text x="630" y="348" fill="#C4B5FD" font-weight="600">后台运维</text>
+    <text x="630" y="368" fill="#64748B" font-size="10">登录记录/错误排查</text>
+  </g>
+
+  <!-- 旅程箭头（蛇形） -->
+  <path d="M340 124 L 386 124" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M520 124 C 550 124, 550 142, 566 142" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M630 176 L 630 204 L 694 204 L 694 240 L 694 240" fill="none" stroke="#34D399" stroke-width="0"/>
+  <path d="M630 176 C 630 208, 700 190, 694 238" fill="none" stroke="#34D399" stroke-width="0"/>
+  <path d="M566 240 L 524 240" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M386 240 L 344 240" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <path d="M275 276 L 275 320" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+  <text x="293" y="300" fill="#64748B" font-size="10">提交审核</text>
+  <path d="M340 356 L 386 356" fill="none" stroke="#34D399" stroke-width="2" marker-end="url(#ar15)"/>
+
+  <!-- 触发登录的竖直提示 -->
+  <path d="M455 160 L 455 204" fill="none" stroke="#FBBF24" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arY)"/>
+  <defs><marker id="arY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#FBBF24"/></marker></defs>
+  <text x="470" y="186" fill="#FBBF24" font-size="10">注册后解锁创作区</text>
+
+  <!-- 右侧价值注记 -->
+  <g>
+    <rect x="724" y="92" width="200" height="296" rx="12" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="824" y="118" fill="#E2E8F0" font-size="13" font-weight="700" text-anchor="middle">旅程设计原则</text>
+    <g font-size="11" fill="#94A3B8">
+      <circle cx="746" cy="146" r="2.5" fill="#FBBF24"/><text x="758" y="150">游客零门槛：先体验后注册</text>
+      <circle cx="746" cy="176" r="2.5" fill="#38BDF8"/><text x="758" y="180">登录只挡「写操作」</text>
+      <circle cx="746" cy="206" r="2.5" fill="#38BDF8"/><text x="758" y="210">Token 会话内保存不落盘</text>
+      <circle cx="746" cy="236" r="2.5" fill="#34D399"/><text x="758" y="240">创作闭环不离开浏览器</text>
+      <circle cx="746" cy="266" r="2.5" fill="#34D399"/><text x="758" y="270">交付物附带完整质检链</text>
+      <circle cx="746" cy="296" r="2.5" fill="#A78BFA"/><text x="758" y="300">运维可见可审计可追溯</text>
+    </g>
+    <text x="824" y="340" fill="#475569" font-size="10" text-anchor="middle">对应四级 RBAC 权限模型</text>
+    <text x="824" y="360" fill="#475569" font-size="10" text-anchor="middle">详见《模块集成流程》§5</text>
+  </g>
+
+  <text x="40" y="408" fill="#64748B" font-size="11.5">读法：主线自左向右、自上而下蛇形推进；琥珀色节点为「游客→用户」的转化时刻，绿色为系统/管理员承接的交付与运维环节。</text>
+</svg>

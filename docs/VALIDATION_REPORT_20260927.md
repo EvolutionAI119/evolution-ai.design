@@ -25,6 +25,11 @@
 
 ## 2. 三层自动化测试
 
+<figure class="doc-figure">
+  <img src="docs/images/validation-metrics.svg" alt="三层测试规模与通过率" loading="lazy">
+  <figcaption>图 2-1 ｜ 三层自动化测试规模与通过率（489 用例全通过）</figcaption>
+</figure>
+
 ### 2.1 结果总表
 
 | 层 | 框架 | 用例 | 耗时 | 范围 |

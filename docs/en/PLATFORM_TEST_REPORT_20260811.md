@@ -9,6 +9,11 @@
 - LLM inference: transformers + Qwen2.5-0.5B-Instruct (port 11434)
 - Backend proxy: Vite maps `/api/v1` → `http://localhost:8000`
 
+<figure class="doc-figure">
+  <img src="docs/images/test-pyramid.svg" alt="Platform test pyramid" loading="lazy">
+  <figcaption>Fig. 1 Platform test pyramid: four verification layers and layering principles</figcaption>
+</figure>
+
 ---
 
 ## 1. Service Startup

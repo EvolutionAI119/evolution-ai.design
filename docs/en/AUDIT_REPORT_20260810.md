@@ -164,6 +164,11 @@
 
 ## IV. Current Key Metrics
 
+<figure class="doc-figure">
+  <img src="docs/images/validation-metrics.svg" alt="Key metrics at audit time" loading="lazy">
+  <figcaption>Fig. 4-1 Key metrics at audit time: three-layer test scale and pass rate</figcaption>
+</figure>
+
 | Metric | Status | Note |
 |---|---|---|
 | Unit tests | 201 / 201 pass | Last full run, August 9 |

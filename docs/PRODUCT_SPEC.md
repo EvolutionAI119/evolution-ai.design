@@ -35,6 +35,11 @@ EVOLUTION AI 是面向汽车造型开发的 AI 平台，目标是实现
 
 ## 3. 核心使用场景（端到端）
 
+<figure class="doc-figure">
+  <img src="docs/images/product-journey.svg" alt="核心场景端到端旅程" loading="lazy">
+  <figcaption>图 3-1 ｜ 核心场景端到端旅程：游客体验 → 注册解锁 → 创作优化 → 审核交付</figcaption>
+</figure>
+
 1. **参数化概念设计**：在 Designer 选择车型/风格与参数 → 生成 3D 整车 →
    云端样本批次 / 质量评估 / 生成式设计 / 优化 → 保存变体对比。
 2. **CAD 导入改参导出**：在 Deliver 上传 CAD/模型文件 → 解析参数 →

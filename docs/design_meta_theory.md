@@ -56,6 +56,11 @@ Terence Love提出的设计理论元理论层级结构，为汽车造型设计�
 
 ## 二、原有框架的扩展——从5维度到10维度
 
+<figure class="doc-figure">
+  <img src="docs/images/meta-10dims.svg" alt="元理论五维到十维映射" loading="lazy">
+  <figcaption>图 2-1 ｜ 元理论扩展：原 5 维度到 10 维度的映射关系</figcaption>
+</figure>
+
 思维导图以"汽车造型设计开发方法论元理论"为核心，从**设计开发流程、设计理念与风格、细节设计与技术创新、时间与资源规划、用户导向与关怀**五大维度展开。基于全网搜索，扩展为**十维度自主知识体系**：
 
 ### 2.1 原有5维度（保留深化）
@@ -143,6 +148,11 @@ Terence Love提出的设计理论元理论层级结构，为汽车造型设计�
 ---
 
 ## 三、知识体系的总体架构
+
+<figure class="doc-figure">
+  <img src="docs/images/meta-architecture.svg" alt="三层一库知识体系架构" loading="lazy">
+  <figcaption>图 3-1 ｜ 自主知识体系「三层一库」总体架构</figcaption>
+</figure>
 
 ### 3.1 三层架构图
 

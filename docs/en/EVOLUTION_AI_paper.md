@@ -174,6 +174,11 @@ premises.
 
 ## 3. System Overview
 
+<figure class="doc-figure">
+  <img src="docs/images/whitepaper-arch.svg" alt="Platform four-layer architecture with deployment channel" loading="lazy">
+  <figcaption>Figure 3-1 ｜ System architecture: four layers (frontend / backend / algorithm / data) and the deployment channel</figcaption>
+</figure>
+
 EVOLUTION AI is organized as five layers (Figure 1, conceptual).
 
 ```
@@ -221,6 +226,11 @@ HTTP layer.
 ---
 
 ## 4. The NURBS-Based Class-A Surface Pipeline
+
+<figure class="doc-figure">
+  <img src="docs/images/paper-nurbs-pipeline.svg" alt="Class-A surface pipeline" loading="lazy">
+  <figcaption>Figure 4-1 ｜ Class-A pipeline: control net → surface lofting → G0/G1/G2 continuity verification</figcaption>
+</figure>
 
 ### 4.1 Parameterization
 
@@ -298,6 +308,11 @@ quality apparatus as a single evaluable function.
 ---
 
 ## 5. The Bayesian Optimization Engine
+
+<figure class="doc-figure">
+  <img src="docs/images/paper-bayes-engine.svg" alt="Bayesian optimization loop with GP surrogate" loading="lazy">
+  <figcaption>Figure 5-1 ｜ Bayesian optimization loop with GP surrogate: observed samples, posterior mean ±σ, and EI acquisition maximum</figcaption>
+</figure>
 
 ### 5.1 The Styling Search Space
 

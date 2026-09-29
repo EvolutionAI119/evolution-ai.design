@@ -7,6 +7,11 @@
 
 ## 1. Overall Architecture
 
+<figure class="doc-figure">
+  <img src="docs/images/whitepaper-arch.svg" alt="Platform architecture overview" loading="lazy">
+  <figcaption>Fig. 1-1 Platform architecture overview: frontend / backend / algorithm / data layers plus deployment channel</figcaption>
+</figure>
+
 The platform uses a five-layer architecture:
 
 ```
@@ -159,6 +164,11 @@ ModelFile 1–N ModelVariant (with self-referencing parent); User 1–N ApiKey.
 ---
 
 ## 6. Key Data Flows
+
+<figure class="doc-figure">
+  <img src="docs/images/arch-dataflow.svg" alt="Car-generation request data flow" loading="lazy">
+  <figcaption>Fig. 6-1 Complete data flow of a car-generation request (including error branches)</figcaption>
+</figure>
 
 ### 6.1 The AI Parameterized-Design Loop
 

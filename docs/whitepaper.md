@@ -59,6 +59,11 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 
 ## 3. 平台总览
 
+<figure class="doc-figure">
+  <img src="docs/images/product-journey.svg" alt="端到端用户旅程" loading="lazy">
+  <figcaption>图 3-1 ｜ 端到端用户旅程：游客 → 创作者 → 交付（对应四级 RBAC）</figcaption>
+</figure>
+
 ### 3.1 五类用户与价值
 
 | 角色 | 核心诉求 | 平台价值 |
@@ -140,6 +145,11 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 ---
 
 ## 5. 技术架构
+
+<figure class="doc-figure">
+  <img src="docs/images/whitepaper-arch.svg" alt="平台四层一通道技术架构" loading="lazy">
+  <figcaption>图 5-1 ｜ 平台四层一通道技术架构总览</figcaption>
+</figure>
 
 ### 5.1 五层架构
 

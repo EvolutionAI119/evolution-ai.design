@@ -56,6 +56,11 @@ Zhang Zongdeng proposes that design-studies meta-theory contains three levels fo
 
 ## II. Extending the Original Framework — From 5 to 10 Dimensions
 
+<figure class="doc-figure">
+  <img src="docs/images/meta-10dims.svg" alt="Mapping from 5 to 10 dimensions" loading="lazy">
+  <figcaption>Fig. 2-1 Mapping from the original 5 dimensions to the extended 10 dimensions</figcaption>
+</figure>
+
 Centered on "the meta-theory of the automotive styling development methodology," the mind map unfolds across five dimensions: **development process, design concept and style, detail design and technical innovation, time and resource planning, and user orientation and care**. Based on comprehensive web research it is expanded into a **ten-dimension autonomous knowledge system**:
 
 ### 2.1 The Original 5 Dimensions (Preserved and Deepened)
@@ -143,6 +148,11 @@ Centered on "the meta-theory of the automotive styling development methodology,"
 ---
 
 ## III. The Overall Architecture of the Knowledge System
+
+<figure class="doc-figure">
+  <img src="docs/images/meta-architecture.svg" alt="Three layers plus one resource library" loading="lazy">
+  <figcaption>Fig. 3-1 Overall architecture of the knowledge system: three layers plus one resource library</figcaption>
+</figure>
 
 ### 3.1 Three-Layer Architecture
 
