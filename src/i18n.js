@@ -650,7 +650,12 @@ const zh = {
     saveSuccess: '{name} 的 Token 已保存', saveFailed: '保存失败',
     deleteTitle: '删除确认',
     deleteConfirm: '确定删除 {name} 的 API Key 吗？删除后相关功能将不可用',
-    deleteSuccess: 'Token 已删除', deleteFailed: '删除失败'
+    deleteSuccess: 'Token 已删除', deleteFailed: '删除失败',
+    inviteTitle: '邀请有礼',
+    inviteDesc: '扫码注册硅基流动，获取推理额度奖励',
+    inviteBrand: '硅基流动（Siliconflow）',
+    inviteHint: '扫描下方二维码注册，或点击链接前往',
+    inviteLink: '前往硅基流动注册'
   },
   admin: {
     title: '管理后台',
@@ -1335,7 +1340,12 @@ const en = {
     saveSuccess: '{name} token saved', saveFailed: 'Failed to save token',
     deleteTitle: 'Confirm deletion',
     deleteConfirm: 'Delete the API key for {name}? Related features will stop working',
-    deleteSuccess: 'Token deleted', deleteFailed: 'Failed to delete token'
+    deleteSuccess: 'Token deleted', deleteFailed: 'Failed to delete token',
+    inviteTitle: 'Invitation Rewards',
+    inviteDesc: 'Scan to register SiliconFlow and earn inference credits',
+    inviteBrand: 'Siliconflow (硅基流动)',
+    inviteHint: 'Scan the QR code below to register, or click the link',
+    inviteLink: 'Register on SiliconFlow'
   },
   admin: {
     title: 'Admin Console',

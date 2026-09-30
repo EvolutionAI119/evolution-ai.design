@@ -98,6 +98,50 @@
         </div>
       </el-card>
     </div>
+
+    <!-- 邀请有礼：硅基流动（Siliconflow）邀请二维码 -->
+    <el-card class="invite-card">
+      <template #header>
+        <div class="invite-header">
+          <div>
+            <span class="invite-title">{{ t('account.inviteTitle') }}</span>
+            <p class="invite-desc">{{ t('account.inviteDesc') }}</p>
+          </div>
+          <el-tag type="success" effect="dark" round>
+            {{ t('account.inviteBrand') }}
+          </el-tag>
+        </div>
+      </template>
+
+      <div class="invite-body">
+        <div class="invite-qr-wrap">
+          <img
+            class="invite-qr"
+            src="/images/siliconflow-invite-qr.png"
+            :alt="t('account.inviteBrand')"
+          />
+          <div class="invite-qr-label">{{ t('account.inviteBrand') }}</div>
+        </div>
+        <div class="invite-info">
+          <h3 class="invite-info-title">{{ t('account.inviteBrand') }}</h3>
+          <p class="invite-info-text">{{ t('account.inviteHint') }}</p>
+          <a
+            class="invite-link"
+            href="https://cloud.siliconflow.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ t('account.inviteLink') }}
+            <el-icon><Promotion /></el-icon>
+          </a>
+          <ul class="invite-tips">
+            <li>OpenAI 兼容接口 · 聚合多家主流模型</li>
+            <li>推理价格低至 0.1 元 / 百万 tokens</li>
+            <li>注册即送推理额度，邀请好友额外奖励</li>
+          </ul>
+        </div>
+      </div>
+    </el-card>
   </div>
 </template>
 
@@ -106,7 +150,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, SwitchButton } from '@element-plus/icons-vue'
+import { Promotion, Refresh, SwitchButton } from '@element-plus/icons-vue'
 import { apiKeyAPI } from '../api'
 import { useAuthStore } from '../stores/auth'
 
@@ -412,5 +456,123 @@ onMounted(async () => {
 
 @media (max-width: 900px) {
   .account-layout { grid-template-columns: 1fr; }
+  .invite-body { flex-direction: column; align-items: center; text-align: center; }
 }
+
+/* ---- 邀请有礼卡片 ---- */
+.invite-card {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition: transform 0.28s ease-out,
+              box-shadow 0.28s ease-out,
+              border-color 0.28s ease-out;
+}
+
+.invite-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(74, 222, 128, 0.5);
+  box-shadow: 0 16px 40px rgba(74, 222, 128, 0.15),
+              0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.invite-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.invite-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.invite-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.invite-body {
+  display: flex;
+  gap: 36px;
+  align-items: center;
+}
+
+.invite-qr-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.invite-qr {
+  width: 180px;
+  height: 180px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+
+.invite-card:hover .invite-qr {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(74, 222, 128, 0.2);
+}
+
+.invite-qr-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.invite-info { flex: 1; min-width: 0; }
+
+.invite-info-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.invite-info-text {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.invite-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #06120a;
+  font-weight: 700;
+  font-size: 13px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.invite-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(74, 222, 128, 0.35);
+}
+
+.invite-tips {
+  margin: 16px 0 0;
+  padding-left: 20px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.9;
+}
+
+.invite-tips li::marker { color: #4ade80; }
 </style>
