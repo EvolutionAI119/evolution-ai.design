@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="ar12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#FBBF24"/>
+    </marker>
+    <marker id="ar12g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+    <linearGradient id="band" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34D399" stop-opacity=".18"/><stop offset=".5" stop-color="#34D399" stop-opacity=".05"/><stop offset="1" stop-color="#34D399" stop-opacity=".18"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="958" height="498" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">贝叶斯优化引擎：代理模型驱动的闭环寻优</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Bayesian Optimization Engine</text>
+
+  <!-- 左：GP 图 -->
+  <g>
+    <rect x="34" y="66" width="400" height="280" rx="12" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="234" y="94" fill="#FCD34D" font-size="13.5" font-weight="700" text-anchor="middle">高斯过程代理模型（示意图）</text>
+    <!-- 坐标轴 -->
+    <line x1="70" y1="300" x2="410" y2="300" stroke="#334155" stroke-width="1.2"/>
+    <line x1="70" y1="300" x2="70" y2="120" stroke="#334155" stroke-width="1.2"/>
+    <text x="240" y="322" fill="#64748B" font-size="10.5" text-anchor="middle">造型参数空间 x（轴距 / 风挡角 …）</text>
+    <text x="56" y="212" fill="#64748B" font-size="10.5" transform="rotate(-90 56 212)" text-anchor="middle">质量评分 y</text>
+    <!-- 置信带 -->
+    <path d="M80 230 C 130 200, 160 250, 210 240 C 260 230, 290 170, 340 185 C 370 193, 395 210, 405 205 L 405 165 C 390 168, 368 150, 338 145 C 292 138, 258 185, 212 196 C 165 205, 130 160, 82 186 Z" fill="url(#band)"/>
+    <!-- 后验均值 -->
+    <path d="M80 208 C 130 180, 160 222, 212 218 C 262 214, 290 156, 340 165 C 372 170, 392 188, 405 185" fill="none" stroke="#34D399" stroke-width="2.2"/>
+    <!-- 已观测样本点 -->
+    <g fill="#FBBF24">
+      <circle cx="98" cy="196" r="4"/><circle cx="150" cy="196" r="4"/><circle cx="212" cy="217" r="4"/><circle cx="268" cy="184" r="4"/><circle cx="330" cy="167" r="4"/>
+    </g>
+    <!-- EI 最大点 -->
+    <g>
+      <line x1="376" y1="146" x2="376" y2="300" stroke="#F472B6" stroke-width="1.4" stroke-dasharray="5 4"/>
+      <path d="M376 138 l6 12 -12 0 z" fill="#F472B6"/>
+      <text x="376" y="130" fill="#F472B6" font-size="10.5" text-anchor="middle">EI 最大 → 下一个采样点</text>
+    </g>
+    <g font-size="10.5">
+      <circle cx="98" cy="196" r="4" fill="#FBBF24"/><text x="110" y="182" fill="#94A3B8">已评估样本（真实调用）</text>
+      <line x1="80" y1="208" x2="80" y2="208" stroke="#34D399"/><text x="240" y="140" fill="#6EE7B7" text-anchor="middle">—— GP 后验均值 μ(x)</text>
+      <text x="240" y="158" fill="#6EE7B7" opacity=".7" text-anchor="middle">±σ(x) 置信带（越宽 = 越不确定）</text>
+    </g>
+  </g>
+
+  <!-- 右：闭环步骤 -->
+  <g font-size="12">
+    <g>
+      <rect x="470" y="70" width="456" height="56" rx="10" fill="#12293D" stroke="#38BDF8" stroke-opacity=".4"/>
+      <text x="492" y="93" fill="#7DD3FC" font-weight="700">① 初始设计 DOE</text>
+      <text x="492" y="112" fill="#94A3B8" font-size="11">LHS 拉丁超立方在 14 维参数空间撒 5~10 个初始样本</text>
+    </g>
+    <g>
+      <rect x="470" y="140" width="456" height="56" rx="10" fill="#0F241C" stroke="#34D399" stroke-opacity=".4"/>
+      <text x="492" y="163" fill="#6EE7B7" font-weight="700">② 真实评估（昂贵）</text>
+      <text x="492" y="182" fill="#94A3B8" font-size="11">生成 NURBS 曲面 → 质量评估器打分（等效 CAD 仿真成本）</text>
+    </g>
+    <g>
+      <rect x="470" y="210" width="456" height="56" rx="10" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".4"/>
+      <text x="492" y="233" fill="#FCD34D" font-weight="700">③ 更新代理模型</text>
+      <text x="492" y="252" fill="#94A3B8" font-size="11">GP 以 (x, y) 历史重训后验 —— 每个新点都让置信带收窄</text>
+    </g>
+    <g>
+      <rect x="470" y="280" width="456" height="56" rx="10" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".4"/>
+      <text x="492" y="303" fill="#C4B5FD" font-weight="700">④ 采集函数选点</text>
+      <text x="492" y="322" fill="#94A3B8" font-size="11">EI(x) = E[max(y* − f(x))] · 平衡「利用已知好区」与「探索未知区」</text>
+    </g>
+    <g>
+      <rect x="470" y="350" width="456" height="56" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+      <text x="492" y="373" fill="#E2E8F0" font-weight="700">⑤ 建议输出 → 回到 ②</text>
+      <text x="492" y="392" fill="#94A3B8" font-size="11">POST /bayes/{sid}/suggest → 返回 x*；评估后 observe 回填闭环</text>
+    </g>
+  </g>
+
+  <!-- 右侧循环箭头 -->
+  <path d="M944 420 L 944 420" stroke="none"/>
+  <path d="M926 420 C 950 380, 950 120, 926 90" fill="none" stroke="#FBBF24" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#ar12)"/>
+
+  <!-- 底部收敛条 -->
+  <rect x="34" y="384" width="400" height="80" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="56" y="410" fill="#E2E8F0" font-size="12" font-weight="600">典型收敛轨迹（实测）</text>
+  <polyline points="56,448 90,442 120,436 150,430 190,424 230,422 280,418 330,416 408,414" fill="none" stroke="#34D399" stroke-width="2"/>
+  <g fill="#34D399"><circle cx="56" cy="448" r="2.5"/><circle cx="120" cy="436" r="2.5"/><circle cx="190" cy="424" r="2.5"/><circle cx="280" cy="418" r="2.5"/><circle cx="408" cy="414" r="2.5"/></g>
+  <text x="240" y="456" fill="#64748B" font-size="9.5" text-anchor="middle">迭代轮次 →　最优评分单调不降，20~40 轮内进入平台期</text>
+
+  <text x="470" y="470" fill="#64748B" font-size="11">核心价值：以「代理模型 + 采集函数」把昂贵评估次数压到最低——每一步评估都花在信息量最大的参数点。</text>
+</svg>

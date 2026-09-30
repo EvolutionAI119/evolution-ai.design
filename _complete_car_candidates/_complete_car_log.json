@@ -1,0 +1,299 @@
+{
+  "Bentley Bentayga": {
+    "total": 3,
+    "passed": 3,
+    "candidates": [
+      {
+        "pass": true,
+        "w": 1024,
+        "h": 768,
+        "asp": 1.33,
+        "car_w": 906,
+        "car_h": 396,
+        "width_ratio": 88.5,
+        "height_ratio": 51.6,
+        "left_margin": 46,
+        "right_margin": 72,
+        "top_margin": 218,
+        "bottom_margin": 154,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 542,
+        "file": "6ab5db2f.png",
+        "orig_file": "orig_6ab5db2f.png",
+        "flip_file": "flip_6ab5db2f.png"
+      },
+      {
+        "pass": true,
+        "w": 1920,
+        "h": 1080,
+        "asp": 1.78,
+        "car_w": 1751,
+        "car_h": 612,
+        "width_ratio": 91.2,
+        "height_ratio": 56.7,
+        "left_margin": 78,
+        "right_margin": 91,
+        "top_margin": 253,
+        "bottom_margin": 215,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 221,
+        "file": "6bd7cf90.jpg",
+        "orig_file": "orig_6bd7cf90.jpg",
+        "flip_file": "flip_6bd7cf90.jpg"
+      },
+      {
+        "pass": true,
+        "w": 1024,
+        "h": 768,
+        "asp": 1.33,
+        "car_w": 823,
+        "car_h": 405,
+        "width_ratio": 80.4,
+        "height_ratio": 52.7,
+        "left_margin": 94,
+        "right_margin": 107,
+        "top_margin": 208,
+        "bottom_margin": 155,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 735,
+        "file": "7a9fdb12.png",
+        "orig_file": "orig_7a9fdb12.png",
+        "flip_file": "flip_7a9fdb12.png"
+      }
+    ]
+  },
+  "Bentley Flying Spur": {
+    "total": 2,
+    "passed": 2,
+    "candidates": [
+      {
+        "pass": true,
+        "w": 1024,
+        "h": 683,
+        "asp": 1.5,
+        "car_w": 872,
+        "car_h": 318,
+        "width_ratio": 85.2,
+        "height_ratio": 46.6,
+        "left_margin": 78,
+        "right_margin": 74,
+        "top_margin": 234,
+        "bottom_margin": 131,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 75,
+        "file": "694dade9.jpg",
+        "orig_file": "orig_694dade9.jpg",
+        "flip_file": "flip_694dade9.jpg"
+      },
+      {
+        "pass": true,
+        "w": 1024,
+        "h": 768,
+        "asp": 1.33,
+        "car_w": 869,
+        "car_h": 347,
+        "width_ratio": 84.9,
+        "height_ratio": 45.2,
+        "left_margin": 67,
+        "right_margin": 88,
+        "top_margin": 233,
+        "bottom_margin": 188,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 357,
+        "file": "8c74b347.png",
+        "orig_file": "orig_8c74b347.png",
+        "flip_file": "flip_8c74b347.png"
+      }
+    ]
+  },
+  "Bentley Continental GTC": {
+    "total": 6,
+    "passed": 6,
+    "candidates": [
+      {
+        "pass": true,
+        "w": 1920,
+        "h": 1080,
+        "asp": 1.78,
+        "car_w": 1774,
+        "car_h": 830,
+        "width_ratio": 92.4,
+        "height_ratio": 76.9,
+        "left_margin": 129,
+        "right_margin": 17,
+        "top_margin": 236,
+        "bottom_margin": 14,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 304,
+        "file": "058b2060.jpg",
+        "orig_file": "orig_058b2060.jpg",
+        "flip_file": "flip_058b2060.jpg"
+      },
+      {
+        "pass": true,
+        "w": 2048,
+        "h": 1360,
+        "asp": 1.51,
+        "car_w": 1785,
+        "car_h": 852,
+        "width_ratio": 87.2,
+        "height_ratio": 62.6,
+        "left_margin": 131,
+        "right_margin": 132,
+        "top_margin": 254,
+        "bottom_margin": 254,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 1571,
+        "file": "2fcd2709.png",
+        "orig_file": "orig_2fcd2709.png",
+        "flip_file": "flip_2fcd2709.png"
+      },
+      {
+        "pass": true,
+        "w": 1920,
+        "h": 1080,
+        "asp": 1.78,
+        "car_w": 1812,
+        "car_h": 922,
+        "width_ratio": 94.4,
+        "height_ratio": 85.4,
+        "left_margin": 91,
+        "right_margin": 17,
+        "top_margin": 144,
+        "bottom_margin": 14,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 402,
+        "file": "b8107636.jpg",
+        "orig_file": "orig_b8107636.jpg",
+        "flip_file": "flip_b8107636.jpg"
+      },
+      {
+        "pass": true,
+        "w": 1600,
+        "h": 1200,
+        "asp": 1.33,
+        "car_w": 1395,
+        "car_h": 616,
+        "width_ratio": 87.2,
+        "height_ratio": 51.3,
+        "left_margin": 113,
+        "right_margin": 92,
+        "top_margin": 264,
+        "bottom_margin": 320,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 146,
+        "file": "c97aa456.jpg",
+        "orig_file": "orig_c97aa456.jpg",
+        "flip_file": "flip_c97aa456.jpg"
+      },
+      {
+        "pass": true,
+        "w": 1600,
+        "h": 1200,
+        "asp": 1.33,
+        "car_w": 1414,
+        "car_h": 478,
+        "width_ratio": 88.4,
+        "height_ratio": 39.8,
+        "left_margin": 98,
+        "right_margin": 88,
+        "top_margin": 291,
+        "bottom_margin": 431,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 129,
+        "file": "e2aa8bdb.jpg",
+        "orig_file": "orig_e2aa8bdb.jpg",
+        "flip_file": "flip_e2aa8bdb.jpg"
+      },
+      {
+        "pass": true,
+        "w": 1439,
+        "h": 870,
+        "asp": 1.65,
+        "car_w": 1369,
+        "car_h": 504,
+        "width_ratio": 95.1,
+        "height_ratio": 57.9,
+        "left_margin": 35,
+        "right_margin": 35,
+        "top_margin": 228,
+        "bottom_margin": 138,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 146,
+        "file": "ef038bdc.jpg",
+        "orig_file": "orig_ef038bdc.jpg",
+        "flip_file": "flip_ef038bdc.jpg"
+      }
+    ]
+  },
+  "Rolls-Royce Cullinan": {
+    "total": 2,
+    "passed": 2,
+    "candidates": [
+      {
+        "pass": true,
+        "w": 1024,
+        "h": 768,
+        "asp": 1.33,
+        "car_w": 834,
+        "car_h": 406,
+        "width_ratio": 81.4,
+        "height_ratio": 52.9,
+        "left_margin": 101,
+        "right_margin": 89,
+        "top_margin": 215,
+        "bottom_margin": 147,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 482,
+        "file": "38a62d00.png",
+        "orig_file": "orig_38a62d00.png",
+        "flip_file": "flip_38a62d00.png"
+      },
+      {
+        "pass": true,
+        "w": 1024,
+        "h": 768,
+        "asp": 1.33,
+        "car_w": 890,
+        "car_h": 480,
+        "width_ratio": 86.9,
+        "height_ratio": 62.5,
+        "left_margin": 63,
+        "right_margin": 71,
+        "top_margin": 181,
+        "bottom_margin": 107,
+        "reasons": [
+          "ALL PASS"
+        ],
+        "size_kb": 334,
+        "file": "3f8b32ad.png",
+        "orig_file": "orig_3f8b32ad.png",
+        "flip_file": "flip_3f8b32ad.png"
+      }
+    ]
+  }
+}

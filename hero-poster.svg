@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 480" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="25%" stop-color="#0d1824"/>
+      <stop offset="50%" stop-color="#0a1220"/>
+      <stop offset="75%" stop-color="#0d1824"/>
+      <stop offset="100%" stop-color="#0a0a0f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="480" fill="url(#bg)"/>
+  <rect width="1920" height="480" fill="url(#accent)"/>
+  <g transform="translate(960, 240)" opacity="0.08" stroke="#10b981" stroke-width="1.5" fill="none">
+    <circle r="100"/>
+    <circle r="180"/>
+    <circle r="260"/>
+    <line x1="-300" y1="0" x2="300" y2="0"/>
+    <line x1="0" y1="-300" x2="0" y2="300"/>
+    <line x1="-212" y1="-212" x2="212" y2="212"/>
+    <line x1="-212" y1="212" x2="212" y2="-212"/>
+  </g>
+  <g opacity="0.04" fill="#10b981">
+    <circle cx="200" cy="100" r="3"/>
+    <circle cx="400" cy="350" r="2"/>
+    <circle cx="600" cy="200" r="2.5"/>
+    <circle cx="1300" cy="150" r="2"/>
+    <circle cx="1500" cy="380" r="3"/>
+    <circle cx="1700" cy="250" r="2"/>
+    <circle cx="300" cy="250" r="2"/>
+    <circle cx="1800" cy="100" r="2.5"/>
+  </g>
+</svg>

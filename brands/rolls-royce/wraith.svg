@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="gradBg_rolls-royce_wraith" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradBody_rolls-royce_wraith" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:0.5" />
+    </linearGradient>
+    <linearGradient id="gradWindow_rolls-royce_wraith" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:0.92" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0.92" />
+    </linearGradient>
+    <radialGradient id="gradShadow_rolls-royce_wraith" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="gradRim_rolls-royce_wraith" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#64748b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#gradBg_rolls-royce_wraith)" />
+  <ellipse cx="400.0" cy="358" rx="336.0" ry="7" fill="url(#gradShadow_rolls-royce_wraith)" />
+  <line x1="20" y1="351" x2="780" y2="351" stroke="rgba(74,222,128,0.3)" stroke-width="1" />
+  <path d="M50,332.11920529801324 Q100.52980132450332,252.27814569536423 172.71523178807948,208.36556291390727 L235.43046357615896,208.36556291390727 L235.43046357615896,180.42119205298013 L296.7456012624626,132.5165562913907 L535.417914084246,132.5165562913907 L589.4017549928237,180.42119205298013 L589.4017549928237,200.38145695364236 Q628.0728476821192,246.29006622516553 692.6225165562914,316.1509933774834 L750.0,332.11920529801324 L658.5761589403975,328.11920529801324 Q606.5562913907286,379.841059602649 554.5364238410597,328.11920529801324 L246.3907284768212,328.11920529801324 Q194.37086092715234,379.841059602649 142.35099337748346,328.11920529801324 L50,328.11920529801324 Z" fill="url(#gradBody_rolls-royce_wraith)" stroke="#4ade80" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M235.43046357615896,180.42119205298013 L296.7456012624626,132.5165562913907 L535.417914084246,132.5165562913907 L589.4017549928237,180.42119205298013 Z" fill="url(#gradWindow_rolls-royce_wraith)" stroke="rgba(74,222,128,0.6)" stroke-width="0.6" stroke-linejoin="round" />
+  <circle cx="194.37086092715234" cy="302.9801324503311" r="47.01986754966888" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="194.37086092715234" cy="302.9801324503311" r="25.860927152317885" fill="url(#gradRim_rolls-royce_wraith)" stroke="#334155" stroke-width="1" />
+  <circle cx="194.37086092715234" cy="302.9801324503311" r="10.344370860927153" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="194.37086092715234" cy="302.9801324503311" r="4.231788079470199" fill="#4ade80" />
+  <circle cx="606.5562913907286" cy="302.9801324503311" r="47.01986754966888" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="606.5562913907286" cy="302.9801324503311" r="25.860927152317885" fill="url(#gradRim_rolls-royce_wraith)" stroke="#334155" stroke-width="1" />
+  <circle cx="606.5562913907286" cy="302.9801324503311" r="10.344370860927153" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="606.5562913907286" cy="302.9801324503311" r="4.231788079470199" fill="#4ade80" />
+  <text x="776" y="385" text-anchor="end" fill="#4ade80" font-family="monospace" font-size="13" font-weight="bold">Rolls-Royce - Wraith  L:5285mm</text>
+</svg>

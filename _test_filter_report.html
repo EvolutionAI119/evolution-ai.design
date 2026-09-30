@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>过滤逻辑测试报告</title>
+<style>
+body{background:#0f0f1e;color:#eee;font-family:monospace;margin:0;padding:20px}
+h1{text-align:center;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+th{background:#16213e;padding:10px;text-align:left;border:1px solid #333}
+td{padding:8px;border:1px solid #333;vertical-align:top}
+.pass{color:#2ecc71;font-weight:bold}
+.fail{color:#e94560;font-weight:bold}
+.img-cell img{width:200px;height:130px;object-fit:contain;background:#fff;display:block}
+.reasons{color:#aaa;font-size:11px}
+.metric{color:#3498db;font-size:11px}
+</style></head><body>
+<h1>过滤逻辑测试报告</h1>
+<table>
+<tr><th>状态</th><th>测试图</th><th>描述</th><th>背景过滤</th><th>背景指标</th><th>车身检测</th><th>车身指标</th></tr>
+<tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/01_white_complete.png"></td>
+<td>纯白背景 + 完整车身（应全通过）</td>
+<td class="pass">通过 (期望通过)</td>
+<td class="metric">白色75.3% | std=0.0 | diff=0.0 | 亮度255.0<br><span class='reasons'>ALL PASS</span></td>
+<td class="pass">通过 (期望通过)</td>
+<td class="metric">车占83.4%<br><span class='reasons'>ALL PASS</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/02_white_narrow.png"></td>
+<td>纯白背景 + 车辆太窄（背景通过，车身不通过）</td>
+<td class="pass">通过 (期望通过)</td>
+<td class="metric">白色94.8% | std=0.0 | diff=0.0 | 亮度255.0<br><span class='reasons'>ALL PASS</span></td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">车占16.8%<br><span class='reasons'>车辆宽度占比异常(17%)</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/03_white_no_margin.png"></td>
+<td>纯白背景 + 无留白（背景通过，车身不通过）</td>
+<td class="pass">通过 (期望通过)</td>
+<td class="metric">白色70.5% | std=0.0 | diff=0.0 | 亮度255.0<br><span class='reasons'>ALL PASS</span></td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">车占100.0%<br><span class='reasons'>车辆宽度占比异常(100%), 左右留白不足(L=0,R=0)</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/04_white_closeup.png"></td>
+<td>纯白背景 + 局部特写（背景通过，车身不通过）</td>
+<td class="pass">通过 (期望通过)</td>
+<td class="metric">白色95.0% | std=0.0 | diff=0.0 | 亮度255.0<br><span class='reasons'>ALL PASS</span></td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">车占83.4%<br><span class='reasons'>车辆高度占比异常(7%)</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/05_white_nocar.png"></td>
+<td>纯白背景 + 无车（背景通过，车身不通过）</td>
+<td class="pass">通过 (期望通过)</td>
+<td class="metric">白色100.0% | std=0.0 | diff=0.0 | 亮度255.0<br><span class='reasons'>ALL PASS</span></td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">车占?%<br><span class='reasons'></span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/06_gray_complete.png"></td>
+<td>灰色背景 + 完整车身（背景不通过）</td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">白色0.0% | std=0.0 | diff=0.0 | 亮度180.0<br><span class='reasons'>4角非白色(亮度=180<235), 白色占比低(0%<55%)</span></td>
+<td class="pass">N/A</td>
+<td class="metric">车占?%<br><span class='reasons'>背景未通过，跳过</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/07_dark_complete.png"></td>
+<td>暗色背景 + 完整车身（背景不通过）</td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">白色0.0% | std=0.0 | diff=0.0 | 亮度30.0<br><span class='reasons'>4角非白色(亮度=30<235), 白色占比低(0%<55%)</span></td>
+<td class="pass">N/A</td>
+<td class="metric">车占?%<br><span class='reasons'>背景未通过，跳过</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/08_complex_complete.png"></td>
+<td>复杂背景 + 完整车身（背景不通过）</td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">白色0.0% | std=41.8 | diff=50.8 | 亮度165.0<br><span class='reasons'>4角颜色差异大(std=41.8>12), 4角亮度差异大(diff=50.8>15), 4角非白色(亮度=165<235), 白色占比低(0%<55%)</span></td>
+<td class="pass">N/A</td>
+<td class="metric">车占?%<br><span class='reasons'>背景未通过，跳过</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/09_shadow.png"></td>
+<td>白底+左上阴影（4角不一致，背景不通过）</td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">白色69.0% | std=23.8 | diff=55.0 | 亮度241.0<br><span class='reasons'>4角颜色差异大(std=23.8>12), 4角亮度差异大(diff=55.0>15)</span></td>
+<td class="pass">N/A</td>
+<td class="metric">车占?%<br><span class='reasons'>背景未通过，跳过</span></td>
+</tr><tr>
+<td class="pass">PASS</td>
+<td class="img-cell"><img src="/_test_filter_images/10_gradient.png"></td>
+<td>白到灰渐变（4角不一致，背景不通过）</td>
+<td class="pass">不通过 (期望不通过)</td>
+<td class="metric">白色58.4% | std=14.5 | diff=29.1 | 亮度240.0<br><span class='reasons'>4角颜色差异大(std=14.5>12), 4角亮度差异大(diff=29.1>15)</span></td>
+<td class="pass">N/A</td>
+<td class="metric">车占?%<br><span class='reasons'>背景未通过，跳过</span></td>
+</tr></table>
+<h2 style="text-align:center">总计: <span class="pass">10 PASS</span> / <span class="fail">0 FAIL</span> / 10 总数 | 准确率: 100.0%</h2>
+</body></html>

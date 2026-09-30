@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="gradBg_rolls-royce_ghost" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradBody_rolls-royce_ghost" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:0.5" />
+    </linearGradient>
+    <linearGradient id="gradWindow_rolls-royce_ghost" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:0.92" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0.92" />
+    </linearGradient>
+    <radialGradient id="gradShadow_rolls-royce_ghost" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="gradRim_rolls-royce_ghost" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#64748b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#gradBg_rolls-royce_ghost)" />
+  <ellipse cx="400.00000000000006" cy="358" rx="336.0" ry="7" fill="url(#gradShadow_rolls-royce_ghost)" />
+  <line x1="20" y1="351" x2="780" y2="351" stroke="rgba(74,222,128,0.3)" stroke-width="1" />
+  <path d="M50,331.6985214569059 Q95.05950234403173,253.44392354850345 159.4302199783628,210.40389469888208 L201.46051208077895,210.40389469888208 L201.46051208077895,183.01478543094123 L282.7850757827147,136.06202668589975 L619.4618904148452,136.06202668589975 L680.8030743304919,183.01478543094123 L680.8030743304919,202.57843490804183 Q617.9327443202309,247.57482870537325 687.8507032095205,316.0476018752254 L750.0000000000001,331.6985214569059 L645.0649116480347,327.6985214569059 Q594.626758023801,377.680490443563 544.1886043995673,327.6985214569059 L229.1795888928958,327.6985214569059 Q178.74143526866212,377.680490443563 128.30328164442844,327.6985214569059 L50,327.6985214569059 Z" fill="url(#gradBody_rolls-royce_ghost)" stroke="#4ade80" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M201.46051208077895,183.01478543094123 L282.7850757827147,136.06202668589975 L619.4618904148452,136.06202668589975 L680.8030743304919,183.01478543094123 Z" fill="url(#gradWindow_rolls-royce_ghost)" stroke="rgba(74,222,128,0.6)" stroke-width="0.6" stroke-linejoin="round" />
+  <circle cx="178.74143526866212" cy="304.5618463757663" r="45.438153624233685" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="178.74143526866212" cy="304.5618463757663" r="24.99098449332853" fill="url(#gradRim_rolls-royce_ghost)" stroke="#334155" stroke-width="1" />
+  <circle cx="178.74143526866212" cy="304.5618463757663" r="9.996393797331411" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="178.74143526866212" cy="304.5618463757663" r="4.089433826181032" fill="#4ade80" />
+  <circle cx="594.626758023801" cy="304.5618463757663" r="45.438153624233685" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="594.626758023801" cy="304.5618463757663" r="24.99098449332853" fill="url(#gradRim_rolls-royce_ghost)" stroke="#334155" stroke-width="1" />
+  <circle cx="594.626758023801" cy="304.5618463757663" r="9.996393797331411" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="594.626758023801" cy="304.5618463757663" r="4.089433826181032" fill="#4ade80" />
+  <text x="776" y="385" text-anchor="end" fill="#4ade80" font-family="monospace" font-size="13" font-weight="bold">Rolls-Royce - Ghost  L:5546mm</text>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#34D399" stop-opacity=".12"/><stop offset="1" stop-color="#38BDF8" stop-opacity=".12"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="1" y="1" width="958" height="52" rx="14" fill="url(#g1)" stroke="none"/>
+  <rect x="24" y="20" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="31" fill="#E2E8F0" font-size="16" font-weight="700">造型范式跃迁：从手绘到参数</text>
+  <text x="936" y="31" fill="#64748B" font-size="11" text-anchor="end">EVOLUTION AI · Design Philosophy</text>
+
+  <!-- 阶段一：传统手绘 -->
+  <g>
+    <rect x="30" y="86" width="270" height="240" rx="12" fill="#131B29" stroke="#2A3A52"/>
+    <rect x="30" y="86" width="270" height="6" rx="3" fill="#64748B"/>
+    <text x="165" y="126" fill="#E2E8F0" font-size="15" font-weight="700" text-anchor="middle">Ⅰ · 传统手绘/油泥时代</text>
+    <text x="165" y="146" fill="#64748B" font-size="11" text-anchor="middle">Analog Craft Era</text>
+    <g fill="#94A3B8" font-size="12">
+      <circle cx="52" cy="176" r="2.5" fill="#64748B"/><text x="64" y="180">灵感依赖设计师个人经验</text>
+      <circle cx="52" cy="206" r="2.5" fill="#64748B"/><text x="64" y="210">修改一轮 = 重绘/重塑一次</text>
+      <circle cx="52" cy="236" r="2.5" fill="#64748B"/><text x="64" y="240">尺寸精度靠经验目测</text>
+      <circle cx="52" cy="266" r="2.5" fill="#64748B"/><text x="64" y="270">评价以定性审美为主</text>
+      <circle cx="52" cy="296" r="2.5" fill="#64748B"/><text x="64" y="300">周期：周～月级</text>
+    </g>
+    <text x="165" y="316" fill="#475569" font-size="11" text-anchor="middle">表达自由 · 复现性低</text>
+  </g>
+
+  <!-- 阶段二：参数化 CAD -->
+  <g>
+    <rect x="345" y="86" width="270" height="240" rx="12" fill="#131B29" stroke="#2A3A52"/>
+    <rect x="345" y="86" width="270" height="6" rx="3" fill="#38BDF8"/>
+    <text x="480" y="126" fill="#E2E8F0" font-size="15" font-weight="700" text-anchor="middle">Ⅱ · 参数化 CAD 时代</text>
+    <text x="480" y="146" fill="#64748B" font-size="11" text-anchor="middle">Parametric CAD Era</text>
+    <g fill="#94A3B8" font-size="12">
+      <circle cx="367" cy="176" r="2.5" fill="#38BDF8"/><text x="379" y="180">整车尺寸由参数显式定义</text>
+      <circle cx="367" cy="206" r="2.5" fill="#38BDF8"/><text x="379" y="210">改参即改型，可复现可追溯</text>
+      <circle cx="367" cy="236" r="2.5" fill="#38BDF8"/><text x="379" y="240">曲面连续性可量化（G0/G1/G2）</text>
+      <circle cx="367" cy="266" r="2.5" fill="#38BDF8"/><text x="379" y="270">评价引入工程指标</text>
+      <circle cx="367" cy="296" r="2.5" fill="#38BDF8"/><text x="379" y="300">周期：天级</text>
+    </g>
+    <text x="480" y="316" fill="#475569" font-size="11" text-anchor="middle">精确可控 · 创意仍靠人工</text>
+  </g>
+
+  <!-- 阶段三：AI 生成与演化 -->
+  <g>
+    <rect x="660" y="86" width="270" height="240" rx="12" fill="#12241E" stroke="#34D399"/>
+    <rect x="660" y="86" width="270" height="6" rx="3" fill="#34D399"/>
+    <text x="795" y="126" fill="#34D399" font-size="15" font-weight="700" text-anchor="middle">Ⅲ · AI 生成与演化（本平台）</text>
+    <text x="795" y="146" fill="#64748B" font-size="11" text-anchor="middle">Generative &amp; Evolving Era</text>
+    <g fill="#A7F3D0" font-size="12">
+      <circle cx="682" cy="176" r="2.5" fill="#34D399"/><text x="694" y="180">参数空间内自动探索方案</text>
+      <circle cx="682" cy="206" r="2.5" fill="#34D399"/><text x="694" y="210">贝叶斯优化闭环自我改进</text>
+      <circle cx="682" cy="236" r="2.5" fill="#34D399"/><text x="694" y="236" fill="#A7F3D0">质量指标实时驱动迭代</text>
+      <circle cx="682" cy="266" r="2.5" fill="#34D399"/><text x="694" y="270">品牌基因数字化注入</text>
+      <circle cx="682" cy="296" r="2.5" fill="#34D399"/><text x="694" y="300">周期：分钟级</text>
+    </g>
+    <text x="795" y="316" fill="#34D399" font-size="11" text-anchor="middle" opacity=".8">精确 + 智能 · 人机共创</text>
+  </g>
+
+  <!-- 跃迁箭头 -->
+  <line x1="304" y1="206" x2="341" y2="206" stroke="#34D399" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="619" y1="206" x2="656" y2="206" stroke="#34D399" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="322" y="196" fill="#34D399" font-size="11" text-anchor="middle">数字化</text>
+  <text x="637" y="196" fill="#34D399" font-size="11" text-anchor="middle">智能化</text>
+
+  <!-- 底部结论条 -->
+  <rect x="30" y="352" width="900" height="58" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+  <circle cx="56" cy="381" r="9" fill="none" stroke="#34D399" stroke-width="2"/>
+  <path d="M52 381l3 3 6-7" stroke="#34D399" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <text x="76" y="377" fill="#E2E8F0" font-size="12.5" font-weight="600">范式核心变化：造型表达从「模拟经验」迁移为「参数 + 算法」</text>
+  <text x="76" y="396" fill="#94A3B8" font-size="11.5">设计自由度不因参数化而损失——参数空间本身就是新的造型语言；AI 在该语言内做有纪律的探索。</text>
+</svg>
