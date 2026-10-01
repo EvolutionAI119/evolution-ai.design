@@ -259,13 +259,21 @@ class PageView(Base):
 
 
 class Message(Base):
-    """访客留言（留言互动证据）：支持管理员回复，回复率据此统计。"""
+    """社区帖子（留言互动证据）：一级嵌套回复 + 点赞。
+
+    parent_id 为 NULL 表示顶级帖，否则为对某帖的回复。
+    reply/replied_by/replied_at 保留兼容：超管的官方回复同时写入 reply 字段
+    并落地一条 parent_id 子帖，回复率统计逻辑不变。
+    """
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     guest_name = Column(String(100), nullable=False)
     content = Column(Text, nullable=False)
     contact = Column(String(200), nullable=True)
+    parent_id = Column(Integer, ForeignKey("messages.id"),
+                       nullable=True, index=True)
+    likes_count = Column(Integer, default=0, nullable=False)
     reply = Column(Text, nullable=True)
     replied_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     replied_at = Column(DateTime, nullable=True)
@@ -297,6 +305,24 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     _migrate_wechat_columns()
     _migrate_role_and_project_owner()
+    _migrate_message_community_columns()
+
+
+def _migrate_message_community_columns():
+    """向已存在的 messages 表补充社区字段（parent_id / likes_count）。"""
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    if "messages" not in inspector.get_table_names():
+        return
+    existing = {col["name"] for col in inspector.get_columns("messages")}
+    with engine.begin() as conn:
+        if "parent_id" not in existing:
+            conn.execute(text(
+                "ALTER TABLE messages ADD COLUMN parent_id INTEGER"))
+        if "likes_count" not in existing:
+            conn.execute(text(
+                "ALTER TABLE messages ADD COLUMN likes_count INTEGER "
+                "NOT NULL DEFAULT 0"))
 
 
 def _migrate_wechat_columns():

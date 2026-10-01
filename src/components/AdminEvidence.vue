@@ -1,49 +1,34 @@
 <template>
-  <div class="analytics-page" v-loading="loading">
-    <!-- 页头 -->
-    <div class="page-hero">
-      <h1 class="hero-title">{{ t('analytics.title') }}</h1>
-      <p class="hero-subtitle">{{ t('analytics.subtitle') }}</p>
-      <div class="verifiable-badge">
-        <el-icon><CircleCheckFilled /></el-icon>
-        {{ t('analytics.verifiable') }}
-        <span class="gen-time" v-if="summary">
-          · {{ t('analytics.generatedAt') }} {{ formatTime(summary.generated_at) }}
-        </span>
-      </div>
-    </div>
-
+  <div class="evidence-panel" v-loading="loading">
     <!-- 筛选栏 -->
-    <el-card class="filter-card">
-      <div class="filter-bar">
-        <div class="filter-group">
-          <span class="filter-label">{{ t('analytics.granularity') }}</span>
-          <el-radio-group v-model="granularity" size="small">
-            <el-radio-button value="day">{{ t('analytics.day') }}</el-radio-button>
-            <el-radio-button value="week">{{ t('analytics.week') }}</el-radio-button>
-            <el-radio-button value="month">{{ t('analytics.month') }}</el-radio-button>
-          </el-radio-group>
-        </div>
-        <div class="filter-group">
-          <span class="filter-label">{{ t('analytics.range') }}</span>
-          <el-radio-group v-model="days" size="small">
-            <el-radio-button :value="7">7{{ t('analytics.daysUnit') }}</el-radio-button>
-            <el-radio-button :value="30">30{{ t('analytics.daysUnit') }}</el-radio-button>
-            <el-radio-button :value="60">60{{ t('analytics.daysUnit') }}</el-radio-button>
-            <el-radio-button :value="90">90{{ t('analytics.daysUnit') }}</el-radio-button>
-          </el-radio-group>
-        </div>
-        <el-tag v-if="isAdmin" type="success" effect="dark" round class="role-tag">
-          {{ t('analytics.adminMode') }}
-        </el-tag>
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">{{ t('analytics.granularity') }}</span>
+        <el-radio-group v-model="granularity" size="small">
+          <el-radio-button value="day">{{ t('analytics.day') }}</el-radio-button>
+          <el-radio-button value="week">{{ t('analytics.week') }}</el-radio-button>
+          <el-radio-button value="month">{{ t('analytics.month') }}</el-radio-button>
+        </el-radio-group>
       </div>
-    </el-card>
+      <div class="filter-group">
+        <span class="filter-label">{{ t('analytics.range') }}</span>
+        <el-radio-group v-model="days" size="small">
+          <el-radio-button :value="7">7{{ t('analytics.daysUnit') }}</el-radio-button>
+          <el-radio-button :value="30">30{{ t('analytics.daysUnit') }}</el-radio-button>
+          <el-radio-button :value="60">60{{ t('analytics.daysUnit') }}</el-radio-button>
+          <el-radio-button :value="90">90{{ t('analytics.daysUnit') }}</el-radio-button>
+        </el-radio-group>
+      </div>
+      <span class="gen-time" v-if="summary">
+        {{ t('analytics.generatedAt') }} {{ formatTime(summary.generated_at) }}
+      </span>
+    </div>
 
     <!-- KPI 卡片 -->
     <div class="kpi-grid">
       <div class="kpi-card" v-for="kpi in kpiCards" :key="kpi.key">
         <div class="kpi-icon" :style="{ background: kpi.bg, color: kpi.color }">
-          <el-icon :size="20"><component :is="kpi.icon" /></el-icon>
+          <el-icon :size="18"><component :is="kpi.icon" /></el-icon>
         </div>
         <div class="kpi-meta">
           <span class="kpi-value">{{ kpi.value }}</span>
@@ -84,7 +69,7 @@
       </el-card>
     </div>
 
-    <!-- 外部引用证据 -->
+    <!-- 外部引用核验 -->
     <el-card class="chart-card">
       <template #header>
         <div class="card-header">
@@ -109,8 +94,7 @@
         </el-form-item>
       </el-form>
 
-      <!-- 管理员待核验队列 -->
-      <div v-if="isAdmin && pendingRefs.length" class="pending-section">
+      <div v-if="pendingRefs.length" class="pending-section">
         <div class="section-sub-title">
           <el-icon><WarningFilled /></el-icon>
           {{ t('analytics.pendingQueue') }} ({{ pendingRefs.length }})
@@ -123,7 +107,7 @@
             </a>
           </div>
           <div class="ref-actions">
-            <el-button size="small" type="success" @click="verifyRef(r, true)">
+            <el-button size="small" type="success" @click="verifyRef(r)">
               {{ t('analytics.verify') }}
             </el-button>
           </div>
@@ -144,68 +128,8 @@
       </div>
     </el-card>
 
-    <!-- 留言互动 -->
+    <!-- 数据导出 -->
     <el-card class="chart-card">
-      <template #header>
-        <span class="card-title">{{ t('analytics.messagesTitle') }}</span>
-      </template>
-
-      <div class="message-layout">
-        <!-- 留言列表 -->
-        <div class="message-list">
-          <div class="message-item" v-for="m in messages" :key="m.id">
-            <div class="message-head">
-              <span class="message-name">{{ m.guest_name }}</span>
-              <span class="message-time">{{ formatTime(m.created_at) }}</span>
-            </div>
-            <p class="message-content">{{ m.content }}</p>
-            <div class="message-reply" v-if="m.reply">
-              <el-icon><ChatLineSquare /></el-icon>
-              <div>
-                <span class="reply-badge">{{ t('analytics.officialReply') }}</span>
-                {{ m.reply }}
-              </div>
-            </div>
-            <!-- 管理员回复框 -->
-            <div class="admin-reply-box" v-if="isAdmin && !m.reply">
-              <el-input v-model="replyDrafts[m.id]" size="small"
-                :placeholder="t('analytics.replyPlaceholder')" />
-              <el-button size="small" type="primary" @click="doReply(m)">
-                {{ t('analytics.reply') }}
-              </el-button>
-            </div>
-          </div>
-          <el-empty v-if="!messages.length" :description="t('analytics.noMessages')"
-            :image-size="60" />
-          <div class="pagination" v-if="messageTotal > messagePageSize">
-            <el-pagination
-              v-model:current-page="messagePage"
-              :page-size="messagePageSize"
-              :total="messageTotal"
-              layout="prev, pager, next"
-              small
-              @current-change="loadMessages" />
-          </div>
-        </div>
-
-        <!-- 留言表单 -->
-        <div class="message-form-wrap">
-          <h3 class="form-title">{{ t('analytics.leaveMessage') }}</h3>
-          <el-input v-model="msgForm.guest_name" size="small"
-            :placeholder="t('analytics.yourName')" class="form-item" />
-          <el-input v-model="msgForm.content" type="textarea" :rows="4"
-            :placeholder="t('analytics.messagePlaceholder')" class="form-item" />
-          <el-input v-model="msgForm.contact" size="small"
-            :placeholder="t('analytics.contactOptional')" class="form-item" />
-          <el-button type="primary" class="submit-btn" @click="postMessage">
-            {{ t('analytics.submitMessage') }}
-          </el-button>
-        </div>
-      </div>
-    </el-card>
-
-    <!-- 管理员：数据导出 -->
-    <el-card v-if="isAdmin" class="chart-card">
       <template #header>
         <span class="card-title">{{ t('analytics.exportTitle') }}</span>
       </template>
@@ -229,15 +153,12 @@ import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import {
   View, User, Timer, UserFilled, ChatDotRound, Link, Promotion,
-  CircleCheckFilled, Plus, WarningFilled, ChatLineSquare,
+  Plus, WarningFilled,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import api, { analyticsAPI } from '../api'
-import { useAuthStore } from '../stores/auth'
 
 const { t } = useI18n({ useScope: 'global' })
-const auth = useAuthStore()
-const isAdmin = computed(() => auth.isAdmin)
 
 // ── 筛选状态 ──
 const granularity = ref('day')
@@ -251,14 +172,6 @@ const trendChartRef = ref(null)
 const pagesChartRef = ref(null)
 const platformsChartRef = ref(null)
 const charts = {}
-
-// ── 留言状态 ──
-const messages = ref([])
-const messagePage = ref(1)
-const messagePageSize = ref(5)
-const messageTotal = ref(0)
-const replyDrafts = reactive({})
-const msgForm = reactive({ guest_name: '', content: '', contact: '' })
 
 // ── 引用状态 ──
 const verifiedRefs = ref([])
@@ -417,59 +330,15 @@ async function loadSummary() {
   }
 }
 
-async function loadMessages(page = 1) {
-  try {
-    const { data } = await analyticsAPI.listMessages(page, messagePageSize.value)
-    messages.value = data.items
-    messageTotal.value = data.total
-  } catch {}
-}
-
 async function loadRefs() {
   try {
     const { data } = await analyticsAPI.listReferences(50)
     verifiedRefs.value = data.items
   } catch {}
-  if (isAdmin.value) {
-    try {
-      const { data } = await analyticsAPI.listAllReferences(
-        { verified: false, page_size: 50 })
-      pendingRefs.value = data.items
-    } catch {}
-  }
-}
-
-// ── 留言提交 / 回复 ──
-
-async function postMessage() {
-  if (!msgForm.guest_name.trim() || !msgForm.content.trim()) {
-    ElMessage.warning(t('analytics.formRequired'))
-    return
-  }
   try {
-    await analyticsAPI.createMessage({
-      guest_name: msgForm.guest_name, content: msgForm.content,
-      contact: msgForm.contact || null })
-    ElMessage.success(t('analytics.messageSent'))
-    msgForm.guest_name = ''
-    msgForm.content = ''
-    msgForm.contact = ''
-    await loadSummary()
-    await loadMessages(1)
-  } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('analytics.sendFailed'))
-  }
-}
-
-async function doReply(m) {
-  const text = (replyDrafts[m.id] || '').trim()
-  if (!text) return
-  try {
-    await analyticsAPI.replyMessage(m.id, text)
-    replyDrafts[m.id] = ''
-    ElMessage.success(t('analytics.replied'))
-    await loadSummary()
-    await loadMessages(messagePage.value)
+    const { data } = await analyticsAPI.listAllReferences(
+      { verified: false, page_size: 50 })
+    pendingRefs.value = data.items
   } catch {}
 }
 
@@ -562,7 +431,6 @@ const onResize = () => Object.values(charts).forEach(c => c.resize())
 
 onMounted(async () => {
   await loadSummary()
-  await loadMessages(1)
   await loadRefs()
   window.addEventListener('resize', onResize)
 })
@@ -577,78 +445,44 @@ watch(trendMetric, () => nextTick().then(renderTrend))
 </script>
 
 <style scoped>
-.analytics-page {
+.evidence-panel {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 4px 0 24px;
+  gap: 16px;
 }
 
-.page-hero { text-align: center; padding: 24px 20px 6px; }
-
-.hero-title {
-  margin: 0 0 10px;
-  font-size: 30px;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.hero-subtitle {
-  margin: 0 auto;
-  max-width: 620px;
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-
-.verifiable-badge {
-  display: inline-flex;
+.filter-bar {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 5px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border-radius: 20px;
+  gap: 24px;
+  flex-wrap: wrap;
 }
 
-.gen-time { color: var(--text-muted); font-weight: 400; }
+.filter-group { display: flex; align-items: center; gap: 10px; }
+.filter-label { font-size: 12px; color: var(--text-muted); }
+.gen-time { margin-left: auto; font-size: 11px; color: var(--text-muted); }
 
-.filter-card,
 .chart-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
 }
 
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  flex-wrap: wrap;
-}
-
-.filter-group { display: flex; align-items: center; gap: 10px; }
-.filter-label { font-size: 12px; color: var(--text-muted); }
-.role-tag { margin-left: auto; }
-
-:deep(.el-card__body) { padding: 18px 20px; }
-:deep(.el-card__header) { padding: 14px 20px; border-bottom: 1px solid var(--border-color); }
+:deep(.el-card__body) { padding: 16px 18px; }
+:deep(.el-card__header) { padding: 12px 18px; border-bottom: 1px solid var(--border-color); }
 
 /* KPI 网格 */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .kpi-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 14px;
+  gap: 10px;
+  padding: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 10px;
@@ -658,9 +492,9 @@ watch(trendMetric, () => nextTick().then(renderTrend))
 .kpi-card:hover { transform: translateY(-3px); border-color: rgba(74,222,128,0.4); }
 
 .kpi-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -668,20 +502,19 @@ watch(trendMetric, () => nextTick().then(renderTrend))
 }
 
 .kpi-meta { display: flex; flex-direction: column; min-width: 0; }
-.kpi-value { font-size: 20px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+.kpi-value { font-size: 18px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
 .kpi-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-/* 卡片头部 */
 .card-header { display: flex; justify-content: space-between; align-items: center; }
-.card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
 
-.chart-box { height: 280px; }
-.chart-box.tall { height: 340px; }
+.chart-box { height: 260px; }
+.chart-box.tall { height: 320px; }
 
 .dist-grid {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
-  gap: 18px;
+  gap: 16px;
 }
 
 /* 引用列表 */
@@ -729,61 +562,6 @@ watch(trendMetric, () => nextTick().then(renderTrend))
 .ref-url:hover { color: var(--accent); }
 .ref-time { font-size: 11px; color: var(--text-muted); margin-left: auto; }
 
-/* 留言区 */
-.message-layout {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 24px;
-}
-
-.message-item {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border-color);
-}
-.message-item:last-child { border-bottom: none; }
-
-.message-head { display: flex; justify-content: space-between; align-items: center; }
-.message-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-.message-time { font-size: 11px; color: var(--text-muted); }
-.message-content { margin: 6px 0; font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-
-.message-reply {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 10px 12px;
-  background: var(--accent-bg);
-  border-radius: 8px;
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.reply-badge {
-  display: inline-block;
-  margin-right: 6px;
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.admin-reply-box { display: flex; gap: 8px; margin-top: 8px; }
-.pagination { margin-top: 14px; text-align: center; }
-
-.message-form-wrap {
-  padding: 18px;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  height: fit-content;
-}
-
-.form-title { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.form-item { width: 100%; }
-.submit-btn { margin-top: 4px; }
-
 /* 导出 */
 .export-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .export-item {
@@ -805,8 +583,7 @@ watch(trendMetric, () => nextTick().then(renderTrend))
 
 @media (max-width: 900px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .dist-grid, .message-layout { grid-template-columns: 1fr; }
-  .filter-bar { gap: 14px; }
-  .role-tag { margin-left: 0; }
+  .dist-grid { grid-template-columns: 1fr; }
+  .gen-time { margin-left: 0; }
 }
 </style>

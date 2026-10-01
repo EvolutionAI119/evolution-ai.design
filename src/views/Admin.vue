@@ -151,6 +151,16 @@
           <el-table-column prop="ip" :label="t('admin.colIp')" width="140" />
         </el-table>
       </el-tab-pane>
+
+      <!-- ── 影响证据（仅 superadmin） ───────── -->
+      <el-tab-pane
+        :label="t('admin.tabAnalytics')"
+        name="analytics"
+        :disabled="!auth.isSuperadmin"
+        lazy
+      >
+        <AdminEvidence v-if="activeTab === 'analytics'" />
+      </el-tab-pane>
     </el-tabs>
 
     <!-- 重置密码对话框 -->
@@ -181,6 +191,7 @@ import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { adminAPI } from '../api'
 import { useAuthStore } from '../stores/auth'
+import AdminEvidence from '../components/AdminEvidence.vue'
 
 const { t } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()

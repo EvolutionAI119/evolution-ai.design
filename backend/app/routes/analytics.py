@@ -7,9 +7,10 @@
   4. 引用证据 ExternalReference —— 外部引用次数、来源平台分布
 
 权限边界：
-  - 公开：埋点上报、公开汇总（最长 90 天聚合值，无原始记录）、
-    留言查看/提交、已核验引用查看/提交
-  - 管理员（admin/superadmin）：全量明细、自定义区间、回复/核验/隐藏、数据导出
+  - 公开：埋点上报、社区帖子浏览/发帖/回复/点赞、已核验引用查看/提交
+  - 超级管理员：公开汇总、全量明细、趋势分析、核验/隐藏、数据导出
+
+  社区身份：游客参与时按 visitor_id 自动建档轻量账户（占位邮箱，幂等复用）。
 
 安全要点：
   - 时间维度 granularity 只接受枚举 day/week/month，由后端白名单映射 SQL 表达式，
@@ -20,6 +21,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -31,7 +33,8 @@ from sqlalchemy.orm import Session
 
 from ..database import (ExternalReference, Message, PageView, User, get_db)
 from ..rate_limit import limit
-from ..security import (get_optional_user, require_admin, user_is_admin)
+from ..security import (ROLE_SUPERADMIN, ROLE_USER, get_optional_user,
+                        hash_password, require_superadmin)
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["影响证据分析"])
 
@@ -60,10 +63,13 @@ class MessageIn(BaseModel):
     guest_name: str = Field(..., min_length=1, max_length=100)
     content: str = Field(..., min_length=1, max_length=2000)
     contact: Optional[str] = Field(None, max_length=200)
+    visitor_id: Optional[str] = Field(None, max_length=64)
 
 
 class ReplyIn(BaseModel):
     reply: str = Field(..., min_length=1, max_length=2000)
+    guest_name: Optional[str] = Field(None, max_length=100)
+    visitor_id: Optional[str] = Field(None, max_length=64)
 
 
 class ReferenceIn(BaseModel):
@@ -205,8 +211,9 @@ def public_summary(
     granularity: str = Query("day"),
     days: int = Query(30),
     db: Session = Depends(get_db),
+    current: User = Depends(require_superadmin),
 ):
-    """公开证据汇总：总量 KPI + 四类时间序列 + 来源分布。"""
+    """证据汇总（仅超级管理员）：总量 KPI + 四类时间序列 + 来源分布。"""
     start, end = _parse_range(granularity, days, _PUBLIC_MAX_DAYS)
     effective_days = min(days, _PUBLIC_MAX_DAYS)
     dialect = _dialect_name(db)
@@ -344,46 +351,85 @@ def public_summary(
 
 
 # ───────────────────────────────────────────────────────────
-# 3) 留言互动（公开查看/提交；管理员回复/隐藏）
+# 3) 社区（公开浏览；登录用户/游客建档后发帖、回复、点赞）
 # ───────────────────────────────────────────────────────────
+
+def _ensure_guest_user(db: Session, name: str,
+                       visitor_id: Optional[str]) -> Optional[User]:
+    """游客参与社区时按 visitor_id 自动建档轻量账户（幂等，复访复用）。
+
+    占位邮箱无法登录、无密码可用，仅作为社区身份与发帖归属。
+    """
+    if not visitor_id:
+        return None
+    email = f"guest_{visitor_id[:24]}@guest.evoai.local"
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        user = User(
+            email=email,
+            username=(name or "访客")[:100],
+            password_hash=hash_password(secrets.token_hex(16)),
+            role=ROLE_USER,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
+def _message_out(m: Message, replies_map: Optional[dict] = None) -> dict:
+    item = {
+        "id": m.id,
+        "guest_name": m.guest_name,
+        "content": m.content,
+        "parent_id": m.parent_id,
+        "likes_count": m.likes_count or 0,
+        "is_official": m.reply is not None,
+        "created_at": m.created_at.isoformat(),
+    }
+    if replies_map is not None:
+        item["replies"] = replies_map.get(m.id, [])
+    return item
+
 
 @router.get("/messages")
 def list_messages(page: int = Query(1, ge=1),
                   page_size: int = Query(10, ge=1, le=50),
                   db: Session = Depends(get_db)):
-    """公开留言列表（不返回被隐藏留言）。"""
-    base = db.query(Message).filter(Message.is_hidden.is_(False))
+    """社区帖子列表：顶级帖分页，每帖附带一级回复。"""
+    base = db.query(Message).filter(
+        Message.is_hidden.is_(False), Message.parent_id.is_(None))
     total = base.count()
-    rows = base.order_by(Message.created_at.desc()).offset(
+    posts = base.order_by(Message.created_at.desc()).offset(
         (page - 1) * page_size
     ).limit(page_size).all()
+    post_ids = [p.id for p in posts]
+    replies: dict[int, list] = {pid: [] for pid in post_ids}
+    if post_ids:
+        children = db.query(Message).filter(
+            Message.parent_id.in_(post_ids),
+            Message.is_hidden.is_(False)
+        ).order_by(Message.created_at.asc()).all()
+        for c in children:
+            replies[c.parent_id].append(_message_out(c))
     return {
         "total": total,
         "page": page,
         "page_size": page_size,
-        "items": [
-            {
-                "id": m.id,
-                "guest_name": m.guest_name,
-                "content": m.content,
-                "reply": m.reply,
-                "replied_at": m.replied_at.isoformat() if m.replied_at else None,
-                "created_at": m.created_at.isoformat(),
-            }
-            for m in rows
-        ],
+        "items": [_message_out(p, replies) for p in posts],
     }
 
 
 @router.post("/messages")
-@limit("5/minute")
+@limit("10/minute")
 def create_message(req: MessageIn, request: Request,
                    db: Session = Depends(get_db),
                    current: Optional[User] = Depends(get_optional_user)):
-    """提交留言（登录用户自动署名并关联账号）。"""
+    """发帖：登录用户直接署名；游客按 visitor_id 自动建档后发帖。"""
+    user = current or _ensure_guest_user(db, req.guest_name, req.visitor_id)
     msg = Message(
-        user_id=current.id if current else None,
-        guest_name=(current.username if current else req.guest_name)[:100],
+        user_id=user.id if user else None,
+        guest_name=(user.username if user else req.guest_name)[:100],
         content=req.content,
         contact=req.contact,
     )
@@ -394,28 +440,59 @@ def create_message(req: MessageIn, request: Request,
 
 
 @router.post("/messages/{message_id}/reply")
-def reply_message(message_id: int, req: ReplyIn,
+@limit("10/minute")
+def reply_message(message_id: int, req: ReplyIn, request: Request,
                   db: Session = Depends(get_db),
-                  current: User = Depends(require_admin)):
-    """管理员回复留言。"""
-    msg = db.query(Message).filter(Message.id == message_id).first()
-    if msg is None:
-        raise HTTPException(status_code=404, detail="留言不存在")
-    msg.reply = req.reply
-    msg.replied_by = current.id
-    msg.replied_at = datetime.utcnow()
+                  current: Optional[User] = Depends(get_optional_user)):
+    """回复帖子（一级嵌套）：登录用户/游客建档均可回复。
+
+    超级管理员的回复同时写入父帖 reply 字段，维持回复率统计口径。
+    """
+    parent = db.query(Message).filter(
+        Message.id == message_id, Message.parent_id.is_(None)).first()
+    if parent is None:
+        raise HTTPException(status_code=404, detail="帖子不存在")
+    user = current or _ensure_guest_user(db, req.guest_name, req.visitor_id)
+    if user is None and not req.guest_name:
+        raise HTTPException(status_code=422, detail="回复需要署名")
+    child = Message(
+        user_id=user.id if user else None,
+        guest_name=(user.username if user else req.guest_name)[:100],
+        content=req.reply,
+        parent_id=parent.id,
+    )
+    db.add(child)
+    if current is not None and getattr(current, "role", "") == ROLE_SUPERADMIN:
+        parent.reply = req.reply
+        parent.replied_by = current.id
+        parent.replied_at = datetime.utcnow()
     db.commit()
-    return {"ok": True}
+    db.refresh(child)
+    return {"id": child.id, "created_at": child.created_at.isoformat()}
+
+
+@router.post("/messages/{message_id}/like")
+@limit("30/minute")
+def like_message(message_id: int, request: Request,
+                 db: Session = Depends(get_db)):
+    """点赞（公开；重复抑制由客户端 localStorage 控制）。"""
+    msg = db.query(Message).filter(
+        Message.id == message_id, Message.is_hidden.is_(False)).first()
+    if msg is None:
+        raise HTTPException(status_code=404, detail="帖子不存在")
+    msg.likes_count = (msg.likes_count or 0) + 1
+    db.commit()
+    return {"ok": True, "likes_count": msg.likes_count}
 
 
 @router.post("/messages/{message_id}/hide")
 def hide_message(message_id: int,
                  db: Session = Depends(get_db),
-                 current: User = Depends(require_admin)):
-    """管理员隐藏不当留言（公开列表与统计中剔除）。"""
+                 current: User = Depends(require_superadmin)):
+    """超级管理员隐藏不当帖子（公开列表与统计中剔除）。"""
     msg = db.query(Message).filter(Message.id == message_id).first()
     if msg is None:
-        raise HTTPException(status_code=404, detail="留言不存在")
+        raise HTTPException(status_code=404, detail="帖子不存在")
     msg.is_hidden = not msg.is_hidden
     db.commit()
     return {"ok": True, "is_hidden": msg.is_hidden}
@@ -468,7 +545,7 @@ def list_all_references(page: int = Query(1, ge=1),
                         page_size: int = Query(20, ge=1, le=100),
                         verified: Optional[bool] = Query(None),
                         db: Session = Depends(get_db),
-                        current: User = Depends(require_admin)):
+                        current: User = Depends(require_superadmin)):
     """管理员：全部引用（含待核验）。"""
     base = db.query(ExternalReference)
     if verified is not None:
@@ -488,7 +565,7 @@ def list_all_references(page: int = Query(1, ge=1),
 @router.post("/references/{reference_id}/verify")
 def verify_reference(reference_id: int,
                      db: Session = Depends(get_db),
-                     current: User = Depends(require_admin)):
+                     current: User = Depends(require_superadmin)):
     """管理员核验外部引用（核验后进入公开证据列表）。"""
     ref = db.query(ExternalReference).filter(
         ExternalReference.id == reference_id
@@ -522,7 +599,7 @@ def _reference_out(r: ExternalReference) -> dict:
 
 @router.get("/overview")
 def admin_overview(db: Session = Depends(get_db),
-                   current: User = Depends(require_admin)):
+                   current: User = Depends(require_superadmin)):
     """管理员 KPI 总览：今日 / 近 7 天 / 近 30 天。"""
     now = datetime.utcnow()
     result = {}
@@ -560,7 +637,7 @@ def admin_overview(db: Session = Depends(get_db),
 def visits_analysis(granularity: str = Query("day"),
                     days: int = Query(30),
                     db: Session = Depends(get_db),
-                    current: User = Depends(require_admin)):
+                    current: User = Depends(require_superadmin)):
     """管理员：访问明细序列（PV/UV）+ 平均停留时长 + 页面分布。"""
     start, end = _parse_range(granularity, days, None)
     dialect = _dialect_name(db)
@@ -615,7 +692,7 @@ def visits_analysis(granularity: str = Query("day"),
 def registrations_analysis(granularity: str = Query("day"),
                           days: int = Query(30),
                           db: Session = Depends(get_db),
-                          current: User = Depends(require_admin)):
+                          current: User = Depends(require_superadmin)):
     """管理员：注册量趋势 + 累计注册。"""
     start, end = _parse_range(granularity, days, None)
     dialect = _dialect_name(db)
@@ -636,7 +713,7 @@ def registrations_analysis(granularity: str = Query("day"),
 def interactions_analysis(granularity: str = Query("day"),
                           days: int = Query(30),
                           db: Session = Depends(get_db),
-                          current: User = Depends(require_admin)):
+                          current: User = Depends(require_superadmin)):
     """管理员：留言/回复序列 + 回复率。"""
     start, end = _parse_range(granularity, days, None)
     dialect = _dialect_name(db)
@@ -683,7 +760,7 @@ def export_data(dataset: str = Query(...),
                 days: int = Query(30),
                 fmt: str = Query("csv"),
                 db: Session = Depends(get_db),
-                current: User = Depends(require_admin)):
+                current: User = Depends(require_superadmin)):
     """导出证据数据：dataset 白名单 + CSV/JSON 两种格式。"""
     if dataset not in _DATASETS:
         raise HTTPException(status_code=422,

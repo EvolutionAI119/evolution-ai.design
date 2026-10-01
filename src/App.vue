@@ -124,7 +124,7 @@ import { useI18n } from 'vue-i18n'
 import {
   Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
   Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton, QuestionFilled,
-  TrendCharts,
+  ChatDotRound,
   Lock, Setting,
 } from '@element-plus/icons-vue'
 // Element Plus 内置语言包
@@ -223,15 +223,15 @@ onBeforeUnmount(() => {
 
 const baseMenuGroups = [
   {
-    labelKey: '',
+    labelKey: 'menu.groupHome',
     items: [
-      { path: '/', nameKey: 'menu.dashboard', icon: Odometer },
-      { path: '/designer', nameKey: 'menu.aiDesigner', icon: Brush }
+      { path: '/', nameKey: 'menu.dashboard', icon: Odometer }
     ]
   },
   {
     labelKey: 'menu.groupDesign',
     items: [
+      { path: '/designer', nameKey: 'menu.aiDesigner', icon: Brush },
       { path: '/projects', nameKey: 'menu.projects', icon: Folder },
       { path: '/deep-learning', nameKey: 'menu.deepLearning', icon: MagicStick }
     ]
@@ -244,11 +244,16 @@ const baseMenuGroups = [
     ]
   },
   {
-    labelKey: '',
+    labelKey: 'menu.groupExplore',
     items: [
       { path: '/demo', nameKey: 'menu.demo', icon: VideoPlay },
+      { path: '/community', nameKey: 'menu.community', icon: ChatDotRound }
+    ]
+  },
+  {
+    labelKey: 'menu.groupSupport',
+    items: [
       { path: '/help', nameKey: 'menu.help', icon: QuestionFilled },
-      { path: '/analytics', nameKey: 'menu.analytics', icon: TrendCharts },
       { path: '/account', nameKey: 'menu.account', icon: UserFilled }
     ]
   }

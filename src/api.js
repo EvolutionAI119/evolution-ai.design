@@ -453,13 +453,14 @@ export const analyticsAPI = {
   publicSummary: (granularity = 'day', days = 30) =>
     api.get('/analytics/public-summary',
             { params: { granularity, days } }),
-  // 留言
+  // 社区
   listMessages: (page = 1, pageSize = 10) =>
     api.get('/analytics/messages',
             { params: { page, page_size: pageSize } }),
   createMessage: (data) => api.post('/analytics/messages', data),
-  replyMessage: (id, reply) =>
-    api.post(`/analytics/messages/${id}/reply`, { reply }),
+  replyMessage: (id, data) =>
+    api.post(`/analytics/messages/${id}/reply`, data),
+  likeMessage: (id) => api.post(`/analytics/messages/${id}/like`),
   hideMessage: (id) => api.post(`/analytics/messages/${id}/hide`),
   // 外部引用
   listReferences: (limit = 20) =>

@@ -2,11 +2,11 @@
 
 覆盖：
 - 埋点：track 落地 + duration 回填（幂等取最大值）
-- 公开汇总：结构完整、90 天上限、非法维度拒绝
-- 留言：提交/列表/隐藏剔除/管理员回复
-- 引用：提交去重/公开仅已核验/管理员核验
-- 权限：游客 401、普通用户 403、管理员 200
-- 导出：CSV/JSON 仅管理员，白名单校验
+- 汇总：仅超级管理员可见、结构完整、90 天上限、非法维度拒绝
+- 社区：发帖/一级回复/点赞/游客自动建档/隐藏剔除
+- 引用：提交去重/公开仅已核验/超管核验
+- 权限：游客 401、普通用户与 admin 均 403、superadmin 200
+- 导出：CSV/JSON 仅超管，白名单校验
 """
 from datetime import datetime, timedelta
 
@@ -20,13 +20,15 @@ from app.security import create_access_token, hash_password
 
 client = TestClient(app)
 
-TEST_EMAILS = ["an_user@test.local", "an_admin@test.local"]
+TEST_EMAILS = ["an_user@test.local", "an_admin@test.local",
+               "an_super@test.local"]
 
 
 def _make_user(db, email, role):
     user = User(email=email, username=email.split("@")[0],
                 password_hash=hash_password("pass123456"),
-                role=role, is_admin=role == "admin", is_active=True)
+                role=role, is_admin=role in ("admin", "superadmin"),
+                is_active=True)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -41,11 +43,14 @@ def accounts():
         users = {
             "user": _make_user(db, "an_user@test.local", "user"),
             "admin": _make_user(db, "an_admin@test.local", "admin"),
+            "super": _make_user(db, "an_super@test.local", "superadmin"),
         }
         yield users
         for model in (PageView, Message, ExternalReference):
             db.query(model).delete()
         db.query(User).filter(User.email.in_(TEST_EMAILS)).delete()
+        db.query(User).filter(
+            User.email.like("guest_%@guest.evoai.local")).delete()
         db.commit()
     finally:
         db.close()
@@ -90,7 +95,7 @@ class TestTrack:
         assert r.status_code == 422
 
 
-# ── 公开汇总 ─────────────────────────────────
+# ── 汇总（仅超级管理员） ────────────────────
 
 class TestPublicSummary:
     def _seed_views(self, n=5):
@@ -107,10 +112,28 @@ class TestPublicSummary:
         finally:
             db.close()
 
+    def test_guest_denied(self, accounts):
+        r = client.get("/api/v1/analytics/public-summary",
+                      params={"granularity": "day", "days": 7})
+        assert r.status_code == 401
+
+    def test_user_denied(self, accounts):
+        r = client.get("/api/v1/analytics/public-summary",
+                      params={"granularity": "day", "days": 7},
+                      headers=_h(accounts["user"]))
+        assert r.status_code == 403
+
+    def test_admin_denied(self, accounts):
+        r = client.get("/api/v1/analytics/public-summary",
+                      params={"granularity": "day", "days": 7},
+                      headers=_h(accounts["admin"]))
+        assert r.status_code == 403
+
     def test_summary_structure(self, accounts):
         self._seed_views()
         r = client.get("/api/v1/analytics/public-summary",
-                      params={"granularity": "day", "days": 7})
+                      params={"granularity": "day", "days": 7},
+                      headers=_h(accounts["super"]))
         assert r.status_code == 200
         body = r.json()
         for key in ("kpi", "series", "top_pages", "top_platforms"):
@@ -123,12 +146,14 @@ class TestPublicSummary:
 
     def test_summary_caps_days_at_90(self, accounts):
         r = client.get("/api/v1/analytics/public-summary",
-                      params={"granularity": "day", "days": 300})
+                      params={"granularity": "day", "days": 300},
+                      headers=_h(accounts["super"]))
         assert r.json()["days"] == 90
 
     def test_invalid_granularity_rejected(self, accounts):
         r = client.get("/api/v1/analytics/public-summary",
-                      params={"granularity": "year", "days": 7})
+                      params={"granularity": "year", "days": 7},
+                      headers=_h(accounts["super"]))
         assert r.status_code == 422
 
 
@@ -139,7 +164,7 @@ class TestMessages:
         r = client.post("/api/v1/analytics/messages", json={
             "guest_name": "测试访客",
             "content": "这是一条测试留言"})
-        assert r.status_code == 200
+        assert r.status_code in (200, 201)
         lst = client.get("/api/v1/analytics/messages")
         assert any(m["content"] == "这是一条测试留言"
                   for m in lst.json()["items"])
@@ -158,45 +183,110 @@ class TestMessages:
         assert "正常显示" in contents
         assert "应被隐藏" not in contents
 
-    def test_guest_cannot_reply(self, accounts):
+    def test_super_reply_marks_official(self, accounts):
+        """超级管理员回复写入 reply 字段，公开列表标记官方回复"""
         db = SessionLocal()
         try:
-            m = Message(guest_name="g", content="c")
-            db.add(m)
-            db.commit()
-            mid = m.id
-        finally:
-            db.close()
-        assert client.post(
-            f"/api/v1/analytics/messages/{mid}/reply",
-            json={"reply": "回复"}).status_code == 401
-
-    def test_user_cannot_reply(self, accounts):
-        db = SessionLocal()
-        try:
-            m = Message(guest_name="g", content="c")
+            m = Message(guest_name="g", content="支持中文吗？")
             db.add(m)
             db.commit()
             mid = m.id
         finally:
             db.close()
         r = client.post(f"/api/v1/analytics/messages/{mid}/reply",
-                       json={"reply": "回复"}, headers=_h(accounts["user"]))
-        assert r.status_code == 403
-
-    def test_admin_reply(self, accounts):
-        db = SessionLocal()
-        try:
-            m = Message(guest_name="g", content="c")
-            db.add(m)
-            db.commit()
-            mid = m.id
-        finally:
-            db.close()
-        r = client.post(f"/api/v1/analytics/messages/{mid}/reply",
-                       json={"reply": "官方回复"},
-                       headers=_h(accounts["admin"]))
+                       json={"reply": "支持，界面可切换中英文。"},
+                       headers=_h(accounts["super"]))
         assert r.status_code == 200
+        db = SessionLocal()
+        try:
+            msg = db.query(Message).filter(Message.id == mid).first()
+            assert msg.reply == "支持，界面可切换中英文。"
+            assert msg.replied_at is not None
+        finally:
+            db.close()
+        item = next(m for m in client.get("/api/v1/analytics/messages")
+                    .json()["items"] if m["id"] == mid)
+        assert item["is_official"] is True
+
+    def test_guest_reply_creates_thread(self, accounts):
+        """游客回复 → 落子帖 + 自动建档 guest 账户"""
+        db = SessionLocal()
+        try:
+            m = Message(guest_name="g", content="这个设计很专业")
+            db.add(m)
+            db.commit()
+            pid = m.id
+        finally:
+            db.close()
+        r = client.post(f"/api/v1/analytics/messages/{pid}/reply",
+                       json={"reply": "谢谢！",
+                             "guest_name": "访客B",
+                             "visitor_id": "vis-test-001"})
+        assert r.status_code in (200, 201)
+        db = SessionLocal()
+        try:
+            child = db.query(Message).filter(
+                Message.parent_id == pid).first()
+            assert child is not None
+            assert child.guest_name == "访客B"
+            assert child.user_id is not None  # 游客已自动建档
+        finally:
+            db.close()
+
+    def test_logged_user_reply_creates_thread(self, accounts):
+        """登录用户回复 → 落子帖，guest_name 取用户名"""
+        db = SessionLocal()
+        try:
+            m = Message(guest_name="g", content="话题")
+            db.add(m)
+            db.commit()
+            pid = m.id
+        finally:
+            db.close()
+        r = client.post(f"/api/v1/analytics/messages/{pid}/reply",
+                       json={"reply": "同意"},
+                       headers=_h(accounts["user"]))
+        assert r.status_code in (200, 201)
+        db = SessionLocal()
+        try:
+            child = db.query(Message).filter(
+                Message.parent_id == pid).first()
+            assert child is not None
+            assert child.user_id == accounts["user"].id
+        finally:
+            db.close()
+
+    def test_like_increments(self, accounts):
+        db = SessionLocal()
+        try:
+            m = Message(guest_name="g", content="点赞测试")
+            db.add(m)
+            db.commit()
+            mid = m.id
+        finally:
+            db.close()
+        for i in range(3):
+            r = client.post(f"/api/v1/analytics/messages/{mid}/like")
+            assert r.status_code == 200
+            assert r.json()["likes_count"] == i + 1
+
+    def test_hide_requires_super(self, accounts):
+        db = SessionLocal()
+        try:
+            m = Message(guest_name="g", content="垃圾广告")
+            db.add(m)
+            db.commit()
+            mid = m.id
+        finally:
+            db.close()
+        # 普通用户无权隐藏
+        assert client.post(f"/api/v1/analytics/messages/{mid}/hide",
+                          headers=_h(accounts["user"])).status_code == 403
+        # 超管可隐藏
+        assert client.post(f"/api/v1/analytics/messages/{mid}/hide",
+                          headers=_h(accounts["super"])).status_code == 200
+        items = client.get("/api/v1/analytics/messages").json()["items"]
+        assert not any(m["id"] == mid for m in items)
 
 
 # ── 外部引用 ─────────────────────────────────
@@ -226,7 +316,7 @@ class TestReferences:
         assert "https://b/2" in urls
         assert "https://a/1" not in urls
 
-    def test_admin_verify_toggle(self, accounts):
+    def test_super_verify_toggle(self, accounts):
         db = SessionLocal()
         try:
             ref = ExternalReference(source_url="https://c/3",
@@ -237,15 +327,30 @@ class TestReferences:
         finally:
             db.close()
         r = client.post(f"/api/v1/analytics/references/{rid}/verify",
-                       headers=_h(accounts["admin"]))
+                       headers=_h(accounts["super"]))
         assert r.json()["verified"] is True
+
+    def test_admin_verify_denied(self, accounts):
+        """普通管理员无权核验引用（仅 superadmin）"""
+        db = SessionLocal()
+        try:
+            ref = ExternalReference(source_url="https://d/4",
+                                    source_platform="公众号", verified=False)
+            db.add(ref)
+            db.commit()
+            rid = ref.id
+        finally:
+            db.close()
+        r = client.post(f"/api/v1/analytics/references/{rid}/verify",
+                       headers=_h(accounts["admin"]))
+        assert r.status_code == 403
 
     def test_guest_verify_denied(self, accounts):
         assert client.post(
             "/api/v1/analytics/references/1/verify").status_code == 401
 
 
-# ── 管理员分析端点 RBAC ──────────────────────
+# ── 分析端点 RBAC（仅超级管理员） ─────────────
 
 class TestAdminEndpoints:
     @pytest.mark.parametrize("path", [
@@ -267,16 +372,25 @@ class TestAdminEndpoints:
         r = client.get(path, headers=_h(accounts["user"]))
         assert r.status_code == 403
 
-    def test_admin_overview_ok(self, accounts):
+    @pytest.mark.parametrize("path", [
+        "/api/v1/analytics/overview",
+        "/api/v1/analytics/references/all",
+    ])
+    def test_admin_403(self, accounts, path):
+        """普通管理员也无权访问证据分析（仅 superadmin）"""
+        r = client.get(path, headers=_h(accounts["admin"]))
+        assert r.status_code == 403
+
+    def test_super_overview_ok(self, accounts):
         r = client.get("/api/v1/analytics/overview",
-                      headers=_h(accounts["admin"]))
+                      headers=_h(accounts["super"]))
         assert r.status_code == 200
         assert {"today", "last_7d", "last_30d"} <= set(r.json())
 
     def test_visits_series_gap_filled(self, accounts):
         r = client.get("/api/v1/analytics/visits",
                       params={"granularity": "day", "days": 14},
-                      headers=_h(accounts["admin"]))
+                      headers=_h(accounts["super"]))
         # 14 天完整序列（含补零）
         assert len(r.json()["series"]) == 15
 
@@ -289,25 +403,31 @@ class TestExport:
                       params={"dataset": "visits", "days": 7})
         assert r.status_code == 401
 
-    def test_admin_csv_export(self, accounts):
+    def test_admin_export_denied(self, accounts):
         r = client.get("/api/v1/analytics/export",
                       params={"dataset": "visits", "days": 7, "fmt": "csv"},
                       headers=_h(accounts["admin"]))
+        assert r.status_code == 403
+
+    def test_super_csv_export(self, accounts):
+        r = client.get("/api/v1/analytics/export",
+                      params={"dataset": "visits", "days": 7, "fmt": "csv"},
+                      headers=_h(accounts["super"]))
         assert r.status_code == 200
         assert "text/csv" in r.headers["content-type"]
         assert "attachment" in r.headers["content-disposition"]
         assert "bucket,pv,uv" in r.text
 
-    def test_admin_json_export(self, accounts):
+    def test_super_json_export(self, accounts):
         r = client.get("/api/v1/analytics/export",
                       params={"dataset": "messages", "days": 7,
                               "fmt": "json"},
-                      headers=_h(accounts["admin"]))
+                      headers=_h(accounts["super"]))
         assert r.status_code == 200
         assert r.json()["dataset"] == "messages"
 
     def test_invalid_dataset(self, accounts):
         r = client.get("/api/v1/analytics/export",
                       params={"dataset": "passwords", "days": 7},
-                      headers=_h(accounts["admin"]))
+                      headers=_h(accounts["super"]))
         assert r.status_code == 422
