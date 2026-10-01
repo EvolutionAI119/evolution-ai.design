@@ -36,8 +36,9 @@ from .config import settings
 from .database import init_db
 from .rate_limit import limiter
 from .routes import (
-    admin, ai, auth, bayes, build, car, export, import_export, llm_proxy,
-    model, modify, project, quality, training, texture, variant, workflow,
+    admin, ai, analytics, auth, bayes, build, car, export, import_export,
+    llm_proxy, model, modify, project, quality, training, texture, variant,
+    workflow,
 )
 
 
@@ -361,6 +362,7 @@ def create_app() -> FastAPI:
     app.include_router(bayes.router, tags=["贝叶斯优化"])
     app.include_router(import_export.router, tags=["导入改参导出"])
     app.include_router(texture.router, tags=["参数化纹理设计"])
+    app.include_router(analytics.router)
     app.include_router(admin.router)
 
     # =====================================================================

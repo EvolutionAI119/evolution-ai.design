@@ -124,12 +124,14 @@ import { useI18n } from 'vue-i18n'
 import {
   Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
   Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton, QuestionFilled,
+  TrendCharts,
   Lock, Setting,
 } from '@element-plus/icons-vue'
 // Element Plus 内置语言包
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import enLocale from 'element-plus/dist/locale/en.mjs'
 import { useAuthStore } from './stores/auth'
+import { tracker } from './utils/tracker'
 
 const route = useRoute()
 const router = useRouter()
@@ -210,10 +212,13 @@ onMounted(() => {
   // 登录态仅存内存（会话级），页面打开时不恢复任何历史凭据
   // 全局登录引导事件（api.js 401 拦截与业务页动作拦截共用）
   window.addEventListener('evoai:auth-required', onAuthRequired)
+  // 启动访问埋点（路由切换自动上报 + 停留时长）
+  tracker.start(router)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('evoai:auth-required', onAuthRequired)
+  tracker.stop()
 })
 
 const baseMenuGroups = [
@@ -243,6 +248,7 @@ const baseMenuGroups = [
     items: [
       { path: '/demo', nameKey: 'menu.demo', icon: VideoPlay },
       { path: '/help', nameKey: 'menu.help', icon: QuestionFilled },
+      { path: '/analytics', nameKey: 'menu.analytics', icon: TrendCharts },
       { path: '/account', nameKey: 'menu.account', icon: UserFilled }
     ]
   }

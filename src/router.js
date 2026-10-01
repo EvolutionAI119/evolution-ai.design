@@ -12,6 +12,9 @@ const routes = [
   { path: '/deliver', name: 'Deliver', component: () => import('./views/Deliver.vue') },
   { path: '/demo', name: 'Demo', component: () => import('./views/Demo.vue') },
   { path: '/help', name: 'Help', component: () => import('./views/Help.vue') },
+  // 影响证据看板（公开页，页内按角色区分数据与管理功能）
+  { path: '/analytics', name: 'Analytics',
+    component: () => import('./views/Analytics.vue') },
   // 账户体系
   {
     path: '/login', name: 'Login',

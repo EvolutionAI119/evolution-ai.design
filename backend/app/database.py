@@ -238,6 +238,60 @@ class TrainingTask(Base):
     completed_at = Column(DateTime, nullable=True)
 
 
+class PageView(Base):
+    """页面访问记录（可验证的访问证据）：
+
+    每次页面进入落地一行；页面离开时由前端 beacon 回填停留时长。
+    visitor_id 为前端生成的跨会话访客标识（localStorage 持久化），
+    用于独立访客数（UV）去重；user_id 在登录时关联，用于用户级分析。
+    """
+    __tablename__ = "page_views"
+    id = Column(Integer, primary_key=True, index=True)
+    visitor_id = Column(String(64), index=True, nullable=False)
+    session_id = Column(String(64), index=True, nullable=False)
+    path = Column(String(300), nullable=False, index=True)
+    referrer = Column(String(500), nullable=True)
+    ip = Column(String(64), nullable=True)
+    user_agent = Column(String(300), nullable=True)
+    duration_seconds = Column(Integer, default=0)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Message(Base):
+    """访客留言（留言互动证据）：支持管理员回复，回复率据此统计。"""
+    __tablename__ = "messages"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    guest_name = Column(String(100), nullable=False)
+    content = Column(Text, nullable=False)
+    contact = Column(String(200), nullable=True)
+    reply = Column(Text, nullable=True)
+    replied_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    replied_at = Column(DateTime, nullable=True)
+    is_hidden = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class ExternalReference(Base):
+    """外部引用记录（影响扩散证据）：网站内容被外部平台引用/转载。
+
+    由访客提交或管理员录入，verified=True 表示已人工核验，
+    公开页只展示已核验记录，保证可验证性。
+    """
+    __tablename__ = "external_references"
+    id = Column(Integer, primary_key=True, index=True)
+    source_url = Column(String(600), nullable=False)
+    source_platform = Column(String(100), nullable=False, index=True)
+    target_path = Column(String(300), nullable=True)
+    title = Column(String(300), nullable=True)
+    note = Column(Text, nullable=True)
+    verified = Column(Boolean, default=False, index=True)
+    verified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 def init_db():
     """创建所有表"""
     Base.metadata.create_all(bind=engine)

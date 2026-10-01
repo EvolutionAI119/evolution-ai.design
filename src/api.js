@@ -442,4 +442,48 @@ export const adminAPI = {
     api.get('/admin/backend-errors', { params: { lines } })
 }
 
+// 可验证的影响证据 · 数据收集与统计 API
+export const analyticsAPI = {
+  // 埋点
+  track: (data) => api.post('/analytics/track', data),
+  duration: (viewId, seconds) =>
+    api.post('/analytics/track/duration',
+             { view_id: viewId, duration_seconds: seconds }),
+  // 公开汇总（最长 90 天）
+  publicSummary: (granularity = 'day', days = 30) =>
+    api.get('/analytics/public-summary',
+            { params: { granularity, days } }),
+  // 留言
+  listMessages: (page = 1, pageSize = 10) =>
+    api.get('/analytics/messages',
+            { params: { page, page_size: pageSize } }),
+  createMessage: (data) => api.post('/analytics/messages', data),
+  replyMessage: (id, reply) =>
+    api.post(`/analytics/messages/${id}/reply`, { reply }),
+  hideMessage: (id) => api.post(`/analytics/messages/${id}/hide`),
+  // 外部引用
+  listReferences: (limit = 20) =>
+    api.get('/analytics/references', { params: { limit } }),
+  submitReference: (data) => api.post('/analytics/references', data),
+  listAllReferences: (params = {}) =>
+    api.get('/analytics/references/all', { params }),
+  verifyReference: (id) =>
+    api.post(`/analytics/references/${id}/verify`),
+  // 管理员分析
+  overview: () => api.get('/analytics/overview'),
+  visits: (granularity, days) =>
+    api.get('/analytics/visits',
+            { params: { granularity, days } }),
+  registrations: (granularity, days) =>
+    api.get('/analytics/registrations',
+            { params: { granularity, days } }),
+  interactions: (granularity, days) =>
+    api.get('/analytics/interactions',
+            { params: { granularity, days } }),
+  // 数据导出（路径相对 axios baseURL，配合 responseType blob 下载）
+  exportPath: (dataset, granularity, days, fmt) =>
+    `/analytics/export?dataset=${dataset}` +
+    `&granularity=${granularity}&days=${days}&fmt=${fmt}`
+}
+
 export default api
