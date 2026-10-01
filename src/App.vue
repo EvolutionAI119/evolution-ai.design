@@ -55,7 +55,60 @@
             <div class="theme-toggle" @click="toggleTheme" :title="isDark ? t('menu.lightMode') : t('menu.darkMode')">
               <el-icon class="header-icon"><component :is="isDark ? Moon : Sunny" /></el-icon>
             </div>
-            <el-icon class="header-icon"><Bell /></el-icon>
+
+            <!-- 通知中心（仅登录用户） -->
+            <el-popover
+              v-if="auth.isAuthenticated"
+              v-model:visible="notifVisible"
+              placement="bottom-end"
+              :width="360"
+              trigger="click"
+              popper-class="notif-popper"
+              @show="loadNotifications"
+            >
+              <template #reference>
+                <div class="notif-trigger">
+                  <el-badge
+                    :value="unreadCount"
+                    :hidden="unreadCount === 0"
+                    :max="99"
+                  >
+                    <el-icon class="header-icon"><Bell /></el-icon>
+                  </el-badge>
+                </div>
+              </template>
+              <div class="notif-panel">
+                <div class="notif-header">
+                  <span class="notif-title">{{ t('notify.title') }}</span>
+                  <el-button
+                    v-if="unreadCount > 0"
+                    size="small" text type="primary"
+                    @click="readAll"
+                  >{{ t('notify.readAll') }}</el-button>
+                </div>
+                <div class="notif-list" v-loading="notifLoading">
+                  <el-empty
+                    v-if="!notifications.length && !notifLoading"
+                    :description="t('notify.empty')"
+                    :image-size="60"
+                  />
+                  <div
+                    v-for="n in notifications"
+                    :key="n.id"
+                    class="notif-item"
+                    :class="{ unread: !n.is_read }"
+                    @click="openNotification(n)"
+                  >
+                    <span class="notif-dot" v-if="!n.is_read"></span>
+                    <div class="notif-body">
+                      <div class="notif-item-title">{{ n.title }}</div>
+                      <div class="notif-item-text" v-if="n.body">{{ n.body }}</div>
+                      <div class="notif-time">{{ formatNotifTime(n.created_at) }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </el-popover>
 
             <!-- 已登录：用户菜单；未登录：登录入口 -->
             <el-dropdown
@@ -131,6 +184,7 @@ import {
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import enLocale from 'element-plus/dist/locale/en.mjs'
 import { useAuthStore } from './stores/auth'
+import { analyticsAPI } from './api'
 import { tracker } from './utils/tracker'
 
 const route = useRoute()
@@ -202,6 +256,60 @@ const changeLanguage = (lang) => {
 // Element Plus 组件语言（分页、日历、校验提示等）
 const elementLocale = computed(() => (locale.value === 'zh' ? zhCn : enLocale))
 
+// ── 通知中心（登录用户） ──────────────────────
+const notifVisible = ref(false)
+const notifLoading = ref(false)
+const notifications = ref([])
+const unreadCount = ref(0)
+let notifTimer = null
+
+const formatNotifTime = (iso) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+         `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const pollUnreadCount = async () => {
+  if (!auth.isAuthenticated) return
+  try {
+    const { data } = await analyticsAPI.unreadCount()
+    unreadCount.value = data.unread_count
+  } catch { /* 静默失败，不打断用户 */ }
+}
+
+const loadNotifications = async () => {
+  notifLoading.value = true
+  try {
+    const { data } = await analyticsAPI.listNotifications(20)
+    notifications.value = data.items
+    unreadCount.value = data.unread_count
+  } catch { /* 静默 */ } finally {
+    notifLoading.value = false
+  }
+}
+
+const openNotification = async (n) => {
+  if (!n.is_read) {
+    try {
+      await analyticsAPI.markNotificationRead(n.id)
+      n.is_read = true
+      unreadCount.value = Math.max(0, unreadCount.value - 1)
+    } catch { /* 静默 */ }
+  }
+  notifVisible.value = false
+  if (n.link) router.push(n.link)
+}
+
+const readAll = async () => {
+  try {
+    await analyticsAPI.markAllNotificationsRead()
+    notifications.value.forEach((n) => { n.is_read = true })
+    unreadCount.value = 0
+  } catch { /* 静默 */ }
+}
+
 onMounted(() => {
   const saved = localStorage.getItem('theme')
   if (saved === 'light') {
@@ -214,11 +322,15 @@ onMounted(() => {
   window.addEventListener('evoai:auth-required', onAuthRequired)
   // 启动访问埋点（路由切换自动上报 + 停留时长）
   tracker.start(router)
+  // 通知未读数轮询（60s）
+  pollUnreadCount()
+  notifTimer = setInterval(pollUnreadCount, 60000)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('evoai:auth-required', onAuthRequired)
   tracker.stop()
+  if (notifTimer) clearInterval(notifTimer)
 })
 
 const baseMenuGroups = [
@@ -499,6 +611,67 @@ body {
 }
 
 .header-icon:hover { color: var(--icon-hover); }
+
+/* 通知中心 */
+.notif-trigger { display: flex; align-items: center; cursor: pointer; }
+
+.notif-panel { display: flex; flex-direction: column; }
+
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
+}
+
+.notif-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+
+.notif-list {
+  max-height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.notif-item:hover { background: rgba(255, 255, 255, 0.04); }
+html.light-theme .notif-item:hover { background: rgba(0, 0, 0, 0.04); }
+
+.notif-item.unread .notif-item-title { font-weight: 700; }
+
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.notif-body { flex: 1; min-width: 0; }
+.notif-item-title { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+.notif-item-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.notif-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
 /* 用户芯片 */
 .user-chip {

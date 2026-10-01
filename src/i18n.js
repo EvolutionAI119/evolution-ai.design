@@ -702,6 +702,11 @@ const zh = {
     refDuplicate: '该引用已登记，无需重复提交',
     refSubmitted: '线索已提交，等待管理员核验'
   },
+  notify: {
+    title: '通知',
+    readAll: '全部已读',
+    empty: '暂无通知',
+  },
   analytics: {
     title: '可验证的影响证据',
     subtitle: '访问 · 注册 · 互动 · 外部引用 —— 全部指标基于服务端原始记录聚合，可核验、可导出、按角色授权',
@@ -1461,6 +1466,11 @@ const en = {
     loadFailed: 'Failed to load',
     refDuplicate: 'This reference is already registered',
     refSubmitted: 'Lead submitted and pending verification'
+  },
+  notify: {
+    title: 'Notifications',
+    readAll: 'Mark all read',
+    empty: 'No notifications yet',
   },
   analytics: {
     title: 'Verifiable Impact Evidence',

@@ -14,8 +14,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.database import (ExternalReference, Message, PageView, SessionLocal,
-                          User, init_db)
+from app.database import (ExternalReference, Message, Notification, PageView,
+                          SessionLocal, User, init_db)
 from app.security import create_access_token, hash_password
 
 client = TestClient(app)
@@ -48,6 +48,11 @@ def accounts():
         yield users
         for model in (PageView, Message, ExternalReference):
             db.query(model).delete()
+        # 清理测试账户及其通知（通知表按 user_id 关联）
+        test_ids = [u.id for u in users.values()]
+        db.query(Notification).filter(
+            Notification.user_id.in_(test_ids)).delete(
+            synchronize_session=False)
         db.query(User).filter(User.email.in_(TEST_EMAILS)).delete()
         db.query(User).filter(
             User.email.like("guest_%@guest.evoai.local")).delete()
@@ -431,3 +436,88 @@ class TestExport:
                       params={"dataset": "passwords", "days": 7},
                       headers=_h(accounts["super"]))
         assert r.status_code == 422
+
+
+# ── 站内通知 ─────────────────────────────────
+
+class TestNotifications:
+    def _make_post_by(self, user):
+        db = SessionLocal()
+        try:
+            m = Message(user_id=user.id, guest_name=user.username,
+                        content="通知测试帖")
+            db.add(m)
+            db.commit()
+            mid = m.id
+        finally:
+            db.close()
+        return mid
+
+    def test_reply_notifies_post_owner(self, accounts):
+        pid = self._make_post_by(accounts["user"])
+        # 另一个用户回复
+        r = client.post(f"/api/v1/analytics/messages/{pid}/reply",
+                       json={"reply": "好观点"},
+                       headers=_h(accounts["admin"]))
+        assert r.status_code in (200, 201)
+        # 帖主收到通知
+        r = client.get("/api/v1/analytics/notifications",
+                      headers=_h(accounts["user"]))
+        assert r.json()["unread_count"] >= 1
+        assert any(n["type"] == "community_reply"
+                  for n in r.json()["items"])
+        # 回复者无新通知
+        r = client.get("/api/v1/analytics/notifications/unread-count",
+                      headers=_h(accounts["admin"]))
+        assert r.json()["unread_count"] == 0
+
+    def test_official_reply_type(self, accounts):
+        pid = self._make_post_by(accounts["user"])
+        client.post(f"/api/v1/analytics/messages/{pid}/reply",
+                   json={"reply": "官方答复"},
+                   headers=_h(accounts["super"]))
+        r = client.get("/api/v1/analytics/notifications",
+                      headers=_h(accounts["user"]))
+        assert any(n["type"] == "official_reply"
+                  for n in r.json()["items"])
+
+    def test_read_and_read_all(self, accounts):
+        pid = self._make_post_by(accounts["user"])
+        client.post(f"/api/v1/analytics/messages/{pid}/reply",
+                   json={"reply": "r1"}, headers=_h(accounts["admin"]))
+        h = _h(accounts["user"])
+        r = client.get("/api/v1/analytics/notifications", headers=h)
+        nid = r.json()["items"][0]["id"]
+        assert client.post(
+            f"/api/v1/analytics/notifications/{nid}/read",
+            headers=h).status_code == 200
+        r = client.get("/api/v1/analytics/notifications/unread-count",
+                      headers=h)
+        assert r.json()["unread_count"] == 0
+
+    def test_guest_denied(self, accounts):
+        assert client.get(
+            "/api/v1/analytics/notifications").status_code == 401
+
+    def test_verify_notifies_submitter(self, accounts):
+        # 登录用户提交引用线索
+        h = _h(accounts["user"])
+        client.post("/api/v1/analytics/references",
+                   json={"source_url": "https://notify-test.example/a",
+                         "source_platform": "测试平台"},
+                   headers=h)
+        db = SessionLocal()
+        try:
+            ref = db.query(ExternalReference).filter(
+                ExternalReference.source_url ==
+                "https://notify-test.example/a").first()
+            rid = ref.id
+            assert ref.submitted_by_id == accounts["user"].id
+        finally:
+            db.close()
+        # 超管核验
+        client.post(f"/api/v1/analytics/references/{rid}/verify",
+                   headers=_h(accounts["super"]))
+        r = client.get("/api/v1/analytics/notifications", headers=h)
+        assert any(n["type"] == "reference_verified"
+                  for n in r.json()["items"])

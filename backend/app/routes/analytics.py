@@ -31,10 +31,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session
 
-from ..database import (ExternalReference, Message, PageView, User, get_db)
+from ..database import (ExternalReference, Message, Notification, PageView,
+                        User, get_db)
 from ..rate_limit import limit
-from ..security import (ROLE_SUPERADMIN, ROLE_USER, get_optional_user,
-                        hash_password, require_superadmin)
+from ..security import (ROLE_SUPERADMIN, ROLE_USER, get_current_user,
+                        get_optional_user, hash_password, require_superadmin)
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["影响证据分析"])
 
@@ -420,6 +421,15 @@ def list_messages(page: int = Query(1, ge=1),
     }
 
 
+def _notify(db: Session, user_id: Optional[int], ntype: str,
+            title: str, body: str, link: str = "") -> None:
+    """落地一条站内通知（不通知自己、不通知无账户的游客）。"""
+    if not user_id:
+        return
+    db.add(Notification(user_id=user_id, type=ntype, title=title[:200],
+                        body=body[:2000], link=link[:300]))
+
+
 @router.post("/messages")
 @limit("10/minute")
 def create_message(req: MessageIn, request: Request,
@@ -447,6 +457,7 @@ def reply_message(message_id: int, req: ReplyIn, request: Request,
     """回复帖子（一级嵌套）：登录用户/游客建档均可回复。
 
     超级管理员的回复同时写入父帖 reply 字段，维持回复率统计口径。
+    回复后向帖主发送站内通知（超管回复类型为 official_reply）。
     """
     parent = db.query(Message).filter(
         Message.id == message_id, Message.parent_id.is_(None)).first()
@@ -462,10 +473,23 @@ def reply_message(message_id: int, req: ReplyIn, request: Request,
         parent_id=parent.id,
     )
     db.add(child)
-    if current is not None and getattr(current, "role", "") == ROLE_SUPERADMIN:
+    is_official = (current is not None
+                   and getattr(current, "role", "") == ROLE_SUPERADMIN)
+    if is_official:
         parent.reply = req.reply
         parent.replied_by = current.id
         parent.replied_at = datetime.utcnow()
+    # 通知帖主（不通知自己）
+    replier_id = user.id if user else None
+    if parent.user_id and parent.user_id != replier_id:
+        _notify(
+            db, parent.user_id,
+            "official_reply" if is_official else "community_reply",
+            title=("官方回复了你的帖子" if is_official
+                   else f"{child.guest_name} 回复了你的帖子"),
+            body=req.reply[:300],
+            link="/community",
+        )
     db.commit()
     db.refresh(child)
     return {"id": child.id, "created_at": child.created_at.isoformat()}
@@ -519,7 +543,8 @@ def list_references(limit: int = Query(20, ge=1, le=100),
 @router.post("/references")
 @limit("10/minute")
 def submit_reference(req: ReferenceIn, request: Request,
-                     db: Session = Depends(get_db)):
+                     db: Session = Depends(get_db),
+                     current: Optional[User] = Depends(get_optional_user)):
     """提交外部引用线索（默认未核验，不进入公开列表）。"""
     if not req.source_url.startswith(("http://", "https://")):
         raise HTTPException(status_code=422, detail="source_url 必须为合法链接")
@@ -533,6 +558,7 @@ def submit_reference(req: ReferenceIn, request: Request,
         source_platform=req.source_platform,
         target_path=req.target_path,
         title=req.title,
+        submitted_by_id=current.id if current else None,
     )
     db.add(ref)
     db.commit()
@@ -576,6 +602,13 @@ def verify_reference(reference_id: int,
     if ref.verified:
         ref.verified_by = current.id
         ref.verified_at = datetime.utcnow()
+        if ref.submitted_by_id:
+            _notify(
+                db, ref.submitted_by_id, "reference_verified",
+                title="你提交的外部引用已通过核验",
+                body=f"平台 {ref.source_platform} 的引用已收录到影响证据。",
+                link="/community",
+            )
     db.commit()
     return {"ok": True, "verified": ref.verified}
 
@@ -745,6 +778,74 @@ def interactions_analysis(granularity: str = Query("day"),
         "series": series,
         "reply_rate": round(total_reply / total_msg, 3) if total_msg else 0,
     }
+
+
+# ───────────────────────────────────────────────────────────
+# 5.5) 站内通知（登录用户收件箱）
+# ───────────────────────────────────────────────────────────
+
+def _notification_out(n: Notification) -> dict:
+    return {
+        "id": n.id,
+        "type": n.type,
+        "title": n.title,
+        "body": n.body,
+        "link": n.link,
+        "is_read": n.is_read,
+        "created_at": n.created_at.isoformat(),
+    }
+
+
+@router.get("/notifications")
+def list_notifications(limit: int = Query(20, ge=1, le=100),
+                       db: Session = Depends(get_db),
+                       current: User = Depends(get_current_user)):
+    """我的通知列表 + 未读数（按时间倒序）。"""
+    base = db.query(Notification).filter(
+        Notification.user_id == current.id)
+    unread = base.filter(Notification.is_read.is_(False)).count()
+    rows = base.order_by(Notification.created_at.desc()).limit(limit).all()
+    return {
+        "unread_count": unread,
+        "items": [_notification_out(n) for n in rows],
+    }
+
+
+@router.get("/notifications/unread-count")
+def unread_count(db: Session = Depends(get_db),
+                 current: User = Depends(get_current_user)):
+    """未读数（轻量轮询端点）。"""
+    count = db.query(func.count(Notification.id)).filter(
+        Notification.user_id == current.id,
+        Notification.is_read.is_(False)).scalar()
+    return {"unread_count": int(count or 0)}
+
+
+@router.post("/notifications/{notification_id}/read")
+def mark_notification_read(notification_id: int,
+                           db: Session = Depends(get_db),
+                           current: User = Depends(get_current_user)):
+    """标记单条已读（仅本人）。"""
+    n = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current.id).first()
+    if n is None:
+        raise HTTPException(status_code=404, detail="通知不存在")
+    n.is_read = True
+    db.commit()
+    return {"ok": True}
+
+
+@router.post("/notifications/read-all")
+def mark_all_read(db: Session = Depends(get_db),
+                  current: User = Depends(get_current_user)):
+    """全部标记已读。"""
+    db.query(Notification).filter(
+        Notification.user_id == current.id,
+        Notification.is_read.is_(False)
+    ).update({"is_read": True}, synchronize_session=False)
+    db.commit()
+    return {"ok": True}
 
 
 # ───────────────────────────────────────────────────────────

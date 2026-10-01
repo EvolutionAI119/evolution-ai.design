@@ -297,6 +297,27 @@ class ExternalReference(Base):
     verified = Column(Boolean, default=False, index=True)
     verified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     verified_at = Column(DateTime, nullable=True)
+    submitted_by_id = Column(Integer, ForeignKey("users.id"),
+                             nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Notification(Base):
+    """站内通知：社区互动与引用核验等事件的收件箱。
+
+    type 取值：community_reply（帖子被回复）、official_reply（官方回复）、
+    reference_verified（提交的引用线索已核验）。
+    link 为前端跳转路径（hash 路由内路径）。
+    """
+    __tablename__ = "notifications"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False,
+                     index=True)
+    type = Column(String(30), nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    body = Column(Text, nullable=True)
+    link = Column(String(300), nullable=True)
+    is_read = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
 
@@ -306,6 +327,22 @@ def init_db():
     _migrate_wechat_columns()
     _migrate_role_and_project_owner()
     _migrate_message_community_columns()
+    _migrate_reference_submitter_column()
+
+
+def _migrate_reference_submitter_column():
+    """向已存在的 external_references 表补充 submitted_by_id（线索提交者）。"""
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    if "external_references" not in inspector.get_table_names():
+        return
+    existing = {col["name"] for col in
+                inspector.get_columns("external_references")}
+    if "submitted_by_id" not in existing:
+        with engine.begin() as conn:
+            conn.execute(text(
+                "ALTER TABLE external_references "
+                "ADD COLUMN submitted_by_id INTEGER"))
 
 
 def _migrate_message_community_columns():

@@ -461,7 +461,14 @@ export const analyticsAPI = {
   replyMessage: (id, data) =>
     api.post(`/analytics/messages/${id}/reply`, data),
   likeMessage: (id) => api.post(`/analytics/messages/${id}/like`),
-  hideMessage: (id) => api.post(`/analytics/messages/${id}/hide`),
+  // 站内通知（登录用户）
+  listNotifications: (limit = 20) =>
+    api.get('/analytics/notifications', { params: { limit } }),
+  unreadCount: () => api.get('/analytics/notifications/unread-count'),
+  markNotificationRead: (id) =>
+    api.post(`/analytics/notifications/${id}/read`),
+  markAllNotificationsRead: () =>
+    api.post('/analytics/notifications/read-all'),
   // 外部引用
   listReferences: (limit = 20) =>
     api.get('/analytics/references', { params: { limit } }),
