@@ -6,6 +6,7 @@ import i18n from './i18n'
 const routes = [
   { path: '/', name: 'Dashboard', component: () => import('./views/Dashboard.vue') },
   { path: '/designer', name: 'Designer', component: () => import('./views/Designer.vue') },
+  { path: '/copilot', name: 'DesignCopilot', component: () => import('./views/DesignCopilot.vue') },
   { path: '/projects', name: 'Projects', component: () => import('./views/Projects.vue') },
   { path: '/projects/:id', name: 'ProjectDetail', component: () => import('./views/ProjectDetail.vue') },
   { path: '/deep-learning', name: 'DeepLearning', component: () => import('./views/DeepLearning.vue') },

@@ -4,7 +4,7 @@
 // 从而断言 method/url/请求体以及 Authorization 头；错误路径模拟上游 401。
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import api, {
-  aiAPI, apiKeyAPI, authAPI, bayesAPI, llmAPI, modifyAPI, setApiToken
+  aiAPI, apiKeyAPI, authAPI, bayesAPI, designIntentAPI, llmAPI, modifyAPI, setApiToken
 } from '../api'
 
 describe('API 路径与后端路由契约', () => {
@@ -135,6 +135,17 @@ describe('API 路径与后端路由契约', () => {
     await bayesAPI.deleteSession('abc')
     expect(captured.method).toBe('delete')
     expect(captured.url).toBe('/bayes/sessions/abc')
+  })
+
+  it('designIntentAPI 意图引擎端点与后端一致并携带正确请求体', async () => {
+    await designIntentAPI.parse('一台运动轿跑')
+    expect(captured.method).toBe('post')
+    expect(captured.url).toBe('/design-intent/parse')
+    expect(JSON.parse(captured.data)).toEqual({ prompt: '一台运动轿跑' })
+
+    await designIntentAPI.examples()
+    expect(captured.method).toBe('get')
+    expect(captured.url).toBe('/design-intent/examples')
   })
 })
 

@@ -178,7 +178,7 @@ import {
   Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
   Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton, QuestionFilled,
   ChatDotRound,
-  Lock, Setting,
+  Lock, Setting, Promotion,
 } from '@element-plus/icons-vue'
 // Element Plus 内置语言包
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
@@ -349,6 +349,7 @@ const baseMenuGroups = [
   {
     labelKey: 'menu.groupDesign',
     items: [
+      { path: '/copilot', nameKey: 'menu.copilot', icon: Promotion },
       { path: '/designer', nameKey: 'menu.aiDesigner', icon: Brush },
       { path: '/projects', nameKey: 'menu.projects', icon: Folder },
       { path: '/deep-learning', nameKey: 'menu.deepLearning', icon: MagicStick }

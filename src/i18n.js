@@ -13,6 +13,7 @@ const zh = {
   },
   menu: {
     dashboard: '仪表盘', aiDesigner: 'AI 设计器', projects: '项目管理',
+    copilot: 'AI 设计副驾',
     deepLearning: '深度学习设计器', quality: '质量检查', deliver: '数据交付', demo: 'DEMO 演示',
     account: '账户设置', help: '帮助中心', community: 'Evolution-ai Community',
     groupHome: '', groupDesign: '设计', groupWorkflow: '工作流',
@@ -443,6 +444,25 @@ const zh = {
       drag_coefficient: '风阻系数'
     }
   },
+  copilot: {
+    title: 'AI 设计副驾',
+    subtitle: '用一句话描述想要的车，AI 为你生成完整整车设计方案',
+    placeholder: '例如：我要一台运动感强、风阻低的深色轿跑，适合城市通勤',
+    generate: '生成设计方案',
+    ctrlEnter: 'Ctrl + Enter 快速生成',
+    examples: '试试这些',
+    confidence: '意图把握',
+    success: '方案生成成功',
+    failed: '生成失败，请稍后重试',
+    warnings: '服务端修正提示',
+    apply: '应用到设计器',
+    applied: '方案已应用，正在进入设计器',
+    copy: '复制参数 JSON',
+    copied: '已复制到剪贴板',
+    copyFailed: '剪贴板不可用，请手动选择',
+    groupSize: '整车尺寸', groupBody: '车身部件',
+    groupAngle: '角度', groupOverhang: '悬伸'
+  },
   common: {
     ok: '确定', cancel: '取消', delete: '删除', edit: '编辑', detail: '详情', search: '搜索', filter: '筛选',
     submit: '提交', reset: '重置', create: '创建', update: '更新', save: '保存', yes: '是', no: '否',
@@ -767,6 +787,7 @@ const en = {
   },
   menu: {
     dashboard: 'Dashboard', aiDesigner: 'AI Designer', projects: 'Projects',
+    copilot: 'AI Design Copilot',
     deepLearning: 'Deep Learning', quality: 'Quality', deliver: 'Deliver', demo: 'DEMO',
     account: 'Account', help: 'Help Center', community: 'Evolution-ai Community',
     groupHome: '', groupDesign: 'Design', groupWorkflow: 'Workflow',
@@ -1196,6 +1217,25 @@ const en = {
       aerodynamic_score: 'Aerodynamics', manufacturability_score: 'Manufacturability',
       drag_coefficient: 'Drag coefficient'
     }
+  },
+  copilot: {
+    title: 'AI Design Copilot',
+    subtitle: 'Describe the car you want in one sentence; AI generates a complete design plan',
+    placeholder: 'e.g. A dark, sporty coupe with low drag for city commuting',
+    generate: 'Generate plan',
+    ctrlEnter: 'Ctrl + Enter to generate',
+    examples: 'Try these',
+    confidence: 'Intent match',
+    success: 'Plan generated',
+    failed: 'Generation failed, please retry later',
+    warnings: 'Server-side corrections',
+    apply: 'Apply to designer',
+    applied: 'Plan applied, opening designer',
+    copy: 'Copy params JSON',
+    copied: 'Copied to clipboard',
+    copyFailed: 'Clipboard unavailable, select manually',
+    groupSize: 'Dimensions', groupBody: 'Body parts',
+    groupAngle: 'Angles', groupOverhang: 'Overhangs'
   },
   common: {
     ok: 'OK', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', detail: 'Detail', search: 'Search', filter: 'Filter',

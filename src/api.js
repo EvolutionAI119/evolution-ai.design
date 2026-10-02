@@ -503,4 +503,10 @@ export const analyticsAPI = {
     `&granularity=${granularity}&days=${days}&fmt=${fmt}`
 }
 
+// AI 设计意图引擎：自然语言 → 结构化整车方案
+export const designIntentAPI = {
+  parse: (prompt) => api.post('/design-intent/parse', { prompt }),
+  examples: () => api.get('/design-intent/examples')
+}
+
 export default api

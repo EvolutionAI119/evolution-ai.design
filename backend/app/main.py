@@ -36,9 +36,9 @@ from .config import settings
 from .database import init_db
 from .rate_limit import limiter
 from .routes import (
-    admin, ai, analytics, auth, bayes, build, car, export, import_export,
-    llm_proxy, model, modify, project, quality, training, texture, variant,
-    workflow,
+    admin, ai, analytics, auth, bayes, build, car, design_intent, export,
+    import_export, llm_proxy, model, modify, project, quality, training,
+    texture, variant, workflow,
 )
 
 
@@ -364,6 +364,7 @@ def create_app() -> FastAPI:
     app.include_router(texture.router, tags=["参数化纹理设计"])
     app.include_router(analytics.router)
     app.include_router(admin.router)
+    app.include_router(design_intent.router, tags=["AI 设计意图引擎"])
 
     # =====================================================================
     # 异常处理器：兜底补上 CORS 头（CORSMiddleware 对 404/405/校验失败可能没生效）
