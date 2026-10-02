@@ -38,6 +38,15 @@ function Wait-Port {
     return $false
 }
 
+# 命令行级进程探测：reload 父进程在重启 server 子进程的瞬间端口短暂空闲，
+# 仅靠端口检查会重复启动（曾出现两个 start.py 并存、请求随机分流）。
+function Find-ServiceProc {
+    param([string]$Pattern)
+    $items = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -and $_.CommandLine -match $Pattern })
+    return $items
+}
+
 # ── cpolar 可执行文件：查找 / 自动安装 ──
 function Find-CpolarExe {
     $cmd = Get-Command cpolar.exe -ErrorAction SilentlyContinue
@@ -77,12 +86,15 @@ function Install-CpolarExe {
 }
 
 # ── 域名提取 / .env 同步（无 BOM UTF-8） ──
+# cpolar 免费域名：兼容各区域后缀（r31.cpolar.top / r7.cpolar.cn 等）
+$DomainPattern = '[a-z0-9]+\.r\d+\.cpolar\.(?:top|cn|com)'
+
 function Get-CpolarDomain {
     for ($i = 0; $i -lt 10; $i++) {
         $raw = & curl.exe -s --max-time 10 http://127.0.0.1:4040/http/in
-        $m = [regex]::Match(($raw -join "`n"), 'https://[a-z0-9]+\.r31\.cpolar\.top')
+        $m = [regex]::Match(($raw -join "`n"), "https://$DomainPattern")
         if ($m.Success) {
-            return [regex]::Match($m.Value, '(?<=https://)[a-z0-9]+\.r31\.cpolar\.top').Value
+            return [regex]::Match($m.Value, "(?<=https://)$DomainPattern").Value
         }
         Start-Sleep -Seconds 1
     }
@@ -91,7 +103,7 @@ function Get-CpolarDomain {
 
 function Get-EnvDomain {
     $text = [System.IO.File]::ReadAllText($envFile)
-    $m = [regex]::Match($text, '(?m)^MP_REDIRECT_URI=https://([a-z0-9]+\.r31\.cpolar\.top)')
+    $m = [regex]::Match($text, "(?m)^MP_REDIRECT_URI=https://($DomainPattern)")
     if ($m.Success) { return $m.Groups[1].Value }
     return $null
 }
@@ -141,30 +153,58 @@ if (-not $NoTunnel) {
 }
 
 # ── 3. 后端（工作目录必须是 backend） ──
-if (-not (Get-PortPid -Port 8000)) {
+$backendProcs = Find-ServiceProc -Pattern 'python.*start\.py'
+if (Get-PortPid -Port 8000) {
+    Write-Host '[backend] 8000 已在监听，跳过'
+}
+elseif ($backendProcs.Count -gt 0) {
+    Write-Host '[backend] start.py 已在运行（reload 重启窗口），等待现有实例 ...'
+}
+else {
     Write-Host '[backend] 启动 python start.py ...'
     Start-Process -FilePath 'python' -ArgumentList 'start.py' `
         -WorkingDirectory $backendDir -WindowStyle Hidden
 }
-else {
-    Write-Host '[backend] 8000 已在监听，跳过'
-}
 if (-not (Wait-Port -Port 8000 -TimeoutSec 30)) {
     throw '后端启动超时（8000 未监听）'
 }
+$backendParents = @(Find-ServiceProc -Pattern 'python.*start\.py')
+if ($backendParents.Count -ne 1) {
+    throw "检测到 $($backendParents.Count) 个 start.py 实例，请先运行 stop_services.ps1 清理"
+}
 
 # ── 4. 前端 ──
-if (-not (Get-PortPid -Port 5173)) {
+$frontendProcs = Find-ServiceProc -Pattern 'vite[/\\]bin[/\\]vite'
+if (Get-PortPid -Port 5173) {
+    Write-Host '[frontend] 5173 已在监听，跳过'
+}
+elseif ($frontendProcs.Count -gt 0) {
+    Write-Host '[frontend] vite 已在运行（启动窗口），等待现有实例 ...'
+}
+else {
     Write-Host '[frontend] 启动 npm run dev ...'
     Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'npm run dev' `
         -WorkingDirectory $projectRoot -WindowStyle Hidden
 }
-else {
-    Write-Host '[frontend] 5173 已在监听，跳过'
-}
 if (-not (Wait-Port -Port 5173 -TimeoutSec 30)) {
     throw '前端启动超时（5173 未监听）'
 }
+
+# ── 4.5 运行时标记：供其他工具识别所有者，避免重复启动/抢占（见 COLLABORATION_PROTOCOL.md） ──
+$runtimeDir = Join-Path $projectRoot '.devservices'
+New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+$tunnelUrl = $null
+if ($domain) { $tunnelUrl = "https://$domain" }
+$runtime = [ordered]@{
+    owner    = 'launch-services-detached'
+    started_at = (Get-Date).ToString('s')
+    backend  = 'http://127.0.0.1:8000/'
+    frontend = 'http://127.0.0.1:5173/'
+    tunnel   = $tunnelUrl
+}
+[System.IO.File]::WriteAllText((Join-Path $runtimeDir 'runtime.json'),
+    ($runtime | ConvertTo-Json),
+    (New-Object System.Text.UTF8Encoding($false)))
 
 # ── 5. 验收 ──
 Write-Host ''

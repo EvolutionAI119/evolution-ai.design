@@ -31,7 +31,7 @@ start_services.ps1 -NoTunnel
 ## 启动顺序与域名处理（脚本已内置；手动操作时必须遵循）
 
 1. **先 cpolar**：`Start-Process <cpolar.exe> -ArgumentList 'http','8000'`；4040 已监听则复用，不重启。
-2. 用 `curl.exe -s http://127.0.0.1:4040/http/in` 配合正则 `https://[a-z0-9]+\.r31\.cpolar\.top` 提取公网域名。**必须用 curl.exe**——Invoke-WebRequest 拿到的正文为空。
+2. 用 `curl.exe -s http://127.0.0.1:4040/http/in` 配合正则 `https://[a-z0-9]+\.r\d+\.cpolar\.(top|cn|com)` 提取公网域名（兼容 r31.cpolar.top / r7.cpolar.cn 等区域后缀）。**必须用 curl.exe**——Invoke-WebRequest 拿到的正文为空。
 3. 域名与 `.env` 的 `MP_REDIRECT_URI` 不一致时（cpolar 免费版每次重启必换），**先更新 .env 再启动后端**；顺序反了授权链接会带旧域名。
 4. **后端**：`Start-Process python -ArgumentList 'start.py' -WorkingDirectory <项目>\backend`（工作目录必须是 backend，端口 8000）。
 5. **前端**：`Start-Process cmd -ArgumentList '/c','npm run dev' -WorkingDirectory <项目根>`（端口 5173）。

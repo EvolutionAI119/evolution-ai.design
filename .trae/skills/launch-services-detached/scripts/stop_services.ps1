@@ -81,3 +81,7 @@ else {
     $suffix = if ($Tunnel) { '（含隧道）' } else { '（隧道保留）' }
     Write-Host "全部已停止$suffix"
 }
+
+# 清理运行时标记（防止其他工具读到过期的 owner 信息）
+$runtimeMarker = Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path '.devservices\runtime.json'
+if (Test-Path $runtimeMarker) { Remove-Item $runtimeMarker -Force }

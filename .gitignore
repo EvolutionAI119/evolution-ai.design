@@ -126,6 +126,9 @@ public/_*
 # --- 本机生成的报告/汇总 ---
 reports/
 
+# --- 多工具协同：运行时所有者标记（本机状态，不入库） ---
+.devservices/
+
 # --- data/：算法运行中间输出 & 训练数据（体积大，可再生） ---
 # 注意：data/training/*.jsonl 数据集若属于"训练集基准"请手动 git add -f
 data/step/
