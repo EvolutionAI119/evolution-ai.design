@@ -37,6 +37,10 @@ dist/
 .env.*
 !.env.example
 
+# 密钥注册表：只含元数据（版本/状态），不含明文密钥；本机维护不入库
+.key-registry.json
+backend/.key-registry.json
+
 # OS
 Thumbs.db
 .DS_Store
@@ -218,3 +222,7 @@ _*.py
 # Docker Compose 部署密钥（POSTGRES_PASSWORD / REDIS_PASSWORD 等）
 /.env
 
+
+# === 内部机密资产（不外发、不上线）===
+# 墨玉品牌 DNA：高度机密，禁止进入公开仓库与线上构建
+internal/
