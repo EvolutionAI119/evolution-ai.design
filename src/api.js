@@ -22,12 +22,14 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
     const { method, url, headers, data, params } = config
-    console.groupCollapsed(`🔄 [${method?.toUpperCase()}] ${url}`)
-    console.log('📝 Request Headers:', headers)
-    if (params) console.log('🔍 Query Params:', params)
-    if (data && !(data instanceof FormData)) console.log('📦 Request Body:', data)
-    else if (data instanceof FormData) console.log('📦 Request Body: FormData (files attached)')
-    console.groupEnd()
+    if (import.meta.env.DEV) {
+      console.groupCollapsed(`🔄 [${method?.toUpperCase()}] ${url}`)
+      console.log('📝 Request Headers:', headers)
+      if (params) console.log('🔍 Query Params:', params)
+      if (data && !(data instanceof FormData)) console.log('📦 Request Body:', data)
+      else if (data instanceof FormData) console.log('📦 Request Body: FormData (files attached)')
+      console.groupEnd()
+    }
     return config
   },
   error => {
@@ -40,31 +42,35 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => {
     const { config, status, statusText, headers, data } = response
-    const duration = Date.now() - config.metadata.startTime
-    console.groupCollapsed(`✅ [${config.method?.toUpperCase()}] ${config.url} (${status} ${statusText}) · ${duration}ms`)
-    console.log('📋 Response Headers:', headers)
-    if (config.responseType === 'blob') {
-      console.log('📤 Response Data: Blob (size: ' + (data?.size || 'N/A') + ' bytes)')
-    } else {
-      console.log('📤 Response Data:', data)
+    if (import.meta.env.DEV) {
+      const duration = Date.now() - config.metadata.startTime
+      console.groupCollapsed(`✅ [${config.method?.toUpperCase()}] ${config.url} (${status} ${statusText}) · ${duration}ms`)
+      console.log('📋 Response Headers:', headers)
+      if (config.responseType === 'blob') {
+        console.log('📤 Response Data: Blob (size: ' + (data?.size || 'N/A') + ' bytes)')
+      } else {
+        console.log('📤 Response Data:', data)
+      }
+      console.log(`⏱️ Duration: ${duration}ms`)
+      console.groupEnd()
     }
-    console.log(`⏱️ Duration: ${duration}ms`)
-    console.groupEnd()
     return response
   },
   error => {
     const { config, response } = error
-    const duration = config?.metadata ? Date.now() - config.metadata.startTime : 'N/A'
-    console.groupCollapsed(`❌ [${config?.method?.toUpperCase()}] ${config?.url} · ${duration}ms`)
-    if (response) {
-      console.log(`💥 Status: ${response.status} ${response.statusText}`)
-      console.log('📋 Response Headers:', response.headers)
-      console.log('📤 Response Data:', response.data)
-    } else {
-      console.log('💥 Error:', error.message)
+    if (import.meta.env.DEV) {
+      const duration = config?.metadata ? Date.now() - config.metadata.startTime : 'N/A'
+      console.groupCollapsed(`❌ [${config?.method?.toUpperCase()}] ${config?.url} · ${duration}ms`)
+      if (response) {
+        console.log(`💥 Status: ${response.status} ${response.statusText}`)
+        console.log('📋 Response Headers:', response.headers)
+        console.log('📤 Response Data:', response.data)
+      } else {
+        console.log('💥 Error:', error.message)
+      }
+      console.log(`⏱️ Duration: ${duration}ms`)
+      console.groupEnd()
     }
-    console.log(`⏱️ Duration: ${duration}ms`)
-    console.groupEnd()
 
     // 401 统一处理：游客默认可浏览全站，不强制跳转登录页。
     // 仅广播「需要登录」事件，由 App 界面层弹出友好提示；
@@ -72,9 +78,11 @@ api.interceptors.response.use(
     const isAuthEndpoint = typeof config?.url === 'string' &&
       config.url.startsWith('/auth/')
     if (response?.status === 401 && !isAuthEndpoint && !config?.skipAuthPrompt) {
-      // 令牌失效时清除内存中的登录态（回到游客身份）
+      // 令牌失效时清除内存中的登录态（回到游客身份）；
+      // reason='expired' 供 App 层同步 Pinia 登录态并抑制重复弹框
       authToken = ''
-      window.dispatchEvent(new CustomEvent('evoai:auth-required'))
+      window.dispatchEvent(new CustomEvent('evoai:auth-required',
+        { detail: { reason: 'expired' } }))
     }
     return Promise.reject(error)
   }
@@ -461,6 +469,7 @@ export const analyticsAPI = {
   replyMessage: (id, data) =>
     api.post(`/analytics/messages/${id}/reply`, data),
   likeMessage: (id) => api.post(`/analytics/messages/${id}/like`),
+  hideMessage: (id) => api.post(`/analytics/messages/${id}/hide`),
   // 站内通知（登录用户）
   listNotifications: (limit = 20) =>
     api.get('/analytics/notifications', { params: { limit } }),

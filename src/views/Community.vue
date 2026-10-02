@@ -177,6 +177,7 @@ async function createPost() {
     ElMessage.success(t('community.published'))
     postForm.guest_name = ''
     postForm.content = ''
+    page.value = 1  // 数据回到第 1 页，同步分页器高亮
     await loadPosts(1)
   } catch (e) {
     ElMessage.error(e.response?.data?.detail || t('community.sendFailed'))

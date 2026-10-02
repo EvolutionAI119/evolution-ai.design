@@ -219,6 +219,12 @@ const loginPromptText = computed(() =>
   loginPromptMessage.value || t('auth.loginRequiredBody'))
 
 const onAuthRequired = (event) => {
+  const reason = event?.detail?.reason
+  if (reason === 'expired') {
+    // JWT 已失效：同步 Pinia 登录态（否则界面残留登录 UI、60s 轮询持续 401 重复弹框）
+    if (!auth.isAuthenticated) return  // 主动登出后在途请求返回 401，不再打扰
+    auth.logout()
+  }
   loginPromptMessage.value = event?.detail?.message || ''
   loginPromptVisible.value = true
 }

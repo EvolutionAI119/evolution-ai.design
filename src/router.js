@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from './stores/auth'
+import i18n from './i18n'
 
 const routes = [
   { path: '/', name: 'Dashboard', component: () => import('./views/Dashboard.vue') },
@@ -63,7 +64,7 @@ router.beforeEach(async (to) => {
       }
     }
     if (!auth.isAdmin) {
-      ElMessage.warning('仅管理员可访问该页面')
+      ElMessage.warning(i18n.global.t('common.adminOnly'))
       return { name: 'Dashboard' }
     }
   }

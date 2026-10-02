@@ -450,7 +450,7 @@ const zh = {
     pleaseSelect: '请选择', pleaseInput: '请输入', required: '必填', chinese: '中文', english: 'English',
     other: '其他选项', completion: '完成率', totalFiles: '总文件数', delivered: '已交付', checkItem: '检查项',
     target: '目标', actual: '实际', passed: '通过', failed: '失败', start: '开始执行', completed: '完成',
-    actions: '操作', close: '关闭'
+    actions: '操作', close: '关闭', adminOnly: '仅管理员可访问该页面'
   },
   deliver: {
     title: '导入 → 改参 → 导出 工作流',
@@ -1204,7 +1204,7 @@ const en = {
     pleaseSelect: 'Please select', pleaseInput: 'Please input', required: 'Required', chinese: '中文', english: 'English',
     other: 'Other Options', completion: 'Completion Rate', totalFiles: 'Total Files', delivered: 'Delivered', checkItem: 'Check Item',
     target: 'Target', actual: 'Actual', passed: 'Passed', failed: 'Failed', start: 'Starting', completed: 'Completed',
-    actions: 'Actions', close: 'Close'
+    actions: 'Actions', close: 'Close', adminOnly: 'Only administrators can access this page'
   },
 
   // ============ Deliver (Import → Modify → Export Workflow) EN ============

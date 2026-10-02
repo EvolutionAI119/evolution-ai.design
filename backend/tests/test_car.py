@@ -15,7 +15,7 @@ def setup():
 
 
 @pytest.fixture(autouse=True)
-def _auth_header():
+def _auth_header(demo_user):
     """生成类端点需登录：以演示账户注入 JWT（role=user）。"""
     r = client.post("/api/v1/auth/login", json={
         "email": "demo@evolution-ai.design", "password": "demo123456"})
