@@ -173,7 +173,7 @@ const onGenerate = async () => {
       ElMessage.success(t('copilot.success'))
     }
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('copilot.failed'))
+    ElMessage.error(t(e.errorKey || 'copilot.failed'))
   } finally {
     loading.value = false
   }

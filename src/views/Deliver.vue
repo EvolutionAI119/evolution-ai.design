@@ -561,7 +561,7 @@ const importInline = async () => {
     lastImportWarnings.value = []
     lastImportMeta.value = null
     ElMessage.error(t('deliver.msgImportFail', {
-      detail: err.response?.data?.detail || err.message
+      detail: t(err.errorKey || 'common.error')
     }))
   } finally {
     loading.import = false
@@ -585,7 +585,7 @@ const importFromUpload = async (option) => {
     lastImportWarnings.value = []
     lastImportMeta.value = null
     ElMessage.error(t('deliver.msgFileImportFail', {
-      detail: err.response?.data?.detail || err.message
+      detail: t(err.errorKey || 'common.error')
     }))
   } finally {
     loading.import = false
@@ -601,7 +601,7 @@ const loadParams = async () => {
     paramList.value = (res.data || []).map(p => ({ ...p, _original: p.value }))
   } catch (err) {
     ElMessage.error(t('deliver.msgLoadParamsFail', {
-      detail: err.response?.data?.detail || err.message
+      detail: t(err.errorKey || 'common.error')
     }))
   }
 }
@@ -632,7 +632,7 @@ const saveParams = async () => {
     await fetchSessions()
   } catch (err) {
     ElMessage.error(t('deliver.msgSaveFail', {
-      detail: err.response?.data?.detail || err.message
+      detail: t(err.errorKey || 'common.error')
     }))
   } finally {
     loading.save = false
@@ -651,7 +651,7 @@ const exportModel = async () => {
     ElMessage.success(t('deliver.msgExportOk', { count: res.data.files.length }))
   } catch (err) {
     ElMessage.error(t('deliver.msgExportFail', {
-      detail: err.response?.data?.detail || err.message
+      detail: t(err.errorKey || 'common.error')
     }))
   } finally {
     loading.export = false
@@ -672,7 +672,7 @@ const getSnapshot = async () => {
     ElMessage.success(t('deliver.msgSnapshotOk'))
   } catch (err) {
     ElMessage.error(t('deliver.msgSnapshotFail', {
-      detail: err.response?.data?.detail || err.message
+      detail: t(err.errorKey || 'common.error')
     }))
   } finally {
     loading.snapshot = false

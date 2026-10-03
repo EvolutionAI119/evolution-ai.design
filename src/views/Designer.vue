@@ -778,7 +778,7 @@ const aiTrain = async () => {
     ElMessage.success(`Cloud: Generated ${res.data.batch_size} samples in ${res.data.compute_time_ms}ms`)
     await loadAiStats()
   } catch (e) {
-    ElMessage.error('AI train failed: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(t(e.errorKey || 'common.error'))
   } finally {
     aiLoading.value = false
   }
@@ -801,7 +801,7 @@ const aiEvaluateQuality = async () => {
     const score = res.data.quality_metrics.overall_score
     ElMessage.success(`Cloud: Quality score ${score}/100 - ${res.data.overall_pass ? 'PASS' : 'REVIEW'}`)
   } catch (e) {
-    ElMessage.error('AI quality eval failed: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(t(e.errorKey || 'common.error'))
   } finally {
     aiLoading.value = false
   }
@@ -826,7 +826,7 @@ const aiGenerateDesign = async () => {
     }
     ElMessage.success(`Cloud: Design ${res.data.design_id} generated (creativity: ${res.data.creativity_score})`)
   } catch (e) {
-    ElMessage.error('AI generate failed: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(t(e.errorKey || 'common.error'))
   } finally {
     aiLoading.value = false
   }
@@ -853,7 +853,7 @@ const aiOptimize = async () => {
     }
     ElMessage.success(`Cloud: Pareto score ${res.data.pareto_score} (${res.data.is_pareto_optimal ? 'OPTIMAL' : 'SUB-OPTIMAL'})`)
   } catch (e) {
-    ElMessage.error('AI optimize failed: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(t(e.errorKey || 'common.error'))
   } finally {
     aiLoading.value = false
   }

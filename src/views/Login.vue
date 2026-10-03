@@ -239,7 +239,7 @@ const handleLogin = async () => {
     ElMessage.success(t('auth.loginSuccess'))
     goAfterAuth()
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('auth.loginFailed'))
+    ElMessage.error(t(e.errorKey || 'auth.loginFailed'))
   }
 }
 
@@ -258,7 +258,7 @@ const handleRegister = async () => {
     ElMessage.success(t('auth.registerSuccess'))
     goAfterAuth()
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('auth.registerFailed'))
+    ElMessage.error(t(e.errorKey || 'auth.registerFailed'))
   }
 }
 

@@ -510,7 +510,7 @@ const startTrain = async () => {
     stopPolling()
     pollTimer.value = setInterval(pollTask, 1000)
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('deepLearning.trainFailed'))
+    ElMessage.error(t(e.errorKey || 'deepLearning.trainFailed'))
   } finally {
     starting.value = false
   }
@@ -524,7 +524,7 @@ const cancelTrain = async () => {
     stopPolling()
     await loadHistory()
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('common.error'))
+    ElMessage.error(t(e.errorKey || 'common.error'))
   }
 }
 
@@ -627,7 +627,7 @@ const runFeature = async () => {
       dreamResults.value = []
     }
   } catch (e) {
-    featureError.value = e.response?.data?.detail || t('deepLearning.featureFailed')
+    featureError.value = t(e.errorKey || 'deepLearning.featureFailed')
   } finally {
     featureRunning.value = false
   }

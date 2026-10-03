@@ -84,6 +84,13 @@ api.interceptors.response.use(
       window.dispatchEvent(new CustomEvent('evoai:auth-required',
         { detail: { reason: 'expired' } }))
     }
+
+    // 方案 B：已知 HTTP 状态码注入 i18n 错误键，前端统一按状态码翻译显示，
+    // 不再直接渲染后端返回的中文 detail
+    const KNOWN_STATUS = [400, 401, 403, 404, 409, 422, 500, 502, 503, 504]
+    if (response && KNOWN_STATUS.includes(response.status)) {
+      error.errorKey = `common.errors.e${response.status}`
+    }
     return Promise.reject(error)
   }
 )

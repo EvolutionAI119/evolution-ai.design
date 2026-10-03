@@ -180,7 +180,7 @@ async function createPost() {
     page.value = 1  // 数据回到第 1 页，同步分页器高亮
     await loadPosts(1)
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('community.sendFailed'))
+    ElMessage.error(t(e.errorKey || 'community.sendFailed'))
   }
 }
 
@@ -206,7 +206,7 @@ async function doReply(p) {
     replyText.value = ''
     await loadPosts(page.value)
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('community.sendFailed'))
+    ElMessage.error(t(e.errorKey || 'community.sendFailed'))
   }
 }
 
@@ -241,7 +241,7 @@ async function submitRef() {
     refForm.source_url = ''
     refForm.source_platform = ''
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('community.sendFailed'))
+    ElMessage.error(t(e.errorKey || 'community.sendFailed'))
   }
 }
 

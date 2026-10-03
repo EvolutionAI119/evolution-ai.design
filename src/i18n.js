@@ -470,7 +470,19 @@ const zh = {
     pleaseSelect: '请选择', pleaseInput: '请输入', required: '必填', chinese: '中文', english: 'English',
     other: '其他选项', completion: '完成率', totalFiles: '总文件数', delivered: '已交付', checkItem: '检查项',
     target: '目标', actual: '实际', passed: '通过', failed: '失败', start: '开始执行', completed: '完成',
-    actions: '操作', close: '关闭', adminOnly: '仅管理员可访问该页面'
+    actions: '操作', close: '关闭', adminOnly: '仅管理员可访问该页面',
+    errors: {
+      e400: '请求参数有误，请检查后重试',
+      e401: '登录已过期，请重新登录',
+      e403: '您没有权限执行此操作',
+      e404: '请求的资源不存在',
+      e409: '操作冲突，该资源可能已被修改',
+      e422: '提交的数据不符合要求，请检查后重试',
+      e500: '服务器内部错误，请稍后重试',
+      e502: '服务暂时不可用，请稍后重试',
+      e503: '服务暂时不可用，请稍后重试',
+      e504: '请求超时，请检查网络后重试'
+    }
   },
   deliver: {
     title: '导入 → 改参 → 导出 工作流',
@@ -676,7 +688,15 @@ const zh = {
     inviteDesc: '扫码注册硅基流动，获取推理额度奖励',
     inviteBrand: '硅基流动（Siliconflow）',
     inviteHint: '扫描下方二维码注册，或点击链接前往',
-    inviteLink: '前往硅基流动注册'
+    inviteLink: '前往硅基流动注册',
+    inviteTip1: 'OpenAI 兼容接口 · 聚合多家主流模型',
+    inviteTip2: '推理价格低至 0.1 元 / 百万 tokens',
+    inviteTip3: '注册即送推理额度，邀请好友额外奖励',
+    providers: {
+      ernie: '百度文心一言', qwen: '阿里通义千问', hunyuan: '腾讯混元',
+      doubao: '字节豆包', deepseek: 'DeepSeek 深度求索',
+      kimi: 'Moonshot Kimi', siliconflow: '硅基流动 SiliconFlow'
+    }
   },
   admin: {
     title: '管理后台',
@@ -1244,7 +1264,19 @@ const en = {
     pleaseSelect: 'Please select', pleaseInput: 'Please input', required: 'Required', chinese: '中文', english: 'English',
     other: 'Other Options', completion: 'Completion Rate', totalFiles: 'Total Files', delivered: 'Delivered', checkItem: 'Check Item',
     target: 'Target', actual: 'Actual', passed: 'Passed', failed: 'Failed', start: 'Starting', completed: 'Completed',
-    actions: 'Actions', close: 'Close', adminOnly: 'Only administrators can access this page'
+    actions: 'Actions', close: 'Close', adminOnly: 'Only administrators can access this page',
+    errors: {
+      e400: 'Invalid request parameters, please check and retry',
+      e401: 'Session expired, please log in again',
+      e403: 'You do not have permission to perform this action',
+      e404: 'The requested resource was not found',
+      e409: 'Conflict: the resource may have been modified',
+      e422: 'Submitted data does not meet requirements, please check and retry',
+      e500: 'Internal server error, please retry later',
+      e502: 'Service temporarily unavailable, please retry later',
+      e503: 'Service temporarily unavailable, please retry later',
+      e504: 'Request timed out, please check your network and retry'
+    }
   },
 
   // ============ Deliver (Import → Modify → Export Workflow) EN ============
@@ -1459,9 +1491,17 @@ const en = {
     deleteSuccess: 'Token deleted', deleteFailed: 'Failed to delete token',
     inviteTitle: 'Invitation Rewards',
     inviteDesc: 'Scan to register SiliconFlow and earn inference credits',
-    inviteBrand: 'Siliconflow (硅基流动)',
+    inviteBrand: 'SiliconFlow',
     inviteHint: 'Scan the QR code below to register, or click the link',
-    inviteLink: 'Register on SiliconFlow'
+    inviteLink: 'Register on SiliconFlow',
+    inviteTip1: 'OpenAI-compatible API · aggregating major foundation models',
+    inviteTip2: 'Inference pricing from ¥0.1 per million tokens',
+    inviteTip3: 'Sign-up bonus credits, plus extra rewards for referrals',
+    providers: {
+      ernie: 'Baidu ERNIE Bot', qwen: 'Alibaba Qwen (Tongyi)', hunyuan: 'Tencent Hunyuan',
+      doubao: 'ByteDance Doubao', deepseek: 'DeepSeek',
+      kimi: 'Moonshot Kimi', siliconflow: 'SiliconFlow'
+    }
   },
   admin: {
     title: 'Admin Console',

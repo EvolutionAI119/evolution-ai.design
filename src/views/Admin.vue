@@ -213,7 +213,7 @@ const loadLoginRecords = async () => {
     const { data } = await adminAPI.loginRecords(params)
     loginRecords.value = data
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('admin.loadFailed'))
+    ElMessage.error(t(e.errorKey || 'admin.loadFailed'))
   } finally {
     recordsLoading.value = false
   }
@@ -229,7 +229,7 @@ const loadUsers = async () => {
     const { data } = await adminAPI.users()
     users.value = data
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('admin.loadFailed'))
+    ElMessage.error(t(e.errorKey || 'admin.loadFailed'))
   } finally {
     usersLoading.value = false
   }
@@ -241,7 +241,7 @@ const toggleActive = async (row, val) => {
     row.is_active = val
     ElMessage.success(t('admin.updateOk'))
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('admin.updateFailed'))
+    ElMessage.error(t(e.errorKey || 'admin.updateFailed'))
   }
 }
 
@@ -251,7 +251,7 @@ const changeRole = async (row, val) => {
     row.role = val
     ElMessage.success(t('admin.updateOk'))
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('admin.updateFailed'))
+    ElMessage.error(t(e.errorKey || 'admin.updateFailed'))
   }
 }
 
@@ -275,7 +275,7 @@ const submitResetPassword = async () => {
     resetDialogVisible.value = false
     ElMessage.success(t('admin.updateOk'))
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('admin.updateFailed'))
+    ElMessage.error(t(e.errorKey || 'admin.updateFailed'))
   }
 }
 
@@ -291,7 +291,7 @@ const loadBackendErrors = async () => {
     errorContent.value = data.content
     errorFilePath.value = data.file_path
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('admin.loadFailed'))
+    ElMessage.error(t(e.errorKey || 'admin.loadFailed'))
   } finally {
     errorsLoading.value = false
   }
@@ -307,7 +307,7 @@ const loadAuditLogs = async () => {
     const { data } = await adminAPI.auditLogs(100)
     auditLogs.value = data
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('admin.loadFailed'))
+    ElMessage.error(t(e.errorKey || 'admin.loadFailed'))
   } finally {
     auditLoading.value = false
   }

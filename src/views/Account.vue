@@ -135,9 +135,9 @@
             <el-icon><Promotion /></el-icon>
           </a>
           <ul class="invite-tips">
-            <li>OpenAI 兼容接口 · 聚合多家主流模型</li>
-            <li>推理价格低至 0.1 元 / 百万 tokens</li>
-            <li>注册即送推理额度，邀请好友额外奖励</li>
+            <li>{{ t('account.inviteTip1') }}</li>
+            <li>{{ t('account.inviteTip2') }}</li>
+            <li>{{ t('account.inviteTip3') }}</li>
           </ul>
         </div>
       </div>
@@ -155,7 +155,7 @@ import { apiKeyAPI } from '../api'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
 
 const keys = ref([])
@@ -163,16 +163,19 @@ const editing = reactive({})
 const saving = ref('')
 const removing = ref('')
 
-// 提供商展示元信息（与后端 LLM 代理注册表对应）
-const providerMeta = {
-  ernie: { name: '百度文心一言', short: '文' },
-  qwen: { name: '阿里通义千问', short: '通' },
-  hunyuan: { name: '腾讯混元', short: '混' },
-  doubao: { name: '字节豆包', short: '豆' },
-  deepseek: { name: 'DeepSeek 深度求索', short: 'DS' },
-  kimi: { name: 'Moonshot Kimi', short: 'K' },
-  siliconflow: { name: '硅基流动 SiliconFlow', short: 'SF' }
-}
+// 提供商展示元信息（与后端 LLM 代理注册表对应；名称/徽标随界面语言切换）
+const providerMeta = computed(() => {
+  const en = locale.value !== 'zh'
+  return {
+    ernie: { name: t('account.providers.ernie'), short: en ? 'E' : '文' },
+    qwen: { name: t('account.providers.qwen'), short: en ? 'Q' : '通' },
+    hunyuan: { name: t('account.providers.hunyuan'), short: en ? 'H' : '混' },
+    doubao: { name: t('account.providers.doubao'), short: en ? 'D' : '豆' },
+    deepseek: { name: t('account.providers.deepseek'), short: 'DS' },
+    kimi: { name: t('account.providers.kimi'), short: 'K' },
+    siliconflow: { name: t('account.providers.siliconflow'), short: 'SF' }
+  }
+})
 
 const avatarText = computed(() => {
   const name = auth.user?.username || 'U'
@@ -199,7 +202,7 @@ const loadKeys = async () => {
       if (!(k.provider in editing)) editing[k.provider] = ''
     })
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('account.loadFailed'))
+    ElMessage.error(t(e.errorKey || 'account.loadFailed'))
   }
 }
 
@@ -207,11 +210,11 @@ const saveKey = async (provider) => {
   saving.value = provider
   try {
     await apiKeyAPI.set(provider, editing[provider].trim())
-    ElMessage.success(t('account.saveSuccess', { name: providerMeta[provider].name }))
+    ElMessage.success(t('account.saveSuccess', { name: providerMeta.value[provider].name }))
     editing[provider] = ''
     await loadKeys()
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('account.saveFailed'))
+    ElMessage.error(t(e.errorKey || 'account.saveFailed'))
   } finally {
     saving.value = ''
   }
@@ -220,7 +223,7 @@ const saveKey = async (provider) => {
 const removeKey = async (provider) => {
   try {
     await ElMessageBox.confirm(
-      t('account.deleteConfirm', { name: providerMeta[provider].name }),
+      t('account.deleteConfirm', { name: providerMeta.value[provider].name }),
       t('account.deleteTitle'),
       { type: 'warning', confirmButtonText: t('account.delete'),
         cancelButtonText: t('account.cancel') }
@@ -234,7 +237,7 @@ const removeKey = async (provider) => {
     ElMessage.success(t('account.deleteSuccess'))
     await loadKeys()
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('account.deleteFailed'))
+    ElMessage.error(t(e.errorKey || 'account.deleteFailed'))
   } finally {
     removing.value = ''
   }

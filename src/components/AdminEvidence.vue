@@ -324,7 +324,7 @@ async function loadSummary() {
     renderPages()
     renderPlatforms()
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('analytics.loadFailed'))
+    ElMessage.error(t(e.errorKey || 'analytics.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -359,7 +359,7 @@ async function submitRef() {
     refForm.source_platform = ''
     showRefSubmit.value = false
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('analytics.sendFailed'))
+    ElMessage.error(t(e.errorKey || 'analytics.sendFailed'))
   }
 }
 
