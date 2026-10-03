@@ -34,7 +34,67 @@
           <span class="score-value">{{ check.score }}/100</span>
         </div>
       </el-card>
+
+      <!-- G2 曲率连续性检测卡片 -->
+      <el-card class="check-card g2-card">
+        <div class="check-header">
+          <div class="check-icon g2">
+            <el-icon :size="24"><Connection /></el-icon>
+          </div>
+          <el-tag
+            :type="g2Result.overall_g2_pass === true ? 'success' : g2Result.overall_g2_pass === false ? 'danger' : 'info'"
+            effect="dark" size="small"
+          >{{ g2Result.overall_g2_pass === true ? t('quality.g2Pass') : g2Result.overall_g2_pass === false ? t('quality.g2Fail') : t('quality.statusNotStarted') }}</el-tag>
+        </div>
+        <h3 class="check-title">{{ t('quality.g2Check') }}</h3>
+        <p class="check-desc">{{ t('quality.g2CheckDesc') }}</p>
+        <div class="g2-actions">
+          <el-button
+            type="primary" size="small" :loading="g2Loading"
+            :disabled="!selectedModel" @click="runG2Check"
+          >
+            {{ g2Loading ? t('quality.g2Checking') : t('quality.g2RunCheck') }}
+          </el-button>
+        </div>
+        <div class="check-score" v-if="g2Result.overall_g2_pass !== null && g2Result.overall_g2_pass !== undefined">
+          <span class="score-label">{{ t('quality.score') }}</span>
+          <span class="score-value">{{ g2Result.pass_rate }}/100</span>
+        </div>
+      </el-card>
     </div>
+
+    <!-- G2 接缝明细 -->
+    <el-card v-if="g2Result.pairs && g2Result.pairs.length" class="g2-detail-card">
+      <template #header>
+        <div class="card-header">
+          <span class="card-title">{{ t('quality.g2Pairs') }}</span>
+          <span class="g2-standard">{{ t('quality.g2Standard') }}</span>
+        </div>
+      </template>
+      <el-table :data="g2Result.pairs" style="width: 100%">
+        <el-table-column prop="seam" :label="t('quality.g2Seam')" min-width="180" />
+        <el-table-column :label="t('quality.g2Ratio')" width="120" align="center">
+          <template #default="{ row }">
+            <span v-if="row.curvature_ratio !== null && row.curvature_ratio !== undefined"
+                  :class="row.g2_pass ? 'score-pass' : 'score-fail'">
+              {{ row.curvature_ratio.toFixed(4) }}
+            </span>
+            <span v-else class="g2-na">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('quality.g2Status')" width="110" align="center">
+          <template #default="{ row }">
+            <el-tag
+              :type="row.status === 'pass' ? 'success' : row.status === 'fail' ? 'danger' : 'info'"
+              effect="dark" size="small"
+            >
+              {{ row.status === 'pass' ? t('quality.g2Pass') : row.status === 'fail' ? t('quality.g2Fail') : t('quality.g2NoData') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="detail" :label="t('quality.g2Threshold')" min-width="200" show-overflow-tooltip />
+      </el-table>
+    </el-card>
 
     <el-card class="reports-card">
       <template #header>
@@ -72,7 +132,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { VideoPlay, Grid, Sunny, TrendCharts } from '@element-plus/icons-vue'
+import { VideoPlay, Grid, Sunny, TrendCharts, Connection } from '@element-plus/icons-vue'
 import { qualityAPI, modelAPI } from '../api'
 
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -168,6 +228,42 @@ const startCheck = async () => {
 const viewReport = (row) => {
   ElMessage.info(t('quality.viewingReport', { id: row.id }))
 }
+
+// ---- G2 曲率连续性检测 ----
+const g2Loading = ref(false)
+const g2Result = ref({
+  overall_g2_pass: null,
+  n_pairs: 0, n_pass: 0, n_fail: 0, n_no_data: 0,
+  pass_rate: 0,
+  pairs: [],
+})
+
+const runG2Check = async () => {
+  if (!selectedModel.value) {
+    ElMessage.warning(t('quality.selectModelFirst'))
+    return
+  }
+  g2Loading.value = true
+  try {
+    const res = await qualityAPI.g2Check({ model_id: selectedModel.value })
+    const data = res.data
+    if (data.error) {
+      ElMessage.warning(data.error)
+      g2Result.value = { overall_g2_pass: null, pairs: [] }
+      return
+    }
+    g2Result.value = data
+    if (data.overall_g2_pass === true) {
+      ElMessage.success(`${t('quality.g2Check')}：${t('quality.g2Pass')}`)
+    } else if (data.overall_g2_pass === false) {
+      ElMessage.warning(`${t('quality.g2Check')}：${t('quality.g2Fail')}（${data.n_pass}/${data.n_pass + data.n_fail} 通过）`)
+    }
+  } catch (err) {
+    ElMessage.error(t('quality.checkFailed'))
+  } finally {
+    g2Loading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -250,7 +346,7 @@ const viewReport = (row) => {
 
 .check-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
@@ -390,5 +486,59 @@ const viewReport = (row) => {
 .score-fail {
   color: #f87171;
   font-weight: 600;
+}
+
+/* ---- G2 检测 ---- */
+.check-icon.g2 {
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+
+.g2-actions {
+  padding-top: 4px;
+}
+
+.g2-detail-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.g2-detail-card :deep(.el-card__header) {
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 20px;
+}
+
+.g2-detail-card :deep(.el-card__body) {
+  padding: 16px 20px;
+}
+
+.g2-standard {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.g2-na {
+  color: var(--text-faint);
+}
+
+.g2-detail-card :deep(.el-table) {
+  --el-table-border-color: transparent;
+  --el-table-header-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-row-hover-bg-color: var(--hover-bg);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.g2-detail-card :deep(.el-table th) {
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.g2-detail-card :deep(.el-table td) {
+  border-bottom: 1px solid var(--border-color);
 }
 </style>

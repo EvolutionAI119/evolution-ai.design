@@ -91,6 +91,37 @@ def check_quality(request: QualityCheckRequest, db: Session = Depends(get_db)):
     return {**result, "report_id": db_report.id}
 
 
+@router.post("/quality/g2-check/")
+def g2_check(request: QualityCheckRequest, db: Session = Depends(get_db)):
+    """G2 曲率连续性检测（真实曲率管线，非硬编码）
+
+    对模型车身数据中相邻 NURBS 面板对执行 G2 判定
+    （曲率比 0.8~1.2，SOP-A SURF-001 §5.2）。
+    """
+    from ..g2_check import run_g2_check_from_model
+
+    model = db.query(ModelFile).filter(ModelFile.id == request.model_id).first()
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+    result = run_g2_check_from_model(model.car_data_json)
+    result["model_id"] = model.id
+    result["timestamp"] = datetime.now().isoformat()
+
+    # 持久化报告
+    passed = result.get("overall_g2_pass")
+    db_report = QualityReport(
+        project_id=model.project_id, model_id=model.id,
+        overall_score=result.get("pass_rate", 0.0),
+        passed=bool(passed) if passed is not None else False,
+        report_data=json.dumps(result, ensure_ascii=False))
+    db.add(db_report)
+    db.commit()
+    db.refresh(db_report)
+    result["report_id"] = db_report.id
+    return result
+
+
 @router.get("/quality/reports/", response_model=List[QualityReportResponse])
 def get_quality_reports(project_id: Optional[int] = None, model_id: Optional[int] = None,
                         db: Session = Depends(get_db)):

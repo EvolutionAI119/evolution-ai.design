@@ -213,7 +213,15 @@ const zh = {
     fullAnalysis: '全面分析',
     statusCompleted: '已完成', statusRunning: '进行中', statusNotStarted: '未开始',
     passShort: '通过', failShort: '未通过', colModel: '模型', dateLabel: '日期',
-    checkCompleted: '质量检查已完成', viewingReport: '正在查看报告 {id}'
+    checkCompleted: '质量检查已完成', viewingReport: '正在查看报告 {id}',
+    g2Check: 'G2 连续性检测',
+    g2CheckDesc: '基于真实曲率管线（SOP-A SURF-001），检测相邻面板间的曲率比是否在 0.8~1.2 范围内。',
+    g2Overall: 'G2 总体结果', g2Pairs: '接缝明细', g2Ratio: '曲率比',
+    g2Seam: '接缝', g2Status: '状态', g2Pass: '通过', g2Fail: '不连续',
+    g2NoData: '缺数据', g2Error: '错误', g2Threshold: '判定标准',
+    g2Standard: 'SOP-A SURF-001 §5.2（曲率比 0.8~1.2）',
+    g2RunCheck: '执行 G2 检测', g2Checking: '正在检测…',
+    g2NoModelData: '该模型无车身数据，请先在设计器中生成',
   },
   parameters: {
     title: '参数管理', subtitle: '管理整车级参数化建模参数', validate: '验证参数', vehicleLevel: '整车级',
@@ -1007,7 +1015,15 @@ const en = {
     fullAnalysis: 'Full Analysis',
     statusCompleted: 'Completed', statusRunning: 'Running', statusNotStarted: 'Not Started',
     passShort: 'Pass', failShort: 'Fail', colModel: 'Model', dateLabel: 'Date',
-    checkCompleted: 'Quality check completed', viewingReport: 'Viewing report {id}'
+    checkCompleted: 'Quality check completed', viewingReport: 'Viewing report {id}',
+    g2Check: 'G2 Continuity Check',
+    g2CheckDesc: 'Real curvature pipeline (SOP-A SURF-001): verifies curvature ratio between adjacent panels is within 0.8–1.2.',
+    g2Overall: 'G2 Overall Result', g2Pairs: 'Seam Details', g2Ratio: 'Curvature Ratio',
+    g2Seam: 'Seam', g2Status: 'Status', g2Pass: 'Pass', g2Fail: 'Discontinuous',
+    g2NoData: 'No Data', g2Error: 'Error', g2Threshold: 'Threshold',
+    g2Standard: 'SOP-A SURF-001 §5.2 (curvature ratio 0.8–1.2)',
+    g2RunCheck: 'Run G2 Check', g2Checking: 'Checking…',
+    g2NoModelData: 'No car body data for this model. Generate one in the Designer first.',
   },
   parameters: {
     title: 'Parameter Management', subtitle: 'Manage vehicle-level parametric modeling parameters', validate: 'Validate Parameters', vehicleLevel: 'Vehicle Level',
