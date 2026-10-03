@@ -119,6 +119,7 @@ export const topologyAPI = {
 // 质量检查 API
 export const qualityAPI = {
   check: (data) => api.post('/quality/check/', data),
+  g2Check: (data) => api.post('/quality/g2-check/', data),
   list: (projectId = null, modelId = null) => {
     const params = {}
     if (projectId) params.project_id = projectId
@@ -506,7 +507,7 @@ export const analyticsAPI = {
 // AI 设计意图引擎：自然语言 → 结构化整车方案
 export const designIntentAPI = {
   parse: (prompt) => api.post('/design-intent/parse', { prompt }),
-  examples: () => api.get('/design-intent/examples')
+  examples: (lang = 'zh') => api.get('/design-intent/examples', { params: { lang } })
 }
 
 export default api

@@ -135,7 +135,7 @@ import { MagicStick, Brush, CopyDocument } from '@element-plus/icons-vue'
 import { designIntentAPI } from '../api'
 import { useDesignerStore } from '../stores/designer'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const designer = useDesignerStore()
 
@@ -158,7 +158,7 @@ const paramGroups = [
 
 onMounted(async () => {
   try {
-    const { data } = await designIntentAPI.examples()
+    const { data } = await designIntentAPI.examples(locale.value)
     examples.value = data.examples
   } catch { /* 示例加载失败不阻塞 */ }
 })

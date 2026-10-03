@@ -259,7 +259,7 @@ async def invoke_llm(prompt: str) -> Dict[str, Any]:
 
 
 # ── 端点 ────────────────────────────────────────────────
-_EXAMPLES = [
+_EXAMPLES_ZH = [
     "我要一台运动感强、风阻低的深色轿跑，适合城市通勤",
     "设计一台稳重大气的黑色豪华轿车，用于商务接待",
     "想要一台通过性好、空间大的 SUV，适合全家周末郊游，白色",
@@ -267,11 +267,21 @@ _EXAMPLES = [
     "一台充满肌肉感的美式跑车，低趴、宽体、红色",
 ]
 
+_EXAMPLES_EN = [
+    "A sporty, low-drag dark coupe for city commuting",
+    "A stately black luxury sedan for business receptions",
+    "A spacious, capable SUV for family weekend trips, in white",
+    "A compact hatchback for young drivers, with rounded lines and a bright color",
+    "A muscular American sports car: low stance, wide body, red",
+]
+
 
 @router.get("/examples")
-def examples():
-    """示例需求（供前端一键填充）"""
-    return {"examples": _EXAMPLES}
+def examples(lang: str = "zh"):
+    """示例需求（供前端一键填充），按 lang 返回中文或英文"""
+    if lang.lower().startswith("en"):
+        return {"examples": _EXAMPLES_EN}
+    return {"examples": _EXAMPLES_ZH}
 
 
 @router.post("/parse")
