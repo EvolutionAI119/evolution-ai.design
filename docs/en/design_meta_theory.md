@@ -1,7 +1,7 @@
 # China's Autonomous Knowledge System for Automotive Styling Design — Meta-Theory Expansion and System Construction
 
 > **Source**: introduced into the project on 2026-09-27; the original is at
-> `D:\API\Research\Automotive\02-AI-3D-Tools\中国汽车造型设计自主知识体系_元理论扩展版.md`
+> `D:\API\Research\Automotive\02-AI-3D-Tools\china_automotive_design_knowledge_system_meta_theory_extended.md`
 > (Chinese-language source: "China's Autonomous Knowledge System for Automotive Styling Design — Meta-Theory Expansion Edition"),
 > serving as the meta-theoretical reference for the EVOLUTION AI platform's design philosophy and styling knowledge system.
 > Accompanying figures (the methodology meta-theory mind map, the ComfyUI-style knowledge-base diagram) are stored in the same directory and were not imported with this text.

@@ -77,7 +77,7 @@ Both steps carry a training-evidence digest in `input_params` (task_id, task nam
 | `/api/v1/workflows/{id}/steps/{sid}/review` | POST | **required** | `{approved: bool, comment?: str(≤500)}` | 200 + `workflow_status`; 400 not reviewable / finalized |
 | `/api/v1/workflows/{id}/steps` | GET | optional | — | step details (status/progress/review I/O) |
 
-Conventions: auth failures return `401 {"detail":"缺少认证信息，请先登录"}` (missing credentials — log in first) or `401 {"detail":"Token 无效或已过期"}` (token invalid or expired) — backend `detail` messages are returned verbatim in Chinese; business validation failures return 400/404 with a readable `detail`; review `comment` is capped at 500 characters.
+Conventions: auth failures return `401 {"detail":"Missing credentials, please log in first"}` or `401 {"detail":"Token is invalid or expired"}` — backend `detail` messages are returned verbatim; business validation failures return 400/404 with a readable `detail`; review `comment` is capped at 500 characters.
 
 ## 5. Authentication and Authorization Mechanism
 
@@ -117,7 +117,7 @@ End-to-end verification (2026-09-27, all passed):
 
 | # | Scenario | Expected | Observed |
 | --- | --- | --- | --- |
-| 1 | Call review endpoint without Token | 401 | `{"detail":"缺少认证信息，请先登录"}` (missing credentials — log in first) |
+| 1 | Call review endpoint without Token | 401 | `{"detail":"Missing credentials, please log in first"}` |
 | 2 | Login for Token + create project | 200 / 201 | pass |
 | 3 | Create training-review workflow with Token | 201 + 2 preset steps + evidence | pass |
 | 4 | execute the review workflow | 400 rejected | pass |
