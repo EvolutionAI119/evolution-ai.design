@@ -226,3 +226,36 @@ _*.py
 # === 内部机密资产（不外发、不上线）===
 # 墨玉品牌 DNA：高度机密，禁止进入公开仓库与线上构建
 internal/
+
+# === HARNESS 已剥离资产（移至 SISA，平台不再保留）===
+# A 级曲面算法链及其测试
+backend/app/iges_nurbs.py
+backend/app/iges_reader.py
+backend/app/inference.py
+backend/app/nurbs_curvature.py
+backend/app/panel_split.py
+backend/app/surface_grade.py
+backend/app/graded_surface.py
+backend/app/quality_assessment.py
+backend/app/proximity_filter.py
+backend/app/dna_mapping.py
+backend/app/car_concept.py
+backend/app/feature_plugins.py
+backend/app/build_pipeline.py
+backend/app/gh_export.py
+backend/app/batch_a_surface.py
+backend/tests/test_iges_nurbs.py
+backend/tests/test_inference.py
+backend/tests/test_panel_split.py
+backend/tests/test_car_concept.py
+backend/tests/test_dna_mapping.py
+backend/tests/test_feature_plugins.py
+backend/tests/test_g2_true_curvature.py
+backend/tests/test_geometry_curvature.py
+backend/tests/test_graded_surface.py
+backend/tests/test_metric_invariance.py
+backend/tests/test_bayes_feasibility.py
+backend/tools/iges_*
+backend/tools/extract_dna_*
+backend/tools/calibrate_curvature_*
+backend/tools/analyze_a_surface_*

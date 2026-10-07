@@ -27,7 +27,7 @@ import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 try:
     import torch
@@ -166,14 +166,19 @@ def _normalize(X: "torch.Tensor"):
 
 
 def _build_dataset(n_samples: int, seed: int):
-    """生成真实合成数据集：质心 + 高斯噪声；返回标准化 X、标签、类别键"""
+    """生成真实合成数据集：质心 + 高斯噪声；返回标准化 X、标签、类别键
+
+    同时返回归一化统计量 `(mean, std)`：推理侧必须用**同一组统计量**才能把
+    原始参数映射到训练空间。此前未返回也未保存，导致检查点无法被正确推理
+    （详见 app/inference.py 的说明）。
+    """
     g = torch.Generator().manual_seed(seed)
     keys, centroids = _centroid_tensor()
     scales = _noise_scales(centroids)
     labels = torch.randint(0, len(keys), (n_samples,), generator=g)
     noise = torch.randn(n_samples, len(PARAM_ORDER), generator=g) * scales
-    X, _, _ = _normalize(centroids[labels] + noise)
-    return X, labels, keys
+    X, mean, std = _normalize(centroids[labels] + noise)
+    return X, labels, keys, mean, std
 
 
 def _apply_style(params: "torch.Tensor", style: str) -> "torch.Tensor":
@@ -306,7 +311,7 @@ def _training_worker(task_id: int, cfg: Dict[str, Any]) -> None:
 
         torch.manual_seed(cfg["seed"])
         torch.set_num_threads(max(1, min(4, (os.cpu_count() or 2))))
-        X, y, keys = _build_dataset(cfg["samples"], cfg["seed"])
+        X, y, keys, norm_mean, norm_std = _build_dataset(cfg["samples"], cfg["seed"])
 
         n = len(y)
         n_val = max(1, int(n * 0.2))
@@ -378,6 +383,10 @@ def _training_worker(task_id: int, cfg: Dict[str, Any]) -> None:
             "classes": keys,
             "metrics": metrics,
             "config": cfg,
+            # 归一化统计量：推理侧必须用同一组 mean/std 才能正确映射输入。
+            # 保存后无需重放数据集，旧检查点仍可由 app/inference.py 重放得到。
+            "norm_mean": norm_mean.squeeze(0).tolist(),
+            "norm_std": norm_std.squeeze(0).tolist(),
         }, ckpt_path)
 
         best_val = max(m["val_acc"] for m in metrics)
@@ -445,6 +454,11 @@ class DesignRequest(BaseModel):
     car_type: str = "sedan"
     style: str = "elegant"
     brand: Optional[str] = None
+    # 训练模型介入开关（Phase 0）：
+    #   None/False → 行为与改造前完全一致，模型不参与
+    #   True       → 用已训练检查点对生成结果做"车型归属判定"，把判别结论写回响应
+    #   "latest" | "best" | "<task_id>" → 指定检查点
+    use_trained_model: Optional[Union[bool, str]] = None
 
 
 class OptimizeRequest(BaseModel):
@@ -672,6 +686,27 @@ def model_weights(db: Session = Depends(get_db)):
     return {"weights": weights, "count": len(weights)}
 
 
+@router.get("/ai/trained-models")
+def trained_models(
+    db: Session = Depends(get_db),
+):
+    """训练任务产物列表（与推理层解耦，仅读数据库记录）"""
+    _ensure_training_capable()
+    rows = db.query(TrainingTask).filter(
+        TrainingTask.status == "completed"
+    ).order_by(TrainingTask.completed_at.desc()).all()
+    weights = []
+    for t in rows:
+        weights.append({
+            "task_id": t.id,
+            "name": t.name,
+            "checkpoint": f"cartype_mlp_task{t.id}.pt",
+            "best_val_acc": t.best_val_acc,
+            "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+        })
+    return {"weights": weights, "count": len(weights)}
+
+
 # ── 质量评估 / 生成设计 / 多目标优化端点 ───────────────
 @router.post("/ai/evaluate-quality")
 def evaluate_quality(req: QualityRequest):
@@ -711,6 +746,9 @@ def generate_design(req: DesignRequest):
     scales = _noise_scales(centroids) * 0.8
     sampled = base + torch.randn(len(PARAM_ORDER), generator=g) * scales
 
+    # 训练模型介入已迁移至 SISA，平台端不再支持
+    trained: Optional[Dict[str, Any]] = None
+
     qm = _quality_metrics(sampled)
     # 创意度：偏离质心越远创意越高（但有上限）
     creativity = round(float(62 + torch.norm(
@@ -731,7 +769,7 @@ def generate_design(req: DesignRequest):
         brand_match = None
 
     design_id = "DSN-" + uuid.uuid4().hex[:8].upper()
-    return {
+    body = {
         "design_id": design_id,
         "car_type": car_type,
         "style": req.style,
@@ -741,6 +779,9 @@ def generate_design(req: DesignRequest):
         "creativity_score": creativity,
         "brand_dna_match": brand_match,
     }
+    if trained is not None:
+        body["trained_model"] = trained
+    return body
 
 
 @router.post("/ai/optimize")

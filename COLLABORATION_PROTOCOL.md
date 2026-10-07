@@ -60,6 +60,28 @@
 - [ ] 需要验证时用 curl / 浏览器，而非重启服务
 - [ ] 测试前后清理自有数据；不运行与他人冲突的长任务
 
+## 七、HARNESS / SISA 隔离条款（2026-10-03 新增）
+
+> 依据：《SISA 资产分类与保密声明》SISA-LEGAL-2026-002、《SISA 隔离治理规范》
+
+1. **HARNESS 资产已剥离**：以下模块、测试与工具已从平台迁移至 SISA（`D:\API\SISA`），平台工作区**不再保留**：
+   - A 级曲面算法链：`iges_nurbs`、`iges_reader`、`nurbs_curvature`、`panel_split`、`surface_grade`、`graded_surface`、`quality_assessment`、`proximity_filter`、`dna_mapping`、`car_concept`、`feature_plugins`、`build_pipeline`、`gh_export`、`batch_a_surface`、`inference`
+   - 对应测试：`test_iges_nurbs`、`test_inference`、`test_panel_split`、`test_car_concept`、`test_dna_mapping`、`test_feature_plugins`、`test_g2_true_curvature`、`test_geometry_curvature`、`test_graded_surface`、`test_metric_invariance`、`test_bayes_feasibility`
+   - 对应工具：`iges_*`、`extract_dna_*`、`calibrate_curvature_*`、`analyze_a_surface_*`
+   - 墨玉品牌 DNA 及全部 `internal/` 子目录
+
+2. **平台不再依赖**：上述文件已从 `.gitignore` 排除，平台任何代码不得再 import 或引用这些模块。若发现残留引用，应立即移除并报告。
+
+3. **单向同步**：平台开源资产如需进入 SISA，必须由 SISA 侧 `tools/sync_open_source.ps1` 执行，来源为平台公开仓库**已提交版本**（`git archive HEAD`）。**禁止任何反向回流**。
+
+4. **SISA 保密**：SISA 系统的全部开发内容（含墨玉项目）严格保密，**禁止提交至 evolution-ai.design 的 GitHub 仓库**及任何公开托管平台。SISA 本地版本库不得配置公开远程。
+
+5. **墨玉只在 SISA**：墨玉（MOYU）项目的一切开发只能在 `D:\API\SISA` 内进行；平台工作区禁止任何墨玉相关代码、数据或配置。
+
+6. **泄漏守卫**：SISA 侧每次开发/版本操作前必须运行 `tools/leak_guard.ps1`；平台侧 `.gitignore` 防线持续生效。
+
+7. **例外审批**：任何跨越上述边界的例外，须经双方书面（含经确认的电子文本）同意，并记录于 SISA `governance/exceptions.log`。
+
 ---
 
-*协议版本 v1（2026-10-02）。如需调整规则，由用户确认后升版。*
+*协议版本 v2（2026-10-03）。如需调整规则，由用户确认后升版。*
