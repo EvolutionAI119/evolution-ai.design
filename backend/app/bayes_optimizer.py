@@ -133,7 +133,14 @@ def _normal_cdf(z: np.ndarray) -> np.ndarray:
 
 @dataclass
 class BayesSession:
-    """一次贝叶斯寻优会话：参数空间 + 目标方向 + 采集函数 + 观测序列。"""
+    """一次贝叶斯寻优会话：参数空间 + 目标方向 + 采集函数 + 观测序列。
+
+    可选**可行性过滤**（`feasible`）：
+      造型寻优往往带有硬性设计约束（例如品牌的比例约束），
+      若不加过滤，`suggest()` 会给出违反约束的候选，白白消耗观测预算。
+      传入 `feasible(params) -> bool` 后，候选池会被过滤；**若过滤后不足，
+      自动回退到未过滤结果**并如实报告，而不是返回空列表。
+    """
 
     space: ParameterSpace
     goal: str = "maximize"           # maximize | minimize
@@ -144,28 +151,116 @@ class BayesSession:
     ucb_kappa: float = 2.0           # UCB 探索权重
     ei_xi: float = 0.01              # EI 最小改进量
     observations: List[Dict[str, Any]] = field(default_factory=list)
+    #: 可行性判定：接收参数字典，返回是否合法。None 表示不过滤。
+    feasible: Optional[Any] = None
 
     def __post_init__(self) -> None:
         self._rng = np.random.default_rng(self.seed)
         self._gp = GaussianProcessSurrogate()
+        #: 上一次 suggest 的过滤统计（供调用方核验，而非静默丢弃）
+        self.last_filter_stats: Dict[str, Any] = {}
+
+    def _params_of(self, u: np.ndarray) -> Dict[str, float]:
+        return self.space.vector_to_params(self.space.denormalize(u))
+
+    def _apply_feasibility(self, pool: np.ndarray, n: int,
+                           acq: Optional[np.ndarray] = None) -> np.ndarray:
+        """按可行性过滤候选池（可选），返回选中的归一化点
+
+        - 无 `feasible`：沿用原有排序逻辑
+        - 有 `feasible`：先过滤再排序；**若可用候选不足 n，则用已过滤集合补足，
+          仍不足时回退到未过滤结果**，并把统计写入 `last_filter_stats`。
+        """
+        if acq is not None:
+            order = np.argsort(acq)[::-1]
+            pool_sorted = pool[order]
+        else:
+            pool_sorted = pool
+
+        if self.feasible is None:
+            self.last_filter_stats = {"filtered": False, "n_pool": int(len(pool_sorted))}
+            return pool_sorted[:n]
+
+        ok_mask = np.array([bool(self.feasible(self._params_of(u)))
+                            for u in pool_sorted], dtype=bool)
+        n_ok = int(ok_mask.sum())
+        kept = pool_sorted[ok_mask]
+        stats = {
+            "filtered": True,
+            "n_pool": int(len(pool_sorted)),
+            "n_feasible": n_ok,
+            "feasible_ratio": round(n_ok / max(len(pool_sorted), 1), 4),
+            "fallback": False,
+        }
+        if n_ok >= n:
+            self.last_filter_stats = stats
+            return kept[:n]
+        # 可行候选不足：如实标记回退，避免"静默给出违规候选"
+        stats["fallback"] = True
+        stats["reason"] = f"可行候选仅 {n_ok} 个，少于请求 {n} 个，已回退补足"
+        self.last_filter_stats = stats
+        if n_ok > 0:
+            tail = pool_sorted[~ok_mask][: max(0, n - n_ok)]
+            return np.vstack([kept, tail])
+        return pool_sorted[:n]
+
+    def _feasible_random(self, n: int, *, tries: int = 12) -> np.ndarray:
+        """随机填充阶段的可行点采样（仅在观测不足时使用，规模小、可承受两阶段）
+
+        先批量抽取（规模 n 的小倍数），过滤后不足再增量补抽；
+        始终为空则如实回退并记账。
+        """
+        if self.feasible is None:
+            return self._rng.random((n, self.space.dim))
+        kept: List[np.ndarray] = []
+        seen = 0
+        for _ in range(tries):
+            batch = self._rng.random((max(n * 4, 32), self.space.dim))
+            seen += len(batch)
+            for u in batch:
+                if len(kept) >= n:
+                    break
+                if self.feasible(self._params_of(u)):
+                    kept.append(u)
+            if len(kept) >= n:
+                break
+        self.last_filter_stats = {
+            "filtered": True, "phase": "random_fill",
+            "n_drawn": seen, "n_feasible": len(kept),
+            "fallback": len(kept) == 0,
+        }
+        if not kept:
+            self.last_filter_stats["reason"] = (
+                "随机填充阶段未找到可行点（约束可能过紧或参数空间不匹配）")
+            return self._rng.random((n, self.space.dim))
+        while len(kept) < n:
+            kept.append(kept[len(kept) % len(kept)])
+        return np.vstack(kept[:n])
+
+    def _random_points(self, n: int) -> np.ndarray:
+        """随机候选点（不在此处过滤）
+
+        刻意**不**在这里做可行性拒绝采样：`suggest` 会以 4096 规模的候选池
+        调用本方法，逐点检查会使其慢两个数量级。过滤统一在
+        `_apply_feasibility` 中对**已生成的池**做（一次性 mask），成本可控。
+        """
+        return self._rng.random((n, self.space.dim))
 
     # -- 内部方向归一：minimize → 取负，统一为最大化 --
     def _internal_scores(self) -> np.ndarray:
         s = np.array([o["score"] for o in self.observations], dtype=float)
         return s if self.goal == "maximize" else -s
 
-    def _random_points(self, n: int) -> np.ndarray:
-        return self._rng.random((n, self.space.dim))
-
     def suggest(self, n: int = 1) -> List[Dict[str, float]]:
         """建议下一组采样参数（原始量纲）。
 
         观测不足 _N_INIT 时随机空间填充；否则拟合 GP 并在候选池上
         最大化采集函数（EI / UCB）。多点建议按采集值排序取前 n。
+        若配置了 `feasible`，候选会被可行性过滤（详见 `_apply_feasibility`）。
         """
         n = max(1, int(n))
         if len(self.observations) < _N_INIT:
-            pts = self._random_points(n)
+            pts = self._feasible_random(n)
         else:
             X = self.space.normalize(
                 np.array([o["vector"] for o in self.observations], dtype=float))
@@ -181,8 +276,7 @@ class BayesSession:
                 imp = mu - best - self.ei_xi
                 z = imp / sigma
                 acq = imp * _normal_cdf(z) + sigma * _normal_pdf(z)
-            idx = np.argsort(acq)[::-1][:n]
-            pts = pool[idx]
+            pts = self._apply_feasibility(pool, n, acq)
         return [self.space.vector_to_params(self.space.denormalize(u)) for u in pts]
 
     def observe(self, params: Dict[str, float], score: float) -> Dict[str, Any]:
