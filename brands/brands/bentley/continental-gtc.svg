@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="gradBg_bentley_continental-gtc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradBody_bentley_continental-gtc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.5" />
+    </linearGradient>
+    <linearGradient id="gradWindow_bentley_continental-gtc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:0.92" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0.92" />
+    </linearGradient>
+    <radialGradient id="gradShadow_bentley_continental-gtc" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="gradRim_bentley_continental-gtc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#64748b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#gradBg_bentley_continental-gtc)" />
+  <ellipse cx="399.99999999999994" cy="358" rx="335.99999999999994" ry="7" fill="url(#gradShadow_bentley_continental-gtc)" />
+  <line x1="20" y1="351" x2="780" y2="351" stroke="rgba(59,130,246,0.3)" stroke-width="1" />
+  <path d="M50,331.9587628865979 Q100.51546391752578,250.84536082474227 172.68041237113403,206.23298969072164 L259.2783505154639,206.23298969072164 L259.2783505154639,177.84329896907218 L321.57060265213494,129.17525773195877 L533.5597980799762,129.17525773195877 L587.6430940880373,177.84329896907218 L587.6430940880373,198.12164948453608 Q627.4422680412371,244.7618556701031 692.3257731958762,315.7360824742268 L749.9999999999999,331.9587628865979 L663.4948453608247,327.9587628865979 Q605.8144329896907,385.90721649484533 548.1340206185566,327.9587628865979 L252.01030927835052,327.9587628865979 Q194.3298969072165,385.90721649484533 136.64948453608247,327.9587628865979 L50,327.9587628865979 Z" fill="url(#gradBody_bentley_continental-gtc)" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M259.2783505154639,177.84329896907218 L321.57060265213494,129.17525773195877 L533.5597980799762,129.17525773195877 L587.6430940880373,177.84329896907218 Z" fill="url(#gradWindow_bentley_continental-gtc)" stroke="rgba(59,130,246,0.6)" stroke-width="0.6" stroke-linejoin="round" />
+  <circle cx="194.3298969072165" cy="297.319587628866" r="52.68041237113402" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="194.3298969072165" cy="297.319587628866" r="28.974226804123713" fill="url(#gradRim_bentley_continental-gtc)" stroke="#334155" stroke-width="1" />
+  <circle cx="194.3298969072165" cy="297.319587628866" r="11.589690721649484" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="194.3298969072165" cy="297.319587628866" r="4.741237113402062" fill="#3b82f6" />
+  <circle cx="605.8144329896907" cy="297.319587628866" r="52.68041237113402" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="605.8144329896907" cy="297.319587628866" r="28.974226804123713" fill="url(#gradRim_bentley_continental-gtc)" stroke="#334155" stroke-width="1" />
+  <circle cx="605.8144329896907" cy="297.319587628866" r="11.589690721649484" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="605.8144329896907" cy="297.319587628866" r="4.741237113402062" fill="#3b82f6" />
+  <text x="776" y="385" text-anchor="end" fill="#3b82f6" font-family="monospace" font-size="13" font-weight="bold">Bentley - Conti GTC  L:4850mm</text>
+</svg>

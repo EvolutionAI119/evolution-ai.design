@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="gradBg_porsche_taycan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradBody_porsche_taycan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#ef4444;stop-opacity:0.5" />
+    </linearGradient>
+    <linearGradient id="gradWindow_porsche_taycan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:0.92" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0.92" />
+    </linearGradient>
+    <radialGradient id="gradShadow_porsche_taycan" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="gradRim_porsche_taycan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#64748b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#gradBg_porsche_taycan)" />
+  <ellipse cx="400.0" cy="358" rx="336.0" ry="7" fill="url(#gradShadow_porsche_taycan)" />
+  <line x1="20" y1="351" x2="780" y2="351" stroke="rgba(239,68,68,0.3)" stroke-width="1" />
+  <path d="M50,332.3695345557123 Q98.37799717912553,254.45698166431595 167.48942172073345,211.60507757404795 L219.2524682651622,211.60507757404795 L219.2524682651622,184.33568406205924 L279.08658033484824,137.58815232722145 L530.1732509310191,137.58815232722145 L582.853148730506,184.33568406205924 L582.853148730506,203.81382228490833 Q620.1622002820875,248.61354019746122 688.8998589562765,316.787023977433 L750.0,332.3695345557123 L652.3201692524683,328.3695345557123 Q597.2496473906912,383.4471086036672 542.179125528914,328.3695345557123 L243.29337094499294,328.3695345557123 Q188.2228490832158,383.4471086036672 133.15232722143867,328.3695345557123 L50,328.3695345557123 Z" fill="url(#gradBody_porsche_taycan)" stroke="#ef4444" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M219.2524682651622,184.33568406205924 L279.08658033484824,137.58815232722145 L530.1732509310191,137.58815232722145 L582.853148730506,184.33568406205924 Z" fill="url(#gradWindow_porsche_taycan)" stroke="rgba(239,68,68,0.6)" stroke-width="0.6" stroke-linejoin="round" />
+  <circle cx="188.2228490832158" cy="299.92947813822286" r="50.07052186177715" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="188.2228490832158" cy="299.92947813822286" r="27.538787023977434" fill="url(#gradRim_porsche_taycan)" stroke="#334155" stroke-width="1" />
+  <circle cx="188.2228490832158" cy="299.92947813822286" r="11.015514809590973" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="188.2228490832158" cy="299.92947813822286" r="4.506346967559944" fill="#ef4444" />
+  <circle cx="597.2496473906912" cy="299.92947813822286" r="50.07052186177715" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="597.2496473906912" cy="299.92947813822286" r="27.538787023977434" fill="url(#gradRim_porsche_taycan)" stroke="#334155" stroke-width="1" />
+  <circle cx="597.2496473906912" cy="299.92947813822286" r="11.015514809590973" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="597.2496473906912" cy="299.92947813822286" r="4.506346967559944" fill="#ef4444" />
+  <text x="776" y="385" text-anchor="end" fill="#ef4444" font-family="monospace" font-size="13" font-weight="bold">Porsche - Taycan  L:4963mm</text>
+</svg>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="gradBg_ferrari_f8-tributo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradBody_ferrari_f8-tributo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#dc2626;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:0.5" />
+    </linearGradient>
+    <linearGradient id="gradWindow_ferrari_f8-tributo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:0.92" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0.92" />
+    </linearGradient>
+    <radialGradient id="gradShadow_ferrari_f8-tributo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#000000;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="gradRim_ferrari_f8-tributo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#94a3b8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#64748b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#gradBg_ferrari_f8-tributo)" />
+  <ellipse cx="400.0" cy="358" rx="335.99999999999994" ry="7" fill="url(#gradShadow_ferrari_f8-tributo)" />
+  <line x1="20" y1="351" x2="780" y2="351" stroke="rgba(220,38,38,0.3)" stroke-width="1" />
+  <path d="M50,335.57796573411406 Q100.47711993060074,262.3443938408154 172.58729126003036,222.0659292995012 L262.53524181305573,222.0659292995012 L262.53524181305573,196.43417913684667 L302.09912439971737,152.49403600086748 L472.8890723391217,152.49403600086748 L512.092118878186,196.43417913684667 L512.092118878186,214.7425721101713 Q619.5413142485361,256.851875948818 688.6076772934288,320.9312513554543 L750.0,335.57796573411406 L656.1711125569291,331.57796573411406 Q596.5191932335719,391.695076989807 536.8672739102146,331.57796573411406 L253.87226198221643,331.57796573411406 Q194.22034265885924,391.695076989807 134.56842333550205,331.57796573411406 L50,331.57796573411406 Z" fill="url(#gradBody_ferrari_f8-tributo)" stroke="#dc2626" stroke-width="1.5" stroke-linejoin="round" />
+  <path d="M262.53524181305573,196.43417913684667 L302.09912439971737,152.49403600086748 L472.8890723391217,152.49403600086748 L512.092118878186,196.43417913684667 Z" fill="url(#gradWindow_ferrari_f8-tributo)" stroke="rgba(220,38,38,0.6)" stroke-width="0.6" stroke-linejoin="round" />
+  <circle cx="194.22034265885924" cy="295.34808067664284" r="54.651919323357184" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="194.22034265885924" cy="295.34808067664284" r="30.058555627846452" fill="url(#gradRim_ferrari_f8-tributo)" stroke="#334155" stroke-width="1" />
+  <circle cx="194.22034265885924" cy="295.34808067664284" r="12.02342225113858" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="194.22034265885924" cy="295.34808067664284" r="4.9186727391021465" fill="#dc2626" />
+  <circle cx="596.5191932335719" cy="295.34808067664284" r="54.651919323357184" fill="#020617" stroke="#000000" stroke-width="2" />
+  <circle cx="596.5191932335719" cy="295.34808067664284" r="30.058555627846452" fill="url(#gradRim_ferrari_f8-tributo)" stroke="#334155" stroke-width="1" />
+  <circle cx="596.5191932335719" cy="295.34808067664284" r="12.02342225113858" fill="#1e293b" stroke="#0f172a" stroke-width="0.5" />
+  <circle cx="596.5191932335719" cy="295.34808067664284" r="4.9186727391021465" fill="#dc2626" />
+  <text x="776" y="385" text-anchor="end" fill="#dc2626" font-family="monospace" font-size="13" font-weight="bold">Ferrari - F8 Tributo  L:4611mm</text>
+</svg>
