@@ -1,5 +1,16 @@
 """pytest共享fixtures"""
 import os
+import sys
+from pathlib import Path
+
+# 确保跨工程导入可用：
+# `app.graded_surface` 依赖 `algorithm_model`（位于工程根 Evolution-Ai.Design/），
+# 而测试从 backend/ 运行。必须在导入 app.* 之前把工程根加入 sys.path。
+_BACKEND = Path(__file__).resolve().parents[1]
+_ROOT = _BACKEND.parent
+for _p in (_BACKEND, _ROOT):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 # 限流按客户端 IP 累计计数，TestClient 固定同一 IP 会互相干扰触发 429；
 # 必须在导入 app.main 之前禁用（环境变量优先级高于 .env）

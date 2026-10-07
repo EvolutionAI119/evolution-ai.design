@@ -49,14 +49,20 @@ ALL_COMPONENTS = (list(_SIMPLE_COMPONENTS) + list(_SIDE_COMPONENTS)
 @router.post("/generate", response_model=CarCompleteResponse)
 async def generate_complete_car(request: CarGenerateRequest,
                                 current: User = Depends(get_current_user)):
-    """生成完整车身模型"""
+    """生成完整车身模型
+
+    注意：请求体中的 `params_override` 会**真正应用到几何**。
+    此前该字段被接收但从未传递，导致前端参数滑杆与几何脱节。
+    """
     try:
         start = time.time()
-        car = _get_generator().generate_complete_car()
+        car = _get_generator().generate_complete_car(
+            params_override=request.params_override)
         elapsed = (time.time() - start) * 1000
         return CarCompleteResponse(
             name=car["name"], components=car["components"],
-            total_surfaces=car["total_surfaces"], parameters=car.get("parameters"))
+            total_surfaces=car["total_surfaces"], parameters=car.get("parameters"),
+            nurbs_quality=car.get("nurbs_quality"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -112,14 +118,20 @@ async def get_car_parameters():
 @router.post("/regenerate", response_model=CarCompleteResponse)
 async def regenerate_car(request: CarGenerateRequest,
                          current: User = Depends(get_current_user)):
-    """用新参数重新生成车身"""
+    """用新参数重新生成车身
+
+    修正：此前该接口只是新建一个**默认**生成器，`params_override` 被完全丢弃，
+    与 docstring 声称的"用新参数重新生成"不符。
+    """
     try:
         global _generator
         _generator = CarBodyGenerator()
-        car = _generator.generate_complete_car()
+        car = _generator.generate_complete_car(
+            params_override=request.params_override)
         return CarCompleteResponse(
             name=car["name"], components=car["components"],
-            total_surfaces=car["total_surfaces"], parameters=car.get("parameters"))
+            total_surfaces=car["total_surfaces"], parameters=car.get("parameters"),
+            nurbs_quality=car.get("nurbs_quality"))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

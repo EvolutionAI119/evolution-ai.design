@@ -1,7 +1,7 @@
 """Pydantic数据模型（请求/响应Schema）"""
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 # ============ 项目 ============
@@ -163,6 +163,28 @@ class CarGenerateRequest(BaseModel):
     project_id: Optional[int] = None
     params_override: Optional[Dict[str, float]] = None
 
+    #: 前端（`src/config/carPresets.js`）发送的字段名。
+    #: 前端调用为 `carAPI.generate({ car_type, params, color })`，
+    #: 而此前后端只认 `params_override`，Pydantic 又会**静默忽略**未知字段，
+    #: 导致参数被悄悄丢弃、参数滑杆与几何脱节。
+    #: 这里接受 `params` 并映射到 `params_override`（字段名不同、语义相同）。
+    params: Optional[Dict[str, float]] = Field(
+        None, description="参数覆盖（前端命名；等价于 params_override）")
+    car_type: Optional[str] = Field(
+        None, description="车型标识（仅记录；几何由参数决定）")
+    color: Optional[str] = Field(None, description="车身颜色（仅记录）")
+
+    @model_validator(mode="after")
+    def _merge_params_alias(self):
+        """`params` 与 `params_override` 合并，`params_override` 优先"""
+        if self.params and not self.params_override:
+            object.__setattr__(self, "params_override", dict(self.params))
+        elif self.params and self.params_override:
+            merged = dict(self.params)
+            merged.update(self.params_override)
+            object.__setattr__(self, "params_override", merged)
+        return self
+
 
 class CarComponentGenerateRequest(BaseModel):
     component: str = Field(..., description="部件名称")
@@ -186,6 +208,10 @@ class CarCompleteResponse(BaseModel):
     components: List[Dict[str, Any]]
     total_surfaces: int
     parameters: Optional[Dict[str, Any]] = None
+    # 实测曲面质量（可选，向后兼容）。
+    # 此前该信息是生成器内硬编码的 `g2_continuous: True`，且未暴露到响应；
+    # 现改为真实测量结果并可选返回，使"质量声明"可被前端与测试核验。
+    nurbs_quality: Optional[Dict[str, Any]] = None
 
 
 # ============ 模型构建 ============

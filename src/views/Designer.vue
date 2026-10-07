@@ -520,6 +520,11 @@ const paramTab = ref('dimensions')
 const baseViewAngle = ref('perspective')
 const previewViewAngle = ref('perspective')
 
+// 最近一次生成的**实测**曲面质量快照（来自后端 nurbs_quality）。
+// 后端此前把该字段硬编码为 g2_continuous: true 且未返回给前端，
+// 现为真实测量结果，故在此保留以便如实展示。
+const nurbsQuality = ref(null)
+
 const carParams = params
 
 const currentBrand = computed(() => {
@@ -717,9 +722,24 @@ const generateCar = async () => {
     console.log('Car generated:', data)
     if (data.components && data.components.length > 0) {
       const q = data.nurbs_quality || {}
-      ElMessage.success(
-        `Generated ${data.components.length} components | ${q.surface_count || data.total_surfaces} NURBS surfaces | ${q.control_points_total || 0} control points`
-      )
+      const nSurf = q.surface_count || data.total_surfaces
+      const nCp = q.control_points_total || 0
+      // 实测质量：后端此前把 g2_continuous 硬编码为 true 且未返回，
+      // 现改为真实测量结果。这里如实展示，避免给用户"恒定通过"的错觉。
+      let quality = ''
+      if (q.measured) {
+        quality = q.g2_continuous
+          ? ' | G2 连续（实测）'
+          : ` | G2 未达标（实测：${q.n_flat_surfaces || 0} 个平面曲面）`
+      }
+      const type = q.g2_continuous === false ? 'warning' : 'success'
+      ElMessage({
+        type,
+        message: `已生成 ${data.components.length} 个部件 | ${nSurf} 个 NURBS 曲面 | ${nCp} 个控制点${quality}`,
+        duration: 6000
+      })
+      // 保留实时质量快照，供面板/后续对照使用
+      nurbsQuality.value = q
     } else {
       ElMessage.success('Car generated successfully')
     }
