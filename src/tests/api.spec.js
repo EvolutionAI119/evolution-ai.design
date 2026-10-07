@@ -141,7 +141,11 @@ describe('API 路径与后端路由契约', () => {
     await designIntentAPI.parse('一台运动轿跑')
     expect(captured.method).toBe('post')
     expect(captured.url).toBe('/design-intent/parse')
-    expect(JSON.parse(captured.data)).toEqual({ prompt: '一台运动轿跑' })
+    // 默认语言为 zh，lang 必须随请求体发送
+    expect(JSON.parse(captured.data)).toEqual({ prompt: '一台运动轿跑', lang: 'zh' })
+
+    await designIntentAPI.parse('a sporty coupe', 'en')
+    expect(JSON.parse(captured.data)).toEqual({ prompt: 'a sporty coupe', lang: 'en' })
 
     await designIntentAPI.examples()
     expect(captured.method).toBe('get')

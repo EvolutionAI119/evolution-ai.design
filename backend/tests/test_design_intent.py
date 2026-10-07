@@ -8,6 +8,7 @@
 """
 import math
 import os
+import re
 
 import pytest
 
@@ -28,6 +29,22 @@ GOOD_RAW = {
     "color": {"hex": "#0A0A0F", "name": "曜石黑"},
     "rationale": "降低车高、增大风挡倾角以降低风阻，长发动机盖强化运动姿态。",
     "confidence": 0.86,
+}
+
+# ── 合法英文 LLM 输出样本 ───────────────────────────────
+GOOD_RAW_EN = {
+    "car_type": "sedan",
+    "style_tags": ["rounded", "youthful", "compact"],
+    "params": {
+        "overall_length": 4000, "overall_width": 1800, "overall_height": 1450,
+        "wheel_base": 2550, "track_width": 1550, "ground_clearance": 150,
+        "hood_length": 800, "roof_height": 500, "wheel_diameter": 600,
+        "windshield_angle": 30, "rear_window_angle": 25, "rear_slant_angle": 20,
+        "front_overhang": 750, "rear_overhang": 700,
+    },
+    "color": {"hex": "#FFD700", "name": "Gold"},
+    "rationale": "Compact design with rounded lines, low height and a moderate windshield angle suits young drivers.",
+    "confidence": 0.85,
 }
 
 
@@ -174,7 +191,7 @@ def test_invoke_llm_no_key(monkeypatch):
 
 
 def test_parse_endpoint_with_mocked_llm(client, monkeypatch):
-    async def fake_invoke(prompt):
+    async def fake_invoke(prompt, lang="zh"):
         return GOOD_RAW
     monkeypatch.setattr(di, "invoke_llm", fake_invoke)
     resp = client.post("/api/v1/design-intent/parse",
@@ -200,7 +217,92 @@ def test_examples_endpoint(client):
     assert all(isinstance(e, str) for e in data["examples"])
 
 
-# ── 4. 真实 LLM（默认跳过） ─────────────────────────────
+# ── 4. 英文语言路径（lang=en） ─────────────────────────
+def test_sanitize_en_good_output():
+    out = di.sanitize_intent(GOOD_RAW_EN, lang="en")
+    assert out["car_type"] == "sedan"
+    assert out["style_tags"] == ["rounded", "youthful", "compact"]
+    assert out["color"] == {"hex": "#ffd700", "name": "Gold"}
+    assert out["confidence"] == 0.85
+    assert out["warnings"] == []
+
+
+def test_en_tags_filter_chinese_words():
+    # 英文词表必须过滤掉中文风格词，全部回退默认 composed
+    raw = {**GOOD_RAW_EN, "style_tags": ["运动", "rounded"]}
+    out = di.sanitize_intent(raw, lang="en")
+    assert out["style_tags"] == ["rounded"]
+
+
+def test_en_defaults_on_empty_raw():
+    out = di.sanitize_intent({}, lang="en")
+    assert out["style_tags"] == ["composed"]
+    assert out["color"] == {"hex": "#374151", "name": "Carbon Gray"}
+    assert out["rationale"] == "The model did not provide a design rationale"
+    # 所有警告均为英文（无 CJK 字符）
+    for w in out["warnings"]:
+        assert not re.search(r"[\u4e00-\u9fff]", w), w
+
+
+def test_en_prompt_hint_overrides_car_type():
+    out = di.sanitize_intent({**GOOD_RAW_EN, "car_type": "sedan"},
+                             "I want a red supercar", lang="en")
+    assert out["car_type"] == "sport"
+    assert any("Corrected" in w for w in out["warnings"])
+    for w in out["warnings"]:
+        assert not re.search(r"[\u4e00-\u9fff]", w)
+
+
+def test_en_prompt_suv_hint():
+    out = di.sanitize_intent({**GOOD_RAW_EN, "car_type": "coupe"},
+                             "A capable off-road SUV", lang="en")
+    assert out["car_type"] == "suv"
+
+
+def test_en_bad_color_warning_english():
+    out = di.sanitize_intent({**GOOD_RAW_EN, "color": {"hex": "red"}},
+                             lang="en")
+    assert out["color"] == {"hex": "#374151", "name": "Carbon Gray"}
+    assert any("Invalid color" in w for w in out["warnings"])
+
+
+def test_normalize_lang():
+    assert di.normalize_lang("en") == "en"
+    assert di.normalize_lang("EN-US") == "en"
+    assert di.normalize_lang("zh") == "zh"
+    assert di.normalize_lang("fr") == "zh"
+    assert di.normalize_lang(None) == "zh"
+
+
+def test_parse_endpoint_en_with_mocked_llm(client, monkeypatch):
+    async def fake_invoke(prompt, lang="zh"):
+        assert lang == "en"
+        return GOOD_RAW_EN
+    monkeypatch.setattr(di, "invoke_llm", fake_invoke)
+    resp = client.post("/api/v1/design-intent/parse",
+                       json={"prompt": "A compact hatchback for young drivers",
+                             "lang": "en"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["style_tags"] == ["rounded", "youthful", "compact"]
+    assert data["color"]["name"] == "Gold"
+    # 返回体中所有自然语言字段均无中文（数值/键名除外）
+    for field in ("rationale",):
+        assert not re.search(r"[\u4e00-\u9fff]", data[field])
+    for w in data["warnings"]:
+        assert not re.search(r"[\u4e00-\u9fff]", w)
+
+
+def test_examples_endpoint_en(client):
+    resp = client.get("/api/v1/design-intent/examples?lang=en")
+    assert resp.status_code == 200
+    data = resp.json()["examples"]
+    assert len(data) >= 3
+    for ex in data:
+        assert not re.search(r"[\u4e00-\u9fff]", ex)
+
+
+# ── 5. 真实 LLM（默认跳过） ─────────────────────────────
 @pytest.mark.skipif(os.getenv("RUN_REAL_LLM") != "1",
                     reason="需真实 SiliconFlow 调用；设 RUN_REAL_LLM=1 启用")
 def test_real_llm_roundtrip(client):

@@ -4,7 +4,7 @@
     <div class="dependency-graph-card">
       <div class="card-header">
         <span class="card-title">DEPENDENCY GRAPH</span>
-        <span class="graph-hint">依赖箭头方向：前置 → 后置</span>
+        <span class="graph-hint">{{ t('techMatrix.graphHint') }}</span>
       </div>
       <div class="graph-body">
         <svg class="dependency-svg" :viewBox="`0 0 ${graphWidth} ${graphHeight}`" preserveAspectRatio="xMidYMid meet">
@@ -50,8 +50,8 @@
                 :stroke="isNodeHighlighted(node.id) ? 'var(--accent)' : 'var(--border-color)'"
                 :stroke-width="isNodeHighlighted(node.id) ? 2 : 1"
               />
-              <text x="0" y="-8" class="node-title" text-anchor="middle">{{ node.dimension }}</text>
-              <text x="0" y="10" class="node-sub" text-anchor="middle">{{ node.stage }} · {{ node.priority }}</text>
+              <text x="0" y="-8" class="node-title" text-anchor="middle">{{ t('techMatrix.dimension.' + node.id) }}</text>
+              <text x="0" y="10" class="node-sub" text-anchor="middle">{{ stageLabel(node.stage) }} · {{ node.priority }}</text>
             </g>
           </g>
           <!-- 箭头标记定义 -->
@@ -62,10 +62,10 @@
           </defs>
         </svg>
         <div class="legend">
-          <span class="legend-item"><span class="dot dot-p0"></span>P0 最高优先级</span>
-          <span class="legend-item"><span class="dot dot-p1"></span>P1 高优先级</span>
-          <span class="legend-item"><span class="dot dot-p2"></span>P2 中优先级</span>
-          <span class="legend-item"><span class="line-demo"></span>依赖关系</span>
+          <span class="legend-item"><span class="dot dot-p0"></span>{{ t('techMatrix.legendP0') }}</span>
+          <span class="legend-item"><span class="dot dot-p1"></span>{{ t('techMatrix.legendP1') }}</span>
+          <span class="legend-item"><span class="dot dot-p2"></span>{{ t('techMatrix.legendP2') }}</span>
+          <span class="legend-item"><span class="line-demo"></span>{{ t('techMatrix.legendDep') }}</span>
         </div>
       </div>
     </div>
@@ -80,13 +80,13 @@
           <thead>
             <tr>
               <th class="col-id">#</th>
-              <th class="col-dim">选型维度</th>
-              <th class="col-current">当前方案</th>
-              <th class="col-recommend">推荐方案</th>
-              <th class="col-stage">阶段</th>
-              <th class="col-priority">优先级</th>
-              <th class="col-dependency">依赖链</th>
-              <th class="col-reason">核心理由</th>
+              <th class="col-dim">{{ t('techMatrix.colDimension') }}</th>
+              <th class="col-current">{{ t('techMatrix.colCurrent') }}</th>
+              <th class="col-recommend">{{ t('techMatrix.colRecommended') }}</th>
+              <th class="col-stage">{{ t('techMatrix.colStage') }}</th>
+              <th class="col-priority">{{ t('techMatrix.colPriority') }}</th>
+              <th class="col-dependency">{{ t('techMatrix.colDependency') }}</th>
+              <th class="col-reason">{{ t('techMatrix.colReason') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -98,19 +98,19 @@
               :class="{ 'row-highlight': isNodeHighlighted(item.id) }"
             >
               <td class="col-id">{{ item.id }}</td>
-              <td class="col-dim">{{ item.dimension }}</td>
-              <td class="col-current">{{ item.currentSolution }}</td>
+              <td class="col-dim">{{ t('techMatrix.dimension.' + item.id) }}</td>
+              <td class="col-current">{{ t('techMatrix.current.' + item.id) }}</td>
               <td class="col-recommend">
-                <span class="recommend-tag">{{ item.recommendedSolution }}</span>
+                <span class="recommend-tag">{{ t('techMatrix.recommended.' + item.id) }}</span>
               </td>
               <td class="col-stage">
-                <span class="stage-tag" :class="`stage-${item.stage}`">{{ item.stage }}</span>
+                <span class="stage-tag" :class="`stage-${stageClass(item.stage)}`">{{ stageLabel(item.stage) }}</span>
               </td>
               <td class="col-priority">
                 <span class="priority-tag" :class="`priority-${item.priority.toLowerCase()}`">{{ item.priority }}</span>
               </td>
               <td class="col-dependency">
-                <div v-if="item.dependencies.length === 0" class="dep-none">无前置</div>
+                <div v-if="item.dependencies.length === 0" class="dep-none">{{ t('techMatrix.noPrerequisite') }}</div>
                 <div v-else class="dep-chain">
                   <span
                     v-for="(depId, idx) in item.dependencies"
@@ -121,10 +121,10 @@
                     <span v-if="idx < item.dependencies.length - 1" class="dep-arrow">→</span>
                   </span>
                   <span class="dep-arrow dep-final">→</span>
-                  <span class="dep-node dep-self">{{ item.dimension }}</span>
+                  <span class="dep-node dep-self">{{ t('techMatrix.dimension.' + item.id) }}</span>
                 </div>
               </td>
-              <td class="col-reason">{{ item.coreReason }}</td>
+              <td class="col-reason">{{ t('techMatrix.reason.' + item.id) }}</td>
             </tr>
           </tbody>
         </table>
@@ -135,9 +135,17 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { techSelectionMatrix, matrixMetadata } from '../data/techSelectionMatrix.js'
+import { useI18n } from 'vue-i18n'
+import { techSelectionMatrix } from '../data/techSelectionMatrix.js'
 
+const { t } = useI18n()
 const hoveredNode = ref(null)
+
+// 阶段（数据层为中文枚举）→ 稳定样式键 / 界面翻译
+const stageClass = (stage) =>
+  ({ '短期': 'short', '中期': 'mid', '长期': 'long' }[stage] || 'mid')
+const stageLabel = (stage) =>
+  t('techMatrix.stage' + ({ '短期': 'Short', '中期': 'Mid', '长期': 'Long' }[stage] || 'Mid'))
 
 const nodeWidth = 150
 const nodeHeight = 56
@@ -210,7 +218,7 @@ const edges = computed(() => {
           path: `M ${from.x} ${from.y + nodeHeight / 2} C ${ctrl1X} ${ctrl1Y}, ${ctrl2X} ${ctrl2Y}, ${to.x} ${to.y - nodeHeight / 2}`,
           midX,
           midY,
-          label: '依赖'
+          label: t('techMatrix.edgeDep')
         })
       }
     })
@@ -236,10 +244,7 @@ const sortedMatrix = computed(() => {
   return result
 })
 
-const getDimensionName = (id) => {
-  const item = techSelectionMatrix.find(i => i.id === id)
-  return item ? item.dimension : `#${id}`
-}
+const getDimensionName = (id) => t('techMatrix.dimension.' + id)
 
 const isNodeHighlighted = (id) => {
   if (!hoveredNode.value) return false
@@ -443,9 +448,9 @@ const getEdgeColor = (edge) => {
   font-weight: 600;
 }
 
-.stage-tag.stage-短期 { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
-.stage-tag.stage-中期 { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
-.stage-tag.stage-长期 { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+.stage-tag.stage-short { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
+.stage-tag.stage-mid { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+.stage-tag.stage-long { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
 
 .priority-tag.priority-p0 { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 .priority-tag.priority-p1 { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }

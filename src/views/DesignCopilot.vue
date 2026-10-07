@@ -127,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
@@ -156,18 +156,20 @@ const paramGroups = [
     keys: ['front_overhang', 'rear_overhang'] }
 ]
 
-onMounted(async () => {
+const loadExamples = async () => {
   try {
     const { data } = await designIntentAPI.examples(locale.value)
     examples.value = data.examples
   } catch { /* 示例加载失败不阻塞 */ }
-})
+}
+
+onMounted(loadExamples)
 
 const onGenerate = async () => {
   if (prompt.value.trim().length < 2 || loading.value) return
   loading.value = true
   try {
-    const { data } = await designIntentAPI.parse(prompt.value.trim())
+    const { data } = await designIntentAPI.parse(prompt.value.trim(), locale.value)
     plan.value = data
     if (!data.warnings.length) {
       ElMessage.success(t('copilot.success'))
@@ -178,6 +180,13 @@ const onGenerate = async () => {
     loading.value = false
   }
 }
+
+// 切换界面语言后：示例与已生成方案都按新语言重新加载/解析，
+// 保证英文界面下不残留后端旧语言的标签、颜色名与设计说明
+watch(locale, async () => {
+  await loadExamples()
+  if (plan.value && prompt.value.trim().length >= 2) await onGenerate()
+})
 
 const applyToDesigner = () => {
   designer.setCarType(plan.value.car_type)

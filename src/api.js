@@ -513,7 +513,7 @@ export const analyticsAPI = {
 
 // AI 设计意图引擎：自然语言 → 结构化整车方案
 export const designIntentAPI = {
-  parse: (prompt) => api.post('/design-intent/parse', { prompt }),
+  parse: (prompt, lang = 'zh') => api.post('/design-intent/parse', { prompt, lang }),
   examples: (lang = 'zh') => api.get('/design-intent/examples', { params: { lang } })
 }
 

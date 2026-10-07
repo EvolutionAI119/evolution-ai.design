@@ -750,6 +750,38 @@ const zh = {
     refDuplicate: '该引用已登记，无需重复提交',
     refSubmitted: '线索已提交，等待管理员核验'
   },
+  techMatrix: {
+    graphHint: '依赖箭头方向：前置 → 后置',
+    legendP0: 'P0 最高优先级', legendP1: 'P1 高优先级',
+    legendP2: 'P2 中优先级', legendDep: '依赖关系',
+    colDimension: '选型维度', colCurrent: '当前方案', colRecommended: '推荐方案',
+    colStage: '阶段', colPriority: '优先级', colDependency: '依赖链',
+    colReason: '核心理由', noPrerequisite: '无前置', edgeDep: '依赖',
+    stageShort: '短期', stageMid: '中期', stageLong: '长期',
+    dimension: {
+      1: '大模型基座', 2: '几何内核', 3: '3D 可视化与渲染', 4: '前端框架',
+      5: '曲面光顺优化算法', 6: '智能体框架', 7: '部署架构', 8: '数据存储与知识管理'
+    },
+    current: {
+      1: '无', 2: '自研 NURBS', 3: 'PyVista', 4: 'Streamlit + Vue 3',
+      5: '模拟退火', 6: '无', 7: '本地 Docker', 8: '无'
+    },
+    recommended: {
+      1: 'DeepSeek 私有化', 2: '自研 + STEP 导出', 3: 'PyVista + Three.js',
+      4: '统一 Vue 3', 5: 'SA + 贝叶斯优化', 6: 'LangGraph',
+      7: '混合云', 8: 'PG + Milvus + Neo4j'
+    },
+    reason: {
+      1: '中文推理强 + 可私有化部署，符合数据安全要求',
+      2: '保持核心算法优势的同时打通与主流 CAD 的数据流',
+      3: '后端做质量评估，前端做交互展示，双轨并行覆盖全场景',
+      4: '统一技术栈提升可维护性，Streamlit 降级为算法调试工具',
+      5: '全局搜索保证收敛，贝叶斯优化做精调提升效率',
+      6: '单 Agent 闭环成熟，预留接入行业平台接口',
+      7: '数据安全与算力弹性的平衡，核心算法本地，大模型上云',
+      8: '三层数据飞轮基础：结构化参数 + 语义检索 + 知识关联'
+    }
+  },
   notify: {
     title: '通知',
     readAll: '全部已读',
@@ -1277,7 +1309,7 @@ const en = {
     ok: 'OK', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', detail: 'Detail', search: 'Search', filter: 'Filter',
     submit: 'Submit', reset: 'Reset', create: 'Create', update: 'Update', save: 'Save', yes: 'Yes', no: 'No',
     loading: 'Loading...', success: 'Success', error: 'Error', warning: 'Warning', info: 'Info', confirm: 'Confirm',
-    pleaseSelect: 'Please select', pleaseInput: 'Please input', required: 'Required', chinese: '中文', english: 'English',
+    pleaseSelect: 'Please select', pleaseInput: 'Please input', required: 'Required', chinese: 'Chinese', english: 'English',
     other: 'Other Options', completion: 'Completion Rate', totalFiles: 'Total Files', delivered: 'Delivered', checkItem: 'Check Item',
     target: 'Target', actual: 'Actual', passed: 'Passed', failed: 'Failed', start: 'Starting', completed: 'Completed',
     actions: 'Actions', close: 'Close', adminOnly: 'Only administrators can access this page',
@@ -1562,6 +1594,38 @@ const en = {
     loadFailed: 'Failed to load',
     refDuplicate: 'This reference is already registered',
     refSubmitted: 'Lead submitted and pending verification'
+  },
+  techMatrix: {
+    graphHint: 'Arrow direction: prerequisite → dependent',
+    legendP0: 'P0 Highest priority', legendP1: 'P1 High priority',
+    legendP2: 'P2 Medium priority', legendDep: 'Dependency',
+    colDimension: 'Selection dimension', colCurrent: 'Current solution', colRecommended: 'Recommended solution',
+    colStage: 'Stage', colPriority: 'Priority', colDependency: 'Dependency chain',
+    colReason: 'Key reason', noPrerequisite: 'No prerequisites', edgeDep: 'dep',
+    stageShort: 'Short-term', stageMid: 'Medium-term', stageLong: 'Long-term',
+    dimension: {
+      1: 'LLM foundation', 2: 'Geometry kernel', 3: '3D visualization & rendering', 4: 'Frontend framework',
+      5: 'Surface smoothing optimization', 6: 'Agent framework', 7: 'Deployment architecture', 8: 'Data storage & knowledge management'
+    },
+    current: {
+      1: 'None', 2: 'In-house NURBS', 3: 'PyVista', 4: 'Streamlit + Vue 3',
+      5: 'Simulated annealing', 6: 'None', 7: 'Local Docker', 8: 'None'
+    },
+    recommended: {
+      1: 'Private DeepSeek', 2: 'In-house + STEP export', 3: 'PyVista + Three.js',
+      4: 'Unified Vue 3', 5: 'SA + Bayesian optimization', 6: 'LangGraph',
+      7: 'Hybrid cloud', 8: 'PG + Milvus + Neo4j'
+    },
+    reason: {
+      1: 'Strong Chinese reasoning plus private deployment meets data-security requirements',
+      2: 'Keeps core-algorithm advantage while connecting data flow with mainstream CAD',
+      3: 'Backend handles quality assessment, frontend handles interaction; dual tracks cover all scenarios',
+      4: 'A unified stack improves maintainability; Streamlit is downgraded to an algorithm debugging tool',
+      5: 'Global search guarantees convergence; Bayesian optimization fine-tunes for efficiency',
+      6: 'Mature single-agent closed loop, with interfaces reserved for industry platforms',
+      7: 'Balances data security and compute elasticity: core algorithms local, LLM on cloud',
+      8: 'Foundation of the three-layer data flywheel: structured parameters + semantic retrieval + knowledge links'
+    }
   },
   notify: {
     title: 'Notifications',
