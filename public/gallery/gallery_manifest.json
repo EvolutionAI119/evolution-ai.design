@@ -1,0 +1,240 @@
+{
+  "n_models": 19,
+  "n_brands": 5,
+  "cell": [
+    1600,
+    900
+  ],
+  "gallery": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\brand_gallery_photos_19.png",
+  "models": [
+    {
+      "brand": "rolls-royce",
+      "brand_name": "Rolls-Royce",
+      "key": "phantom",
+      "name": "Phantom",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\rolls-royce\\phantom.jpg",
+      "source_size": [
+        2560,
+        1440
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\rolls-royce__phantom.png"
+    },
+    {
+      "brand": "rolls-royce",
+      "brand_name": "Rolls-Royce",
+      "key": "ghost",
+      "name": "Ghost",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\rolls-royce\\ghost.jpg",
+      "source_size": [
+        1920,
+        1080
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\rolls-royce__ghost.png"
+    },
+    {
+      "brand": "rolls-royce",
+      "brand_name": "Rolls-Royce",
+      "key": "cullinan",
+      "name": "Cullinan",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\rolls-royce\\cullinan.jpg",
+      "source_size": [
+        930,
+        620
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\rolls-royce__cullinan.png"
+    },
+    {
+      "brand": "rolls-royce",
+      "brand_name": "Rolls-Royce",
+      "key": "wraith",
+      "name": "Wraith",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\rolls-royce\\wraith.jpg",
+      "source_size": [
+        630,
+        318
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\rolls-royce__wraith.png"
+    },
+    {
+      "brand": "bentley",
+      "brand_name": "Bentley",
+      "key": "continental-gt",
+      "name": "Continental GT",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\bentley\\continental-gt.jpg",
+      "source_size": [
+        2560,
+        1440
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\bentley__continental-gt.png"
+    },
+    {
+      "brand": "bentley",
+      "brand_name": "Bentley",
+      "key": "continental-gtc",
+      "name": "Continental GTC",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\bentley\\continental-gtc.jpg",
+      "source_size": [
+        1600,
+        1200
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\bentley__continental-gtc.png"
+    },
+    {
+      "brand": "bentley",
+      "brand_name": "Bentley",
+      "key": "flying-spur",
+      "name": "Flying Spur",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\bentley\\flying-spur.jpg",
+      "source_size": [
+        1439,
+        870
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\bentley__flying-spur.png"
+    },
+    {
+      "brand": "bentley",
+      "brand_name": "Bentley",
+      "key": "bentayga",
+      "name": "Bentayga",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\bentley\\bentayga.jpg",
+      "source_size": [
+        1024,
+        768
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\bentley__bentayga.png"
+    },
+    {
+      "brand": "bugatti",
+      "brand_name": "Bugatti",
+      "key": "chiron",
+      "name": "Chiron",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\bugatti\\chiron.jpg",
+      "source_size": [
+        1700,
+        1133
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\bugatti__chiron.png"
+    },
+    {
+      "brand": "bugatti",
+      "brand_name": "Bugatti",
+      "key": "veyron",
+      "name": "Veyron",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\bugatti\\veyron.jpg",
+      "source_size": [
+        626,
+        626
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\bugatti__veyron.png"
+    },
+    {
+      "brand": "bugatti",
+      "brand_name": "Bugatti",
+      "key": "divo",
+      "name": "Divo",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\bugatti\\divo.jpg",
+      "source_size": [
+        640,
+        415
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\bugatti__divo.png"
+    },
+    {
+      "brand": "porsche",
+      "brand_name": "Porsche",
+      "key": "911",
+      "name": "911 Carrera",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\porsche\\911.jpg",
+      "source_size": [
+        1300,
+        920
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\porsche__911.png"
+    },
+    {
+      "brand": "porsche",
+      "brand_name": "Porsche",
+      "key": "taycan",
+      "name": "Taycan",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\porsche\\taycan.jpg",
+      "source_size": [
+        1257,
+        628
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\porsche__taycan.png"
+    },
+    {
+      "brand": "porsche",
+      "brand_name": "Porsche",
+      "key": "panamera",
+      "name": "Panamera",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\porsche\\panamera.jpg",
+      "source_size": [
+        1920,
+        1080
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\porsche__panamera.png"
+    },
+    {
+      "brand": "porsche",
+      "brand_name": "Porsche",
+      "key": "cayenne",
+      "name": "Cayenne",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\porsche\\cayenne.jpg",
+      "source_size": [
+        2048,
+        1360
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\porsche__cayenne.png"
+    },
+    {
+      "brand": "porsche",
+      "brand_name": "Porsche",
+      "key": "macan",
+      "name": "Macan",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\porsche\\macan.jpg",
+      "source_size": [
+        1366,
+        911
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\porsche__macan.png"
+    },
+    {
+      "brand": "ferrari",
+      "brand_name": "Ferrari",
+      "key": "sf90",
+      "name": "SF90 Stradale",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\ferrari\\sf90.jpg",
+      "source_size": [
+        1200,
+        750
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\ferrari__sf90.png"
+    },
+    {
+      "brand": "ferrari",
+      "brand_name": "Ferrari",
+      "key": "f8-tributo",
+      "name": "F8 Tributo",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\ferrari\\f8-tributo.jpg",
+      "source_size": [
+        750,
+        500
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\ferrari__f8-tributo.png"
+    },
+    {
+      "brand": "ferrari",
+      "brand_name": "Ferrari",
+      "key": "roma",
+      "name": "Roma",
+      "source": "D:\\API\\Evolution-Ai.Design\\public\\brands\\ferrari\\roma.jpg",
+      "source_size": [
+        1024,
+        768
+      ],
+      "normalized": "D:\\API\\Evolution-Ai.Design\\public\\gallery\\ferrari__roma.png"
+    }
+  ],
+  "missing": []
+}
