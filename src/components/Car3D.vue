@@ -1,16 +1,18 @@
 <template>
   <div ref="containerRef" class="car-3d-container">
     <div class="view-controls">
-      <div
+      <button
         v-for="view in viewAngles"
         :key="view.key"
+        type="button"
         class="view-btn"
         :class="{ active: currentView === view.key }"
         @click="setViewAngle(view.key)"
         :title="view.label"
+        :aria-label="view.label"
       >
         {{ view.icon }}
-      </div>
+      </button>
     </div>
     <div class="control-buttons">
       <div class="ctrl-btn" @click="resetView" title="重置">
@@ -48,6 +50,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
+import { deriveCarProfile } from '../utils/carProfile.js'
 
 const props = defineProps({
   carParams: {
@@ -121,20 +124,17 @@ const viewPresets = {
 
 const createCar = () => {
   const group = new THREE.Group()
-  
-  const W = props.carParams.overall_width / 1000
-  const H = props.carParams.overall_height / 1000
-  const WB = props.carParams.wheel_base / 1000
-  const track = props.carParams.track_width / 1000
-  const gc = props.carParams.ground_clearance / 1000
-  const hoodLen = props.carParams.hood_length / 1000
-  const wheelR = props.carParams.wheel_diameter / 2000
-  const roofH = props.carParams.roof_height / 1000
-  const wAngle = props.carParams.windshield_angle * Math.PI / 180
-  const rAngle = props.carParams.rear_window_angle * Math.PI / 180
-  const rSlant = props.carParams.rear_slant_angle * Math.PI / 180
-  const FO = (props.carParams.front_overhang || 1000) / 1000
-  const RO = (props.carParams.rear_overhang || 1000) / 1000
+
+  // 侧围轮廓（米）：mm 推导与物理约束集中在纯函数，保证全车型拓扑合法
+  const P = deriveCarProfile(props.carParams, props.carType)
+  const {
+    W, H, gc, wheelR, halfTrack,
+    frontWheelX, rearWheelX, frontX, rearX,
+    bodyBottomY, roofTopY, beltLineY, hoodLineY, trunkLineY,
+    hoodEndX, trunkStartX,
+    windshieldTopX, rearWindowTopX, rearWindowBottomX,
+    wheelArchRadius, archY, pickup, rails: railSpec, wing: wingSpec
+  } = P
 
   const bodyColor = new THREE.Color(props.carColor)
 
@@ -166,56 +166,24 @@ const createCar = () => {
     wireframe: wireframeMode.value
   })
 
-  const frontWheelX = WB / 2
-  const rearWheelX = -WB / 2
-  const halfTrack = track / 2
-
-  const frontX = frontWheelX + FO
-  const rearX = rearWheelX - RO
-  const bodyLength = rearX - frontX
-
   const bodyShape = new THREE.Shape()
-  const hoodEndX = frontX - hoodLen
-
-  const trunkLength = Math.min(RO * 0.6, hoodLen * 0.5)
-  const trunkStartX = rearX + trunkLength
-
-  const bodyBottomY = gc
-  const roofTopY = bodyBottomY + H
-  const beltLineY = bodyBottomY + H * 0.76
-  const hoodLineY = bodyBottomY + H * 0.62
-  const trunkLineY = bodyBottomY + H * 0.66
-
-  console.log(`[Car3D] ${props.carType.toUpperCase()} - H=${H.toFixed(3)}, gc=${gc.toFixed(3)}`)
-  console.log(`[Car3D] bodyBottomY=${bodyBottomY.toFixed(3)}, beltLineY=${beltLineY.toFixed(3)}, roofTopY=${roofTopY.toFixed(3)}`)
-  console.log(`[Car3D] hoodLineY=${hoodLineY.toFixed(3)}, trunkLineY=${trunkLineY.toFixed(3)}`)
-  console.log(`[Car3D] total height = ${(roofTopY - bodyBottomY).toFixed(3)} (should equal H=${H.toFixed(3)})`)
-
-  const windshieldHeight = roofTopY - beltLineY
-  const windshieldTopX = hoodEndX - windshieldHeight / Math.tan(wAngle)
-
-  const maxRoofLength = windshieldTopX - trunkStartX
-  const slantFactor = Math.min(Math.max(props.carParams.rear_slant_angle / 60, 0), 1)
-  const roofLen = Math.max(maxRoofLength * (1 - slantFactor * 0.6), 0.8)
-  const rearWindowTopX = windshieldTopX - roofLen
-
-  const rearWindowVertHeight = roofTopY - beltLineY
-  const rearWindowHeightRatio = 0.5 + slantFactor * 0.35
-  const rearWindowHeight = rearWindowVertHeight * rearWindowHeightRatio
-  const rearWindowBottomX = rearWindowTopX - rearWindowHeight / Math.tan(rAngle)
 
   bodyShape.moveTo(frontX, bodyBottomY)
   bodyShape.quadraticCurveTo(frontX + 0.08, hoodLineY - 0.05, frontX + 0.02, hoodLineY)
   bodyShape.lineTo(hoodEndX, hoodLineY)
   bodyShape.lineTo(windshieldTopX, roofTopY)
   bodyShape.lineTo(rearWindowTopX, roofTopY)
-  bodyShape.lineTo(rearWindowBottomX, trunkLineY)
-  bodyShape.lineTo(trunkStartX, trunkLineY)
-  bodyShape.quadraticCurveTo(rearX - 0.08, hoodLineY + 0.05, rearX, bodyBottomY)
+  if (pickup) {
+    // 驾驶室后窗下沿 → 货箱栏板上沿（贯通至车尾）→ 尾门微弧收到底边
+    bodyShape.lineTo(pickup.cabWindowBottomX, pickup.bedWallY)
+    bodyShape.lineTo(pickup.wallTopRearX, pickup.bedWallY)
+    bodyShape.quadraticCurveTo(rearX + 0.05, gc + wheelR, rearX, bodyBottomY)
+  } else {
+    bodyShape.lineTo(rearWindowBottomX, trunkLineY)
+    bodyShape.lineTo(trunkStartX, trunkLineY)
+    bodyShape.quadraticCurveTo(rearX - 0.08, hoodLineY + 0.05, rearX, bodyBottomY)
+  }
   bodyShape.closePath()
-
-  const wheelArchRadius = wheelR + 0.05
-  const archY = gc + wheelR
 
   const frontArch = new THREE.Path()
   frontArch.moveTo(frontWheelX - wheelArchRadius, archY)
@@ -250,6 +218,20 @@ const createCar = () => {
   bodyMesh.castShadow = true
   bodyMesh.receiveShadow = true
   group.add(bodyMesh)
+
+  // 皮卡货箱：深色内舱面嵌于栏板之间（略高于栏板上沿，俯视呈开放货舱）
+  if (pickup) {
+    const bedMat = new THREE.MeshStandardMaterial({
+      color: 0x14141a, metalness: 0.2, roughness: 0.9,
+      wireframe: wireframeMode.value
+    })
+    const bedLen = pickup.bedFrontX - pickup.bedRearX
+    const bedGeom = new THREE.BoxGeometry(bedLen, 0.015, pickup.bedInteriorHalfZ * 2)
+    const bed = new THREE.Mesh(bedGeom, bedMat)
+    bed.position.set((pickup.bedFrontX + pickup.bedRearX) / 2, pickup.bedWallY + 0.006, 0)
+    bed.receiveShadow = true
+    group.add(bed)
+  }
 
   const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
 
@@ -393,37 +375,31 @@ const createCar = () => {
   group.add(createMirror(1))
   group.add(createMirror(-1))
 
-  if (props.carType === 'sport') {
-    // GT 尾翼：水平翼片横跨车身宽度方向（Z），位于车尾后备箱上方
-    const wingSpan = W * 0.9       // 翼展
-    const wingChord = 0.28         // 弦长（沿车长 X）
-    const wingGeom = new THREE.BoxGeometry(wingChord, 0.045, wingSpan)
-    const wingX = rearX + 0.32
-    const wingY = trunkLineY + 0.32
+  if (wingSpec) {
+    // GT 尾翼：翼片沿车长（X）取弦长、横跨车宽（Z），支柱落在后甲板实体上
+    const wingGeom = new THREE.BoxGeometry(wingSpec.chord, wingSpec.thickness, wingSpec.span)
     const wing = new THREE.Mesh(wingGeom, bodyMat)
-    wing.position.set(wingX, wingY, 0)
+    wing.position.set(wingSpec.x, wingSpec.y, 0)
     group.add(wing)
 
-    // 两根垂直支柱，从后备箱甲板向上承托翼片
-    const supportH = wingY - (trunkLineY + 0.04)
-    const wingSupportGeom = new THREE.BoxGeometry(0.035, supportH, 0.05)
-    const strutZ = W * 0.28
+    // 两根垂直支柱，从后甲板向上承托翼片
+    const wingSupportGeom = new THREE.BoxGeometry(0.035, wingSpec.supportH, 0.05)
     const ws1 = new THREE.Mesh(wingSupportGeom, chromeMat)
-    ws1.position.set(wingX, trunkLineY + 0.04 + supportH / 2, strutZ)
+    ws1.position.set(wingSpec.x, wingSpec.deckY + wingSpec.supportH / 2, wingSpec.strutZ)
     group.add(ws1)
     const ws2 = new THREE.Mesh(wingSupportGeom, chromeMat)
-    ws2.position.set(wingX, trunkLineY + 0.04 + supportH / 2, -strutZ)
+    ws2.position.set(wingSpec.x, wingSpec.deckY + wingSpec.supportH / 2, -wingSpec.strutZ)
     group.add(ws2)
   }
 
-  if (props.carType === 'suv' || props.carType === 'mpv') {
-    const railLength = Math.abs(rearWindowTopX - windshieldTopX)
-    const railGeom = new THREE.BoxGeometry(0.04, 0.03, railLength * 0.8)
-    const rail1 = new THREE.Mesh(railGeom, chromeMat)
-    rail1.position.set((windshieldTopX + rearWindowTopX) / 2, roofTopY + 0.02, halfTrack - 0.1)
+  if (railSpec) {
+    // 行李架：长边沿车长（X）、与车身同色，半嵌车顶，阴影落在车顶而非侧面
+    const railGeom = new THREE.BoxGeometry(railSpec.length, 0.035, 0.045)
+    const rail1 = new THREE.Mesh(railGeom, bodyMat)
+    rail1.position.set(railSpec.xCenter, railSpec.y, railSpec.z)
     group.add(rail1)
-    const rail2 = new THREE.Mesh(railGeom, chromeMat)
-    rail2.position.set((windshieldTopX + rearWindowTopX) / 2, roofTopY + 0.02, -halfTrack + 0.1)
+    const rail2 = new THREE.Mesh(railGeom, bodyMat)
+    rail2.position.set(railSpec.xCenter, railSpec.y, -railSpec.z)
     group.add(rail2)
   }
 
@@ -776,9 +752,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  border: none;
+  padding: 0;
   font-size: 11px;
   font-weight: 500;
   color: var(--text-muted);
+  background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: Inter, sans-serif;
