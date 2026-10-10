@@ -471,7 +471,7 @@ class NURBSCarBodyGenerator:
         x0 = self.FO + 40
         x1 = self._door_mid_author() - 30
         z_top = self.waist * 0.97
-        nu, nv = 8, 7
+        nu, nv = 12, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
@@ -496,7 +496,7 @@ class NURBSCarBodyGenerator:
         x0 = self._door_mid_author() + 30
         x1 = self.L * 0.87
         z_top = self.waist * 0.97
-        nu, nv = 8, 7
+        nu, nv = 12, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
@@ -755,16 +755,18 @@ class NURBSCarBodyGenerator:
             x0, x1 = ax - span_x, ax + span_x
         z_top = 545
         cps = []
-        for i in range(9):
-            u = i / 8.0
+        for i in range(13):
+            u = i / 12.0
             x = x0 + u * (x1 - x0)
             z_bot = self.GC * 0.6 + min(self._arch_lift(x), 450)
             sgn_lat = 1.0 if side == 'left' else -1.0
+            # 轮眉外鼓沿纵向两端渐隐为零，与外蒙皮/车门平滑相接（消除硬台阶）
+            flare = 15.0 * (1.0 - (2.0 * u - 1.0) ** 2)
             row = []
             for j in range(6):
                 v = j / 5.0
                 z = z_bot + v * (z_top - z_bot)
-                z_lat = sgn_lat * (self._outer_half_width(x, z) + 15)
+                z_lat = sgn_lat * (self._outer_half_width(x, z) + flare)
                 row.append((x, z, z_lat))
             cps.append(row)
         return self._grid_component(f'{side}{position}翼子板', 'fender', cps,

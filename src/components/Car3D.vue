@@ -173,6 +173,10 @@ const createNurbsCar = (mesh) => {
 
     const isGlass = part.type === 'windshield' || part.type === 'rear_window'
       || part.type === 'side_glass'
+    // 车漆件：BODY COLOR 面板选色优先（灯具/格栅/保险杠保留后端本色）
+    const PAINT_TYPES = new Set(['body_shell', 'hood', 'roof', 'trunk', 'door', 'fender'])
+    const isPaint = PAINT_TYPES.has(part.type)
+    const paintColor = (isPaint && props.carColor) || part.color || props.carColor
     const material = isGlass
       ? new THREE.MeshPhysicalMaterial({
           color: part.color || '#87CEEB',
@@ -180,15 +184,17 @@ const createNurbsCar = (mesh) => {
           opacity: part.opacity ?? 0.5,
           metalness: 0,
           roughness: 0.05,
+          envMapIntensity: 1.2,
           side: THREE.DoubleSide,
           wireframe: wireframeMode.value
         })
       : new THREE.MeshPhysicalMaterial({
-          color: part.color || props.carColor,
-          metalness: 0.9,
-          roughness: 0.35,
+          color: paintColor,
+          metalness: 0.72,
+          roughness: 0.28,
           clearcoat: 1.0,
           clearcoatRoughness: 0.06,
+          envMapIntensity: 1.5,
           side: THREE.DoubleSide,
           wireframe: wireframeMode.value
         })
