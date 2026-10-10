@@ -72,6 +72,53 @@ def _basis_function(i: int, k: int, u: float, knots: List[float]) -> float:
     return result
 
 
+def basis_matrix(knots, degree: int, ts) -> np.ndarray:
+    """批量计算 B 样条基函数矩阵（Cox-de Boor 向量化递推）
+
+    与逐点递归的 :func:`_basis_function` 数值等价，但一次处理整组参数值，
+    供曲面网格密集采样使用。
+
+    Args:
+        knots: 节点矢量（长度 n+p+2）
+        degree: 阶数 p
+        ts: 参数值数组 [N]
+    Returns:
+        基函数矩阵 [N, n]，n = len(knots) - p - 1；每行求和为 1（节点区间内）
+    """
+    knots = np.asarray(knots, dtype=float)
+    ts = np.asarray(ts, dtype=float)
+    # 0 阶：N_{i,0}(t) = 1 当 knots[i] <= t < knots[i+1]
+    B = ((knots[:-1][None, :] <= ts[:, None])
+         & (ts[:, None] < knots[1:][None, :])).astype(float)
+
+    # clamped 端点性质（末端 p+1 重节点）：t=0 时只有 N_0=1，t=1 时只有最后一个基函数=1。
+    # 不能仅靠递推——重节点区间 0/0 项被跳过后基函数会全部消失，
+    # 导致曲面在 u=1 角点求值返回零向量（错误顶点）。
+    B[ts <= 0.0, :] = 0.0
+    B[ts <= 0.0, 0] = 1.0
+    B[ts >= 1.0, :] = 0.0
+    B[ts >= 1.0, B.shape[1] - 1] = 1.0
+
+    for p in range(1, degree + 1):
+        cols = B.shape[1] - 1          # 本阶基函数数量
+        d1 = knots[p:p + cols] - knots[0:cols]
+        d2 = knots[p + 1:p + 1 + cols] - knots[1:1 + cols]
+        with np.errstate(divide='ignore', invalid='ignore'):
+            t1 = np.where(d1 > 1e-10,
+                          (ts[:, None] - knots[0:cols][None, :])
+                          / np.where(d1 > 1e-10, d1, 1.0), 0.0)
+            t2 = np.where(d2 > 1e-10,
+                          (knots[p + 1:p + 1 + cols][None, :] - ts[:, None])
+                          / np.where(d2 > 1e-10, d2, 1.0), 0.0)
+        B = t1 * B[:, :cols] + t2 * B[:, 1:cols + 1]
+        # 每阶递推后重新固定 clamped 端点（递推本身无法传播末端重节点的 1）
+        B[ts <= 0.0, :] = 0.0
+        B[ts <= 0.0, 0] = 1.0
+        B[ts >= 1.0, :] = 0.0
+        B[ts >= 1.0, cols - 1] = 1.0
+    return B
+
+
 class NURBSCurve:
     """NURBS曲线"""
 
@@ -86,6 +133,8 @@ class NURBSCurve:
 
     def evaluate_point(self, t: float) -> np.ndarray:
         """计算曲线上参数 t 处的点"""
+        # 端点钳制（同 NURBSSurface：t=1 处重节点递推会零权重）
+        t = min(max(float(t), 0.0), 1.0 - 1e-10)
         point = np.zeros(3)
         weight_sum = 0.0
         for i, cp in enumerate(self.control_points):
@@ -146,6 +195,10 @@ class NURBSSurface:
 
     def evaluate_point(self, u: float, v: float) -> np.ndarray:
         """计算曲面上的点 (u, v)"""
+        # 端点钳制：末端 p+1 重节点在 t=1 处递推 0/0 项全被跳过会得到零权重
+        # （返回零向量 = 错误顶点）；退一个极小参数求值，几何差异 ~1e-7mm
+        u = min(max(float(u), 0.0), 1.0 - 1e-10)
+        v = min(max(float(v), 0.0), 1.0 - 1e-10)
         point = np.zeros(3)
         weight_sum = 0.0
         for i in range(len(self.control_points)):
@@ -159,6 +212,27 @@ class NURBSSurface:
         if weight_sum > 1e-10:
             point /= weight_sum
         return point
+
+    def evaluate_grid(self, u_values, v_values) -> np.ndarray:
+        """批量计算 u×v 参数网格上的曲面点（向量化，供密集采样）
+
+        Args:
+            u_values: u 参数数组 [nu]
+            v_values: v 参数数组 [nv]
+        Returns:
+            点网格 [nu, nv, 3]，与逐点 :meth:`evaluate_point` 数值等价
+        """
+        knots_u = np.asarray(self.knot_vector_u.values, dtype=float)
+        knots_v = np.asarray(self.knot_vector_v.values, dtype=float)
+        Bu = basis_matrix(knots_u, self.degree_u, np.asarray(u_values))  # [nu, ncu]
+        Bv = basis_matrix(knots_v, self.degree_v, np.asarray(v_values))  # [nv, ncv]
+        cp = np.array([[[p.x, p.y, p.z] for p in row]
+                       for row in self.control_points], dtype=float)      # [ncu, ncv, 3]
+        w = np.array([[p.weight for p in row]
+                      for row in self.control_points], dtype=float)       # [ncu, ncv]
+        numerator = np.einsum('ui,vj,ij,ijx->uvx', Bu, Bv, w, cp)
+        denominator = np.einsum('ui,vj,ij->uv', Bu, Bv, w)
+        return numerator / denominator[..., None]
 
     def evaluate_normal(self, u: float, v: float) -> np.ndarray:
         """计算曲面法向量"""

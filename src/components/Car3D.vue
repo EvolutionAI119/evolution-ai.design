@@ -50,6 +50,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile } from '../utils/carProfile.js'
 
 const props = defineProps({
@@ -72,6 +73,14 @@ const props = defineProps({
   wireframe: {
     type: Boolean,
     default: false
+  },
+  // 后端真实 NURBS 采样网格（Designer 生成后传入）：
+  // { parts: [{name,type,points:[[[x,y,z]]](canonical,mm),color,opacity}],
+  //   wheels: [{radius,width,position:{x,y,z}(author,mm)}] }
+  // 缺省时走 2D 轮廓 ExtrudeGeometry 近似路径（Demo 页/游客态）
+  nurbsMesh: {
+    type: Object,
+    default: null
   }
 })
 
@@ -122,7 +131,114 @@ const viewPresets = {
   perspective: { x: 0.4, y: 0.8, dist: 8, ortho: false }
 }
 
+/**
+ * 从后端 NURBS 采样网格构建高保真汽车（真实曲面，替代 ExtrudeGeometry 近似）
+ *
+ * 坐标映射：后端 canonical（X=车长, Y=车宽, Z=车高, mm）
+ *           → three（x=车长, y=高, z=宽, m）
+ */
+const createNurbsCar = (mesh) => {
+  const group = new THREE.Group()
+  const M = 0.001
+
+  for (const part of mesh.parts || []) {
+    const pts = part.points
+    if (!pts || pts.length < 2 || !pts[0] || pts[0].length < 2) continue
+    const nu = pts.length
+    const nv = pts[0].length
+    const positions = new Float32Array(nu * nv * 3)
+    let k = 0
+    for (let i = 0; i < nu; i++) {
+      for (let j = 0; j < nv; j++) {
+        const p = pts[i][j]
+        positions[k++] = p[0] * M   // X 车长
+        positions[k++] = p[2] * M   // Z 车高 → three.y
+        positions[k++] = p[1] * M   // Y 车宽 → three.z
+      }
+    }
+    const indices = []
+    for (let i = 0; i < nu - 1; i++) {
+      for (let j = 0; j < nv - 1; j++) {
+        const a = i * nv + j
+        const b = i * nv + j + 1
+        const c = (i + 1) * nv + j
+        const d = (i + 1) * nv + j + 1
+        indices.push(a, b, c, b, d, c)
+      }
+    }
+    const geom = new THREE.BufferGeometry()
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+    geom.setIndex(indices)
+    geom.computeVertexNormals()   // 共享顶点 → 平滑法线
+
+    const isGlass = part.type === 'windshield' || part.type === 'rear_window'
+      || part.type === 'side_glass'
+    const material = isGlass
+      ? new THREE.MeshPhysicalMaterial({
+          color: part.color || '#87CEEB',
+          transparent: true,
+          opacity: part.opacity ?? 0.5,
+          metalness: 0,
+          roughness: 0.05,
+          side: THREE.DoubleSide,
+          wireframe: wireframeMode.value
+        })
+      : new THREE.MeshPhysicalMaterial({
+          color: part.color || props.carColor,
+          metalness: 0.9,
+          roughness: 0.35,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.06,
+          side: THREE.DoubleSide,
+          wireframe: wireframeMode.value
+        })
+    const meshObj = new THREE.Mesh(geom, material)
+    meshObj.castShadow = true
+    meshObj.receiveShadow = true
+    group.add(meshObj)
+  }
+
+  for (const w of mesh.wheels || []) {
+    group.add(createNurbsWheel(w))
+  }
+  return group
+}
+
+/** 后端 wheel 部件 → three 轮子组（位置字典为 author 约定：y=高, z=宽） */
+const createNurbsWheel = (w) => {
+  const M = 0.001
+  const g = new THREE.Group()
+  const r = w.radius * M
+  const width = (w.width || 200) * M
+
+  const tireGeom = new THREE.CylinderGeometry(r, r, width, 40)
+  tireGeom.rotateX(Math.PI / 2)
+  g.add(new THREE.Mesh(
+    tireGeom,
+    new THREE.MeshStandardMaterial({ color: 0x26262b, metalness: 0.1, roughness: 0.85 })))
+
+  // 轮毂/轮芯端面必须比胎面更宽才能外露（否则被轮胎实体完全包住）
+  const rimGeom = new THREE.CylinderGeometry(r * 0.62, r * 0.62, width * 1.08, 24)
+  rimGeom.rotateX(Math.PI / 2)
+  g.add(new THREE.Mesh(
+    rimGeom,
+    new THREE.MeshStandardMaterial({ color: 0xb8bdc4, metalness: 0.95, roughness: 0.2 })))
+
+  const hubGeom = new THREE.CylinderGeometry(r * 0.18, r * 0.18, width * 1.16, 12)
+  hubGeom.rotateX(Math.PI / 2)
+  g.add(new THREE.Mesh(
+    hubGeom,
+    new THREE.MeshStandardMaterial({ color: 0xd8dadd, metalness: 1.0, roughness: 0.15 })))
+
+  const pos = w.position || {}
+  g.position.set((pos.x || 0) * M, (pos.y || 0) * M, (pos.z || 0) * M)
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true })
+  return g
+}
+
 const createCar = () => {
+  // 有后端真实网格时走高保真路径
+  if (props.nurbsMesh) return createNurbsCar(props.nurbsMesh)
   const group = new THREE.Group()
 
   // 侧围轮廓（米）：mm 推导与物理约束集中在纯函数，保证全车型拓扑合法
@@ -435,6 +551,12 @@ const initScene = () => {
   renderer.toneMappingExposure = 1.0
   container.appendChild(renderer.domElement)
 
+  // PBR 环境反射：RoomEnvironment 经 PMREM 预处理，供车漆/金属反射
+  // （three 内置，无外部 hdr 资源依赖）
+  const pmrem = new THREE.PMREMGenerator(renderer)
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+  pmrem.dispose()
+
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.35)
   scene.add(ambientLight)
 
@@ -662,7 +784,7 @@ const updateCar = () => {
 }
 
 watch(
-  () => [props.carParams, props.carType, props.carColor],
+  () => [props.carParams, props.carType, props.carColor, props.nurbsMesh],
   () => updateCar(),
   { deep: true }
 )

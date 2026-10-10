@@ -297,3 +297,115 @@ def test_curvature_values_are_physical(gen):
             assert 1.0 <= v["r_median_mm"] <= 1e6, (
                 f"{name} 曲率半径异常: {v['r_median_mm']} mm"
             )
+
+
+# ---------------------------------------------------------------------------
+# 3. 几何连贯性（第二阶段：连续车身重构）
+# ---------------------------------------------------------------------------
+@pytest.fixture(scope="module")
+def car(gen):
+    return gen.generate_complete_car()
+
+
+def _by_name(car, name):
+    for c in car["components"]:
+        if c.get("name") == name:
+            return c
+    raise AssertionError(f"未找到部件 {name}")
+
+
+def test_no_nan_or_inf_anywhere(car):
+    """所有采样点与控制点均不得出现 NaN/Inf"""
+    for c in car["components"]:
+        if "points" in c:
+            a = np.array(c["points"], dtype=float)
+            assert np.isfinite(a).all(), f"{c['name']} 采样点含 NaN/Inf"
+        s = c.get("surface")
+        if s and "control_points" in s:
+            for row in s["control_points"]:
+                for p in row:
+                    assert all(np.isfinite(v) for v in (p["x"], p["y"], p["z"])), \
+                        f"{c['name']} 控制点含 NaN/Inf"
+
+
+def test_body_shell_covers_full_length(gen, car):
+    """左右外蒙皮纵向覆盖全车（除鼻/尾极小余量），不得有中段缺失"""
+    L = gen.L
+    for side in ("left", "right"):
+        c = _by_name(car, f"{side}车身外蒙皮")
+        a = np.array(c["points"])[:, :, 0]
+        assert a.min() <= -L / 2 + 60, f"{side}蒙皮未覆盖车头"
+        assert a.max() >= L / 2 - 60, f"{side}蒙皮未覆盖车尾"
+
+
+def _edge_profile(row):
+    """共享边行 → 以车宽 lat 为自变量的 (x, z) 插值器"""
+    row = np.asarray(row, dtype=float)
+    lat = row[:, 1]
+    order = np.argsort(lat)
+    lat = lat[order]
+    return lat, row[order, 0], row[order, 2]
+
+
+def _assert_edges_match(row_a, row_b, label, atol=12.0):
+    """两条共享边在重叠车宽区间上的 x（纵向）与 z（高度）必须一致"""
+    la, xa, za = _edge_profile(row_a)
+    lb, xb, zb = _edge_profile(row_b)
+    lo = max(la.min(), lb.min()) + 20
+    hi = min(la.max(), lb.max()) - 20
+    assert hi > lo, f"{label} 共享边无重叠车宽区间"
+    for s in np.linspace(lo, hi, 7):
+        assert abs(np.interp(s, la, xa) - np.interp(s, lb, xb)) <= atol, \
+            f"{label} 纵向错位 @lat={s:.0f}"
+        assert abs(np.interp(s, la, za) - np.interp(s, lb, zb)) <= atol, \
+            f"{label} 高度错位 @lat={s:.0f}"
+
+
+def test_upper_body_chain_shares_edges(car):
+    """引擎盖-风挡-车顶-后窗-行李箱：相邻钣件共享同一条边"""
+    hood = _by_name(car, "发动机盖")
+    ws = _by_name(car, "前风挡玻璃")
+    roof = _by_name(car, "车顶")
+    rw = _by_name(car, "后风挡玻璃")
+    trunk = _by_name(car, "行李箱盖")
+    _assert_edges_match(hood["points"][-1], ws["points"][0], "引擎盖-风挡")
+    _assert_edges_match(ws["points"][-1], roof["points"][0], "风挡-车顶")
+    _assert_edges_match(roof["points"][-1], rw["points"][0], "车顶-后窗")
+    _assert_edges_match(rw["points"][-1], trunk["points"][0], "后窗-行李箱")
+
+
+def test_wheels_on_axles_and_ground(gen, car):
+    """四轮必须位于前后车轴、正确车宽，轮胎贴地（位置已归一为规范坐标）"""
+    L, r = gen.L, gen._p("车身部件", "wheel_diameter") / 2
+    expect_x = {"front": -L / 2 + gen._ax_f, "rear": -L / 2 + gen._ax_r}
+    wheels = [c for c in car["components"] if c.get("type") == "wheel"]
+    assert len(wheels) == 4
+    for w in wheels:
+        pos = w["position"]
+        kind = "front" if "front" in w["name"] else "rear"
+        side_lat = gen.TW / 2 * (1 if "left" in w["name"] else -1)
+        assert abs(pos["x"] - expect_x[kind]) <= 5, f"{w['name']} 不在车轴上"
+        assert abs(pos["z"] - side_lat) <= 5, f"{w['name']} 车宽位置错误"
+        assert abs(pos["y"] - (gen.GC + r)) <= 5, f"{w['name']} 未贴地"
+        assert w["radius"] == r
+
+
+def test_glass_panels_present_and_translucent(car):
+    """风挡/后窗/四侧窗均存在且半透明"""
+    glass = [c for c in car["components"]
+             if c.get("type") in ("windshield", "rear_window", "side_glass")]
+    assert len(glass) == 6
+    for g in glass:
+        assert 0.0 < float(g.get("opacity", 1.0)) < 1.0, \
+            f"{g['name']} 未标记半透明"
+
+
+def test_glb_scene_is_manifold_enough(gen, car):
+    """GLB 场景面数充足、包围盒合理（整车连续表面的可复现证据）"""
+    scene = gen._build_trimesh_scene()
+    faces = sum(len(m.faces) for m in scene.geometry.values())
+    assert faces > 5000, f"GLB 面数仅 {faces}"
+    b = scene.bounds
+    assert b[0, 2] >= 0, "存在伸入地面以下的几何"
+    assert b[1, 2] <= gen.H + 50, "几何超过车高"
+

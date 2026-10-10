@@ -105,7 +105,13 @@ class NURBSCarBodyGenerator:
         return out
 
     def _init_coords(self):
-        """初始化车身坐标系关键尺寸"""
+        """初始化车身坐标系关键尺寸与**统一硬点链**
+
+        所有钣件共享同一组硬点（单一事实来源）：
+        相邻钣件的边缘取自同一个锚点，从几何上消除缝隙。
+        硬点采用 author 约定（x∈[0,L] 从前到后，y=高度，z=车宽），
+        经 :meth:`_to_canonical` 统一变换到规范坐标系。
+        """
         s = self.params['整车尺寸']
         p = self.params['比例参数']
         self.L = s['overall_length']['value']
@@ -121,6 +127,113 @@ class NURBSCarBodyGenerator:
         self.fwx = self.FO + self.GC
         self.rwx = self.L - self.RO
         self.fwz = self.TW / 2
+        self._build_hardpoints()
+
+    def _build_hardpoints(self):
+        """计算全车硬点链（author 约定，mm）
+
+        侧视轮廓链（x=纵向, y=高度），顺序自车头向车尾：
+          A 鼻尖      B 引擎盖前缘   C 引擎盖后缘/风挡底(COWL)
+          D 风挡顶     E 车顶后缘/后窗顶  F 后窗底/行李箱前缘  G 行李箱后缘
+        各钣件的对应边必须严格落在这些锚点上。
+        """
+        L, W, H, GC = self.L, self.W, self.H, self.GC
+        waist = self.waist
+        hood_len = self._p('车身部件', 'hood_length')
+        hood_ang = np.radians(self._p('造型角度', 'hood_angle'))
+        # ---- 纵向 X 锚点 ----
+        x_hood_f = 190                      # 固定锚点：机盖形状只由 hood_length 决定
+        x_cowl = hood_len
+        x_wstop = hood_len + 0.25 * (L * 0.82 - hood_len)
+        x_cab_end = L * 0.82
+        x_rwbot = L * 0.82 + 0.25 * (L - L * 0.82)
+        # ---- 高度 Z 锚点（author y） ----
+        z_skirt = GC * 0.8
+        z_nose_top = GC + H * 0.12
+        # 引擎盖前缘：由 hood_angle 从 COWL 反推（角度参数真正作用于几何）
+        z_hood_f = waist - float(np.tan(hood_ang)) * (x_cowl - x_hood_f)
+        z_hood_f = max(z_hood_f, waist * 0.4)
+        z_wstop = H * 0.95
+        z_roof_r = H * 0.94
+        z_trunk_r = GC + (H - GC) * 0.52
+        # ---- 侧视轮廓链（车身上边缘） ----
+        self.hp = {
+            'x_nose': 0.0, 'x_hood_f': x_hood_f, 'x_cowl': x_cowl,
+            'x_wstop': x_wstop, 'x_cab_end': x_cab_end,
+            'x_rwbot': x_rwbot, 'x_tail': L,
+            'z_skirt': z_skirt, 'z_nose_top': z_nose_top,
+            'z_hood_f': z_hood_f, 'z_cowl': waist,
+            'z_wstop': z_wstop, 'z_roof_r': z_roof_r,
+            'z_rwbot': waist, 'z_trunk_r': z_trunk_r,
+        }
+        # 上轮廓折线（author x, y高度）；A 鼻尖 → G 行李箱后缘
+        self._top_chain = np.array([
+            (0.0, z_nose_top), (x_hood_f, z_hood_f),
+            (x_cowl, waist), (x_wstop, z_wstop),
+            (x_cab_end, z_roof_r), (x_rwbot, waist),
+            (L, z_trunk_r)
+        ])
+        # 车轴 X（author）与轮拱参数
+        self._ax_f = self.FO
+        self._ax_r = L - self.RO
+        self._arch_R = self._p('车身部件', 'wheel_arch_radius')
+        # 轮拱开口抛物线峰高：拱心边缘 570 略低于轮顶 600，
+        # 既露出胎冠又处处让开门外的轮胎圆周（余量经逐点核算）。
+        wheel_r = self._p('车身部件', 'wheel_diameter') / 2.0
+        self._arch_H = wheel_r * 2.0 - 30.0
+
+    # ---- 共享剖面函数（shell / 车门 / 翼子板共用，保证贴合） ----
+    @staticmethod
+    def _chain_lookup(x, chain):
+        """折线上按 x 线性插值（chain 已按 x 升序）"""
+        xs = chain[:, 0]
+        if x <= xs[0]:
+            return float(chain[0, 1])
+        if x >= xs[-1]:
+            return float(chain[-1, 1])
+        i = int(np.searchsorted(xs, x) - 1)
+        x0, y0 = chain[i]
+        x1, y1 = chain[i + 1]
+        t = (x - x0) / (x1 - x0) if x1 > x0 else 0.0
+        return float(y0 + t * (y1 - y0))
+
+    def _silhouette_top(self, x):
+        """车身上边缘高度（不含风挡/车顶抬高段的侧围轮廓）。
+
+        侧围外蒙皮在乘员舱段只到腰线；引擎盖/行李箱段随钣件高度。
+        """
+        hp = self.hp
+        if x < hp['x_hood_f']:          # 鼻尖 → 引擎盖前缘
+            return self._chain_lookup(x, self._top_chain[:2])
+        if x < hp['x_cowl']:            # 引擎盖侧缘
+            return self._chain_lookup(x, self._top_chain[1:3])
+        if x <= hp['x_rwbot']:          # 乘员舱：腰线
+            return hp['z_cowl']
+        return self._chain_lookup(x, self._top_chain[5:])  # 行李箱侧缘
+
+    def _arch_lift(self, x):
+        """轮拱开口下缘相对 GC 的抬升量（抛物线，开口处连续归 0）。
+
+        采用 H·(1-(dx/R)²) 而非圆：在 dx=R 处抬升恰为 0，与裙边平滑相接；
+        峰高 _arch_H 经核算处处高于轮胎圆周（含余量），杜绝穿模。
+        前后拱取较大者。
+        """
+        H, R = self._arch_H, self._arch_R
+        lift = 0.0
+        for ax in (self._ax_f, self._ax_r):
+            dx = abs(x - ax)
+            if dx < R:
+                lift = max(lift, H * (1.0 - (dx / R) ** 2))
+        return float(lift)
+
+    def _outer_half_width(self, x, z):
+        """外蒙皮在(x,z)处的半宽（author z_lat）：含溜肩(tumblehome)与拱鼓"""
+        gc, h, hw = self.GC, self.H, self.half_w
+        ratio = min(max((z - gc) / (h - gc), 0.0), 1.0)
+        base = hw * (0.985 - 0.05 * ratio)          # 上沿内收
+        bulge = 16.0 * (self._arch_lift(x) / max(self._arch_H, 1.0))
+        return base + bulge
+
 
     def _p(self, group, key):
         return self.params[group][key]['value']
@@ -150,6 +263,11 @@ class NURBSCarBodyGenerator:
     #   需要转换，但车门曲面的 Z 退化为 0（宽度未展开），判定失败、漏转。
     #   故改为由每个生成函数**显式声明** `axes='author' | 'canonical'`。
     CANONICAL_AXES = True
+
+    # 渲染采样密度（与控制点数量解耦）：按部件物理尺寸 + 目标边长自适应
+    RENDER_TARGET_MM = 40.0   # 渲染网格目标边长（mm）
+    RENDER_MIN_N = 12         # 每方向最少采样数
+    RENDER_MAX_N = 64         # 每方向最多采样数
 
     def _build_surface(self, cps_3d, template, axes='author'):
         """从3D控制点列表构建NURBS曲面
@@ -184,357 +302,483 @@ class NURBSCarBodyGenerator:
             pts.append(row)
         return pts
 
+    def _render_count(self, size_mm):
+        """按目标边长把部件物理尺寸换算为采样数（与控制点数量解耦）"""
+        n = int(round(float(size_mm) / self.RENDER_TARGET_MM))
+        return max(self.RENDER_MIN_N, min(self.RENDER_MAX_N, n))
+
+    def _sample_grid(self, surface, size_u_mm, size_v_mm):
+        """按物理尺寸自适应密度采样曲面（向量化批量求值）
+
+        输出与 :meth:`_sample` 相同的 ``[[[x,y,z]]]`` 数值嵌套结构，
+        下游 JSON 序列化与 GLB 网格构造无需改动。
+        """
+        nu = self._render_count(size_u_mm)
+        nv = self._render_count(size_v_mm)
+        grid = surface.evaluate_grid(np.linspace(0.0, 1.0, nu),
+                                     np.linspace(0.0, 1.0, nv))
+        # 与旧 _sample 相同的 [[[x,y,z]]] 数值嵌套结构（非 dict），
+        # 保证 GLB np.array 构造与 JSON schema 不变
+        return [[[float(p[0]), float(p[1]), float(p[2])] for p in row]
+                for row in grid]
+
+    def _make_surface(self, cp_grid, template_name, axes='author'):
+        """从 CP 网格 + 模板名构建 NURBS 曲面（阶数取模板，节点按 CP 数生成）"""
+        return self._build_surface(cp_grid, self.nurbs_templates[template_name],
+                                   axes=axes)
+
+    def _grid_component(self, name, ctype, cp_grid, template_name,
+                        size_u, size_v, color, axes='author', **extra):
+        """通用：CP 网格 → NURBS 曲面 → 自适应采样点 → 组件字典"""
+        surf = self._make_surface(cp_grid, template_name, axes=axes)
+        comp = {'name': name, 'type': ctype,
+                'points': self._sample_grid(surf, size_u, size_v),
+                'surface': surf.to_dict(), 'color': color,
+                'position': {'x': 0, 'y': 0, 'z': 0}}
+        comp.update(extra)
+        return comp
+
     # ============ 部件生成 ============
 
     def generate_hood(self):
         """发动机盖"""
-        t = self.nurbs_templates['hood']
-        length = self._p('车身部件', 'hood_length')
-        width = self._p('车身部件', 'hood_width')
-        height = self._p('车身部件', 'hood_height')
-        angle = np.radians(self._p('造型角度', 'hood_angle'))
-        nu, nv = t['num_u'], t['num_v']
-        # author 坐标：x 从车头开始（0 ~ length），y 为高度（引擎盖高度），z 为车宽
-        # Z 契约 [waist*0.35, waist]：cy_base 取 waist*0.55，保证 height 项下探后仍 ≥ waist*0.35
-        cx_start, cy_base = 0, self.waist * 0.55
+        hp = self.hp
+        x0, x1 = hp['x_hood_f'], hp['x_cowl']
+        z0, z1 = hp['z_hood_f'], hp['z_cowl']
+        w0 = self.W * 0.82                    # 前缘窄
+        w1 = self.W * 0.95                    # 后缘宽（与风挡底同宽）
+        crown = self._p('车身部件', 'hood_height')
+        nu, nv = 7, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                x = cx_start + u * length
-                y = cy_base + height * np.sin(u * np.pi) * np.cos(v * np.pi) + u * np.tan(angle) * length * 0.3
-                z = (v - 0.5) * width
-                row.append((x, y, z))
+                x = x0 + u * (x1 - x0)
+                # 边缘严格落在轮廓线上（crown 只在横向中部隆起）
+                z = z0 + u * (z1 - z0) + crown * np.sin(u * np.pi) * (1 - (2 * v - 1) ** 2)
+                z_lat = (v - 0.5) * (w0 + u * (w1 - w0))
+                row.append((x, z, z_lat))
             cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': '发动机盖', 'type': 'hood', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#c0c0c0', 'position': {'x': 0, 'y': 0, 'z': 0}}
+        return self._grid_component('发动机盖', 'hood', cps, 'hood',
+                                    x1 - x0, w1, '#c0c0c0')
 
     def generate_windshield(self):
-        """前风挡玻璃"""
-        t = self.nurbs_templates['windshield']
-        width = self._p('车身部件', 'windshield_width')
-        nu, nv = t['num_u'], t['num_v']
-        # author 坐标：底边在 hood_end(x=hood_length, y=waist)，
-        # 顶边在 cabin 前 25% 处(x=hood_len+0.25*(0.82L-hood_len), y=H*0.96)。
-        # 与布局契约 windshield.{X,Z} 对齐。
-        hood_len = self._p('车身部件', 'hood_length')
-        cabin_end = self.L * 0.82
-        x_bot = hood_len
-        x_top = hood_len + 0.25 * (cabin_end - hood_len)
-        y_bot = self.waist
-        y_top = self.H * 0.96
+        """前风挡玻璃：底边=COWL（与引擎盖后缘共享），顶边=车顶板前缘"""
+        hp = self.hp
+        x0, x1 = hp['x_cowl'], hp['x_wstop']
+        z0, z1 = hp['z_cowl'], hp['z_wstop']
+        w_bot = self.W * 0.95
+        w_top = self.W * 0.81
+        nu, nv = 6, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                x = x_bot + u * (x_top - x_bot)
-                y = y_bot + u * (y_top - y_bot)
-                z = (v - 0.5) * width * (1 - u * 0.15)
-                row.append((x, y, z))
+                x = x0 + u * (x1 - x0)
+                z = z0 + u * (z1 - z0)
+                # 玻璃横向微弧，边缘为直线（与邻件共享）
+                z += 25 * np.sin(u * np.pi) * (1 - (2 * v - 1) ** 2)
+                z_lat = (v - 0.5) * (w_bot + u * (w_top - w_bot))
+                row.append((x, z, z_lat))
             cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': '前风挡玻璃', 'type': 'windshield', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#87CEEB', 'opacity': 0.6, 'position': {'x': 0, 'y': 0, 'z': 0}}
+        return self._grid_component('前风挡玻璃', 'windshield', cps, 'windshield',
+                                    np.hypot(x1 - x0, z1 - z0), w_bot,
+                                    '#87CEEB', opacity=0.55)
 
     def generate_roof(self):
-        """车顶"""
-        t = self.nurbs_templates['roof']
-        width = self._p('车身部件', 'roof_width')
-        nu, nv = t['num_u'], t['num_v']
-
-        # author 坐标：与布局契约 roof.{X,Z} 对齐
-        # X: [cabin_start+25%cabin, cabin_end] → author [hood_len+0.25*(0.82L-hood_len), 0.82L]
-        # Z: [0.92H, H] → y 在 [0.92H, 0.98H] 微拱
-        hood_len = self._p('车身部件', 'hood_length')
-        cabin_end = self.L * 0.82
-        cx_start = hood_len + 0.25 * (cabin_end - hood_len)
-        roof_len = cabin_end - cx_start
-
+        """车顶：前缘=风挡顶，后缘=后窗顶（共享硬点）"""
+        hp = self.hp
+        x0, x1 = hp['x_wstop'], hp['x_cab_end']
+        z0, z1 = hp['z_wstop'], hp['z_roof_r']
+        w_front = self.W * 0.81
+        w_rear = self.W * 0.76
+        crown = max(self._p('车身部件', 'roof_height'), 30)
+        nu, nv = 9, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                x = cx_start + u * roof_len
-                y = self.H * (0.92 + 0.06 * (0.5 + 0.5 * np.cos((u - 0.5) * np.pi * 2)))
-                z = (v - 0.5) * width * (1 - u * 0.2)
-                row.append((x, y, z))
+                x = x0 + u * (x1 - x0)
+                z = z0 + u * (z1 - z0) + crown * np.sin(u * np.pi) * (1 - (2 * v - 1) ** 2)
+                z_lat = (v - 0.5) * (w_front + u * (w_rear - w_front))
+                row.append((x, z, z_lat))
             cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': '车顶', 'type': 'roof', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#c0c0c0', 'position': {'x': 0, 'y': 0, 'z': 0},
-                'roof_end_x': cx_start + roof_len, 'roof_top_y': self.H * 0.98}
+        return self._grid_component('车顶', 'roof', cps, 'roof',
+                                    x1 - x0, w_front, '#c0c0c0',
+                                    roof_end_x=x1, roof_top_y=z0)
 
     def generate_rear_window(self):
-        """后风挡玻璃"""
-        t = self.nurbs_templates['rear_window']
-        width = self._p('车身部件', 'rear_window_width')
-        height = self._p('车身部件', 'rear_window_height')
-        rear_window_angle = np.radians(self._p('造型角度', 'rear_window_angle'))
-        nu, nv = t['num_u'], t['num_v']
-
-        windshield_top_x = self.FO + self.WB * 0.4
-        windshield_top_y = self.GC + 900
-        trunk_start_x = self.L - self.RO - self._p('车身部件', 'trunk_length') * 0.3
-
-        max_roof_length = trunk_start_x - windshield_top_x
-        slant_factor = min(max(self._p('造型角度', 'rear_slant_angle') / 60.0, 0), 1)
-        roof_len = max(max_roof_length * (1 - slant_factor * 0.7), 800)
-
-        rear_window_top_x = windshield_top_x + roof_len
-        rear_window_top_y = windshield_top_y
-
-        rear_window_bottom_x = rear_window_top_x - height / np.tan(rear_window_angle)
-        rear_window_bottom_y = rear_window_top_y - height
-
-        cx_base = rear_window_top_x
-        cy_top = rear_window_top_y
-
+        """后风挡玻璃：顶边=车顶后缘，底边=行李箱前缘（共享硬点）"""
+        hp = self.hp
+        x0, x1 = hp['x_cab_end'], hp['x_rwbot']
+        z0, z1 = hp['z_roof_r'], hp['z_rwbot']
+        w_top = self.W * 0.76
+        w_bot = self.W * 0.85
+        nu, nv = 6, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                x = cx_base - u * (rear_window_top_x - rear_window_bottom_x)
-                y = cy_top - u * height
-                z = (v - 0.5) * width * (1 - u * 0.1)
-                row.append((x, y, z))
+                x = x0 + u * (x1 - x0)
+                z = z0 + u * (z1 - z0)
+                z += 22 * np.sin(u * np.pi) * (1 - (2 * v - 1) ** 2)
+                z_lat = (v - 0.5) * (w_top + u * (w_bot - w_top))
+                row.append((x, z, z_lat))
             cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': '后风挡玻璃', 'type': 'rear_window', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#87CEEB', 'opacity': 0.6, 'position': {'x': 0, 'y': 0, 'z': 0},
-                'rear_window_bottom_x': rear_window_bottom_x, 'rear_window_bottom_y': rear_window_bottom_y}
+        return self._grid_component('后风挡玻璃', 'rear_window', cps, 'rear_window',
+                                    np.hypot(x1 - x0, z1 - z0), w_bot,
+                                    '#87CEEB', opacity=0.55,
+                                    rear_window_bottom_x=x1,
+                                    rear_window_bottom_y=z1)
 
     def generate_trunk(self):
-        """行李箱盖"""
-        t = self.nurbs_templates['trunk']
-        width = self._p('车身部件', 'trunk_width')
-        nu, nv = t['num_u'], t['num_v']
-
-        # author 坐标：与布局契约 trunk.{X,Z} 对齐
-        # X: [cabin_end, L] = [0.82L, L]；Z: [waist*0.6, waist*1.15]
-        cx_start = self.L * 0.82
-        cx_end = self.L
-        cy_base = self.waist * 0.75  # 基准高度，exp 项向下衰减至 waist*0.6 附近
-
+        """行李箱盖：前缘=后窗底，后缘=车尾，与侧围上缘贴合"""
+        hp = self.hp
+        x0, x1 = hp['x_rwbot'], hp['x_tail']
+        z0, z1 = hp['z_rwbot'], hp['z_trunk_r']
+        w_front = self.W * 0.85
+        w_rear = self.W * 0.86
+        nu, nv = 7, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                x = cx_start + u * (cx_end - cx_start)
-                y = cy_base + 80 * np.exp(-u * 4) * np.cos(v * np.pi)
-                z = (v - 0.5) * width
-                row.append((x, y, z))
+                x = x0 + u * (x1 - x0)
+                z = z0 + u * (z1 - z0) + 55 * np.sin(u * np.pi) * (1 - (2 * v - 1) ** 2)
+                z_lat = (v - 0.5) * (w_front + u * (w_rear - w_front))
+                row.append((x, z, z_lat))
             cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': '行李箱盖', 'type': 'trunk', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#c0c0c0', 'position': {'x': 0, 'y': 0, 'z': 0}}
+        return self._grid_component('行李箱盖', 'trunk', cps, 'trunk',
+                                    x1 - x0, w_rear, '#c0c0c0')
+
+    def _door_mid_author(self):
+        """B 柱/前后门分界 X（author）：前后轴中点"""
+        return (self.FO + (self.L - self.RO)) / 2.0
 
     def generate_door_front(self, side='left'):
-        """前门"""
-        t = self.nurbs_templates['door_front']
-        length = self._p('车身部件', 'door_front_length')
-        height = self._p('车身部件', 'door_front_height')
-        nu, nv = t['num_u'], t['num_v']
-        cx_start = self.FO  # 前门从前轴位置开始
-        cy_base = self.GC
-        z_base = self.half_w * 0.92  # 贴近车身侧面（契约 Y∈[0.88hw, hw]）
+        """前门：前轴后 40mm → B 柱区前 30mm；下缘在轮拱区随拱抛物线开口"""
+        sgn = 1.0 if side == 'left' else -1.0
+        x0 = self.FO + 40
+        x1 = self._door_mid_author() - 30
+        z_top = self.waist * 0.97
+        nu, nv = 8, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                cps_row = (cx_start + u * length, cy_base + v * height,
-                           z_base if side == 'left' else -z_base)
-                row.append(cps_row)
+                x = x0 + u * (x1 - x0)
+                # 拱区下缘抬起形成轮拱开口，其余处正常裙边（GC+100）
+                z_bot = max(self.GC + 100, self.GC + self._arch_lift(x))
+                z = z_bot + v * (z_top - z_bot)
+                # 比外蒙皮外凸 4mm（装配间隙），曲面随 _outer_half_width 起伏
+                z_lat = sgn * (self._outer_half_width(x, z) + 4)
+                row.append((x, z, z_lat))
             cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': f'{side}前门', 'type': 'door', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#c0c0c0',
-                'position': {'x': 0, 'y': 0, 'z': 0}, 'side': side}
+        return self._grid_component(f'{side}前门', 'door', cps, 'door_front',
+                                    x1 - x0, z_top - self.GC, '#c0c0c0',
+                                    side=side)
 
     def generate_door_rear(self, side='left'):
-        """后门"""
-        t = self.nurbs_templates['door_rear']
-        length = self._p('车身部件', 'door_rear_length')
-        height = self._p('车身部件', 'door_rear_height')
-        nu, nv = t['num_u'], t['num_v']
-        cx_start = self.L * 0.50  # 后门约在 50%~70% 车长
-        cy_base = self.GC
-        z_base = self.half_w * 0.90
+        """后门：B 柱区后 30mm → 座舱终点后 5%L；下缘随后轮拱抛物线开口"""
+        sgn = 1.0 if side == 'left' else -1.0
+        x0 = self._door_mid_author() + 30
+        x1 = self.L * 0.87
+        z_top = self.waist * 0.97
+        nu, nv = 8, 7
         cps = []
         for i in range(nu):
             u = i / (nu - 1)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
-                row.append((cx_start + u * length, cy_base + v * height,
-                            z_base if side == 'left' else -z_base))
+                x = x0 + u * (x1 - x0)
+                z_bot = max(self.GC + 100, self.GC + self._arch_lift(x))
+                z = z_bot + v * (z_top - z_bot)
+                z_lat = sgn * (self._outer_half_width(x, z) + 4)
+                row.append((x, z, z_lat))
             cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': f'{side}后门', 'type': 'door', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#c0c0c0',
-                'position': {'x': 0, 'y': 0, 'z': 0}, 'side': side}
+        return self._grid_component(f'{side}后门', 'door', cps, 'door_rear',
+                                    x1 - x0, z_top - self.GC, '#c0c0c0',
+                                    side=side)
+
+    # ------------------------------------------------------------------
+    # 车身连续外蒙皮（最关键部件）：侧围整体 + 轮拱 + 鼻/尾卷包
+    # ------------------------------------------------------------------
+    def generate_body_shell(self, side='left'):
+        """连续侧围外蒙皮：鼻尖 → 车尾；下缘随轮拱，鼻尾卷包封闭端面"""
+        sgn = 1.0 if side == 'left' else -1.0
+        hp = self.hp
+        L, GC = self.L, self.GC
+
+        def v_rows(low, up):
+            row = []
+            for j in range(7):
+                v = j / 6.0
+                x = low[0] + v * (up[0] - low[0])
+                z = low[1] + v * (up[1] - low[1])
+                row.append((x, z, sgn * self._outer_half_width(x, z)))
+            return row
+
+        grid = []
+        # 鼻卷包（s=0 上下缘重合于鼻尖）
+        for s in (0.0, 0.5, 1.0):
+            low = (40 * s, hp['z_skirt'])
+            up = (200 * s, hp['z_skirt'] + (hp['z_hood_f'] - hp['z_skirt']) * s * s)
+            grid.append(v_rows(low, up))
+        # 中段（去掉与卷包重合的两端）
+        for x in np.linspace(200.0, L - 200.0, 20)[1:-1]:
+            x = float(x)
+            grid.append(v_rows((x, GC + self._arch_lift(x)),
+                               (x, self._silhouette_top(x))))
+        # 尾卷包
+        for s in (1.0, 0.5, 0.0):
+            low = (L - 40 * s, hp['z_skirt'])
+            up = (L - 200 * s, hp['z_skirt'] + (hp['z_trunk_r'] - hp['z_skirt']) * s * s)
+            grid.append(v_rows(low, up))
+
+        return self._grid_component(f'{side}车身外蒙皮', 'body_shell', grid,
+                                    'roof', L, self.H, '#c0c0c0')
+
+    # ------------------------------------------------------------------
+    # 侧窗玻璃（前/后）与 B 柱：填补腰线 → 车顶边的乘员舱侧面
+    # ------------------------------------------------------------------
+    def _greenhouse_grid(self, x0, x1, top_pts, sgn, nu=8, nv=5):
+        """腰线→车顶侧 CP 网格。top_pts: 上沿折线 (x, 高度, 半宽)
+
+        CP 站必须落在折线锚点上（斜率突变处有 CP 压制）：
+        若只用均匀站，NURBS 会在锚点间过冲，侧窗上沿冒出车顶线呈锯齿。
+        """
+        z_low = self.waist * 0.98
+        lat_low = self.half_w * 0.93
+        top_z_chain, top_lat_chain = top_pts[:, [0, 1]], top_pts[:, [0, 2]]
+        anchors = top_pts[:, 0]
+        nu_per_seg = max(2, int(np.ceil(nu / max(len(anchors) - 1, 1))))
+        xs = []
+        for k in range(len(anchors) - 1):
+            seg = np.linspace(anchors[k], anchors[k + 1], nu_per_seg)
+            xs.extend(seg if k == 0 else seg[1:])
+        grid = []
+        for x in xs:
+            x = float(x)
+            z_top = self._chain_lookup(x, top_z_chain)
+            lat_top = self._chain_lookup(x, top_lat_chain)
+            row = []
+            for j in range(nv):
+                v = j / (nv - 1)
+                z = z_low + v * (z_top - z_low)
+                lat = lat_low + v * (lat_top - lat_low)
+                row.append((x, z, sgn * lat))
+            grid.append(row)
+        return grid
+
+    def generate_side_glass_front(self, side='left'):
+        """前侧窗：COWL 后 40 → B 柱前 18；上沿跟风挡斜线后平接车顶"""
+        hp = self.hp
+        x0 = hp['x_cowl'] + 40
+        x1 = self._door_mid_author() - 18
+        top_pts = np.array([
+            (x0, self._chain_lookup(x0, self._top_chain[2:4]), self.W * 0.95 * 0.5),
+            (hp['x_wstop'], hp['z_wstop'], self.W * 0.81 * 0.5),
+            (x1, hp['z_wstop'] - 2, self.W * 0.81 * 0.5)
+        ])
+        grid = self._greenhouse_grid(x0, x1, top_pts,
+                                     1.0 if side == 'left' else -1.0)
+        return self._grid_component(f'{side}前侧窗', 'side_glass', grid, 'roof',
+                                    x1 - x0, hp['z_wstop'] - self.waist * 0.98,
+                                    '#9fc5e8', opacity=0.5)
+
+    def generate_side_glass_rear(self, side='left'):
+        """后侧窗：B 柱后 18 → 后窗底前 40；上沿平接车顶后随 C 柱斜线"""
+        hp = self.hp
+        x0 = self._door_mid_author() + 18
+        x1 = hp['x_rwbot'] - 40
+        top_pts = np.array([
+            (x0, hp['z_wstop'] - 3, self.W * 0.81 * 0.5),
+            (hp['x_cab_end'], hp['z_roof_r'], self.W * 0.76 * 0.5),
+            (x1, self._chain_lookup(x1, self._top_chain[4:6]), self.W * 0.85 * 0.5)
+        ])
+        grid = self._greenhouse_grid(x0, x1, top_pts,
+                                     1.0 if side == 'left' else -1.0)
+        return self._grid_component(f'{side}后侧窗', 'side_glass', grid, 'roof',
+                                    x1 - x0, hp['z_roof_r'] - self.waist * 0.98,
+                                    '#9fc5e8', opacity=0.5)
+
+    def generate_b_pillar(self, side='left'):
+        """B 柱：前后门/侧窗之间的窄竖条"""
+        sgn = 1.0 if side == 'left' else -1.0
+        mid = self._door_mid_author()
+        x0, x1 = mid - 22, mid + 22
+        z_bot, z_top = self.waist * 0.97, self.hp['z_wstop'] - 2
+        lat_bot, lat_top = self.half_w * 0.93, self.W * 0.81 * 0.5
+        cps = []
+        for i in range(4):
+            u = i / 3.0
+            x = x0 + u * (x1 - x0)
+            row = []
+            for j in range(6):
+                v = j / 5.0
+                z = z_bot + v * (z_top - z_bot)
+                lat = lat_bot + v * (lat_top - lat_bot)
+                row.append((x, z, sgn * lat))
+            cps.append(row)
+        return self._grid_component(f'{side}B柱', 'b_pillar', cps, 'door_front',
+                                    x1 - x0, z_top - z_bot, '#1a1a1a')
+
+    def _bumper_grid(self, is_front):
+        """垂直卷包保险杠 CP 网格：横向弧形 wrap，z 90→370"""
+        nu, nv = 9, 6
+        z0, z1 = 90, 370
+        grid = []
+        for i in range(nu):
+            f = i / (nu - 1)
+            lat = (f - 0.5) * 2 * self.half_w * 0.98
+            wrap = (abs(lat) / self.half_w) ** 2 * 180
+            x = 30 + wrap if is_front else self.L - 30 - wrap
+            row = []
+            for j in range(nv):
+                g = j / (nv - 1)
+                # 中部略高（微笑曲线）
+                z = z0 + g * (z1 - z0) + 12 * (1 - (2 * f - 1) ** 2) * g
+                row.append((x, z, lat))
+            grid.append(row)
+        return grid
 
     def generate_bumper_front(self):
-        """前保险杠"""
-        t = self.nurbs_templates['bumper_front']
-        width = self._p('整车尺寸', 'overall_width')
-        nu, nv = t['num_u'], t['num_v']
-        length, height = 200, 250
-        cps = []
-        for i in range(nu):
-            u = i / (nu - 1)
-            row = []
-            for j in range(nv):
-                v = j / (nv - 1)
-                x = u * length  # 从车头向内延伸
-                y = height * (1 - np.cos(u * np.pi)) * 0.5 + self.GC * 0.4
-                z = (v - 0.5) * width * (0.85 + u * 0.15)
-                row.append((x, y, z))
-            cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': '前保险杠', 'type': 'bumper', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#808080', 'position': {'x': 0, 'y': 0, 'z': 0}}
+        """前保险杠：鼻端垂直弧面"""
+        grid = self._bumper_grid(True)
+        return self._grid_component('前保险杠', 'bumper', grid, 'bumper_front',
+                                    210, self.W, '#808080')
 
     def generate_bumper_rear(self):
-        """后保险杠"""
-        t = self.nurbs_templates['bumper_rear']
-        width = self._p('整车尺寸', 'overall_width')
-        nu, nv = t['num_u'], t['num_v']
-        length, height = 200, 250
-        cps = []
-        for i in range(nu):
-            u = i / (nu - 1)
-            row = []
-            for j in range(nv):
-                v = j / (nv - 1)
-                x = self.L - length + u * length  # 车尾向内延伸
-                y = height * (1 - np.cos(u * np.pi)) * 0.5 + self.GC * 0.4
-                z = (v - 0.5) * width * (0.85 + (1 - u) * 0.15)
-                row.append((x, y, z))
-            cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': '后保险杠', 'type': 'bumper', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#808080', 'position': {'x': 0, 'y': 0, 'z': 0}}
+        """后保险杠：尾端垂直弧面"""
+        grid = self._bumper_grid(False)
+        return self._grid_component('后保险杠', 'bumper', grid, 'bumper_rear',
+                                    210, self.W, '#808080')
 
     def generate_headlight(self, side='left'):
-        """前大灯"""
-        height = self._p('车身部件', 'headlight_height')
-        depth = 80
-        pts = []
-        for i in range(5):
+        """前大灯：正面灯组 + 包角（夹格栅两侧，下缘坐保险杠顶）"""
+        sgn = 1.0 if side == 'left' else -1.0
+        cps = []
+        for i in range(6):
+            u = i / 5.0
+            x = 40 + u * 150                    # 正面 → 包角向后扫
+            lat = sgn * (280 + u * 360)         # 280 → 640
             row = []
             for j in range(4):
-                row.append([i * (depth / 4), height * (1 - j / 3), 0])
-            pts.append(row)
-        z_offset = 400 if side == 'left' else -400
-        return {'name': f'{side}前大灯', 'type': 'headlight', 'points': pts, 'color': '#ffffff',
-                'emissive': '#00ffff', 'position': {'x': 300, 'y': 400, 'z': z_offset}}
+                v = j / 3.0
+                z = 370 + v * 150
+                row.append((x, z, lat))
+            cps.append(row)
+        return self._grid_component(f'{side}前大灯', 'headlight', cps,
+                                    'bumper_front', 360, 150, '#ffffff',
+                                    emissive='#cceeff')
 
     def generate_taillight(self, side='left'):
-        """后尾灯"""
-        height = self._p('车身部件', 'taillight_height')
-        depth = 60
-        pts = []
-        for i in range(4):
+        """后尾灯：背面灯组 + 包角，下缘坐后保险杠顶"""
+        sgn = 1.0 if side == 'left' else -1.0
+        L = self.L
+        cps = []
+        for i in range(6):
+            u = i / 5.0
+            x = L - 40 - u * 150
+            lat = sgn * (280 + u * 360)
             row = []
-            for j in range(5):
-                row.append([i * (depth / 3), height * (1 - j / 4), 0])
-            pts.append(row)
-        z_offset = 400 if side == 'left' else -400
-        return {'name': f'{side}后尾灯', 'type': 'taillight', 'points': pts, 'color': '#ff0000',
-                'emissive': '#ff4400', 'position': {'x': self.L - 150, 'y': 400, 'z': z_offset}}
+            for j in range(4):
+                v = j / 3.0
+                z = 370 + v * 170
+                row.append((x, z, lat))
+            cps.append(row)
+        return self._grid_component(f'{side}后尾灯', 'taillight', cps,
+                                    'bumper_rear', 360, 170, '#cc2200',
+                                    emissive='#ff4400')
 
     def generate_grille(self):
-        """进气格栅"""
-        height = self._p('车身部件', 'grille_height')
-        depth = 50
-        pts = []
-        for i in range(3):
+        """进气格栅：正面横向板（lat ±300，z 130→340），中部前凸微弧"""
+        cps = []
+        for i in range(6):
+            u = i / 5.0
+            lat = (u - 0.5) * 600
+            x = 12 + 26 * (lat / 300.0) ** 2    # 两侧随鼻弧向后收
             row = []
-            for j in range(8):
-                row.append([i * (depth / 2), height * (1 - j / 7), 0])
-            pts.append(row)
-        return {'name': '进气格栅', 'type': 'grille', 'points': pts, 'color': '#1a1a1a',
-                'position': {'x': 100, 'y': 300, 'z': 0}}
+            for j in range(4):
+                v = j / 3.0
+                z = 130 + v * 210
+                row.append((x, z, lat))
+            cps.append(row)
+        return self._grid_component('进气格栅', 'grille', cps, 'bumper_front',
+                                    600, 210, '#1a1a1a')
 
     def generate_wheel(self, position='front', side='left'):
-        """车轮"""
+        """车轮（位置已归一到规范坐标系：X∈[-L/2,L/2]，Y=高度，Z=车宽）"""
         diameter = self._p('车身部件', 'wheel_diameter')
         width = self._p('车身部件', 'wheel_width')
-        x_pos = self.fwx if position == 'front' else self.rwx
+        x_pos = self._ax_f if position == 'front' else self._ax_r
         z_pos = self.fwz if side == 'left' else -self.fwz
         return {'name': f'{side}{position}轮', 'type': 'wheel', 'radius': diameter / 2, 'width': width,
-                'color': '#222222', 'rim_color': '#666666',
-                'position': {'x': x_pos, 'y': self.GC + diameter / 2, 'z': z_pos}}
+                'color': '#26262b', 'rim_color': '#9aa0a8',
+                'position': {'x': x_pos - self.L / 2, 'y': self.GC + diameter / 2, 'z': z_pos}}
 
     def generate_mirror(self, side='left'):
-        """后视镜"""
-        width = self._p('车身部件', 'mirror_width')
-        height = self._p('车身部件', 'mirror_height')
-        depth = self._p('车身部件', 'mirror_depth')
-        z_offset = 470 if side == 'left' else -470
-        return {'name': f'{side}后视镜', 'type': 'mirror', 'width': width, 'height': height, 'depth': depth,
+        """后视镜（位置/尺寸元数据，不生成独立面片）"""
+        return {'name': f'{side}后视镜', 'type': 'mirror',
+                'width': self._p('车身部件', 'mirror_width'),
+                'height': self._p('车身部件', 'mirror_height'),
+                'depth': self._p('车身部件', 'mirror_depth'),
                 'color': '#c0c0c0', 'glass_color': '#87CEEB',
-                'position': {'x': 2600, 'y': 850, 'z': z_offset}}
+                'position': {'x': self.hp['x_cowl'] - 80,
+                             'y': self.waist + 60,
+                             'z': (self.half_w + 30) * (1 if side == 'left' else -1)}}
 
     def generate_fender(self, position='front', side='left'):
-        """翼子板"""
-        t = self.nurbs_templates['fender_front']
-        radius = self._p('车身部件', 'wheel_arch_radius')
-        nu, nv = t['num_u'], t['num_v']
-        x_center = self.fwx if position == 'front' else self.rwx
-        # author 坐标：y 为高度（GC 以上），z 为车宽（半宽 80%~100% 区间）
-        z_center = self.half_w * 0.90 if side == 'left' else -self.half_w * 0.90
-        y_base = self.GC * 0.8  # 保证最低点在地面以上
-        cps = []
-        for i in range(nu):
-            u = i / (nu - 1)
-            row = []
-            for j in range(nv):
-                v = j / (nv - 1)
-                theta, phi = u * np.pi, v * np.pi
-                x = x_center + radius * np.cos(theta) * 0.6
-                y = y_base + radius * (0.5 + 0.5 * np.sin(theta)) * (0.7 + 0.3 * np.cos(phi))
-                z = z_center + radius * np.sin(theta) * np.sin(phi) * 0.3
-                row.append((x, y, z))
-            cps.append(row)
-        surf = self._build_surface(cps, t)
-        return {'name': f'{side}{position}翼子板', 'type': 'fender', 'points': self._sample(surf, nu, nv),
-                'surface': surf.to_dict(), 'color': '#c0c0c0', 'position': {'x': 0, 'y': 0, 'z': 0}}
+        """翼子板：轮拱外覆圈，比外蒙皮外凸 15mm。
 
-    def generate_pillar(self, pillar_type='A', side='left'):
-        """立柱"""
-        heights = {'A': 1000, 'B': 900, 'C': 800}
-        x_positions = {'A': 1700, 'B': 3000, 'C': 4000}
-        height = heights[pillar_type]
-        width = 60
-        pts = []
-        for i in range(3):
+        内缘随拱抛物线但封顶 z=540（契约上限 556 内）；
+        前翼子板后缘与前门切齐，避免与车门双板重叠。
+        """
+        ax = self._ax_f if position == 'front' else self._ax_r
+        span_x = self.L * 0.09 - 8
+        if position == 'front':
+            x0, x1 = ax - span_x, self.FO + 40      # 后缘=前门起点
+        else:
+            x0, x1 = ax - span_x, ax + span_x
+        z_top = 545
+        cps = []
+        for i in range(9):
+            u = i / 8.0
+            x = x0 + u * (x1 - x0)
+            z_bot = self.GC * 0.6 + min(self._arch_lift(x), 450)
+            sgn_lat = 1.0 if side == 'left' else -1.0
             row = []
-            for j in range(10):
-                row.append([i * (width / 2), height * (1 - j / 9), 0])
-            pts.append(row)
-        z_offset = 430 if side == 'left' else -430
-        return {'name': f'{side}{pillar_type}柱', 'type': 'pillar', 'points': pts, 'color': '#1a1a1a',
-                'position': {'x': x_positions[pillar_type], 'y': 200, 'z': z_offset}}
+            for j in range(6):
+                v = j / 5.0
+                z = z_bot + v * (z_top - z_bot)
+                z_lat = sgn_lat * (self._outer_half_width(x, z) + 15)
+                row.append((x, z, z_lat))
+            cps.append(row)
+        return self._grid_component(f'{side}{position}翼子板', 'fender', cps,
+                                    'fender_front', x1 - x0, z_top - self.GC,
+                                    '#c0c0c0')
 
     def generate_door_seam(self):
-        """车门分缝"""
-        seam_width = self._p('车身部件', 'door_seam_width')
-        return {'name': '车门分缝', 'type': 'seam', 'width': seam_width, 'color': '#111111',
-                'segments': [{'start': {'x': 3200, 'y': 250, 'z': 0}, 'end': {'x': 3200, 'y': 1000, 'z': 0}}]}
+        """车门分缝（元数据）"""
+        mid = self._door_mid_author()
+        return {'name': '车门分缝', 'type': 'seam',
+                'width': self._p('车身部件', 'door_seam_width'),
+                'color': '#111111',
+                'segments': [{'start': {'x': mid, 'y': 250, 'z': 0},
+                              'end': {'x': mid, 'y': 1000, 'z': 0}}]}
 
     def generate_complete_car(self, params_override=None):
         """生成完整车身模型
@@ -572,21 +816,35 @@ class NURBSCarBodyGenerator:
             self._init_coords()
 
     def _generate_current(self):
-        """按当前参数生成完整车身（实际生成逻辑）"""
+        """按当前参数生成完整车身（实际生成逻辑）
+
+        装配顺序（外到内/前到后）：连续外蒙皮 → 翼子板 → 保险杠 →
+        灯具/格栅 → 上车身钣件链 → 车门 → 侧窗/B柱 → 车轮。
+        """
         components = [
-            self.generate_bumper_front(), self.generate_grille(),
-            self.generate_headlight('left'), self.generate_headlight('right'),
-            self.generate_hood(), self.generate_windshield(), self.generate_roof(),
-            self.generate_rear_window(), self.generate_trunk(), self.generate_bumper_rear(),
-            self.generate_taillight('left'), self.generate_taillight('right'),
-            self.generate_door_front('left'), self.generate_door_front('right'),
-            self.generate_door_rear('left'), self.generate_door_rear('right'),
-            self.generate_mirror('left'), self.generate_mirror('right'),
-            self.generate_pillar('A', 'left'), self.generate_pillar('A', 'right'),
-            self.generate_pillar('B', 'left'), self.generate_pillar('B', 'right'),
-            self.generate_pillar('C', 'left'), self.generate_pillar('C', 'right'),
+            # 连续车身外蒙皮（左右）
+            self.generate_body_shell('left'), self.generate_body_shell('right'),
+            # 翼子板（轮拱外覆）
             self.generate_fender('front', 'left'), self.generate_fender('front', 'right'),
             self.generate_fender('rear', 'left'), self.generate_fender('rear', 'right'),
+            # 保险杠 / 格栅 / 灯具
+            self.generate_bumper_front(), self.generate_bumper_rear(),
+            self.generate_grille(),
+            self.generate_headlight('left'), self.generate_headlight('right'),
+            self.generate_taillight('left'), self.generate_taillight('right'),
+            # 上车身钣件链（共享硬点边缘）
+            self.generate_hood(), self.generate_windshield(), self.generate_roof(),
+            self.generate_rear_window(), self.generate_trunk(),
+            # 车门
+            self.generate_door_front('left'), self.generate_door_front('right'),
+            self.generate_door_rear('left'), self.generate_door_rear('right'),
+            # 乘员舱侧窗 + B 柱
+            self.generate_side_glass_front('left'), self.generate_side_glass_front('right'),
+            self.generate_side_glass_rear('left'), self.generate_side_glass_rear('right'),
+            self.generate_b_pillar('left'), self.generate_b_pillar('right'),
+            # 后视镜（元数据）
+            self.generate_mirror('left'), self.generate_mirror('right'),
+            # 车轮
             self.generate_wheel('front', 'left'), self.generate_wheel('front', 'right'),
             self.generate_wheel('rear', 'left'), self.generate_wheel('rear', 'right'),
             self.generate_door_seam()
@@ -695,9 +953,16 @@ class NURBSCarBodyGenerator:
 
     # ============ 网格导出 ============
 
+    #: GLB 导出 PBR 参数
+    PBR_PAINT = {'metallicFactor': 0.9, 'roughnessFactor': 0.35}
+    PBR_GLASS = {'metallicFactor': 0.0, 'roughnessFactor': 0.05}
+    PBR_TIRE = {'metallicFactor': 0.1, 'roughnessFactor': 0.9}
+    PBR_RIM = {'metallicFactor': 0.85, 'roughnessFactor': 0.3}
+
     def _build_trimesh_scene(self):
-        """用trimesh从NURBS点云构建3D场景"""
+        """用trimesh从NURBS采样网格构建3D场景（平滑法线 + PBR材质）"""
         import trimesh
+        from trimesh.visual.material import PBRMaterial
         car = self.generate_complete_car()
         scene = trimesh.Scene()
         for comp in car['components']:
@@ -714,17 +979,60 @@ class NURBSCarBodyGenerator:
                             faces.append([v0, v1, v2]); faces.append([v1, v3, v2])
                     if faces:
                         mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+                        mesh.merge_vertices()
+                        mesh.fix_normals()   # 平滑顶点法线（面片共享顶点）
                         pos = comp.get('position', {'x': 0, 'y': 0, 'z': 0})
                         mesh.apply_translation([pos.get('x', 0), pos.get('y', 0), pos.get('z', 0)])
-                        self._apply_color(mesh, comp.get('color', '#c0c0c0'))
+                        self._apply_pbr(mesh, comp, PBRMaterial)
                         scene.add_geometry(mesh, node_name=comp.get('name', 'part'))
             elif comp.get('type') == 'wheel' and 'radius' in comp:
-                wheel = trimesh.creation.cylinder(radius=comp['radius'], height=comp.get('width', 200))
+                wheel = trimesh.creation.cylinder(
+                    radius=comp['radius'], height=comp.get('width', 200),
+                    sections=32)   # 轮胎细分提升
+                # 圆柱默认轴朝 Z；车轮轴必须朝车宽 Y：绕 X 旋转 90°（Z→Y）
+                wheel.apply_transform(np.array([
+                    [1, 0, 0, 0], [0, 0, -1, 0],
+                    [0, 1, 0, 0], [0, 0, 0, 1]]))
                 pos = comp.get('position', {'x': 0, 'y': 0, 'z': 0})
-                wheel.apply_translation([pos.get('x', 0), pos.get('y', 0), pos.get('z', 0)])
-                self._apply_color(wheel, comp.get('rim_color', '#666666'))
+                # 车轮位置已是规范坐标（generate_wheel 已减 L/2）；
+                # author (x, y=高度, z=车宽) → canonical (X, Y=车宽, Z=高度)
+                wheel.apply_translation([pos.get('x', 0),
+                                         pos.get('z', 0), pos.get('y', 0)])
+                wheel.fix_normals()
+                rgb = self._hex_to_rgb(comp.get('rim_color', '#9aa0a8'))
+                wheel.visual = trimesh.visual.TextureVisuals(
+                    material=PBRMaterial(name='wheel',
+                                         baseColorFactor=[*rgb, 1.0],
+                                         doubleSided=True,
+                                         **self.PBR_RIM))
                 scene.add_geometry(wheel, node_name=comp.get('name', 'wheel'))
         return scene
+
+    def _apply_pbr(self, mesh, comp, PBRMaterial):
+        """为车身部件网格赋 PBR 材质（车漆或玻璃）"""
+        import trimesh
+        opacity = comp.get('opacity')
+        is_glass = comp.get('type') in ('windshield', 'rear_window',
+                                       'side_glass') or (
+            opacity is not None and float(opacity) < 1.0)
+        rgb = self._hex_to_rgb(comp.get('color', '#c0c0c0'))
+        alpha = float(opacity) if is_glass and opacity is not None else 1.0
+        params = self.PBR_GLASS if is_glass else self.PBR_PAINT
+        mesh.visual = trimesh.visual.TextureVisuals(
+            material=PBRMaterial(name=comp.get('name', 'part'),
+                                 baseColorFactor=[*rgb, alpha],
+                                 alphaMode='BLEND' if alpha < 1.0 else 'OPAQUE',
+                                 doubleSided=True,
+                                 **params))
+
+    @staticmethod
+    def _hex_to_rgb(color_hex):
+        """'#rrggbb' → [r, g, b]，各通道 0~1；解析失败回退银灰"""
+        try:
+            h = str(color_hex).lstrip('#')
+            return [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+        except Exception:
+            return [0.75, 0.75, 0.75]
 
     @staticmethod
     def _apply_color(mesh, color_hex):

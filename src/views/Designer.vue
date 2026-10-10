@@ -121,6 +121,7 @@
                 car-color="#3b82f6"
                 :view-angle="baseViewAngle"
                 :wireframe="true"
+                :nurbs-mesh="nurbsMeshData"
                 @update:view-angle="baseViewAngle = $event"
               />
             </div>
@@ -146,6 +147,7 @@
                 :car-color="selectedColor"
                 :view-angle="previewViewAngle"
                 :wireframe="false"
+                :nurbs-mesh="nurbsMeshData"
                 @update:view-angle="previewViewAngle = $event"
               />
               <div v-else class="viewport-2d">
@@ -525,6 +527,10 @@ const previewViewAngle = ref('perspective')
 // 现为真实测量结果，故在此保留以便如实展示。
 const nurbsQuality = ref(null)
 
+// 最近一次生成的真实 NURBS 采样网格，传给 Car3D 走高保真渲染路径；
+// 未生成前为 null，视口保持参数化 fallback（游客态/Demo 不受影响）。
+const nurbsMeshData = ref(null)
+
 const carParams = params
 
 const currentBrand = computed(() => {
@@ -740,6 +746,26 @@ const generateCar = async () => {
       })
       // 保留实时质量快照，供面板/后续对照使用
       nurbsQuality.value = q
+      // 组装真实 NURBS 网格：曲面部件取采样点，车轮取几何参数。
+      // 轮子部件无 points（只有 radius/width/position），需单独提取。
+      nurbsMeshData.value = {
+        parts: data.components
+          .filter(c => c.points && c.points.length)
+          .map(c => ({
+            name: c.name,
+            type: c.type,
+            points: c.points,
+            color: c.color,
+            opacity: c.opacity
+          })),
+        wheels: data.components
+          .filter(c => c.type === 'wheel' && c.radius)
+          .map(c => ({
+            radius: c.radius,
+            width: c.width,
+            position: c.position
+          }))
+      }
     } else {
       ElMessage.success('Car generated successfully')
     }
