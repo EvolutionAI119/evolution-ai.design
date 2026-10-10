@@ -24,18 +24,21 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('初始状态', () => {
-  it('无本地 token 时未认证', () => {
+describe('初始状态（账号封存期：预置游客身份）', () => {
+  it('默认即为游客态：guest 内置账户（superadmin），保证全功能可测', () => {
     const auth = useAuthStore()
-    expect(auth.isAuthenticated).toBe(false)
-    expect(auth.user).toBeNull()
+    expect(auth.isAuthenticated).toBe(true)
+    expect(auth.token).toBe('guest')
+    expect(auth.user?.email).toBe('guest@evolution-ai.design')
+    expect(auth.user?.role).toBe('superadmin')
   })
 
   it('不读取任何持久化凭据：localStorage 残留同名键也不恢复登录态', () => {
     localStorage.setItem('evoai_token', 'stale-jwt')
     const auth = useAuthStore()
-    expect(auth.isAuthenticated).toBe(false)
-    expect(auth.token).toBe('')
+    // 游客身份由代码预置，与 localStorage 无关
+    expect(auth.token).toBe('guest')
+    expect(auth.user?.username).toBe('guest')
   })
 })
 
@@ -67,8 +70,9 @@ describe('login / register', () => {
 })
 
 describe('fetchMe', () => {
-  it('无 token 时直接返回 null，不发请求', async () => {
+  it('token 被显式清空时直接返回 null，不发请求', async () => {
     const auth = useAuthStore()
+    auth.setToken('')
     const result = await auth.fetchMe()
     expect(result).toBeNull()
     expect(authAPI.me).not.toHaveBeenCalled()
@@ -97,7 +101,7 @@ describe('fetchMe', () => {
 })
 
 describe('logout', () => {
-  it('退出清除 token、用户与本地存储', async () => {
+  it('封存期：退出即回到预置游客态', async () => {
     authAPI.login.mockResolvedValue({
       data: { access_token: fakeToken, user: fakeUser }
     })
@@ -105,9 +109,9 @@ describe('logout', () => {
     await auth.login('a@b.com', 'pass123')
 
     auth.logout()
-    expect(auth.isAuthenticated).toBe(false)
-    expect(auth.token).toBe('')
-    expect(auth.user).toBeNull()
+    expect(auth.isAuthenticated).toBe(true)
+    expect(auth.token).toBe('guest')
+    expect(auth.user?.email).toBe('guest@evolution-ai.design')
     expect(localStorage.getItem('evoai_token')).toBeNull()
   })
 })
@@ -122,11 +126,11 @@ describe('分级角色 getters', () => {
     return auth
   }
 
-  it('游客（未登录）：role=guest，非管理员', () => {
+  it('游客默认身份（封存期）：role=superadmin，管理员/超管均为 true', () => {
     const auth = useAuthStore()
-    expect(auth.role).toBe('guest')
-    expect(auth.isAdmin).toBe(false)
-    expect(auth.isSuperadmin).toBe(false)
+    expect(auth.role).toBe('superadmin')
+    expect(auth.isAdmin).toBe(true)
+    expect(auth.isSuperadmin).toBe(true)
   })
 
   it('普通用户：role=user，非管理员', async () => {

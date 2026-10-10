@@ -15,11 +15,18 @@ const zh = {
     dashboard: '仪表盘', aiDesigner: 'AI 设计器', projects: '项目管理',
     copilot: 'AI 设计副驾',
     deepLearning: '深度学习设计器', quality: '质量检查', deliver: '数据交付', demo: 'DEMO 演示',
-    account: '账户设置', help: '帮助中心', community: 'Evolution-ai Community',
+    contact: '联系我们', help: '帮助中心', community: 'Evolution-ai Community',
     groupHome: '', groupDesign: '设计', groupWorkflow: '工作流',
     groupExplore: '探索', groupSupport: '支持',
     groupAdmin: '管理', admin: '管理后台',
     lightMode: '切换到浅色模式', darkMode: '切换到深色模式', language: '语言'
+  },
+  contact: {
+    title: '联系我们',
+    subtitle: '有任何问题、建议或合作意向，欢迎通过邮件与我们联系',
+    copy: '复制',
+    copied: '已复制',
+    mailto: '发送邮件'
   },
   dashboard: {
     projects: '项目总数', models: '模型数量', reports: '检查报告', qualityRate: '合格率',
@@ -849,11 +856,18 @@ const en = {
     dashboard: 'Dashboard', aiDesigner: 'AI Designer', projects: 'Projects',
     copilot: 'AI Design Copilot',
     deepLearning: 'Deep Learning', quality: 'Quality', deliver: 'Deliver', demo: 'DEMO',
-    account: 'Account', help: 'Help Center', community: 'Evolution-ai Community',
+    contact: 'Contact', help: 'Help Center', community: 'Evolution-ai Community',
     groupHome: '', groupDesign: 'Design', groupWorkflow: 'Workflow',
     groupExplore: 'Explore', groupSupport: 'Support',
     groupAdmin: 'Admin', admin: 'Admin Console',
     lightMode: 'Switch to light mode', darkMode: 'Switch to dark mode', language: 'Language'
+  },
+  contact: {
+    title: 'Contact Us',
+    subtitle: 'Questions, feedback or collaboration inquiries — reach us by email',
+    copy: 'Copy',
+    copied: 'Copied',
+    mailto: 'Send Email'
   },
   dashboard: {
     projects: 'Total Projects', models: 'Model Count', reports: 'Check Reports', qualityRate: 'Pass Rate',

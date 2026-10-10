@@ -3,10 +3,20 @@
 import { defineStore } from 'pinia'
 import { authAPI, setApiToken } from '../api'
 
+// 账号体系封存期：默认进入游客态（guest 内置账户）。
+// 后端 GUEST_MODE=true 时，所有受保护接口由 guest 账户（superadmin）放行，
+// 前端预置同名身份以保持角色判定/通知轮询等既有逻辑正常工作。
+const GUEST_USER = Object.freeze({
+  email: 'guest@evolution-ai.design',
+  username: 'guest',
+  role: 'superadmin',
+  is_admin: true
+})
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    token: '',
-    user: null,
+    token: 'guest',
+    user: { ...GUEST_USER },
     loading: false
   }),
 
@@ -72,8 +82,9 @@ export const useAuthStore = defineStore('auth', {
     },
 
     logout() {
-      this.setToken('')
-      this.user = null
+      // 封存期：登出即回到游客态（不再有登录页可跳）
+      this.setToken('guest')
+      this.user = { ...GUEST_USER }
     }
   }
 })

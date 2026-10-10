@@ -15,6 +15,9 @@ for _p in (_BACKEND, _ROOT):
 # 限流按客户端 IP 累计计数，TestClient 固定同一 IP 会互相干扰触发 429；
 # 必须在导入 app.main 之前禁用（环境变量优先级高于 .env）
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+# 本地 .env 已开 GUEST_MODE（账号封存期）；测试必须强制走真实鉴权路径，
+# 否则依赖 401/403 语义的用例会被游客旁路击穿（环境变量优先级高于 .env）
+os.environ["GUEST_MODE"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient

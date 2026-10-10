@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     # 注册时是否要求邮箱唯一（默认开启）
     REQUIRE_EMAIL_VERIFICATION: bool = False
 
+    # ============ 游客模式（账号体系封存期） ============
+    # true：所有受保护接口免登录，统一落到内置 guest 账户（角色 superadmin，
+    # 保证「游客可测试全部功能」）。账号模块封存阶段的临时开关，
+    # 生产环境禁止开启（下方校验 fail-fast）。
+    GUEST_MODE: bool = False
+
     # ============ 微信扫码登录（开放平台） ============
     # 在 https://open.weixin.qq.com/ 创建「网站应用」后获得
     WECHAT_APPID: str = ""          # 例如 wx1234567890abcdef
@@ -163,6 +169,13 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "生产环境必须设置 DEBUG=false：DEBUG 开启时 CORS 放行任意 Origin，"
                     "且 500 响应会暴露异常堆栈"
+                )
+            # 游客模式把所有受保护接口对匿名访客完全开放（含超管接口），
+            # 仅限本地封存测试期使用，生产开启等同于无鉴权裸奔，禁止。
+            if self.GUEST_MODE:
+                raise ValueError(
+                    "生产环境禁止开启 GUEST_MODE=true：该模式将包含超级管理员"
+                    "接口在内的全部受保护接口对匿名访客开放，仅限本地封存测试使用"
                 )
         return self
 

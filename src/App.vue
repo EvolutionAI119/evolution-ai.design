@@ -110,36 +110,7 @@
               </div>
             </el-popover>
 
-            <!-- 已登录：用户菜单；未登录：登录入口 -->
-            <el-dropdown
-              v-if="auth.isAuthenticated"
-              trigger="click"
-              @command="onUserCommand"
-            >
-              <div class="user-chip">
-                <div class="user-chip-avatar">{{ userInitial }}</div>
-                <span class="user-chip-name">{{ auth.user?.username || '—' }}</span>
-                <el-icon class="chip-arrow"><ArrowDown /></el-icon>
-              </div>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="account">
-                    <el-icon><UserFilled /></el-icon>{{ t('account.menuItem') }}
-                  </el-dropdown-item>
-                  <el-dropdown-item command="logout" divided>
-                    <el-icon><SwitchButton /></el-icon>{{ t('account.logout') }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-            <el-button
-              v-else
-              size="small"
-              class="login-btn"
-              @click="goLogin"
-            >
-              <el-icon><UserFilled /></el-icon>{{ t('auth.login') }}
-            </el-button>
+            <!-- 账号模块封存期：用户菜单/登录入口已移除（Contact 页在侧栏） -->
           </div>
         </el-header>
         <el-main class="main-content">
@@ -151,23 +122,6 @@
       </el-container>
     </el-container>
   </div>
-
-  <!-- 全局登录引导：游客触发「项目工作 / 模型生成」时友好提示，不强制跳转 -->
-  <el-dialog
-    v-model="loginPromptVisible"
-    :title="t('auth.loginRequiredTitle')"
-    width="380px"
-    align-center
-  >
-    <div class="login-prompt-body">
-      <el-icon class="login-prompt-icon"><Lock /></el-icon>
-      <p>{{ loginPromptText }}</p>
-    </div>
-    <template #footer>
-      <el-button @click="loginPromptVisible = false">{{ t('auth.maybeLater') }}</el-button>
-      <el-button type="primary" @click="goLoginFromPrompt">{{ t('auth.login') }}</el-button>
-    </template>
-  </el-dialog>
 </template>
 
 <script setup>
@@ -176,9 +130,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
-  Bell, Moon, Sunny, ArrowDown, UserFilled, SwitchButton, QuestionFilled,
-  ChatDotRound,
-  Lock, Setting, Promotion,
+  Bell, Moon, Sunny, QuestionFilled, ChatDotRound, Message, Setting,
+  Promotion,
 } from '@element-plus/icons-vue'
 // Element Plus 内置语言包
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
@@ -200,7 +153,7 @@ const menuTextColor = computed(() =>
 )
 const activeMenuColor = computed(() => (isDark.value ? '#4ade80' : '#16a34a'))
 
-// 登录页采用全屏独立布局
+// 登录页采用全屏独立布局（封存期 Login 路由已移除，此处恒为 false，保留以兼容复启）
 const isLoginRoute = computed(() => route.name === 'Login')
 
 const userInitial = computed(() => {
@@ -208,43 +161,7 @@ const userInitial = computed(() => {
   return name.slice(0, 1).toUpperCase()
 })
 
-const goLogin = () => router.push('/login')
-
-// ── 全局登录引导弹窗 ──────────────────────────
-// 游客在任意页面触发需登录动作时，api.js/业务页派发 evoai:auth-required
-// 事件，这里统一展示友好引导（可携带 detail.message 定制文案）。
-const loginPromptVisible = ref(false)
-const loginPromptMessage = ref('')
-const loginPromptText = computed(() =>
-  loginPromptMessage.value || t('auth.loginRequiredBody'))
-
-const onAuthRequired = (event) => {
-  const reason = event?.detail?.reason
-  if (reason === 'expired') {
-    // JWT 已失效：同步 Pinia 登录态（否则界面残留登录 UI、60s 轮询持续 401 重复弹框）
-    if (!auth.isAuthenticated) return  // 主动登出后在途请求返回 401，不再打扰
-    auth.logout()
-  }
-  loginPromptMessage.value = event?.detail?.message || ''
-  loginPromptVisible.value = true
-}
-
-const goLoginFromPrompt = () => {
-  loginPromptVisible.value = false
-  const redirect = isLoginRoute.value ? '/' : route.fullPath
-  router.push({ path: '/login', query: redirect !== '/' ? { redirect } : {} })
-}
-
-const onUserCommand = (command) => {
-  if (command === 'account') {
-    router.push('/account')
-  } else if (command === 'logout') {
-    auth.logout()
-    // 退出后留在当前页、回到游客模式；
-    // 仅当当前页要求登录（如账户设置）时回首页，避免守卫弹回登录页
-    if (route.meta.requiresAuth) router.replace('/')
-  }
-}
+// 账号模块封存期：登录引导弹窗/用户菜单指令处理已随模板一并移除
 
 const toggleTheme = () => {
   isDark.value = !isDark.value
@@ -323,18 +240,14 @@ onMounted(() => {
     document.documentElement.classList.add('light-theme')
   }
   document.documentElement.setAttribute('lang', locale.value === 'zh' ? 'zh-CN' : 'en')
-  // 登录态仅存内存（会话级），页面打开时不恢复任何历史凭据
-  // 全局登录引导事件（api.js 401 拦截与业务页动作拦截共用）
-  window.addEventListener('evoai:auth-required', onAuthRequired)
   // 启动访问埋点（路由切换自动上报 + 停留时长）
   tracker.start(router)
-  // 通知未读数轮询（60s）
+  // 通知未读数轮询（60s）；游客模式下命中内置 guest 账户
   pollUnreadCount()
   notifTimer = setInterval(pollUnreadCount, 60000)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('evoai:auth-required', onAuthRequired)
   tracker.stop()
   if (notifTimer) clearInterval(notifTimer)
 })
@@ -373,7 +286,7 @@ const baseMenuGroups = [
     labelKey: 'menu.groupSupport',
     items: [
       { path: '/help', nameKey: 'menu.help', icon: QuestionFilled },
-      { path: '/account', nameKey: 'menu.account', icon: UserFilled }
+      { path: '/contact', nameKey: 'menu.contact', icon: Message }
     ]
   }
 ]

@@ -73,13 +73,10 @@ api.interceptors.response.use(
     }
 
     // 401 统一处理：游客默认可浏览全站，不强制跳转登录页。
-    // 仅广播「需要登录」事件，由 App 界面层弹出友好提示；
-    // 登录/注册接口本身的 401 由调用页面自行提示，请求也可通过 skipAuthPrompt 关闭弹窗。
+    // 仅广播「需要登录」事件；登录/注册接口本身的 401 由调用页面自行提示。
     const isAuthEndpoint = typeof config?.url === 'string' &&
       config.url.startsWith('/auth/')
     if (response?.status === 401 && !isAuthEndpoint && !config?.skipAuthPrompt) {
-      // 令牌失效时清除内存中的登录态（回到游客身份）；
-      // reason='expired' 供 App 层同步 Pinia 登录态并抑制重复弹框
       authToken = ''
       window.dispatchEvent(new CustomEvent('evoai:auth-required',
         { detail: { reason: 'expired' } }))

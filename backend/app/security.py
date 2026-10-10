@@ -135,7 +135,14 @@ def get_current_user(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ) -> User:
-    """从 Authorization: Bearer <token> 解析当前用户"""
+    """从 Authorization: Bearer <token> 解析当前用户
+
+    GUEST_MODE（账号体系封存期）：无论是否携带令牌，
+    一律返回内置 guest 账户（superadmin 角色，保证游客可测试全部功能）。
+    生产环境禁止开启 GUEST_MODE（config.py 启动校验 fail-fast）。
+    """
+    if settings.GUEST_MODE:
+        return _get_or_create_guest_user(db)
     token = _extract_token(authorization)
     payload = decode_access_token(token)
     user_id = payload.get("sub")
@@ -149,11 +156,39 @@ def get_current_user(
     return user
 
 
+#: 游客模式内置账户的稳定标识
+GUEST_USER_EMAIL = "guest@evolution-ai.design"
+
+
+def _get_or_create_guest_user(db: Session) -> User:
+    """获取（不存在则惰性创建）内置 guest 账户。
+
+    幂等：按唯一邮箱查询；角色固定 superadmin，使游客可触达全部功能
+    （含 Impact Evidence 等超管模块）。仅在 GUEST_MODE 下被调用。
+    """
+    user = db.query(User).filter(User.email == GUEST_USER_EMAIL).first()
+    if user is None:
+        user = User(
+            email=GUEST_USER_EMAIL,
+            username="guest",
+            password_hash=hash_password(os.urandom(24).hex()),  # 随机口令，不可登录
+            is_active=True,
+            is_admin=True,
+            role=ROLE_SUPERADMIN,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return user
+
+
 def get_optional_user(
     authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ) -> Optional[User]:
     """可选认证：无 token 时返回 None（兼容既有匿名接口）"""
+    if settings.GUEST_MODE:
+        return _get_or_create_guest_user(db)
     if not authorization:
         return None
     token = _extract_token(authorization)
