@@ -82,8 +82,14 @@ async def generate_component(request: CarComponentGenerateRequest,
             result = getattr(gen, _POSITION_SIDE_COMPONENTS[comp])(
                 position=request.position or "front", side=request.side or "left")
         elif comp == "pillar":
-            result = gen.generate_pillar(pillar_type=request.pillar_type or "A",
-                                         side=request.side or "left")
+            # 按柱型分发到对应生成器方法（A/C 柱楔与 B 柱签名一致，均只取 side）
+            ptype = (request.pillar_type or "A").upper()
+            fn = {"A": "generate_a_pillar", "B": "generate_b_pillar",
+                  "C": "generate_c_pillar"}.get(ptype)
+            if fn is None:
+                raise HTTPException(status_code=400,
+                                    detail=f"Unknown pillar_type: {ptype}. Available: A/B/C")
+            result = getattr(gen, fn)(side=request.side or "left")
         else:
             raise HTTPException(status_code=400,
                                 detail=f"Unknown component: {comp}. Available: {ALL_COMPONENTS}")

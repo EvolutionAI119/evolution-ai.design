@@ -365,12 +365,16 @@ class NURBSCarBodyGenerator:
                                     x1 - x0, w1, '#c0c0c0')
 
     def generate_windshield(self):
-        """前风挡玻璃：底边=COWL（与引擎盖后缘共享），顶边=车顶板前缘"""
+        """前风挡玻璃：底边=COWL（与引擎盖后缘共享），顶边=车顶板前缘
+
+        宽度取布局契约：底 ±0.90hw（风挡窄于机盖，阶差由 cowl 补板封闭），
+        顶 ±0.92hw 与车顶前缘**同值**；size_v 与顶面五板统一 → 共享边采样点一致。
+        """
         hp = self.hp
         x0, x1 = hp['x_cowl'], hp['x_wstop']
         z0, z1 = hp['z_cowl'], hp['z_wstop']
-        w_bot = self.W * 0.95
-        w_top = self.W * 0.81
+        w_bot = self.W * 0.90
+        w_top = self.W * 0.92
         nu, nv = 6, 7
         cps = []
         for i in range(nu):
@@ -386,7 +390,7 @@ class NURBSCarBodyGenerator:
                 row.append((x, z, z_lat))
             cps.append(row)
         return self._grid_component('前风挡玻璃', 'windshield', cps, 'windshield',
-                                    np.hypot(x1 - x0, z1 - z0), w_bot,
+                                    np.hypot(x1 - x0, z1 - z0), self.W * 0.95,
                                     '#87CEEB', opacity=0.55)
 
     def generate_roof(self):
@@ -394,8 +398,8 @@ class NURBSCarBodyGenerator:
         hp = self.hp
         x0, x1 = hp['x_wstop'], hp['x_cab_end']
         z0, z1 = hp['z_wstop'], hp['z_roof_r']
-        w_front = self.W * 0.81
-        w_rear = self.W * 0.76
+        w_front = self.W * 0.92          # 契约 ±0.92hw，与风挡顶同值
+        w_rear = self.W * 0.92
         crown = max(self._p('车身部件', 'roof_height'), 30)
         nu, nv = 9, 7
         cps = []
@@ -410,7 +414,7 @@ class NURBSCarBodyGenerator:
                 row.append((x, z, z_lat))
             cps.append(row)
         return self._grid_component('车顶', 'roof', cps, 'roof',
-                                    x1 - x0, w_front, '#c0c0c0',
+                                    x1 - x0, self.W * 0.95, '#c0c0c0',
                                     roof_end_x=x1, roof_top_y=z0)
 
     def generate_rear_window(self):
@@ -418,8 +422,8 @@ class NURBSCarBodyGenerator:
         hp = self.hp
         x0, x1 = hp['x_cab_end'], hp['x_rwbot']
         z0, z1 = hp['z_roof_r'], hp['z_rwbot']
-        w_top = self.W * 0.76
-        w_bot = self.W * 0.85
+        w_top = self.W * 0.92            # 与车顶后缘同值
+        w_bot = self.W * 0.90            # 与行李箱前缘同值
         nu, nv = 6, 7
         cps = []
         for i in range(nu):
@@ -434,7 +438,7 @@ class NURBSCarBodyGenerator:
                 row.append((x, z, z_lat))
             cps.append(row)
         return self._grid_component('后风挡玻璃', 'rear_window', cps, 'rear_window',
-                                    np.hypot(x1 - x0, z1 - z0), w_bot,
+                                    np.hypot(x1 - x0, z1 - z0), self.W * 0.95,
                                     '#87CEEB', opacity=0.55,
                                     rear_window_bottom_x=x1,
                                     rear_window_bottom_y=z1)
@@ -444,8 +448,8 @@ class NURBSCarBodyGenerator:
         hp = self.hp
         x0, x1 = hp['x_rwbot'], hp['x_tail']
         z0, z1 = hp['z_rwbot'], hp['z_trunk_r']
-        w_front = self.W * 0.85
-        w_rear = self.W * 0.86
+        w_front = self.W * 0.90          # 与后窗底同值（契约 ±0.90hw）
+        w_rear = self.W * 0.90
         nu, nv = 7, 7
         cps = []
         for i in range(nu):
@@ -459,7 +463,7 @@ class NURBSCarBodyGenerator:
                 row.append((x, z, z_lat))
             cps.append(row)
         return self._grid_component('行李箱盖', 'trunk', cps, 'trunk',
-                                    x1 - x0, w_rear, '#c0c0c0')
+                                    x1 - x0, self.W * 0.95, '#c0c0c0')
 
     def _door_mid_author(self):
         """B 柱/前后门分界 X（author）：前后轴中点"""
@@ -470,7 +474,7 @@ class NURBSCarBodyGenerator:
         sgn = 1.0 if side == 'left' else -1.0
         x0 = self.FO + 40
         x1 = self._door_mid_author() - 30
-        z_top = self.waist * 0.97
+        z_top = self.waist * 0.995       # 盖过侧窗下沿，消除窗台缝
         nu, nv = 12, 7
         cps = []
         for i in range(nu):
@@ -495,7 +499,7 @@ class NURBSCarBodyGenerator:
         sgn = 1.0 if side == 'left' else -1.0
         x0 = self._door_mid_author() + 30
         x1 = self.L * 0.87
-        z_top = self.waist * 0.97
+        z_top = self.waist * 0.995       # 盖过侧窗下沿，消除窗台缝
         nu, nv = 12, 7
         cps = []
         for i in range(nu):
@@ -559,9 +563,11 @@ class NURBSCarBodyGenerator:
 
         CP 站必须落在折线锚点上（斜率突变处有 CP 压制）：
         若只用均匀站，NURBS 会在锚点间过冲，侧窗上沿冒出车顶线呈锯齿。
+        下沿统一 z=waist*0.98、半宽 hw*0.928：玻璃内缩于门顶沿
+        （门 z_top=waist*0.995、lat=outer+4）之下，窗台无缝。
         """
         z_low = self.waist * 0.98
-        lat_low = self.half_w * 0.93
+        lat_low = self.half_w * 0.928
         top_z_chain, top_lat_chain = top_pts[:, [0, 1]], top_pts[:, [0, 2]]
         anchors = top_pts[:, 0]
         nu_per_seg = max(2, int(np.ceil(nu / max(len(anchors) - 1, 1))))
@@ -589,9 +595,9 @@ class NURBSCarBodyGenerator:
         x0 = hp['x_cowl'] + 40
         x1 = self._door_mid_author() - 18
         top_pts = np.array([
-            (x0, self._chain_lookup(x0, self._top_chain[2:4]), self.W * 0.95 * 0.5),
-            (hp['x_wstop'], hp['z_wstop'], self.W * 0.81 * 0.5),
-            (x1, hp['z_wstop'] - 2, self.W * 0.81 * 0.5)
+            (x0, self._chain_lookup(x0, self._top_chain[2:4]), self.W * 0.92 * 0.5 - 2),
+            (hp['x_wstop'], hp['z_wstop'], self.W * 0.92 * 0.5 - 2),
+            (x1, hp['z_wstop'] - 2, self.W * 0.92 * 0.5 - 2)
         ])
         grid = self._greenhouse_grid(x0, x1, top_pts,
                                      1.0 if side == 'left' else -1.0)
@@ -605,9 +611,9 @@ class NURBSCarBodyGenerator:
         x0 = self._door_mid_author() + 18
         x1 = hp['x_rwbot'] - 40
         top_pts = np.array([
-            (x0, hp['z_wstop'] - 3, self.W * 0.81 * 0.5),
-            (hp['x_cab_end'], hp['z_roof_r'], self.W * 0.76 * 0.5),
-            (x1, self._chain_lookup(x1, self._top_chain[4:6]), self.W * 0.85 * 0.5)
+            (x0, hp['z_wstop'] - 3, self.W * 0.92 * 0.5 - 2),
+            (hp['x_cab_end'], hp['z_roof_r'], self.W * 0.92 * 0.5 - 2),
+            (x1, self._chain_lookup(x1, self._top_chain[4:6]), self.W * 0.90 * 0.5 - 2)
         ])
         grid = self._greenhouse_grid(x0, x1, top_pts,
                                      1.0 if side == 'left' else -1.0)
@@ -620,8 +626,9 @@ class NURBSCarBodyGenerator:
         sgn = 1.0 if side == 'left' else -1.0
         mid = self._door_mid_author()
         x0, x1 = mid - 22, mid + 22
-        z_bot, z_top = self.waist * 0.97, self.hp['z_wstop'] - 2
-        lat_bot, lat_top = self.half_w * 0.93, self.W * 0.81 * 0.5
+        z_bot, z_top = self.waist * 0.995, self.hp['z_wstop'] - 2
+        lat_bot = self._outer_half_width(mid, z_bot) + 4   # 与门顶沿同面
+        lat_top = self.W * 0.92 * 0.5 - 2                  # 与侧窗上沿同值
         cps = []
         for i in range(4):
             u = i / 3.0
@@ -635,6 +642,183 @@ class NURBSCarBodyGenerator:
             cps.append(row)
         return self._grid_component(f'{side}B柱', 'b_pillar', cps, 'door_front',
                                     x1 - x0, z_top - z_bot, '#1a1a1a')
+
+    # ------------------------------------------------------------------
+    # 封闭件：cowl 阶差条 / A·C 柱楔 / 鼻端板 / 前脸·尾门封板 / 底板 / 拱内衬
+    # 目标：整车无透视破洞——每一条开口边都有邻件边界或封闭板对接
+    # ------------------------------------------------------------------
+    def generate_cowl(self, side='left'):
+        """cowl 阶差条：机盖后缘(±0.95hw)与风挡底(±0.90hw)之间的水平落差封闭"""
+        sgn = 1.0 if side == 'left' else -1.0
+        hp = self.hp
+        z = hp['z_cowl'] - 1.5             # 低于机盖后缘 1.5mm，留排水缝
+        lat0, lat1 = self.W * 0.45, self.W * 0.475 + 3
+        cps = []
+        for i in range(4):                 # 4 站（3 阶模板最低要求）
+            x = hp['x_cowl'] - 6 + i * 4.0
+            row = []
+            for j in range(4):
+                v = j / 3.0
+                row.append((x, z, sgn * (lat0 + v * (lat1 - lat0))))
+            cps.append(row)
+        return self._grid_component(f'{side}cowl封条', 'cowl', cps, 'door_front',
+                                    12, lat1 - lat0, '#202020')
+
+    def _corner_wedge(self, label, p1, p2, p3, color):
+        """三角楔补板：三顶点 CP（末列重合退化），用于 A/C 柱与风挡侧缘的三角空域
+
+        4×4 CP 网格 + 3 阶模板（fender_front），满足 clamped 节点最低 CP 数。
+        """
+        cps = []
+        for j in range(4):
+            t = j / 3.0
+            lo = [p1[k] + t * (p3[k] - p1[k]) for k in range(3)]
+            mid_lo = [(p1[k] + p2[k]) / 2 * (1 - t) + (p3[k] + p2[k]) / 2 * t
+                      for k in range(3)]
+            row = [lo, mid_lo, mid_lo, list(p2)]
+            cps.append(row)
+        cps = [[cps[i][j] for i in range(4)] for j in range(4)]
+        return self._grid_component(label, 'pillar', cps, 'fender_front',
+                                    700, 700, color)
+
+    def generate_a_pillar(self, side='left'):
+        """A 柱楔：封闭风挡侧缘与侧窗前缘之间的三角空域"""
+        sgn = 1.0 if side == 'left' else -1.0
+        hp = self.hp
+        p1 = (hp['x_cowl'], hp['z_cowl'], sgn * self.W * 0.45)
+        p2 = (hp['x_wstop'], hp['z_wstop'], sgn * self.W * 0.46)
+        p3 = (hp['x_cowl'] + 40, self.waist * 0.98, sgn * self.half_w * 0.928)
+        return self._corner_wedge(f'{side}A柱', p1, p2, p3, '#1a1a1a')
+
+    def generate_c_pillar(self, side='left'):
+        """C 柱楔：封闭后窗侧缘与后侧窗后缘之间的三角空域"""
+        sgn = 1.0 if side == 'left' else -1.0
+        hp = self.hp
+        p1 = (hp['x_rwbot'], hp['z_rwbot'], sgn * self.W * 0.45)
+        p2 = (hp['x_cab_end'], hp['z_roof_r'], sgn * self.W * 0.46)
+        p3 = (hp['x_rwbot'] - 40, self.waist * 0.98, sgn * self.half_w * 0.928)
+        return self._corner_wedge(f'{side}C柱', p1, p2, p3, '#1a1a1a')
+
+    def generate_nose_deck(self):
+        """鼻端上表面：车头(0)→机盖前缘(x_hood_f)的轮廓面板，封闭鼻端顶"""
+        hp = self.hp
+        cps = []
+        for i in range(4):
+            x = hp['x_hood_f'] * i / 3.0
+            z = self._chain_lookup(x, self._top_chain[:2]) - 2
+            row = []
+            for j in range(5):
+                v = j / 4.0
+                row.append((x, z, (v - 0.5) * self.W * 0.94))
+            cps.append(row)
+        return self._grid_component('鼻端面板', 'nose_deck', cps, 'fender_front',
+                                    hp['x_hood_f'], self.W * 0.94, '#c0c0c0')
+
+    def generate_nose_panel(self):
+        """前脸中央封板：保险杠顶(374)→机盖前缘(447)，封闭格栅上方开口"""
+        z0, z1 = 374.0, self.hp['z_hood_f'] - 2
+        cps = []
+        for j in range(4):
+            z = z0 + j * (z1 - z0) / 3.0
+            x = 30 + (1 - (z - z0) / (z1 - z0)) * 22
+            lat_s = 894 + (z - z0) / (z1 - z0) * (882 - 894)
+            row = []
+            for i in range(5):
+                v = i / 4.0
+                row.append((x, z, (v - 0.5) * 2 * lat_s))
+            cps.append(row)
+        cps = [[cps[j][i] for j in range(4)] for i in range(5)]
+        return self._grid_component('前脸封板', 'nose_panel', cps, 'fender_front',
+                                    1788, z1 - z0, '#808080')
+
+    def generate_tailgate(self):
+        """尾门封板：后保险杠顶(374)→行李箱后缘(824)，封闭尾端中央开口"""
+        L = self.L
+        z0, z1 = 374.0, self.hp['z_trunk_r'] - 2
+        cps = []
+        for j in range(5):
+            t = j / 4.0
+            z = z0 + t * (z1 - z0)
+            x = L - 30 + t * 24
+            lat_s = 894 - t * (894 - 838)
+            row = []
+            for i in range(5):
+                v = i / 4.0
+                row.append((x, z, (v - 0.5) * 2 * lat_s))
+            cps.append(row)
+        cps = [[cps[j][i] for j in range(5)] for i in range(5)]
+        return self._grid_component('尾门封板', 'tailgate', cps, 'fender_front',
+                                    1676, z1 - z0, '#c0c0c0')
+
+    def generate_underbody(self):
+        """底盘托盘：中央下沉至 z=115，两缘**逐位复用蒙皮底缘 CP**
+
+        u 站与 body_shell 完全一致（鼻卷包3 + 中段18 + 尾卷包3 = 24 站）、
+        同用 roof 模板 → 缘曲线与蒙皮底缘逐位重合（非近似贴合），
+        底部视角全封闭。
+        """
+        hp = self.hp
+        L, GC = self.L, self.GC
+        stations = []                       # (x, z_bot) 与蒙皮底缘同源
+        for s in (0.0, 0.5, 1.0):           # 鼻卷包
+            stations.append((40 * s, hp['z_skirt']))
+        for x in np.linspace(200.0, L - 200.0, 20)[1:-1]:   # 中段（去重端）
+            x = float(x)
+            stations.append((x, GC + self._arch_lift(x)))
+        for s in (1.0, 0.5, 0.0):           # 尾卷包
+            stations.append((L - 40 * s, hp['z_skirt']))
+        cps = []
+        for x, z_bot in stations:
+            lat_e = self._outer_half_width(x, z_bot) + 3
+            row = []
+            for j in range(7):
+                v = j / 6.0
+                f = 2.0 * v - 1.0
+                z = z_bot - (1 - abs(f)) * (z_bot - 115.0)
+                row.append((x, z, f * lat_e))
+            cps.append(row)
+        return self._grid_component('底盘托盘', 'underbody', cps, 'roof',
+                                    L - 60, self.W * 0.98, '#1f1f1f')
+
+    def generate_arch_liner(self, position='front', side='left'):
+        """轮拱内衬：拱洞内侧暗色壁，杜绝由拱口望穿车身"""
+        sgn = 1.0 if side == 'left' else -1.0
+        ax = self._ax_f if position == 'front' else self._ax_r
+        R = self._arch_R * 0.96
+        cps = []
+        for i in range(7):
+            x = ax - R + i * (2 * R) / 6.0
+            z_bot = self.GC + self._arch_lift(x)
+            z_top = max(self.GC + self._arch_H - 8, z_bot + 40)
+            row = []
+            for j in range(4):
+                t = j / 3.0
+                z = z_bot + t * (z_top - z_bot)
+                row.append((x, z, sgn * (self._outer_half_width(x, z) - 58)))
+            cps.append(row)
+        return self._grid_component(f'{side}{position}拱内衬', 'arch_liner', cps,
+                                    'fender_front', 2 * R, self._arch_H,
+                                    '#151515')
+
+    def generate_interior_shelf(self, which='cowl'):
+        """内饰遮板：cowl 台 / 后parcel台，防止透过玻璃看穿车身"""
+        hp = self.hp
+        z = self.waist - 20
+        if which == 'cowl':
+            x0, x1 = hp['x_cowl'] + 20, hp['x_cowl'] + 320
+        else:
+            x0, x1 = hp['x_rwbot'] - 320, hp['x_rwbot'] - 20
+        cps = []
+        for i in range(4):
+            x = x0 + i * (x1 - x0) / 3.0
+            row = []
+            for j in range(4):
+                v = j / 3.0
+                row.append((x, z, (v - 0.5) * 1600))
+            cps.append(row)
+        name = 'cowl内饰台' if which == 'cowl' else '后parcel台'
+        return self._grid_component(name, 'interior', cps, 'fender_front',
+                                    x1 - x0, 1600, '#2a2a2a')
 
     def _bumper_grid(self, is_front):
         """垂直卷包保险杠 CP 网格：横向弧形 wrap，z 90→370"""
@@ -824,8 +1008,14 @@ class NURBSCarBodyGenerator:
         灯具/格栅 → 上车身钣件链 → 车门 → 侧窗/B柱 → 车轮。
         """
         components = [
+            # 底盘托盘（底部封闭）
+            self.generate_underbody(),
             # 连续车身外蒙皮（左右）
             self.generate_body_shell('left'), self.generate_body_shell('right'),
+            # 鼻端顶面板 + 轮拱内衬
+            self.generate_nose_deck(),
+            self.generate_arch_liner('front', 'left'), self.generate_arch_liner('front', 'right'),
+            self.generate_arch_liner('rear', 'left'), self.generate_arch_liner('rear', 'right'),
             # 翼子板（轮拱外覆）
             self.generate_fender('front', 'left'), self.generate_fender('front', 'right'),
             self.generate_fender('rear', 'left'), self.generate_fender('rear', 'right'),
@@ -834,16 +1024,24 @@ class NURBSCarBodyGenerator:
             self.generate_grille(),
             self.generate_headlight('left'), self.generate_headlight('right'),
             self.generate_taillight('left'), self.generate_taillight('right'),
+            # 前脸 / 尾门中央封板（端面封闭）
+            self.generate_nose_panel(), self.generate_tailgate(),
             # 上车身钣件链（共享硬点边缘）
             self.generate_hood(), self.generate_windshield(), self.generate_roof(),
             self.generate_rear_window(), self.generate_trunk(),
+            # cowl 阶差条（机盖-风挡落差封闭）
+            self.generate_cowl('left'), self.generate_cowl('right'),
             # 车门
             self.generate_door_front('left'), self.generate_door_front('right'),
             self.generate_door_rear('left'), self.generate_door_rear('right'),
-            # 乘员舱侧窗 + B 柱
+            # 乘员舱侧窗 + A/B/C 柱
             self.generate_side_glass_front('left'), self.generate_side_glass_front('right'),
             self.generate_side_glass_rear('left'), self.generate_side_glass_rear('right'),
+            self.generate_a_pillar('left'), self.generate_a_pillar('right'),
             self.generate_b_pillar('left'), self.generate_b_pillar('right'),
+            self.generate_c_pillar('left'), self.generate_c_pillar('right'),
+            # 内饰遮板（防透视）
+            self.generate_interior_shelf('cowl'), self.generate_interior_shelf('parcel'),
             # 后视镜（元数据）
             self.generate_mirror('left'), self.generate_mirror('right'),
             # 车轮
