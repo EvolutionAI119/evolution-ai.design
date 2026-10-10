@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>车头方向检测测试报告</title>
+<style>
+body{background:#0f0f1e;color:#eee;font-family:sans-serif;margin:0;padding:20px}
+h1{text-align:center;margin-bottom:5px}
+.summary{text-align:center;margin-bottom:20px;font-size:18px}
+.pass{color:#2ecc71}.fail{color:#e94560}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid #333;font-size:13px}
+th{background:#1a1a2e;color:#3498db}
+tr.pass-row{background:rgba(46,204,113,0.1)}
+tr.fail-row{background:rgba(233,69,96,0.1)}
+.detail{background:#16213e;border-radius:10px;padding:15px;margin-bottom:20px}
+.detail h2{margin-top:0;color:#3498db}
+</style></head><body>
+<h1>🚗 车头方向自动检测算法 - 测试报告</h1>
+<div class="summary">通过 <span class="pass">8</span> / 不通过 <span class="fail">0</span> / 共 8 张 | 准确率 <span class="pass">100%</span></div>
+<table>
+<tr><th>#</th><th>车型</th><th>版本</th><th>检测方向</th><th>置信度</th><th>需翻转</th><th>轮源</th><th>需人工</th><th>结果</th></tr>
+<tr class="pass-row"><td>1</td><td>bentley/bentayga</td><td>原图(应向左)</td><td>left</td><td>100%</td><td>否</td><td>brightness</td><td>否</td><td>✅ PASS</td></tr>
+<tr class="pass-row"><td>2</td><td>bentley/bentayga</td><td>翻转(应向右)</td><td>right</td><td>100%</td><td>是</td><td>brightness</td><td>否</td><td>✅ PASS</td></tr>
+<tr class="pass-row"><td>3</td><td>bentley/flying-spur</td><td>原图(应向左)</td><td>left</td><td>40%</td><td>否</td><td>none(unreliable)</td><td>⚠️ 是</td><td>✅ PASS</td></tr>
+<tr class="pass-row"><td>4</td><td>bentley/flying-spur</td><td>翻转(应向右)</td><td>right</td><td>40%</td><td>是</td><td>none(unreliable)</td><td>⚠️ 是</td><td>✅ PASS</td></tr>
+<tr class="pass-row"><td>5</td><td>bentley/continental-gtc</td><td>原图(应向左)</td><td>left</td><td>80%</td><td>否</td><td>brightness</td><td>否</td><td>✅ PASS</td></tr>
+<tr class="pass-row"><td>6</td><td>bentley/continental-gtc</td><td>翻转(应向右)</td><td>right</td><td>80%</td><td>是</td><td>brightness</td><td>否</td><td>✅ PASS</td></tr>
+<tr class="pass-row"><td>7</td><td>rolls-royce/cullinan</td><td>原图(应向左)</td><td>left</td><td>100%</td><td>否</td><td>brightness</td><td>否</td><td>✅ PASS</td></tr>
+<tr class="pass-row"><td>8</td><td>rolls-royce/cullinan</td><td>翻转(应向右)</td><td>right</td><td>100%</td><td>是</td><td>brightness</td><td>否</td><td>✅ PASS</td></tr>
+</table>
+<div class="detail">
+<h2>算法原理 v2</h2>
+<p><b>核心原理</b>：前轮悬垂 &lt; 后轮悬垂（前轮更靠近车头边缘）。</p>
+<p>通过多层特征融合+可靠性检查判定车头方向，适用所有车型（含深色车、敞篷车）。</p>
+<h2>四层特征融合</h2>
+<ul>
+<li><b>特征1（权重3，主）</b>：底部轮廓车轮检测 — 车轮是车身最低点（触地），与车身颜色无关。通过底部轮廓的低点区域定位车轮。</li>
+<li><b>特征2（权重1，辅）</b>：自适应亮度车轮检测 — 车轮是底部最暗区域，用自适应阈值（相对中值30%）检测。</li>
+<li><b>特征3（权重1，辅）</b>：上轮廓非对称性 — 引擎盖低于行李箱/C柱（车尾更高）。</li>
+<li><b>特征4（权重1，备用）</b>：亮度梯度 — 车头通常更亮（引擎盖反射、前格栅），亮度重心偏向车头侧。适用深色/无特征车。</li>
+</ul>
+<h2>可靠性检查</h2>
+<ul>
+<li>底部轮廓平坦（range &lt; 车高5%）→ 轮廓检测不可靠</li>
+<li>车轮过宽（&gt; 车宽20%）→ 误检（合并了车身）</li>
+<li>车轮间距过小（&lt; 车宽20%）→ 误检</li>
+<li>不可靠时自动降级到亮度梯度，置信度上限0.4（标记需人工确认）</li>
+</ul>
+</div>
+</body></html>
