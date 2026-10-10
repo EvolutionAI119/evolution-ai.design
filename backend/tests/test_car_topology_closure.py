@@ -127,10 +127,12 @@ def test_front_and_rear_faces_sealed(gen, car):
     tail = np.array(_by_name(car, "尾门封板")["points"]).reshape(-1, 3)
     assert np.abs(tail[:, 2].max() - (gen.hp["z_trunk_r"] - 2)) <= 6
     assert np.abs(tail[:, 2].min() - 374) <= 6
-    # 尾门板位于车尾端面（x 靠近 +L/2）；前脸板**顶行**贴机盖前缘（x≈车头）
-    assert tail[:, 0].min() >= gen.L / 2 - 40
+    # 尾门板位于车尾端面（wrap 圆角前收 ≤230）；前脸板顶行中心后倾贴
+    # 机盖前缘、端部随鼻弧后收（流线化 rake+wrap，见流线型测试）
+    assert tail[:, 0].min() >= gen.L / 2 - 230
     nose_top = nose[nose[:, 2] > nose[:, 2].max() - 8]
-    assert nose_top[:, 0].max() <= -gen.L / 2 + 42
+    assert nose_top[:, 0].min() >= -gen.L / 2 + 60, "前脸顶行中心前伸越界"
+    assert nose_top[:, 0].max() <= -gen.L / 2 + 240, "前脸顶行端部 wrap 后收越界"
 
 
 def test_nose_deck_plus_hood_equals_hood_length(gen, car):
@@ -143,6 +145,49 @@ def test_nose_deck_plus_hood_equals_hood_length(gen, car):
     assert x_lo <= 5, "鼻端面板应从车头 0 起"
     assert (x_hi - x_lo) == pytest.approx(
         gen._p("车身部件", "hood_length"), abs=8)
+
+
+# ---------------------------------------------------------------- 流线型
+def test_plan_taper_streamlined(gen, car):
+    """俯视收窄：舱区恒 1.0（契约锚点不动），鼻/尾单调收窄且体现到蒙皮"""
+    hp = gen.hp
+    assert gen._plan_taper(hp['x_cowl']) == pytest.approx(1.0)
+    assert gen._plan_taper((hp['x_cowl'] + hp['x_rwbot']) / 2) == pytest.approx(1.0)
+    assert gen._plan_taper(hp['x_rwbot']) == pytest.approx(1.0)
+    assert gen._plan_taper(0.0) < 0.97
+    assert gen._plan_taper(gen.L) < 0.99
+    assert gen._plan_taper(0.0) < gen._plan_taper(300.0) < 1.0
+    assert gen._plan_taper(gen.L) < gen._plan_taper(gen.L - 300.0) < 1.0
+    shell = np.array(_by_name(car, "left车身外蒙皮")["points"])
+    lat = np.abs(shell[:, :, 1])
+    x = shell[:, :, 0] + gen.L / 2
+    nose_lat = lat[x < 120.0].max()
+    cabin_lat = lat[(x > hp['x_cowl'] + 100) & (x < hp['x_rwbot'] - 100)].max()
+    assert nose_lat < cabin_lat * 0.975, \
+        f"鼻部蒙皮未体现收窄 {nose_lat:.1f} vs 舱段 {cabin_lat:.1f}"
+
+
+def test_nose_tail_panels_sculpted(gen, car):
+    """前脸/尾门封板流线化：顶部收窄 + rake 斜背 + 端部 wrap 圆角
+
+    CP 网格转置后**行=横向、列=纵向**（自底向顶），故取列而非行。
+    """
+    nose = _cps(_by_name(car, "前脸封板"))
+    nose_bot, nose_top = nose[:, 0], nose[:, -1]
+    assert np.abs(nose_top[:, 1]).max() < np.abs(nose_bot[:, 1]).max(), \
+        "前脸顶部未收窄（仍有方角外撅）"
+    cx_top = nose_top[np.abs(nose_top[:, 1]).argmin(), 0]
+    cx_bot = nose_bot[np.abs(nose_bot[:, 1]).argmin(), 0]
+    assert cx_top - cx_bot >= 30, "前脸顶部未后倾（rake）"
+    corner_top = nose_top[np.abs(nose_top[:, 1]).argmax(), 0]
+    assert corner_top - cx_top >= 80, "前脸端部未随鼻弧后收（wrap）"
+    tail = _cps(_by_name(car, "尾门封板"))
+    tail_bot, tail_top = tail[:, 0], tail[:, -1]
+    assert np.abs(tail_top[:, 1]).max() < np.abs(tail_bot[:, 1]).max(), \
+        "尾门顶部未收窄"
+    cx_top = tail_top[np.abs(tail_top[:, 1]).argmin(), 0]
+    cx_bot = tail_bot[np.abs(tail_bot[:, 1]).argmin(), 0]
+    assert cx_bot - cx_top >= 20, "尾门顶部未前收（kammback）"
 
 
 # ---------------------------------------------------------------- 装配关系

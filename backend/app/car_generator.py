@@ -226,13 +226,29 @@ class NURBSCarBodyGenerator:
                 lift = max(lift, H * (1.0 - (dx / R) ** 2))
         return float(lift)
 
+    def _plan_taper(self, x):
+        """俯视收窄系数（1.0 = 不收）：鼻/尾平滑收窄，避免方盒子感
+
+        乘员舱契约区 [x_cowl, x_rwbot] 内**严格为 1.0**——五板链/车门/
+        玻璃/B 柱的固定宽度锚点全部落在该区，收窄不得破坏封闭化成果。
+        鼻端二次淡出最多收 6.5%、尾端 4.5%，端部最窄、向舱区平滑回归。
+        """
+        hp = self.hp
+        if x >= hp['x_cowl']:
+            if x <= hp['x_rwbot']:
+                return 1.0
+            t = (x - hp['x_rwbot']) / max(self.L - hp['x_rwbot'], 1.0)
+            return 1.0 - 0.045 * t * t
+        t = 1.0 - x / max(hp['x_cowl'], 1.0)
+        return 1.0 - 0.065 * t * t
+
     def _outer_half_width(self, x, z):
-        """外蒙皮在(x,z)处的半宽（author z_lat）：含溜肩(tumblehome)与拱鼓"""
+        """外蒙皮在(x,z)处的半宽（author z_lat）：溜肩(tumblehome) + 拱鼓 + 俯视收窄"""
         gc, h, hw = self.GC, self.H, self.half_w
         ratio = min(max((z - gc) / (h - gc), 0.0), 1.0)
         base = hw * (0.985 - 0.05 * ratio)          # 上沿内收
         bulge = 16.0 * (self._arch_lift(x) / max(self._arch_H, 1.0))
-        return base + bulge
+        return (base + bulge) * self._plan_taper(x)
 
 
     def _p(self, group, key):
@@ -700,55 +716,83 @@ class NURBSCarBodyGenerator:
         return self._corner_wedge(f'{side}C柱', p1, p2, p3, '#1a1a1a')
 
     def generate_nose_deck(self):
-        """鼻端上表面：车头(0)→机盖前缘(x_hood_f)的轮廓面板，封闭鼻端顶"""
+        """鼻端上表面：车头(0)→机盖前缘(x_hood_f)的轮廓面板，封闭鼻端顶
+
+        横向拱顶 +6mm（前缘最凸、后缘归零与机盖前缘平接），宽度随
+        俯视收窄（_plan_taper），边缘严格落在轮廓线下 2mm（入蒙皮内）。
+        """
         hp = self.hp
         cps = []
         for i in range(4):
-            x = hp['x_hood_f'] * i / 3.0
+            u = i / 3.0
+            x = hp['x_hood_f'] * u
             z = self._chain_lookup(x, self._top_chain[:2]) - 2
+            w = self.W * 0.47 * self._plan_taper(x)
             row = []
             for j in range(5):
                 v = j / 4.0
-                row.append((x, z, (v - 0.5) * self.W * 0.94))
+                zc = z + 6.0 * (1.0 - (2.0 * v - 1.0) ** 2) * (1.0 - u)
+                row.append((x, zc, (v - 0.5) * 2 * w))
             cps.append(row)
         return self._grid_component('鼻端面板', 'nose_deck', cps, 'fender_front',
                                     hp['x_hood_f'], self.W * 0.94, '#c0c0c0')
 
     def generate_nose_panel(self):
-        """前脸中央封板：保险杠顶(374)→机盖前缘(447)，封闭格栅上方开口"""
-        z0, z1 = 374.0, self.hp['z_hood_f'] - 2
-        cps = []
-        for j in range(4):
-            z = z0 + j * (z1 - z0) / 3.0
-            x = 30 + (1 - (z - z0) / (z1 - z0)) * 22
-            lat_s = 894 + (z - z0) / (z1 - z0) * (882 - 894)
-            row = []
-            for i in range(5):
-                v = i / 4.0
-                row.append((x, z, (v - 0.5) * 2 * lat_s))
-            cps.append(row)
-        cps = [[cps[j][i] for j in range(4)] for i in range(5)]
-        return self._grid_component('前脸封板', 'nose_panel', cps, 'fender_front',
-                                    1788, z1 - z0, '#808080')
+        """前脸中央封板：保险杠顶(374)→机盖前缘(447)，封闭格栅上方开口
 
-    def generate_tailgate(self):
-        """尾门封板：后保险杠顶(374)→行李箱后缘(824)，封闭尾端中央开口"""
-        L = self.L
-        z0, z1 = 374.0, self.hp['z_trunk_r'] - 2
+        流线化：顶部后倾 rake 46mm（引擎盖前伸感）、端部随鼻弧后收
+        （wrap，与保险杠同弧率）、横向宽度由保险杠顶缘收到鼻端面板后缘
+        ——消除此前 ±半宽的直立方板外撅。
+        """
+        hp = self.hp
+        z0, z1 = 374.0, hp['z_hood_f'] - 2
+        lat_b = self.half_w * 0.98 * self._plan_taper(120.0)          # 保险杠顶缘同宽
+        lat_t = self.W * 0.47 * self._plan_taper(hp['x_hood_f']) - 2  # 接鼻端面板后缘
+        rake = 46.0
         cps = []
         for j in range(5):
             t = j / 4.0
             z = z0 + t * (z1 - z0)
-            x = L - 30 + t * 24
-            lat_s = 894 - t * (894 - 838)
+            lat_s = lat_b + t * (lat_t - lat_b)
+            xb = 30 + rake * t
             row = []
             for i in range(5):
                 v = i / 4.0
-                row.append((x, z, (v - 0.5) * 2 * lat_s))
+                lat = (2 * v - 1) * lat_s
+                x = xb + (abs(lat) / self.half_w) ** 2 * 180
+                row.append((x, z, lat))
+            cps.append(row)
+        cps = [[cps[j][i] for j in range(5)] for i in range(5)]
+        return self._grid_component('前脸封板', 'nose_panel', cps, 'fender_front',
+                                    1780, z1 - z0, '#808080')
+
+    def generate_tailgate(self):
+        """尾门封板：后保险杠顶(374)→行李箱后缘(824)，封闭尾端中央开口
+
+        流线化：顶部前收 rake 34mm（kammback 斜截尾）、端部随尾弧前收
+        （wrap，与保险杠同弧率）、横向宽度由保险杠顶缘收到行李箱后缘。
+        """
+        L = self.L
+        hp = self.hp
+        z0, z1 = 374.0, hp['z_trunk_r'] - 2
+        lat_b = self.half_w * 0.98 * self._plan_taper(L - 120.0)   # 保险杠顶缘同宽
+        lat_t = self.W * 0.45 + 4.0                                # 接行李箱后缘 +4mm 搭接
+        rake = 34.0
+        cps = []
+        for j in range(5):
+            t = j / 4.0
+            z = z0 + t * (z1 - z0)
+            lat_s = lat_b + t * (lat_t - lat_b)
+            row = []
+            for i in range(5):
+                v = i / 4.0
+                lat = (2 * v - 1) * lat_s
+                x = L - 30 - rake * t - (abs(lat) / self.half_w) ** 2 * 180
+                row.append((x, z, lat))
             cps.append(row)
         cps = [[cps[j][i] for j in range(5)] for i in range(5)]
         return self._grid_component('尾门封板', 'tailgate', cps, 'fender_front',
-                                    1676, z1 - z0, '#c0c0c0')
+                                    1780, z1 - z0, '#c0c0c0')
 
     def generate_underbody(self):
         """底盘托盘：中央下沉至 z=115，两缘**逐位复用蒙皮底缘 CP**
@@ -821,13 +865,18 @@ class NURBSCarBodyGenerator:
                                     x1 - x0, 1600, '#2a2a2a')
 
     def _bumper_grid(self, is_front):
-        """垂直卷包保险杠 CP 网格：横向弧形 wrap，z 90→370"""
+        """垂直卷包保险杠 CP 网格：横向弧形 wrap，z 90→370
+
+        lat 带随俯视收窄同步（鼻/尾蒙皮收窄后保险杠方角不得外撅）。
+        """
         nu, nv = 9, 6
         z0, z1 = 90, 370
+        x_ref = 120.0 if is_front else self.L - 120.0
+        lat_max = self.half_w * 0.98 * self._plan_taper(x_ref)
         grid = []
         for i in range(nu):
             f = i / (nu - 1)
-            lat = (f - 0.5) * 2 * self.half_w * 0.98
+            lat = (f - 0.5) * 2 * lat_max
             wrap = (abs(lat) / self.half_w) ** 2 * 180
             x = 30 + wrap if is_front else self.L - 30 - wrap
             row = []
