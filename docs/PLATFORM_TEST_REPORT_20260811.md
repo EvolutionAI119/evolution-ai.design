@@ -188,7 +188,7 @@ POST /api/v1/car/generate → 200 OK
 - 前端: Vite 5 + Vue 3.4（http://127.0.0.1:5173）
 - 后端: FastAPI + Uvicorn（http://127.0.0.1:8000），`GUEST_MODE=true`（账号封存期）
 - 公网隧道: cpolar（本轮 https://5bb18d47.r30.cpolar.top）
-- 公开站点: https://evolution-ai.design（GitHub Pages，gh-pages `ba59fde9`）
+- 公开站点: https://evolution-ai.design（GitHub Pages，gh-pages `215e94e8`）
 - 独立后台: http://127.0.0.1:8000/admin/（FastAPI StaticFiles 托管）
 
 ## 7. 自动化测试总览（权威口径，当日实跑）
@@ -255,7 +255,7 @@ POST /api/v1/car/generate → 200 OK
 
 ## 11. 公网站点发布验证（强制校验环节）
 
-gh-pages 部署 `ba59fde9` 后对 https://evolution-ai.design 实测：
+gh-pages 部署 `215e94e8` 后对 https://evolution-ai.design 实测：
 
 | 验证项 | 结果 |
 |------|------|
@@ -276,4 +276,37 @@ gh-pages 部署 `ba59fde9` 后对 https://evolution-ai.design 实测：
 ```
 
 **状态**: 平台核心功能可用，账号封存期（游客模式）功能完整；管理功能经独立后台保留，等待内地服务器 ICP 备案完成后恢复账号体系并关闭 GUEST_MODE。
+
+---
+
+## 13. 合规审查（2026-10-11）
+
+### 13.1 密钥与凭证
+
+| 审查项 | 结果 | 说明 |
+|------|------|------|
+| 硬编码密钥 | ✅ 无 | 后端/前端源码扫描无 `sk-` 前缀真实密钥 |
+| `.env` 保护 | ✅ 合规 | `.env` / `.env.*` 全部 gitignore，仅 `.env.example` 入库 |
+| 密钥注册表 | ✅ 合规 | `backend/.key-registry.json` 仅存元数据，无明文密钥，已 gitignore |
+| 生产 SECRET_KEY | ✅ 合规 | 禁止默认值、长度≥32 位，违反 fail-fast |
+| LLM 平台密钥隔离 | ✅ 合规 | 各平台独立 `EVOAI_{PROVIDER}_KEY` 槽位，禁止共享 |
+
+### 13.2 数据出境与 PIPL
+
+| 审查项 | 结果 | 说明 |
+|------|------|------|
+| 微信扫码登录 | ✅ 已封存 | 前端路由移除；后端路由由 `WECHAT_APPID`/`WECHAT_SECRET` 开关控制，未配置自动禁用 |
+| 生产部署约束 | ✅ 合规 | 含微信扫码的生产环境仅限内地合规服务器 |
+| 游客模式 | ✅ 合规 | 内置 guest(superadmin) 随机口令；生产环境 GUEST_MODE=true 即 fail-fast |
+| 联系邮箱 | ✅ 固定 | `Icemtrainer@hotmail.com` |
+
+### 13.3 前端安全
+
+| 审查项 | 结果 | 说明 |
+|------|------|------|
+| Admin 代码隔离 | ✅ 合规 | 公开构建零 Admin chunk，后端 `/admin/` 独立托管 |
+| CSP 作用域 | ✅ 合规 | 公开站严格 CSP，仅 `/admin` 追加 `'unsafe-eval'` |
+| 登录入口 | ✅ 已移除 | 顶栏无登录按钮/弹窗，默认游客态 |
+
+**合规结论**: 密钥管理、数据出境、前端安全三项审查均通过。待 ICP 备案完成后关闭 GUEST_MODE 并恢复账号体系。
 

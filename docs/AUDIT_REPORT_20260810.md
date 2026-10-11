@@ -190,8 +190,8 @@
 | 拓扑封闭测试 | **12 / 12 通过** | `test_car_topology_closure.py`：开口封闭、横链边重合、俯视收窄、轮拱内衬等 |
 | 游客模式测试 | 2 / 2 通过 | 无令牌全功能放行 + 生产环境开启 fail-fast |
 | 独立后台测试 | 3 / 3 通过 | `/admin/` 托管、资产落盘、CSP 作用域边界 |
-| 主线分支 | `main` | HEAD `864421d5`（feature 分支 8 个提交快进合入） |
-| 公开静态站 | `gh-pages` | HEAD `ba59fde9`，https://evolution-ai.design 已验证 |
+| 主线分支 | `main` | HEAD `2a87fcd9`（feature 分支 8 个提交 + 2 个文档提交快进合入） |
+| 公开静态站 | `gh-pages` | HEAD `215e94e8`，https://evolution-ai.design 已验证 |
 | 管理后台 | 后端 `/admin/` 独立托管 | 公开前端零 Admin 代码（路由/菜单/chunk 均已移除） |
 
 <figure class="doc-figure">
@@ -337,17 +337,96 @@
 | 主站构建 | 通过，产物不含 Admin 代码 | `npm run build` 后 `dist/assets/` 无 Admin chunk |
 | 后台构建 | 通过（2 HTML + 6 资产） | `npm run build:admin` |
 | 后台浏览器实测 | 5 标签全渲染、影响证据图表正常、控制台零错误 | http://localhost:8000/admin/ |
-| 公网站点 | 已部署并实测 | gh-pages `ba59fde9`，https://evolution-ai.design |
+| 公网站点 | 已部署并实测 | gh-pages `215e94e8`，https://evolution-ai.design |
 
 **遗留/后续事项**:
 
 | 优先级 | 事项 |
 |------|------|
 | 高 | 京东云购买 + 域名转入 + ICP 备案（清单已备，约 1 个月）；备案完成后生产环境必须关闭 GUEST_MODE 并恢复账号体系 |
-| 中 | `feature/nurbs-geometry-phase2` 新 HEAD 的 SISA 同步（安全层拦截中，需用户明确批准后执行 `sync_open_source.ps1`） |
+| ~~中~~ ✅ | `feature/nurbs-geometry-phase2` 新 HEAD 的 SISA 同步（已于 2026-10-11 完成，HEAD `2a87fcd9`，15 条资产同步；SISA 隔离测试 6/6、拓扑封闭测试 10/10 通过） |
 | 中 | 《平台测试报告》第 4 节 P1–P6 历史问题中未专项复测的条目（DEMO 动画端口硬编码、ElPagination 过期用法），下次前端专项回归时核销 |
 
 <figure class="doc-figure">
   <img src="docs/images/october-timeline.svg" alt="10 月迭代时间线" loading="lazy">
-  <figcaption><strong>图 7-6 ｜ 10 月迭代时间线</strong>读图：合入 main 的 8 个提交按时间分布——前 4 项为 NURBS 封闭化与流线型造型，中间 2 项为账号封存与京东云部署，后 2 项为 Admin 后移与 CSP 修复；主线 HEAD 为 `864421d5`。</figcaption>
+  <figcaption><strong>图 7-6 ｜ 10 月迭代时间线</strong>读图：合入 main 的 8 个提交按时间分布——前 4 项为 NURBS 封闭化与流线型造型，中间 2 项为账号封存与京东云部署，后 2 项为 Admin 后移与 CSP 修复；主线 HEAD 为 `2a87fcd9`（含后续文档提交）。</figcaption>
 </figure>
+
+---
+
+## 八、报告可视化标准化（2026-10-11）
+
+> 提交: `2a87fcd9`
+> 范围: 审计报告与测试报告的关键指标、结论、逻辑关联全覆盖图表化
+
+### 8.1 可视化方案
+
+**技术选型**: 原生 SVG（零依赖、GitHub Pages 直接渲染、可入库），生成器 `tools/gen_october_charts.py`（Python），所有数字以当日实跑为唯一口径。
+
+**设计系统**（继承 `docs/images/` 既有图表）:
+- 深色底 `#0F1622`、边框 `#1E2A3A`、画布 960×440、圆角 rx=14
+- 四色强调：绿 `#34D399` / 蓝 `#38BDF8` / 紫 `#A78BFA` / 黄 `#FBBF24`
+- 字体 Segoe UI / 微软雅黑；标题带 12×12 色块指示器
+
+### 8.2 图表清单（9 张）
+
+| 文件 | 类型 | 内容 |
+|------|------|------|
+| `october-test-results.svg` | 柱状图 | 五层测试 483 用例零失败 |
+| `october-regression-donut.svg` | 环形图 | 后端 344 用例构成（341 pass / 1 skip / 2 xfail） |
+| `october-new-tests.svg` | 横向条形图 | 5 个新增/改写测试文件用例分布 |
+| `october-admin-flow.svg` | 流程图 | Admin 后移四步流程 |
+| `october-guest-arch.svg` | 架构图 | 游客模式旁路 + 生产 fail-fast |
+| `october-timeline.svg` | 时间线 | 8 个提交演进 |
+| `october-closure.svg` | 卡片网格 | 7 类开口封闭 |
+| `october-deployment.svg` | 拓扑图 | 生产部署拓扑 |
+| `october-csp-scope.svg` | 双栏对比 | CSP 作用域关系 |
+
+### 8.3 质量红线
+
+- XML 必须良构（`save()` 阶段统一转义 `&` → `&amp;`，保留已有实体）
+- 每张图含标题、数据标签、单位/说明、图例
+- 配色不超过 4 色
+- 所有数据可追溯到 `pytest` / `npm test` 实跑结果
+- 图注含「读图：」说明
+
+### 8.4 嵌入与发布校验
+
+- 中文审计报告嵌入 7 张图（图 4-2 + 图 7-1~7-6），中文测试报告嵌入 3 张图
+- 英文报告复用同一套 SVG（图内中文），仅 figcaption 用英文
+- 公网强制校验：9 张 SVG 均返回 200，Help Center 浏览器实测全部正常渲染
+
+---
+
+## 九、合规审查（2026-10-11）
+
+### 9.1 密钥与凭证管理
+
+| 审查项 | 结果 | 说明 |
+|------|------|------|
+| 硬编码密钥扫描 | ✅ 无 | 后端/前端源码均无 `sk-` 前缀真实密钥 |
+| `.env` 文件保护 | ✅ 合规 | `.env` / `.env.*` 全部 gitignore，仅保留 `.env.example` |
+| 密钥注册表 | ✅ 合规 | `backend/.key-registry.json` 仅记录元数据（版本/状态/时间），无明文密钥，且已 gitignore |
+| 生产 SECRET_KEY 校验 | ✅ 合规 | 生产环境禁止默认值、长度≥32 位，违反即 fail-fast |
+| 平台密钥隔离 | ✅ 合规 | 各 LLM 平台独立密钥槽位（`EVOAI_{PROVIDER}_KEY`），禁止跨平台共享 |
+
+### 9.2 数据出境与个人信息保护（PIPL）
+
+| 审查项 | 结果 | 说明 |
+|------|------|------|
+| 微信扫码登录 | ✅ 已封存 | 前端 `/login`、`/account` 路由已移除；后端微信路由通过 `WECHAT_APPID`/`WECHAT_SECRET` 环境变量开关控制，未配置时自动禁用 |
+| 生产部署约束 | ✅ 合规 | 含微信扫码的生产环境必须部署于内地合规服务器，禁止境外/香港服务器，避免个人信息跨境传输 |
+| 游客模式 | ✅ 合规 | `GUEST_MODE=true` 时受保护接口免登录，统一落到内置 `guest@evolution-ai.design`（superadmin，随机不可登录口令）；生产环境开启 GUEST_MODE 即 fail-fast |
+| 联系邮箱 | ✅ 固定 | `Icemtrainer@hotmail.com`，支持 mailto + 一键复制 |
+
+### 9.3 前端安全
+
+| 审查项 | 结果 | 说明 |
+|------|------|------|
+| Admin 代码隔离 | ✅ 合规 | Admin 模块已移出公开前端，由 FastAPI `/admin/` 独立托管；公开构建产物零 Admin chunk |
+| CSP 作用域 | ✅ 合规 | 公开站严格 `script-src 'self'`；仅 `/admin` 文档作用域追加 `'unsafe-eval'`（vue-i18n 编译需要），有回归测试锁定边界 |
+| 登录入口 | ✅ 已移除 | 顶栏无登录按钮、无登录弹窗，默认游客态停留在首页 |
+
+### 9.4 合规结论
+
+平台当前处于**账号封存期（游客模式）**，全部功能对游客开放，管理功能经独立后台保留。密钥管理、数据出境、前端安全三项审查均通过。**待办**：内地服务器 ICP 备案完成后，生产环境必须关闭 `GUEST_MODE` 并恢复账号体系。

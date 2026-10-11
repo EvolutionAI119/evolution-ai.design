@@ -34,7 +34,7 @@
     <text x="635" y="94" fill="#34D399" font-size="14" font-weight="700" text-anchor="middle">扩展框架 · 10 维度</text>
     <text x="635" y="112" fill="#64748B" font-size="10.5" text-anchor="middle">前 5 维继承原文 · 后 5 维为元理论新增（绿色）</text>
     <g font-size="12">
-      <rect x="362" y="128" width="270" height="40" rx="9" fill="#0B101A"/><text x="497" y="153" text-anchor="middle" fill="#94A3B8">⑥ ⑥文化母体与文明根脉</text>
+      <rect x="362" y="128" width="270" height="40" rx="9" fill="#0B101A"/><text x="497" y="153" text-anchor="middle" fill="#94A3B8">⑥ 文化母体与文明根脉</text>
       <rect x="648" y="128" width="270" height="40" rx="9" fill="#123528" stroke="#34D399" stroke-opacity=".45"/><text x="783" y="153" text-anchor="middle" fill="#6EE7B7">⑦ 哲学元理论（形·理·数）</text>
       <rect x="362" y="178" width="270" height="40" rx="9" fill="#0B101A"/><text x="497" y="203" text-anchor="middle" fill="#94A3B8">⑥ 技术理性与工程伦理</text>
       <rect x="648" y="178" width="270" height="40" rx="9" fill="#123528" stroke="#34D399" stroke-opacity=".45"/><text x="783" y="203" text-anchor="middle" fill="#6EE7B7">⑧ 数理美学与算法生成论</text>
