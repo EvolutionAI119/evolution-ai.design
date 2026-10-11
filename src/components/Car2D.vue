@@ -40,20 +40,36 @@
         <!-- 地面线 -->
         <line :x1="groundX1" :y1="groundY" :x2="groundX2" :y2="groundY" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke" />
 
-        <!-- 前悬 / 后悬标注 -->
-        <line :x1="0" :y1="groundY - s(60)" :x2="frontWheelCX" :y2="groundY - s(60)" stroke="#00ff88" stroke-width="1.2" stroke-dasharray="4,2" vector-effect="non-scaling-stroke" />
-        <line :x1="0" :y1="groundY - s(60) - 5" :x2="0" :y2="groundY - s(60) + 5" stroke="#00ff88" stroke-width="1.2" vector-effect="non-scaling-stroke" />
-        <line :x1="frontWheelCX" :y1="groundY - s(60) - 5" :x2="frontWheelCX" :y2="groundY - s(60) + 5" stroke="#00ff88" stroke-width="1.2" vector-effect="non-scaling-stroke" />
-        <text :x="frontWheelCX / 2" :y="groundY - s(60) - 8" text-anchor="middle" fill="#00ff88" font-size="11" font-family="Inter, sans-serif" font-weight="600">FO: {{ FO }}mm</text>
+        <!-- ===== 尺寸标注区：地面线下方三行（FO/RO · WB · L）+ 右侧车高 H，延伸线规范 ===== -->
+        <g font-family="Inter, sans-serif" font-size="11">
+          <!-- 延伸线（从地面线垂至对应尺寸行） -->
+          <line :x1="0" :y1="groundY + 3" :x2="0" :y2="dimY3 + 4" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <line :x1="frontWheelCX" :y1="groundY + 3" :x2="frontWheelCX" :y2="dimY2 + 4" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <line :x1="rearWheelCX" :y1="groundY + 3" :x2="rearWheelCX" :y2="dimY2 + 4" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <line :x1="rearX" :y1="groundY + 3" :x2="rearX" :y2="dimY3 + 4" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke" />
 
-        <line :x1="rearWheelCX" :y1="groundY - s(60)" :x2="rearX" :y2="groundY - s(60)" stroke="#ff6b6b" stroke-width="1.2" stroke-dasharray="4,2" vector-effect="non-scaling-stroke" />
-        <line :x1="rearWheelCX" :y1="groundY - s(60) - 5" :x2="rearWheelCX" :y2="groundY - s(60) + 5" stroke="#ff6b6b" stroke-width="1.2" vector-effect="non-scaling-stroke" />
-        <line :x1="rearX" :y1="groundY - s(60) - 5" :x2="rearX" :y2="groundY - s(60) + 5" stroke="#ff6b6b" stroke-width="1.2" vector-effect="non-scaling-stroke" />
-        <text :x="(rearWheelCX + rearX) / 2" :y="groundY - s(60) - 8" text-anchor="middle" fill="#ff6b6b" font-size="11" font-family="Inter, sans-serif" font-weight="600">RO: {{ RO }}mm</text>
+          <!-- 第一行：前悬 FO / 后悬 RO -->
+          <line :x1="0" :y1="dimY1" :x2="frontWheelCX" :y2="dimY1" stroke="#00ff88" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <text :x="frontWheelCX / 2" :y="dimY1 - 5" text-anchor="middle" fill="#00ff88" font-weight="600">FO {{ FO }}mm</text>
+          <line :x1="rearWheelCX" :y1="dimY1" :x2="rearX" :y2="dimY1" stroke="#ff6b6b" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <text :x="(rearWheelCX + rearX) / 2" :y="dimY1 - 5" text-anchor="middle" fill="#ff6b6b" font-weight="600">RO {{ RO }}mm</text>
 
-        <!-- 轴距 / 车长标注 -->
-        <text :x="wheelBaseMidX" :y="groundY + 22" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="11" font-family="Inter, sans-serif">WB {{ WB }}mm</text>
-        <text :x="rearX / 2" :y="groundY + 40" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="11" font-family="Inter, sans-serif">L {{ actualLength }}mm</text>
+          <!-- 第二行：轴距 WB -->
+          <line :x1="frontWheelCX" :y1="dimY2" :x2="rearWheelCX" :y2="dimY2" stroke="rgba(255,255,255,0.6)" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <text :x="wheelBaseMidX" :y="dimY2 - 5" text-anchor="middle" fill="rgba(255,255,255,0.78)">WB {{ WB }}mm</text>
+
+          <!-- 第三行：整车长 L -->
+          <line :x1="0" :y1="dimY3" :x2="rearX" :y2="dimY3" stroke="rgba(255,255,255,0.6)" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <text :x="rearX / 2" :y="dimY3 - 5" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-weight="600">L {{ actualLength }}mm</text>
+
+          <!-- 车高 H：车尾右侧垂直尺寸线 + 车顶延伸线 -->
+          <line :x1="rearWindowTopX" :y1="roofTopY" :x2="rearX + 48" :y2="roofTopY" stroke="rgba(255,255,255,0.32)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
+          <line :x1="rearX + 44" :y1="groundY" :x2="rearX + 44" :y2="roofTopY" stroke="rgba(255,255,255,0.6)" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <text :transform="`rotate(-90 ${rearX + 56} ${(groundY + roofTopY) / 2})`" :x="rearX + 56" :y="(groundY + roofTopY) / 2" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-weight="600">H {{ overallHeight }}mm</text>
+
+          <!-- 车宽 W：侧视图无法直接标注，车顶右上方文本给出 -->
+          <text :x="rearX + 44" :y="roofTopY - 10" text-anchor="end" fill="rgba(255,255,255,0.55)">W {{ overallWidth }}mm</text>
+        </g>
       </g>
     </svg>
   </div>
@@ -90,20 +106,27 @@ const { t } = useI18n({ useScope: 'global' })
 const svgWidth = 800
 const svgHeight = 420
 const padTop = 30          // 车顶上方留白（SISA 图例文字区）
-const dimAreaH = 56        // 地面线下方标注区（WB / L 两行）
+const dimAreaH = 84        // 地面线下方标注区（FO/RO · WB · L 三行尺寸）
 const groundY = svgHeight - dimAreaH
+
+// 尺寸标注行（地面线下方）
+const dimY1 = groundY + 20 // 前悬 FO / 后悬 RO
+const dimY2 = groundY + 42 // 轴距 WB
+const dimY3 = groundY + 64 // 整车长 L
 
 const FO = computed(() => props.carParams.front_overhang ?? 1000)
 const RO = computed(() => props.carParams.rear_overhang ?? 1000)
 const WB = computed(() => props.carParams.wheel_base)
 const overallHeight = computed(() => props.carParams.overall_height ?? 1400)
+const overallWidth = computed(() => props.carParams.overall_width ?? 1800)
 const groundClearanceMm = computed(() => props.carParams.ground_clearance ?? 140)
 
 const actualLength = computed(() => FO.value + WB.value + RO.value)
 
 // 双向自适应：同时满足宽度（车长）与高度（离地间隙 + 车高）约束
+// 宽度预留 150px：右侧容纳 H 车高垂直标注（rearX+56），左侧容纳延伸线
 const scale = computed(() => {
-  const usableW = svgWidth - 80
+  const usableW = svgWidth - 150
   const usableH = groundY - padTop
   return Math.min(usableW / actualLength.value, usableH / (overallHeight.value + groundClearanceMm.value))
 })
@@ -130,12 +153,12 @@ const underbodyY = computed(() => groundY - s(groundClearanceMm.value))
 
 // ============ 高度分层：按车型取顶廓线比例（SUV 参考 SISA hood_height_ratio≈0.69 校正） ============
 const LINE_RATIOS = {
-  sedan:  { hood: 0.60, belt: 0.74, trunk: 0.66 },
-  suv:    { hood: 0.66, belt: 0.80, trunk: 0.72 },
-  coupe:  { hood: 0.62, belt: 0.72, trunk: 0.70 },
-  sport:  { hood: 0.66, belt: 0.72, trunk: 0.72 },
-  mpv:    { hood: 0.52, belt: 0.76, trunk: 0.74 },
-  pickup: { hood: 0.60, belt: 0.78, trunk: 0.80 }
+  sedan:  { hood: 0.60, belt: 0.68, trunk: 0.64 },
+  suv:    { hood: 0.66, belt: 0.74, trunk: 0.70 },
+  coupe:  { hood: 0.62, belt: 0.66, trunk: 0.64 },
+  sport:  { hood: 0.66, belt: 0.68, trunk: 0.72 },
+  mpv:    { hood: 0.52, belt: 0.70, trunk: 0.74 },
+  pickup: { hood: 0.60, belt: 0.72, trunk: 0.80 }
 }
 const ratios = computed(() => LINE_RATIOS[props.carType] || LINE_RATIOS.sedan)
 
@@ -146,6 +169,13 @@ const trunkLineY = computed(() => underbodyY.value - s(overallHeight.value * rat
 
 // ============ 侧窗轮廓 X 关键点（全链路钳位，防止 SUV/MPV 大倾角越出车尾） ============
 const hoodEndX = computed(() => Math.min(s(props.carParams.hood_length ?? 1000), rearX.value * 0.42))
+
+// Cowl 斜坡：引擎盖面在风挡底之前沿车身上升至腰带线，使玻璃下缘落在车身表面（消除玻璃悬浮）
+const cowlStartX = computed(() => {
+  const rise = hoodLineY.value - beltLineY.value // 引擎盖到腰带的升高量（正值）
+  const run = Math.min(s(140), Math.max(rise * 0.9, s(20)))
+  return Math.max(hoodEndX.value - run, s(30))
+})
 
 const windshieldAngleRad = computed(() => (props.carParams.windshield_angle ?? 30) * Math.PI / 180)
 const rearWindowAngleRad = computed(() => (props.carParams.rear_window_angle ?? 25) * Math.PI / 180)
@@ -204,7 +234,8 @@ const silhouettePath = computed(() => {
   return [
     `M${fx},${uy}`,
     `L${fx},${hy + s(55)}`,
-    `Q${fx + noseR},${hy} ${hoodEndX.value},${hy}`,
+    `Q${fx + noseR},${hy} ${cowlStartX.value},${hy}`,
+    `L${hoodEndX.value},${beltLineY.value}`,
     `L${windshieldTopX.value},${roofTopY.value}`,
     `L${rearWindowTopX.value},${roofTopY.value}`,
     `L${rearWindowBottomX.value},${beltLineY.value}`,
@@ -239,7 +270,7 @@ const shadowCX = computed(() => (frontWheelCX.value + rearWheelCX.value) / 2)
 const shadowRX = computed(() => (WB.value + (props.carParams.wheel_diameter ?? 680) * 1.6) / 2 * scale.value)
 
 const groundX1 = computed(() => -24)
-const groundX2 = computed(() => rearX.value + 24)
+const groundX2 = computed(() => rearX.value + 48)
 
 // ============ SISA 参考线叠加 + 像真度 RMSE ============
 const sisaOverlay = computed(() => {

@@ -12,16 +12,16 @@ import { SISA_META, SISA_Z_TOP_NORM, evalTopRMSE, sampleTopNorm, toPlatformX } f
 const svgWidth = 800
 const svgHeight = 420
 const padTop = 30
-const dimAreaH = 56
+const dimAreaH = 84
 const groundY = svgHeight - dimAreaH
 
 const LINE_RATIOS = {
-  sedan:  { hood: 0.60, belt: 0.74, trunk: 0.66 },
-  suv:    { hood: 0.66, belt: 0.80, trunk: 0.72 },
-  coupe:  { hood: 0.62, belt: 0.72, trunk: 0.70 },
-  sport:  { hood: 0.66, belt: 0.72, trunk: 0.72 },
-  mpv:    { hood: 0.52, belt: 0.76, trunk: 0.74 },
-  pickup: { hood: 0.60, belt: 0.78, trunk: 0.80 }
+  sedan:  { hood: 0.60, belt: 0.68, trunk: 0.64 },
+  suv:    { hood: 0.66, belt: 0.74, trunk: 0.70 },
+  coupe:  { hood: 0.62, belt: 0.66, trunk: 0.64 },
+  sport:  { hood: 0.66, belt: 0.68, trunk: 0.72 },
+  mpv:    { hood: 0.52, belt: 0.70, trunk: 0.74 },
+  pickup: { hood: 0.60, belt: 0.72, trunk: 0.80 }
 }
 
 function computeCar2D(params, carType = 'sedan') {
@@ -33,7 +33,7 @@ function computeCar2D(params, carType = 'sedan') {
   const actualLength = FO + WB + RO
 
   // 双向自适应缩放：宽度（车长）与高度（离地 + 车高）共同约束
-  const scale = Math.min((svgWidth - 80) / actualLength, (groundY - padTop) / (H + gc))
+  const scale = Math.min((svgWidth - 150) / actualLength, (groundY - padTop) / (H + gc))
   const s = (val) => val * scale
 
   const rearX = s(actualLength)
@@ -51,6 +51,9 @@ function computeCar2D(params, carType = 'sedan') {
   const trunkLineY = underbodyY - s(H * r.trunk)
 
   const hoodEndX = Math.min(s(params.hood_length ?? 1000), rearX * 0.42)
+  // Cowl 斜坡：机盖面上升至风挡底（与组件同式）
+  const cowlRise = s(H * r.belt) - s(H * r.hood) // hoodLineY - beltLineY 的等价量
+  const cowlStartX = Math.max(hoodEndX - Math.min(s(140), Math.max(cowlRise * 0.9, s(20))), s(30))
   const windshieldAngleRad = (params.windshield_angle ?? 30) * Math.PI / 180
   const rearWindowAngleRad = (params.rear_window_angle ?? 25) * Math.PI / 180
   const slantFactor = Math.min(Math.max((params.rear_slant_angle ?? 15) / 60, 0), 1)
@@ -84,6 +87,7 @@ function computeCar2D(params, carType = 'sedan') {
     hoodLineY,
     trunkLineY,
     hoodEndX,
+    cowlStartX,
     slantFactor,
     roofLen,
     windshieldTopX,
@@ -110,7 +114,7 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
     it('缩放取宽度与高度约束的较小者', () => {
       const params = { ...defaultCarParams, ...carTypeParams.sedan }
       const result = computeCar2D(params)
-      const expected = Math.min((svgWidth - 80) / result.actualLength, (groundY - padTop) / (params.overall_height + params.ground_clearance))
+      const expected = Math.min((svgWidth - 150) / result.actualLength, (groundY - padTop) / (params.overall_height + params.ground_clearance))
       expect(result.scale).toBeCloseTo(expected, 6)
       expect(result.rearX).toBeLessThanOrEqual(svgWidth - 40)
     })
@@ -250,6 +254,51 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
     it('Car2D.vue 不得包含顶层 console.log', () => {
       const src = readFileSync(resolve(process.cwd(), 'src/components/Car2D.vue'), 'utf8')
       expect(src).not.toMatch(/console\.log/)
+    })
+  })
+
+  describe('11. 玻璃衔接与标注规范回归（belt 下移 + cowl 斜坡 + 三行尺寸标注）', () => {
+    it('腰带线已下移且仍高于引擎盖（玻璃不悬浮、车身比例正确）', () => {
+      for (const r of Object.values(LINE_RATIOS)) {
+        expect(1 - r.belt).toBeGreaterThanOrEqual(0.26) // 玻璃区高度不低于车高 26%
+        expect(r.belt).toBeGreaterThan(r.hood)          // 腰带高于引擎盖
+        expect(r.trunk).toBeGreaterThan(r.hood)         // 尾部高于引擎盖
+      }
+    })
+
+    it('Cowl 斜坡位于风挡底之前（玻璃下缘落在车身表面）', () => {
+      for (const type of Object.keys(carTypeParams)) {
+        const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
+        expect(result.cowlStartX).toBeLessThan(result.hoodEndX)
+        expect(result.cowlStartX).toBeGreaterThan(0)
+        expect(result.windshieldTopX).toBeGreaterThan(result.hoodEndX)
+      }
+    })
+
+    it('三行尺寸标注均在地面线下方且不越出画布（文字不与车身/车轮重叠）', () => {
+      const dimY1 = groundY + 20
+      const dimY2 = groundY + 42
+      const dimY3 = groundY + 64
+      for (const textBaseY of [dimY1 - 5, dimY2 - 5, dimY3 - 5]) {
+        expect(textBaseY).toBeGreaterThan(groundY) // 车身/车轮均在地面线之上
+      }
+      expect(dimY3 + 4).toBeLessThanOrEqual(svgHeight)
+    })
+
+    it('H 车高垂直标注不越出画布右缘（宽度预留 150px）', () => {
+      for (const type of Object.keys(carTypeParams)) {
+        const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
+        const contentX = (svgWidth - result.actualLength * result.scale) / 2
+        expect(contentX + result.rearX + 56).toBeLessThanOrEqual(svgWidth)
+      }
+    })
+
+    it('Car2D.vue 源码含 cowl 斜坡与完整尺寸标注实现', () => {
+      const src = readFileSync(resolve(process.cwd(), 'src/components/Car2D.vue'), 'utf8')
+      expect(src).toContain('cowlStartX')
+      expect(src).toContain('dimY3')
+      expect(src).toContain('H {{ overallHeight }}mm')
+      expect(src).toContain('W {{ overallWidth }}mm')
     })
   })
 })
