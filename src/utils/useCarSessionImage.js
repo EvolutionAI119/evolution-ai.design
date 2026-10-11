@@ -142,15 +142,53 @@ export const useCarSessionImage = (scope = 'default', { maxAttempts = 5 } = {}) 
 
   /**
    * <img @error> 统一处理：
-   *   - 失败 URL 若不是 data: 就记入 markUrlFailed（下次全局不再尝试）
-   *   - state.minLayer 至少提升到本次失败 layer
+   *   - L1（/brands/* 随包静态真车图）按瞬时故障处理：不标记不降级，
+   *     按 0/500/1500ms 退避重挂重试；仍失败则临时 L3 SVG 占位，
+   *     10s 后自愈探测（最多 2 轮），避免一次网络抖动就整会话卡成 SVG。
+   *   - L2+ 远程/兜底层：失败 URL 若非 data: 记入 markUrlFailed，
+   *     state.minLayer 至少提升到本次失败 layer，attempt 封顶锁 L4。
    *   - renderKey++ 让 Vue 重新挂载 <img>（onerror 钩子可以再次触发）
-   *   - attempt 封顶就锁在 L4（终极兜底 data: URL，不会再请求网络）
    */
+  const L1_RETRY_DELAYS = [0, 500, 1500]
+  const L1_RECOVER_DELAY = 10000
+  const L1_MAX_RECOVERIES = 2
+
+  const scheduleRetry = (state, delay, fn) => {
+    if (state._retryTimer) clearTimeout(state._retryTimer)
+    state._retryTimer = setTimeout(() => {
+      state._retryTimer = null
+      fn()
+    }, delay)
+  }
+
   const handleImageError = (key, ctx) => {
     const state = ensureState(key)
-    state.attempt++
     const resolved = resolveByLayer(ctx, state.minLayer || 0)
+
+    // ── L1 静态真车图：瞬时故障策略（重试 + 延迟自愈，永不永久降级）──
+    if (resolved.layer === 1) {
+      state.l1Retries = (state.l1Retries || 0) + 1
+      if (state.l1Retries <= L1_RETRY_DELAYS.length) {
+        const delay = L1_RETRY_DELAYS[state.l1Retries - 1]
+        scheduleRetry(state, delay, () => { state.renderKey++ })
+        return
+      }
+      // 快速重试耗尽：临时 L3 占位，随后延迟自愈
+      state.minLayer = 2
+      state.renderKey++
+      state.l1Recoveries = (state.l1Recoveries || 0) + 1
+      if (state.l1Recoveries <= L1_MAX_RECOVERIES) {
+        scheduleRetry(state, L1_RECOVER_DELAY, () => {
+          state.minLayer = 0
+          state.l1Retries = 0
+          state.renderKey++
+        })
+      }
+      return
+    }
+
+    // ── L2+：失败即推进（原逻辑）──
+    state.attempt++
     if (resolved.src && !resolved.src.startsWith('data:')) {
       markUrlFailed(resolved.src)
     }
@@ -164,10 +202,29 @@ export const useCarSessionImage = (scope = 'default', { maxAttempts = 5 } = {}) 
     state.renderKey++
   }
 
+  /**
+   * <img @load>：L1 加载成功时取消挂起重试；若当前正处于临时 L3 占位，
+   * 立刻回到真车图层（minLayer=0 + 重挂）。
+   */
+  const handleImageLoad = key => {
+    const state = ensureState(key)
+    if (state._retryTimer) {
+      clearTimeout(state._retryTimer)
+      state._retryTimer = null
+    }
+    state.l1Retries = 0
+    if ((state.minLayer || 0) === 2) {
+      state.minLayer = 0
+      state.l1Recoveries = 0
+      state.renderKey++
+    }
+  }
+
   /** 清理本 scope 下的所有状态（慎用；需要整个画布刷新时用） */
   const clearScope = () => {
     const keys = Object.keys(imageStates)
     for (const k of keys) {
+      if (imageStates[k]?._retryTimer) clearTimeout(imageStates[k]._retryTimer)
       imageStates[k] = { layer: 0, attempt: 0, renderKey: 0, minLayer: 0 }
     }
   }
@@ -175,10 +232,13 @@ export const useCarSessionImage = (scope = 'default', { maxAttempts = 5 } = {}) 
   /** 重置某个 key 的状态（切换 model/session 时调用，避免跨会话 attempt 污染） */
   const resetState = key => {
     const s = ensureState(key)
+    if (s._retryTimer) clearTimeout(s._retryTimer)
     s.layer = 0
     s.attempt = 0
     s.renderKey = 0
     s.minLayer = 0
+    s.l1Retries = 0
+    s.l1Recoveries = 0
   }
 
   return {
@@ -187,6 +247,7 @@ export const useCarSessionImage = (scope = 'default', { maxAttempts = 5 } = {}) 
     imageSrc,
     stateLabel,
     handleImageError,
+    handleImageLoad,
     // —— 业务侧细粒度 ——
     ensureState,
     resolveByLayer,

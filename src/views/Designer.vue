@@ -58,6 +58,7 @@
                     :alt="model.name"
                     class="model-img"
                     @error="handleImageError(model.key)"
+                    @load="handleImageLoad(model.key)"
                   />
                   <div v-if="getImageState(model.key) === 'loading'" class="img-loading-overlay">
                     <svg class="loading-spinner" viewBox="0 0 24 24">
@@ -176,6 +177,7 @@
                     :alt="currentModel.name"
                     class="reference-img"
                     @error="handleImageError(currentModel.key)"
+                    @load="handleImageLoad(currentModel.key)"
                   />
                   <div v-if="getImageState(currentModel.key) === 'loading'" class="ref-loading-overlay">
                     <svg class="ref-loading-spinner" viewBox="0 0 24 24">
@@ -635,45 +637,105 @@ const getBrandKeyForModel = (modelKey) => {
 const prepareModelImage = (model) => {
   if (!model) return
   const s = ensureState(model.key)
+  if (s._retryTimer) {
+    clearTimeout(s._retryTimer)
+    s._retryTimer = null
+  }
   s.layer = 0
   s.attempt = 0
   s.renderKey = 0
   s.minLayer = 0
+  s.l1Retries = 0
+  s.l1Recoveries = 0
 }
 
 /**
  * 图片加载失败处理（确定性降级，不再依赖 localStorage 隐式跳过）：
- *   1. 当前失败 URL 若不是 data:，记入失败名单（远程 / 本地 JPG 都记；但 carImageManager 已会忽略 /brands/*）
- *   2. state.minLayer = 当前 layer → 下次解析直接从下一层开始
- *   3. renderKey++ → Vue 强制重新挂载 <img :key>，保证 onerror 二次触发可用
- *   4. attempt <= 5 防护，到顶直接锁定 L4 dataURL
+ *
+ * L1（/brands/* 随包发布的静态真车图）按"瞬时故障"处理——CDN 边缘刷新、
+ * cpolar 隧道中断、快速切换品牌导致的请求 abort 都可能让一张本应 200 的
+ * 图只抛一次 error。旧逻辑遇到一次 error 就把 minLayer 永久推过 L1，
+ * 而公网 L2 远程 AI URL 又必然失败，卡片就此在整个会话锁死成 SVG（漂移）。
+ * 现在：
+ *   1. L1 失败不标记、不降级，按退避重挂重试（0/500/1500ms，共 3 次）
+ *   2. 快速重试仍失败 → 临时退到 L3 SVG 占位，10s 后自动回到 L1 自愈探测（最多 2 轮）
+ *   3. L2 及以上失败维持原逻辑：记失败名单 + minLayer 推进，attempt<=5 封顶锁 L4
  */
 const MAX_ATTEMPTS = 5
+const L1_RETRY_DELAYS = [0, 500, 1500]
+const L1_RECOVER_DELAY = 10000
+const L1_MAX_RECOVERIES = 2
+
+const scheduleImgRetry = (state, delay, fn) => {
+  if (state._retryTimer) clearTimeout(state._retryTimer)
+  state._retryTimer = setTimeout(() => {
+    state._retryTimer = null
+    fn()
+  }, delay)
+}
+
 const handleImageError = (modelKey) => {
   const model = getModelByKey(modelKey)
   if (!model) return
   const bk = getBrandKeyForModel(modelKey)
   const state = ensureState(modelKey)
-  state.attempt++
 
-  // 先把本次失败的 src（按当前 minLayer 解析所得）标记失败
   const resolved = resolveByLayer(model, bk, state.minLayer || 0)
+
+  // ── L1 静态真车图：瞬时故障策略（重试 + 延迟自愈，永不永久降级）──
+  if (resolved.layer === 1) {
+    state.l1Retries = (state.l1Retries || 0) + 1
+    if (state.l1Retries <= L1_RETRY_DELAYS.length) {
+      const delay = L1_RETRY_DELAYS[state.l1Retries - 1]
+      // minLayer 保持 0，重挂 <img> 重新请求同一个静态图
+      scheduleImgRetry(state, delay, () => { state.renderKey++ })
+      return
+    }
+    // 快速重试耗尽：临时 SVG 占位（minLayer=2 → 解析直接落到 L3）
+    state.minLayer = 2
+    state.renderKey++
+    // 延迟自愈：网络恢复后自动回到真车图，无需用户刷新
+    state.l1Recoveries = (state.l1Recoveries || 0) + 1
+    if (state.l1Recoveries <= L1_MAX_RECOVERIES) {
+      scheduleImgRetry(state, L1_RECOVER_DELAY, () => {
+        state.minLayer = 0
+        state.l1Retries = 0
+        state.renderKey++
+      })
+    }
+    return
+  }
+
+  // ── L2+ 远程/兜底层：失败即推进（原逻辑）──
+  state.attempt++
   if (resolved.src && !resolved.src.startsWith('data:')) {
     markUrlFailed(resolved.src)
   }
 
   if (state.attempt >= MAX_ATTEMPTS) {
-    // 兜底：直接锁定 L4
     state.minLayer = 4
     state.renderKey++
     return
   }
 
-  // 从下一层开始解析
   state.minLayer = Math.max(state.minLayer || 0, resolved.layer)
-  // 超过 L3 就锁在 L4（避免 attempt 耗尽前跑乱）
   if (state.minLayer >= 4) state.minLayer = 4
   state.renderKey++
+}
+
+// L1 图片加载成功：取消挂起重试，若处于 SVG 临时占位则立刻回到真车图层
+const handleImageLoad = (modelKey) => {
+  const state = ensureState(modelKey)
+  if (state._retryTimer) {
+    clearTimeout(state._retryTimer)
+    state._retryTimer = null
+  }
+  state.l1Retries = 0
+  if ((state.minLayer || 0) === 2) {
+    state.minLayer = 0
+    state.l1Recoveries = 0
+    state.renderKey++
+  }
 }
 
 const cleanupImageCache = () => {

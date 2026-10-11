@@ -163,6 +163,7 @@
                 class="reference-image"
                 loading="lazy"
                 @error="handleSessionImageError(lastImportPreview, 'import-main')"
+                @load="handleSessionImageLoad(lastImportPreview, 'import-main')"
               />
             </div>
           </div>
@@ -259,6 +260,7 @@
                     :alt="row.name"
                     loading="lazy"
                     @error="handleSessionImageError(_sessionPreview(row), 'sess_' + row.session_id)"
+                    @load="handleSessionImageLoad(_sessionPreview(row), 'sess_' + row.session_id)"
                   />
                 </div>
               </template>
@@ -359,6 +361,7 @@ const {
   imageSrc: _composableImgSrc,
   stateLabel: _composableStateLabel,
   handleImageError: _composableHandleError,
+  handleImageLoad: _composableHandleLoad,
   resetState: resetSessionImageState,
 } = useCarSessionImage('deliver', { maxAttempts: 5 })
 
@@ -458,6 +461,10 @@ const sessionImageStateLabel = (_preview, scopeKey) => _composableStateLabel(sco
 const handleSessionImageError = (preview, scopeKey) => {
   if (!preview) return
   _composableHandleError(scopeKey, { preview })
+}
+const handleSessionImageLoad = (preview, scopeKey) => {
+  if (!preview) return
+  _composableHandleLoad(scopeKey)
 }
 // 当用户重新 import 时重置当前预览 key 的 attempt，避免"上次失败记忆"污染这次
 const resetImportPreviewState = () => {
