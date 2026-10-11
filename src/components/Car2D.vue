@@ -15,14 +15,6 @@
         <!-- 闭合车身轮廓（含前后保险杠立面与轮拱开口） -->
         <path :d="silhouettePath" fill="rgba(74,222,128,0.06)" stroke="#4ade80" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
 
-        <!-- SISA 真车参考顶线（可选叠加） -->
-        <g v-if="sisaOverlay">
-          <polyline :points="sisaOverlay.points" fill="none" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="6,4" vector-effect="non-scaling-stroke" opacity="0.85" />
-          <text :x="s(20)" :y="padTop + 14" fill="#fbbf24" font-size="10.5" font-family="Inter, sans-serif">
-            {{ t('designer.sisaLegend') }} · {{ t('designer.sisaRmse') }} {{ sisaOverlay.rmse }}
-          </text>
-        </g>
-
         <!-- 侧窗 DLO + B 柱 -->
         <path :d="windowPath" fill="rgba(59,130,246,0.12)" stroke="#3b82f6" stroke-width="1.1" vector-effect="non-scaling-stroke" />
         <line :x1="pillarX" :y1="roofTopY + s(60)" :x2="pillarX" :y2="beltLineY - s(40)" stroke="rgba(59,130,246,0.55)" stroke-width="1" vector-effect="non-scaling-stroke" />
@@ -77,12 +69,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import {
-  SISA_META,
-  referenceTopOverlay,
-  evalTopRMSE
-} from '../config/sisaReference'
 import { deriveCarProfile } from '../utils/carProfile.js'
 
 const props = defineProps({
@@ -93,20 +79,13 @@ const props = defineProps({
   carType: {
     type: String,
     default: 'sedan'
-  },
-  // SISA 真车参考线叠加（referenceTopOverlay + 像真度 RMSE）
-  showSisaReference: {
-    type: Boolean,
-    default: false
   }
 })
-
-const { t } = useI18n({ useScope: 'global' })
 
 // ============ 画布布局：高度方向与宽度方向共同约束缩放，杜绝车顶越界裁切 ============
 const svgWidth = 800
 const svgHeight = 420
-const padTop = 30          // 车顶上方留白（SISA 图例文字区）
+const padTop = 30          // 车顶上方留白
 const dimAreaH = 84        // 地面线下方标注区（FO/RO · WB · L 三行尺寸）
 const groundY = svgHeight - dimAreaH
 
@@ -269,41 +248,6 @@ const shadowRX = computed(() => (WB.value + (props.carParams.wheel_diameter ?? 6
 
 const groundX1 = computed(() => -24)
 const groundX2 = computed(() => rearX.value + 48)
-
-// ============ SISA 参考线叠加 + 像真度 RMSE ============
-const sisaOverlay = computed(() => {
-  if (!props.showSisaReference) return null
-  const refLen = SISA_META.coordinateSystem.refLengthMm
-  const refH = SISA_META.coordinateSystem.refHeightMm
-  // 参考车拉伸到当前车长（README §3：归一化 x 跨尺寸比较），z 用同一长度比例 → 暴露车高比例差
-  const k = (actualLength.value * scale.value) / refLen
-  const points = referenceTopOverlay()
-    .map(p => `${(p.x * actualLength.value * scale.value).toFixed(1)},${(groundY - p.z * refH * k).toFixed(1)}`)
-    .join(' ')
-  // 当前车的顶廓线（z/H 归一化，100 采样）→ 对真车 RMSE
-  const n = 100
-  const myTop = []
-  const hoodEndMm = hoodEndX.value / scale.value
-  const wsTopMm = windshieldTopX.value / scale.value
-  const rwTopMm = rearWindowTopX.value / scale.value
-  const rwBotMm = rearWindowBottomX.value / scale.value
-  const zAt = (xMm) => {
-    const toZ = (y) => (groundY - y) / scale.value / overallHeight.value
-    if (xMm < hoodEndMm) return toZ(hoodLineY.value)
-    if (xMm < wsTopMm) return toZ(hoodLineY.value + (roofTopY.value - hoodLineY.value) * (xMm - hoodEndMm) / Math.max(wsTopMm - hoodEndMm, 1))
-    if (isPickup.value) {
-      // 皮卡：车顶止于驾驶室后壁，之后为货箱栏板顶线（后窗近直立，不参与顶线分段）
-      if (xMm < rwTopMm) return toZ(roofTopY.value)
-      return toZ(trunkLineY.value)
-    }
-    if (xMm < rwTopMm) return toZ(roofTopY.value)
-    if (xMm < rwBotMm) return toZ(roofTopY.value + (beltLineY.value - roofTopY.value) * (xMm - rwTopMm) / Math.max(rwBotMm - rwTopMm, 1))
-    return toZ(trunkLineY.value)
-  }
-  for (let i = 0; i < n; i++) myTop.push(zAt((i / (n - 1)) * actualLength.value))
-  const rmse = evalTopRMSE(myTop)
-  return { points, rmse: Number.isFinite(rmse) ? rmse.toFixed(3) : '—' }
-})
 </script>
 
 <style scoped>
