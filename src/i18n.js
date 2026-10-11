@@ -72,6 +72,8 @@ const zh = {
     title: '模型生成', subtitle: '参数化车身生成与部件管理', generateCar: '生成完整车身',
     generateCarFailed: '车身生成失败', generateComponentFailed: '部件生成失败',
     regenerateFailed: '重新生成失败', exportSuccess: '数据导出成功', exportFailed: '导出失败',
+    // 3D 视口控件提示
+    viewerReset: '重置视角', viewerWireframe: '线框模式', viewerAutoRotate: '自动旋转', viewerFullscreen: '全屏',
     paramConfig: '参数配置', dimensions: '整车尺寸', components: '车身部件', angles: '造型角度',
     overallLength: '整车长度 (mm)', overallWidth: '整车宽度 (mm)', overallHeight: '整车高度 (mm)',
     wheelBase: '轴距 (mm)', hoodLength: '发动机盖长度 (mm)', roofHeight: '车顶高度 (mm)',
@@ -246,8 +248,6 @@ const zh = {
     g2NoData: '缺数据', g2Error: '错误', g2Threshold: '判定标准',
     g2Standard: 'SOP-A SURF-001 §5.2（曲率比 0.8~1.2）',
     g2RunCheck: '执行 G2 检测', g2Checking: '正在检测…',
-    // 3D 视口控件提示
-    viewerReset: '重置视角', viewerWireframe: '线框模式', viewerAutoRotate: '自动旋转', viewerFullscreen: '全屏',
     // 生成结果 toast（实测质量）
     msgGenerated: '已生成 {parts} 个部件 | {surfaces} 个 NURBS 曲面 | {points} 个控制点',
     msgG2Pass: ' | G2 连续（实测）',
@@ -941,6 +941,8 @@ const en = {
     title: 'Model Generator', subtitle: 'Parametric Car Body Generation & Component Management', generateCar: 'Generate Complete Car',
     generateCarFailed: 'Failed to generate car', generateComponentFailed: 'Failed to generate component',
     regenerateFailed: 'Regeneration failed', exportSuccess: 'Data exported successfully', exportFailed: 'Export failed',
+    // 3D viewport control tooltips
+    viewerReset: 'Reset view', viewerWireframe: 'Wireframe mode', viewerAutoRotate: 'Auto rotate', viewerFullscreen: 'Fullscreen',
     paramConfig: 'Parameter Configuration', dimensions: 'Vehicle Dimensions', components: 'Body Components', angles: 'Styling Angles',
     overallLength: 'Overall Length (mm)', overallWidth: 'Overall Width (mm)', overallHeight: 'Overall Height (mm)',
     wheelBase: 'Wheel Base (mm)', hoodLength: 'Hood Length (mm)', roofHeight: 'Roof Height (mm)',
@@ -1115,8 +1117,6 @@ const en = {
     g2NoData: 'No Data', g2Error: 'Error', g2Threshold: 'Threshold',
     g2Standard: 'SOP-A SURF-001 §5.2 (curvature ratio 0.8–1.2)',
     g2RunCheck: 'Run G2 Check', g2Checking: 'Checking…',
-    // 3D viewport control tooltips
-    viewerReset: 'Reset view', viewerWireframe: 'Wireframe mode', viewerAutoRotate: 'Auto rotate', viewerFullscreen: 'Fullscreen',
     // Generation result toast (measured quality)
     msgGenerated: 'Generated {parts} parts | {surfaces} NURBS surfaces | {points} control points',
     msgG2Pass: ' | G2 continuous (measured)',

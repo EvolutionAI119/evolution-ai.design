@@ -52,7 +52,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile } from '../utils/carProfile.js'
+import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
 
 const { t } = useI18n()
 
@@ -123,13 +123,15 @@ let currentPan = { x: 0, y: 0 }
 let isOrthoCamera = false
 let orthoCamera
 
+// 视角预设：车长沿 X 轴（X+ 朝车头）。正交视角 dist 经 0.6 系数映射为半视口高度 d
+// front=相机在 +X（正对车头）/ rear=-X / left=-Z（驾驶员侧）/ right=+Z
 const viewPresets = {
-  front: { x: 0, y: 0, dist: 8, ortho: true },
-  rear: { x: 0, y: Math.PI, dist: 8, ortho: true },
-  left: { x: 0, y: -Math.PI / 2, dist: 8, ortho: true },
-  right: { x: 0, y: Math.PI / 2, dist: 8, ortho: true },
-  top: { x: Math.PI / 2, y: 0, dist: 10, ortho: true },
-  bottom: { x: -Math.PI / 2, y: 0, dist: 10, ortho: true },
+  front: { x: 0, y: Math.PI / 2, dist: 5, ortho: true },
+  rear: { x: 0, y: -Math.PI / 2, dist: 5, ortho: true },
+  left: { x: 0, y: Math.PI, dist: 5, ortho: true },
+  right: { x: 0, y: 0, dist: 5, ortho: true },
+  top: { x: Math.PI / 2, y: 0, dist: 5, ortho: true },
+  bottom: { x: -Math.PI / 2, y: 0, dist: 5, ortho: true },
   isometric: { x: Math.PI / 4, y: Math.PI / 4, dist: 10, ortho: false },
   perspective: { x: 0.4, y: 0.8, dist: 8, ortho: false }
 }
@@ -256,7 +258,7 @@ const createCar = () => {
     W, H, gc, wheelR, halfTrack,
     frontWheelX, rearWheelX, frontX, rearX,
     bodyBottomY, roofTopY, beltLineY, hoodLineY, trunkLineY,
-    hoodEndX, trunkStartX,
+    hoodEndX, cowlStartX, trunkStartX,
     windshieldTopX, rearWindowTopX, rearWindowBottomX,
     wheelArchRadius, archY, pickup, rails: railSpec, wing: wingSpec
   } = P
@@ -293,20 +295,50 @@ const createCar = () => {
 
   const bodyShape = new THREE.Shape()
 
-  bodyShape.moveTo(frontX, bodyBottomY)
-  bodyShape.quadraticCurveTo(frontX + 0.08, hoodLineY - 0.05, frontX + 0.02, hoodLineY)
-  bodyShape.lineTo(hoodEndX, hoodLineY)
-  bodyShape.lineTo(windshieldTopX, roofTopY)
-  bodyShape.lineTo(rearWindowTopX, roofTopY)
+  // ---- 侧围轮廓（与 2D Car2D.vue 同源锚点 + G1 圆角，杜绝折痕/曲率突变） ----
+  // 尾部 / 底部过渡控制点与 2D 轮廓逐点镜像（20/16/56/26/36mm）
+  const tailCtrlX = rearX + 0.02
+  const tailCtrlY = trunkLineY - 0.016
+  const tailEndY = trunkLineY - 0.056
   if (pickup) {
-    // 驾驶室后窗下沿 → 货箱栏板上沿（贯通至车尾）→ 尾门微弧收到底边
-    bodyShape.lineTo(pickup.cabWindowBottomX, pickup.bedWallY)
-    bodyShape.lineTo(pickup.wallTopRearX, pickup.bedWallY)
-    bodyShape.quadraticCurveTo(rearX + 0.05, gc + wheelR, rearX, bodyBottomY)
+    // 皮卡拓扑：车顶止于驾驶室后壁 → 后壁斜落至货箱栏板 → 栏板贯通至尾门
+    const cabBotX = pickup.cabWindowBottomX
+    // A 柱顶 + 驾驶室后壁顶 + 后壁底三处 G1 圆角
+    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, 0.09)
+    const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, 0.05)
+    const f3 = filletCorner(pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, 0.03)
+    bodyShape.moveTo(frontX, bodyBottomY)
+    bodyShape.quadraticCurveTo(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
+    bodyShape.lineTo(cowlStartX, hoodLineY)
+    bodyShape.lineTo(hoodEndX, beltLineY)
+    bodyShape.lineTo(f1.a[0], f1.a[1])
+    bodyShape.quadraticCurveTo(f1.ctrl[0], f1.ctrl[1], f1.b[0], f1.b[1])
+    bodyShape.lineTo(f2.a[0], f2.a[1])
+    bodyShape.quadraticCurveTo(f2.ctrl[0], f2.ctrl[1], f2.b[0], f2.b[1])
+    bodyShape.lineTo(f3.a[0], f3.a[1])
+    bodyShape.quadraticCurveTo(f3.ctrl[0], f3.ctrl[1], f3.b[0], f3.b[1])
+    bodyShape.lineTo(rearX - 0.024, pickup.bedWallY)
+    bodyShape.quadraticCurveTo(rearX, pickup.bedWallY - 0.008, rearX, pickup.bedWallY - 0.048)
+    bodyShape.lineTo(rearX, bodyBottomY + 0.026)
+    bodyShape.quadraticCurveTo(rearX, bodyBottomY, rearX - 0.036, bodyBottomY)
   } else {
-    bodyShape.lineTo(rearWindowBottomX, trunkLineY)
-    bodyShape.lineTo(trunkStartX, trunkLineY)
-    bodyShape.quadraticCurveTo(rearX - 0.08, hoodLineY + 0.05, rearX, bodyBottomY)
+    // 三厢/两厢拓扑：车顶 → C 柱 → 尾部曲线（2D 同源：无平甲板硬折点）
+    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, 0.09)
+    const f2 = filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, 0.09)
+    const f3 = filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, 0.06)
+    bodyShape.moveTo(frontX, bodyBottomY)
+    bodyShape.quadraticCurveTo(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
+    bodyShape.lineTo(cowlStartX, hoodLineY)
+    bodyShape.lineTo(hoodEndX, beltLineY)
+    bodyShape.lineTo(f1.a[0], f1.a[1])
+    bodyShape.quadraticCurveTo(f1.ctrl[0], f1.ctrl[1], f1.b[0], f1.b[1])
+    bodyShape.lineTo(f2.a[0], f2.a[1])
+    bodyShape.quadraticCurveTo(f2.ctrl[0], f2.ctrl[1], f2.b[0], f2.b[1])
+    bodyShape.lineTo(f3.a[0], f3.a[1])
+    bodyShape.quadraticCurveTo(f3.ctrl[0], f3.ctrl[1], f3.b[0], f3.b[1])
+    bodyShape.quadraticCurveTo(tailCtrlX, tailCtrlY, rearX, tailEndY)
+    bodyShape.lineTo(rearX, bodyBottomY + 0.026)
+    bodyShape.quadraticCurveTo(rearX, bodyBottomY, rearX - 0.036, bodyBottomY)
   }
   bodyShape.closePath()
 

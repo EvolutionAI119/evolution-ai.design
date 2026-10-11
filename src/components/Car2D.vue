@@ -83,7 +83,7 @@ import {
   referenceTopOverlay,
   evalTopRMSE
 } from '../config/sisaReference'
-import { LINE_RATIOS } from '../utils/carProfile.js'
+import { deriveCarProfile } from '../utils/carProfile.js'
 
 const props = defineProps({
   carParams: {
@@ -152,63 +152,26 @@ const wheelGroups = computed(() => [
 // 车身底边（侧裙下缘 = 离地间隙；SISA ground_alignment：z 原点 = 地面）
 const underbodyY = computed(() => groundY - s(groundClearanceMm.value))
 
-// ============ 高度分层：离地高度/H 语义，与 3D carProfile.js 共享 LINE_RATIOS（唯一来源） ============
-// 校准基准：sedan≈E级 / suv≈Cayenne / coupe≈911 / sport≈488 / mpv≈V级 / pickup≈F-150
-const ratios = computed(() => LINE_RATIOS[props.carType] || LINE_RATIOS.sedan)
+// ============ 轮廓锚点：全部由 deriveCarProfile 推导（2D/3D 唯一来源，镜像换算） ============
+// 3D 坐标 X+ 朝车头 → 2D x = 距前保险杠距离；高度线 = 离地高度（与 3D 完全同值）
+const profile = computed(() => deriveCarProfile(props.carParams, props.carType))
 const isPickup = computed(() => props.carType === 'pickup')
+const toX = (x3d) => s((profile.value.frontX - x3d) * 1000)
 
-const roofTopY = computed(() => groundY - s(overallHeight.value))
-const beltLineY = computed(() => groundY - s(overallHeight.value * ratios.value.belt))
-const hoodLineY = computed(() => groundY - s(overallHeight.value * ratios.value.hood))
-// 轿车/SUV 等为行李箱盖线；皮卡为货箱栏板顶线（bed 比例）
-const trunkLineY = computed(() => groundY - s(overallHeight.value * (ratios.value.trunk ?? ratios.value.bed ?? 0.60)))
+const roofTopY = computed(() => groundY - s(profile.value.roofTopY * 1000))
+const beltLineY = computed(() => groundY - s(profile.value.beltLineY * 1000))
+const hoodLineY = computed(() => groundY - s(profile.value.hoodLineY * 1000))
+const trunkLineY = computed(() => groundY - s(profile.value.trunkLineY * 1000))
 
-// ============ 侧窗轮廓 X 关键点（全链路钳位，防止 SUV/MPV 大倾角越出车尾） ============
-const hoodEndX = computed(() => Math.min(s(props.carParams.hood_length ?? 1000), rearX.value * 0.42))
-
-// Cowl 斜坡：引擎盖面在风挡底之前沿车身上升至腰带线，使玻璃下缘落在车身表面（消除玻璃悬浮）
-const cowlStartX = computed(() => {
-  const rise = hoodLineY.value - beltLineY.value // 引擎盖到腰带的升高量（正值）
-  const run = Math.min(s(140), Math.max(rise * 0.9, s(20)))
-  return Math.max(hoodEndX.value - run, s(30))
-})
-
-const windshieldAngleRad = computed(() => (props.carParams.windshield_angle ?? 30) * Math.PI / 180)
-const rearWindowAngleRad = computed(() => (props.carParams.rear_window_angle ?? 25) * Math.PI / 180)
-const slantFactor = computed(() => Math.min(Math.max((props.carParams.rear_slant_angle ?? 15) / 60, 0), 1))
-
-const tailReserve = computed(() => Math.max(s(90), rearX.value * 0.06))
-
-// A 柱顶点：风挡水平投影，钳位保证车顶剩余空间
-const windshieldTopX = computed(() => {
-  const run = (beltLineY.value - roofTopY.value) / Math.tan(windshieldAngleRad.value)
-  const ideal = hoodEndX.value + run
-  const maxTop = rearX.value - tailReserve.value - s(120)
-  return Math.min(Math.max(ideal, hoodEndX.value + s(120)), maxTop)
-})
-
-// 车顶长度：slant 越大越短（保留最小平顶段）
-const maxRoofLength = computed(() => rearX.value - tailReserve.value - windshieldTopX.value)
-const roofLen = computed(() => {
-  const minRoof = Math.min(maxRoofLength.value, Math.max(s(400), maxRoofLength.value * 0.25))
-  return Math.max(maxRoofLength.value * (1 - slantFactor.value * 0.6), minRoof)
-})
-
-// 皮卡专属：驾驶室后壁 X（与 3D carProfile.js 同源：后轮中心朝车头 0.5m，F-150 基准）
-const cabRearX2d = computed(() => Math.max(rearWheelCX.value - s(500), windshieldTopX.value + s(300)))
-
-// 车顶后缘：皮卡止于驾驶室后壁（不贯通），其余车型按后窗顶推导
-const rearWindowTopX = computed(() => isPickup.value ? cabRearX2d.value : windshieldTopX.value + roofLen.value)
-
-// C 柱底点：后风挡水平投影，钳位到车尾预留区之前；皮卡后窗近直立、下沿微向前收（同 3D cabWindowBottomX）
-const rearWindowBottomX = computed(() => {
-  if (isPickup.value) return cabRearX2d.value - s(120)
-  const vertH = (beltLineY.value - roofTopY.value) * (0.5 + slantFactor.value * 0.35)
-  const tan = Math.tan(rearWindowAngleRad.value)
-  const run = tan > 0.05 ? vertH / tan : (rearX.value - tailReserve.value - rearWindowTopX.value)
-  const maxBottom = rearX.value - tailReserve.value
-  return Math.min(Math.max(rearWindowTopX.value + run, rearWindowTopX.value + s(30)), maxBottom)
-})
+const hoodEndX = computed(() => toX(profile.value.hoodEndX))
+// Cowl 斜坡锚点（共享）：机盖面在风挡底之前上升至腰带线
+const cowlStartX = computed(() => toX(profile.value.cowlStartX))
+const windshieldTopX = computed(() => toX(profile.value.windshieldTopX))
+const rearWindowTopX = computed(() => toX(profile.value.rearWindowTopX))
+const rearWindowBottomX = computed(() => toX(profile.value.rearWindowBottomX))
+// 皮卡：驾驶室后壁 / 后窗下沿（与 3D pickup 结构同源）
+const cabRearX2d = computed(() => (profile.value.pickup ? toX(profile.value.pickup.cabRearX) : 0))
+const cabWindowBottomX2d = computed(() => (profile.value.pickup ? toX(profile.value.pickup.cabWindowBottomX) : 0))
 
 const pillarX = computed(() => windshieldTopX.value + (rearWindowTopX.value - windshieldTopX.value) * 0.55)
 
@@ -243,8 +206,6 @@ const silhouettePath = computed(() => {
   ]
   if (isPickup.value) {
     // 皮卡拓扑：车顶止于驾驶室后壁 → 后壁下落至货箱栏板 → 栏板顶贯通至尾门（与 3D carProfile.js 同源）
-    const cabX = cabRearX2d.value
-    const cabWallBaseX = cabX - s(120)   // 后壁下沿微向前收（同 cabWindowBottomX）
     const bedY = ty                       // 货箱栏板顶 = H × bed 比例
     return [
       `M${fx},${uy}`,
@@ -252,8 +213,8 @@ const silhouettePath = computed(() => {
       `Q${fx + noseR},${hy} ${cowlStartX.value},${hy}`,
       `L${hoodEndX.value},${beltLineY.value}`,
       `L${windshieldTopX.value},${roofTopY.value}`,
-      `L${cabX},${roofTopY.value}`,
-      `L${cabWallBaseX},${bedY}`,
+      `L${cabRearX2d.value},${roofTopY.value}`,
+      `L${cabWindowBottomX2d.value},${bedY}`,
       `L${rx - s(24)},${bedY}`,
       `Q${rx},${bedY + s(8)} ${rx},${bedY + s(48)}`,
       `L${rx},${uy + s(26)}`,
@@ -289,7 +250,7 @@ const windowPath = computed(() => {
       `M${hoodEndX.value},${beltLineY.value}`,
       `L${windshieldTopX.value},${roofTopY.value}`,
       `L${cabRearX2d.value},${roofTopY.value}`,
-      `L${cabRearX2d.value - s(120)},${beltLineY.value}`,
+      `L${cabWindowBottomX2d.value},${beltLineY.value}`,
       'Z'
     ].join(' ')
   }

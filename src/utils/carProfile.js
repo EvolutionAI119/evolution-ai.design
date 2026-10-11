@@ -63,6 +63,11 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
   const trunkLength = Math.min(RO * 0.6, hoodLen * 0.5)
   const trunkStartX = rearX + trunkLength
 
+  // ---------- 4.5 Cowl 斜坡（2D/3D 共享）：机盖面在风挡底之前上升至腰带线 ----------
+  const cowlRise = beltLineY - hoodLineY                      // 引擎盖→腰带的升高量（正值）
+  const cowlRun = Math.min(0.14, Math.max(cowlRise * 0.9, 0.02))
+  const cowlStartX = Math.min(hoodEndX + cowlRun, frontX - 0.03)
+
   // ---------- 5. 前风挡（锚点：hoodEnd → 车顶） ----------
   const wAngle = (wAngleDeg * Math.PI) / 180
   const windshieldHeight = roofTopY - beltLineY
@@ -143,7 +148,7 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     // 高度 Y
     bodyBottomY, roofTopY, beltLineY, hoodLineY, trunkLineY,
     // 侧围关键点
-    hoodEndX, trunkLength, trunkStartX,
+    hoodEndX, cowlStartX, trunkLength, trunkStartX,
     windshieldHeight, windshieldTopX,
     slantFactor, roofLen,
     rearWindowTopX, rearWindowHeight, rearWindowBottomX,
@@ -152,5 +157,24 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     archY: gc + wheelR,
     // 车型专属
     pickup, rails, wing
+  }
+}
+
+/**
+ * 角点圆角（G1 切线连续）：在角点 P 处，沿 PA / PB 两段各取距 P 为 r 的切点，
+ * 返回 { a, ctrl, b } —— 路径 lineTo(a) → quadraticCurveTo(ctrl=P, b)。
+ * 切线连续性由构造保证：曲线 t=0 端方向 = a→P = 原直线方向；t=1 端方向 = P→b = 原直线方向。
+ * 短段保护：r 超过段长 45% 时钳位，切点不越过段中点，杜绝回折。
+ */
+export function filletCorner(ax, ay, px, py, bx, by, r) {
+  const dAP = Math.hypot(px - ax, py - ay)
+  const dPB = Math.hypot(bx - px, by - py)
+  const safe = (d) => (d > 1e-9 ? d : 1e-9)
+  const t = Math.min(r / safe(dAP), 0.45)
+  const u = Math.min(r / safe(dPB), 0.45)
+  return {
+    a: [px + (ax - px) * t, py + (ay - py) * t],
+    ctrl: [px, py],
+    b: [px + (bx - px) * u, py + (by - py) * u]
   }
 }

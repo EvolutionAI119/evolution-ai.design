@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, LINE_RATIOS } from '../utils/carProfile.js'
+import { deriveCarProfile, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -145,6 +145,35 @@ describe('pickup：专属拓扑（短驾驶室 + 开放货箱）', () => {
 })
 
 describe('极端参数：约束仍保证拓扑合法', () => {
+  it('Cowl 斜坡锚点位于 hoodEnd 与前保险杠之间（全车型）', () => {
+    for (const type of ALL_TYPES) {
+      const p = deriveCarProfile(carTypeParams[type], type)
+      expect(p.cowlStartX).toBeGreaterThan(p.hoodEndX)     // 3D X+ 朝车头：cowl 在 hoodEnd 之前
+      expect(p.cowlStartX).toBeLessThanOrEqual(p.frontX - 0.03 + 1e-9)
+    }
+  })
+
+  it('filletCorner 圆角：切点在段内、G1 切线方向与原直线一致', () => {
+    // L 形角点：A(0,0) → P(1,0) → B(1,1)，r=0.2
+    const f = filletCorner(0, 0, 1, 0, 1, 1, 0.2)
+    expect(f.a[0]).toBeCloseTo(0.8, 9)                    // a 在 PA 段上距 P 为 r
+    expect(f.a[1]).toBeCloseTo(0, 9)
+    expect(f.ctrl).toEqual([1, 0])                        // 控制点 = 角点
+    expect(f.b[0]).toBeCloseTo(1, 9)                      // b 在 PB 段上距 P 为 r
+    expect(f.b[1]).toBeCloseTo(0.2, 9)
+    // G1：曲线 t=0 切线（ctrl-a）∥ 原入线方向；t=1 切线（b-ctrl）∥ 原出线方向
+    const inDot = (f.ctrl[0] - f.a[0]) * (1 - 0) + (f.ctrl[1] - f.a[1]) * 0
+    const outDot = (f.b[0] - f.ctrl[0]) * 0 + (f.b[1] - f.ctrl[1]) * 1
+    expect(inDot).toBeGreaterThan(0)
+    expect(outDot).toBeGreaterThan(0)
+  })
+
+  it('filletCorner 短段保护：r 超过段长 45% 时钳位，不产生回折', () => {
+    const f = filletCorner(0, 0, 0.1, 0, 0.1, 0.1, 5)
+    expect(f.a[0]).toBeGreaterThanOrEqual(0.055 - 1e-9)   // t = 0.45 → a = 0.1 - 0.045
+    expect(f.b[1]).toBeLessThanOrEqual(0.045 + 1e-9)
+  })
+
   it('后窗角度极小（5°）时后窗仍不越出车身', () => {
     const params = { ...carTypeParams.sedan, rear_window_angle: 5 }
     const p = deriveCarProfile(params, 'sedan')

@@ -36,39 +36,19 @@ function computeCar2D(params, carType = 'sedan') {
   const wheelCY = groundY - wheelRadius
   const underbodyY = groundY - s(gc)
 
-  // 离地高度/H 语义（与组件同源：carProfile.js LINE_RATIOS）
-  const r = LINE_RATIOS[carType] || LINE_RATIOS.sedan
-  const roofTopY = groundY - s(H)
-  const beltLineY = groundY - s(H * r.belt)
-  const hoodLineY = groundY - s(H * r.hood)
-  const trunkLineY = groundY - s(H * (r.trunk ?? r.bed ?? 0.60))
-
-  const hoodEndX = Math.min(s(params.hood_length ?? 1000), rearX * 0.42)
-  // Cowl 斜坡：机盖面上升至风挡底（与组件同式）
-  const cowlRise = s(H * r.belt) - s(H * r.hood) // hoodLineY - beltLineY 的等价量
-  const cowlStartX = Math.max(hoodEndX - Math.min(s(140), Math.max(cowlRise * 0.9, s(20))), s(30))
-  const windshieldAngleRad = (params.windshield_angle ?? 30) * Math.PI / 180
-  const rearWindowAngleRad = (params.rear_window_angle ?? 25) * Math.PI / 180
-  const slantFactor = Math.min(Math.max((params.rear_slant_angle ?? 15) / 60, 0), 1)
-
-  const tailReserve = Math.max(s(90), rearX * 0.06)
-  const wsRun = (beltLineY - roofTopY) / Math.tan(windshieldAngleRad)
-  const windshieldTopX = Math.min(Math.max(hoodEndX + wsRun, hoodEndX + s(120)), rearX - tailReserve - s(120))
-
-  const maxRoofLength = rearX - tailReserve - windshieldTopX
-  const minRoof = Math.min(maxRoofLength, Math.max(s(400), maxRoofLength * 0.25))
-  const roofLen = Math.max(maxRoofLength * (1 - slantFactor * 0.6), minRoof)
-
-  // 皮卡：车顶止于驾驶室后壁（后轮中心朝车头 0.5m），后窗近直立微向前收
-  const cabRearX2d = Math.max(rearWheelCX - s(500), windshieldTopX + s(300))
-  const rearWindowTopX = carType === 'pickup' ? cabRearX2d : windshieldTopX + roofLen
-
-  const rwVertH = (beltLineY - roofTopY) * (0.5 + slantFactor * 0.35)
-  const tanR = Math.tan(rearWindowAngleRad)
-  const rwRun = tanR > 0.05 ? rwVertH / tanR : (rearX - tailReserve - rearWindowTopX)
-  const rearWindowBottomX = carType === 'pickup'
-    ? cabRearX2d - s(120)
-    : Math.min(Math.max(rearWindowTopX + rwRun, rearWindowTopX + s(30)), rearX - tailReserve)
+  // 轮廓锚点与组件/3D 同源：deriveCarProfile → 2D 镜像换算（x = 距前保险杠距离）
+  const P = deriveCarProfile(params, carType)
+  const toX = (x3d) => s((P.frontX - x3d) * 1000)
+  const roofTopY = groundY - s(P.roofTopY * 1000)
+  const beltLineY = groundY - s(P.beltLineY * 1000)
+  const hoodLineY = groundY - s(P.hoodLineY * 1000)
+  const trunkLineY = groundY - s(P.trunkLineY * 1000)
+  const hoodEndX = toX(P.hoodEndX)
+  const cowlStartX = toX(P.cowlStartX)
+  const windshieldTopX = toX(P.windshieldTopX)
+  const rearWindowTopX = toX(P.rearWindowTopX)
+  const rearWindowBottomX = toX(P.rearWindowBottomX)
+  const cabRearX2d = P.pickup ? toX(P.pickup.cabRearX) : 0
 
   return {
     scale,
@@ -86,13 +66,14 @@ function computeCar2D(params, carType = 'sedan') {
     trunkLineY,
     hoodEndX,
     cowlStartX,
+    trunkStartX: toX(P.trunkStartX),
     cabRearX2d,
-    slantFactor,
-    roofLen,
+    slantFactor: P.slantFactor,
+    roofLen: P.roofLen * 1000,
     windshieldTopX,
     rearWindowTopX,
     rearWindowBottomX,
-    tailReserve,
+    profile: P,
     wheelBottomY: wheelCY + wheelRadius,
     heightLines: {
       distanceRoofToBelt: beltLineY - roofTopY,
@@ -199,13 +180,19 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       expect(result4.slantFactor).toBe(1)
     })
 
-    it('侧窗关键点应钳位在车尾预留区之前（SUV/MPV 大倾角不越出车尾）', () => {
-      for (const type of ['suv', 'mpv', 'pickup']) {
+    it('侧窗关键点应钳位在甲板起点与车尾之间（SUV/MPV 大倾角不越出车尾）', () => {
+      for (const type of ['suv', 'mpv']) {
         const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
-        expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.rearX - result.tailReserve + 0.001)
+        expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.rearX + 0.001)
+        expect(result.rearWindowBottomX).toBeGreaterThanOrEqual(result.trunkStartX - 0.001)
         expect(result.windshieldTopX).toBeGreaterThan(result.hoodEndX)
         expect(result.rearWindowTopX).toBeGreaterThan(result.windshieldTopX)
       }
+      // pickup：后窗下沿在驾驶室（cabWindowBottom），位于风挡顶之后、车尾之前
+      const pk = computeCar2D({ ...defaultCarParams, ...carTypeParams.pickup }, 'pickup')
+      expect(pk.rearWindowBottomX).toBeLessThan(pk.rearWindowTopX)
+      expect(pk.rearWindowBottomX).toBeGreaterThan(pk.windshieldTopX)
+      expect(pk.rearWindowBottomX).toBeLessThan(pk.rearX)
     })
   })
 
@@ -217,7 +204,8 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       const result = computeCar2D(cayenne.params, 'suv')
       expect(result.roofTopY).toBeGreaterThanOrEqual(padTop - 0.001)
       expect(result.wheelBottomY).toBeCloseTo(result.groundY, 6)
-      expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.rearX - result.tailReserve + 0.001)
+      expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.rearX + 0.001)
+      expect(result.rearWindowBottomX).toBeGreaterThanOrEqual(result.trunkStartX - 0.001)
     })
   })
 
@@ -344,14 +332,29 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       expect((r2d.groundY - r2d.trunkLineY) / r2d.scale).toBeCloseTo(p3d.pickup.bedWallY * 1000, 1)
     })
 
-    it('六车型 2D/3D 车顶与腰带离地高度全部一致', () => {
+    it('六车型 2D/3D 全部侧围锚点逐点一致（hoodEnd/cowl/wsTop/rwTop/rwBot/高度线）', () => {
       for (const type of Object.keys(carTypeParams)) {
-        const params = { ...defaultCarParams, ...carTypeParams[type] }
-        const r2d = computeCar2D(params, type)
-        const p3d = deriveCarProfile(carTypeParams[type], type)
+        const r2d = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
+        const p3d = r2d.profile
+        // 镜像换算自 profile → 与 3D 锚点严格一致（重算验证换算无漂移）
+        const toX = (x) => (p3d.frontX - x) * 1000
+        expect(r2d.hoodEndX / r2d.scale).toBeCloseTo(toX(p3d.hoodEndX), 1)
+        expect(r2d.cowlStartX / r2d.scale).toBeCloseTo(toX(p3d.cowlStartX), 1)
+        expect(r2d.windshieldTopX / r2d.scale).toBeCloseTo(toX(p3d.windshieldTopX), 1)
+        expect(r2d.rearWindowTopX / r2d.scale).toBeCloseTo(toX(p3d.rearWindowTopX), 1)
+        expect(r2d.rearWindowBottomX / r2d.scale).toBeCloseTo(toX(p3d.rearWindowBottomX), 1)
         expect((r2d.groundY - r2d.roofTopY) / r2d.scale).toBeCloseTo(p3d.roofTopY * 1000, 1)
         expect((r2d.groundY - r2d.beltLineY) / r2d.scale).toBeCloseTo(p3d.beltLineY * 1000, 1)
+        expect((r2d.groundY - r2d.hoodLineY) / r2d.scale).toBeCloseTo(p3d.hoodLineY * 1000, 1)
+        expect((r2d.groundY - r2d.trunkLineY) / r2d.scale).toBeCloseTo(p3d.trunkLineY * 1000, 1)
       }
+    })
+
+    it('Car3D.vue 源码含 G1 圆角与 cowl 斜坡（过渡平滑 + 轮廓同源）', () => {
+      const src = readFileSync(resolve(process.cwd(), 'src/components/Car3D.vue'), 'utf8')
+      expect(src).toContain('filletCorner')
+      expect(src).toContain('cowlStartX')
+      expect(src).toContain('lineTo(hoodEndX, beltLineY)')
     })
 
     it('Car2D.vue 源码含皮卡专属拓扑分支（isPickup / cabRearX2d）', () => {
