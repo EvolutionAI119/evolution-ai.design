@@ -202,9 +202,10 @@ _*.py
 /data/uploads/
 /data/*.json
 
-# 根目录分析/报告产物（保留 Vite 入口 index.html）
+# 根目录分析/报告产物（保留 Vite 入口 index.html / admin.html）
 /*.html
 !index.html
+!admin.html
 /*.png
 /PROJECT_STATUS_*.md
 /debug-igs-import-error.md

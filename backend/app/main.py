@@ -26,6 +26,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -365,6 +366,19 @@ def create_app() -> FastAPI:
     app.include_router(analytics.router)
     app.include_router(admin.router)
     app.include_router(design_intent.router, tags=["AI 设计意图引擎"])
+
+    # =====================================================================
+    # 独立管理后台（Admin 模块已移出公开前端）
+    # 由 vite.admin.config.js 构建到 backend/app/static/admin，
+    # 在 /admin 提供登录门 + 管理界面；数据仍走 /api/v1 真实鉴权。
+    # =====================================================================
+    _admin_static_dir = Path(__file__).resolve().parent / "static" / "admin"
+    if _admin_static_dir.is_dir():
+        app.mount(
+            "/admin",
+            StaticFiles(directory=str(_admin_static_dir), html=True),
+            name="admin-console",
+        )
 
     # =====================================================================
     # 异常处理器：兜底补上 CORS 头（CORSMiddleware 对 404/405/校验失败可能没生效）

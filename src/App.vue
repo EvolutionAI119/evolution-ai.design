@@ -130,7 +130,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   Odometer, Brush, Folder, MagicStick, CircleCheck, Upload, VideoPlay,
-  Bell, Moon, Sunny, QuestionFilled, ChatDotRound, Message, Setting,
+  Bell, Moon, Sunny, QuestionFilled, ChatDotRound, Message,
   Promotion,
 } from '@element-plus/icons-vue'
 // Element Plus 内置语言包
@@ -291,19 +291,8 @@ const baseMenuGroups = [
   }
 ]
 
-// 管理后台入口仅对管理员（admin / superadmin）显示
-const menuGroups = computed(() => {
-  if (!auth.isAdmin) return baseMenuGroups
-  return [
-    ...baseMenuGroups,
-    {
-      labelKey: 'menu.groupAdmin',
-      items: [
-        { path: '/admin', nameKey: 'menu.admin', icon: Setting }
-      ]
-    }
-  ]
-})
+// 管理后台已移出前端：由后端 /admin 独立提供，主站侧栏不再含管理入口
+const menuGroups = computed(() => baseMenuGroups)
 
 const allMenuItems = computed(() => menuGroups.value.flatMap(g => g.items))
 

@@ -18,12 +18,7 @@ const routes = [
   { path: '/contact', name: 'Contact',
     component: () => import('./views/Contact.vue') },
   // 账户体系（封存中）：登录/账户页不再注册路由，源码保留于 views/ 备查
-  // 管理后台：游客模式期间由后端 guest 账户（superadmin）直接放行
-  {
-    path: '/admin', name: 'Admin',
-    component: () => import('./views/Admin.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  }
+  // 管理后台已移出前端：由后端 FastAPI 在 /admin 提供独立页面（源码见 admin.html）
 ]
 
 const router = createRouter({

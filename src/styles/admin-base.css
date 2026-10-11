@@ -1,0 +1,29 @@
+/* 独立管理后台全局基础样式：复刻主站 App.vue 中的 CSS 变量与全局基底，
+   保证 Admin.vue / AdminEvidence.vue 脱离主站后样式与原先一致。 */
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #16161f;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.65);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-faint: rgba(255, 255, 255, 0.35);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --accent: #4ade80;
+  --accent-bg: rgba(74, 222, 128, 0.12);
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --control-bg: rgba(255, 255, 255, 0.05);
+  --icon-color: rgba(255, 255, 255, 0.55);
+  --icon-hover: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+#admin-app { min-height: 100vh; }

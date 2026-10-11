@@ -28,6 +28,19 @@ const zh = {
     copied: '已复制',
     mailto: '发送邮件'
   },
+  // 独立管理后台登录门（后端 /admin，不在主站）
+  adminGate: {
+    title: '管理后台',
+    checking: '正在核验身份…',
+    email: '邮箱',
+    password: '密码',
+    login: '登 录',
+    formRequired: '请输入邮箱和密码',
+    loginFailed: '登录失败：邮箱或密码错误',
+    forbidden: '无访问权限',
+    forbiddenHint: '管理后台仅限管理员（admin / superadmin）访问',
+    back: '返回登录'
+  },
   dashboard: {
     projects: '项目总数', models: '模型数量', reports: '检查报告', qualityRate: '合格率',
     projectStatus: '项目状态分布', qualityTrend: '质量评分趋势', recentProjects: '最近项目',
@@ -868,6 +881,19 @@ const en = {
     copy: 'Copy',
     copied: 'Copied',
     mailto: 'Send Email'
+  },
+  // Standalone admin console gate (backend /admin, not part of main site)
+  adminGate: {
+    title: 'Admin Console',
+    checking: 'Verifying credentials…',
+    email: 'Email',
+    password: 'Password',
+    login: 'Sign In',
+    formRequired: 'Please enter both email and password',
+    loginFailed: 'Login failed: incorrect email or password',
+    forbidden: 'Access Denied',
+    forbiddenHint: 'The admin console is restricted to administrators (admin / superadmin)',
+    back: 'Back to login'
   },
   dashboard: {
     projects: 'Total Projects', models: 'Model Count', reports: 'Check Reports', qualityRate: 'Pass Rate',
