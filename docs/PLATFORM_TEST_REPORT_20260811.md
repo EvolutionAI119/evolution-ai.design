@@ -202,6 +202,11 @@ POST /api/v1/car/generate → 200 OK
 - 后端 2 项 xfail：Harness 曲率管线已迁 SISA，平台端无法 import，测试标注不再适用
 - 前端 10 文件 = `src/tests/` 4 个 `*.spec.js` + 仓库根 `tests/` 6 个 `*.test.js`
 
+<figure class="doc-figure">
+  <img src="docs/images/october-regression-donut.svg" alt="后端回归结果构成" loading="lazy">
+  <figcaption><strong>图 7-1 ｜ 后端回归结果构成（344 用例）</strong>读图：环形图为后端 344 用例的构成——通过 341（99.13%）、跳过 1（0.29%，需真实 LLM）、预期失败 2（0.58%，已迁 SISA 管线）；结论为零非预期失败。</figcaption>
+</figure>
+
 ## 8. 本轮新增/改写测试
 
 | 测试文件 | 用例数 | 覆盖点 |
@@ -213,6 +218,11 @@ POST /api/v1/car/generate → 200 OK
 | `src/tests/authStore.spec.js`（改写） | 13 | 预置 guest(superadmin)、退出回游客态、三级角色 getter |
 
 **回归结论**: 全量 483 项（341 后端 + 142 前端）零失败，历史用例无回退。
+
+<figure class="doc-figure">
+  <img src="docs/images/october-new-tests.svg" alt="本轮新增改写测试分布" loading="lazy">
+  <figcaption><strong>图 8-1 ｜ 本轮新增 / 改写测试用例分布</strong>读图：条形图按用例数降序展示 5 个测试文件——authStore 13、拓扑封闭 12、路由守卫 5、独立后台 3、游客模式 2；合计 35 用例，覆盖拓扑、游客、后台、路由、身份五类关注点。</figcaption>
+</figure>
 
 ## 9. 管理后台迁移专项测试（浏览器实测）
 
@@ -237,6 +247,11 @@ POST /api/v1/car/generate → 200 OK
 | `/contact` 替代 Account：mailto 与一键复制 Icemtrainer@hotmail.com | 🟢 |
 | 生产 fail-fast：production + GUEST_MODE=true 启动即拒 | 🟢（单测覆盖） |
 | 测试套件不被游客旁路击穿：conftest 强制 GUEST_MODE=false | 🟢 401/403 用例语义保持 |
+
+<figure class="doc-figure">
+  <img src="docs/images/october-guest-arch.svg" alt="游客模式架构" loading="lazy">
+  <figcaption><strong>图 10-1 ｜ 游客模式架构</strong>读图：匿名访客经 `GUEST_MODE` 旁路落到内置 guest（superadmin）从而全功能可达；底部红色区块为生产 fail-fast 防护与测试套件防击穿机制。</figcaption>
+</figure>
 
 ## 11. 公网站点发布验证（强制校验环节）
 
