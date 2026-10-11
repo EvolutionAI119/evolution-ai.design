@@ -23,18 +23,19 @@
     <rect x="250" y="253.22222222222223" width="72" height="86.77777777777777" rx="6" fill="none" stroke="#34D399" stroke-width="1.4"/>
     <text x="286" y="245.22222222222223" fill="#6EE7B7" font-size="15" font-weight="700" text-anchor="middle">142</text>
     <text x="286" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">前端组件</text>
-    <rect x="350" y="332.6666666666667" width="72" height="7.333333333333333" rx="6" fill="#A78BFA" opacity=".16"/>
-    <rect x="350" y="332.6666666666667" width="72" height="7.333333333333333" rx="6" fill="none" stroke="#A78BFA" stroke-width="1.4"/>
-    <text x="386" y="324.6666666666667" fill="#C4B5FD" font-size="15" font-weight="700" text-anchor="middle">12</text>
+    <rect x="350" y="318" width="72" height="22" rx="6" fill="#A78BFA" opacity=".16"/>
+    <rect x="350" y="318" width="72" height="22" rx="6" fill="none" stroke="#A78BFA" stroke-width="1.4"/>
+    <text x="386" y="310" fill="#C4B5FD" font-size="15" font-weight="700" text-anchor="middle">12</text>
     <text x="386" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">拓扑封闭</text>
-    <rect x="450" y="338.77777777777777" width="72" height="1.2222222222222223" rx="6" fill="#FBBF24" opacity=".16"/>
-    <rect x="450" y="338.77777777777777" width="72" height="1.2222222222222223" rx="6" fill="none" stroke="#FBBF24" stroke-width="1.4"/>
-    <text x="486" y="330.77777777777777" fill="#FCD34D" font-size="15" font-weight="700" text-anchor="middle">2</text>
+    <rect x="450" y="318" width="72" height="22" rx="6" fill="#FBBF24" opacity=".16"/>
+    <rect x="450" y="318" width="72" height="22" rx="6" fill="none" stroke="#FBBF24" stroke-width="1.4"/>
+    <text x="486" y="310" fill="#FCD34D" font-size="15" font-weight="700" text-anchor="middle">2</text>
     <text x="486" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">游客模式</text>
-    <rect x="550" y="338.1666666666667" width="72" height="1.8333333333333333" rx="6" fill="#F87171" opacity=".16"/>
-    <rect x="550" y="338.1666666666667" width="72" height="1.8333333333333333" rx="6" fill="none" stroke="#F87171" stroke-width="1.4"/>
-    <text x="586" y="330.1666666666667" fill="#FCA5A5" font-size="15" font-weight="700" text-anchor="middle">3</text>
+    <rect x="550" y="318" width="72" height="22" rx="6" fill="#F87171" opacity=".16"/>
+    <rect x="550" y="318" width="72" height="22" rx="6" fill="none" stroke="#F87171" stroke-width="1.4"/>
+    <text x="586" y="310" fill="#FCA5A5" font-size="15" font-weight="700" text-anchor="middle">3</text>
     <text x="586" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">独立后台</text>
+  <text x="150" y="385" fill="#64748B" font-size="9.5">注：拓扑封闭 12 / 游客模式 2 / 独立后台 3 的柱体按 ≥22px 最小高度渲染，柱顶标签为真实用例数</text>
   <g text-anchor="middle">
     <rect x="680" y="80" width="240" height="64" rx="10" fill="#0F241C" stroke="#34D399"/>
     <text x="800" y="108" fill="#6EE7B7" font-size="17" font-weight="700">483 项零失败</text>

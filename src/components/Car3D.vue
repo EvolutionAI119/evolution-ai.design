@@ -15,25 +15,25 @@
       </button>
     </div>
     <div class="control-buttons">
-      <div class="ctrl-btn" @click="resetView" title="重置">
+      <div class="ctrl-btn" @click="resetView" :title="t('designer.viewerReset')" :aria-label="t('designer.viewerReset')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
           <path d="M3 3v5h5"/>
         </svg>
       </div>
-      <div class="ctrl-btn" @click="toggleWireframe" :class="{ active: wireframeMode }" title="线框">
+      <div class="ctrl-btn" @click="toggleWireframe" :class="{ active: wireframeMode }" :title="t('designer.viewerWireframe')" :aria-label="t('designer.viewerWireframe')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <path d="M3 9h18M9 3v18M3 15h18M15 3v18"/>
         </svg>
       </div>
-      <div class="ctrl-btn" @click="toggleAutoRotate" :class="{ active: autoRotate }" title="自动旋转">
+      <div class="ctrl-btn" @click="toggleAutoRotate" :class="{ active: autoRotate }" :title="t('designer.viewerAutoRotate')" :aria-label="t('designer.viewerAutoRotate')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
           <path d="M21 3v5h-5"/>
         </svg>
       </div>
-      <div class="ctrl-btn" @click="toggleFullscreen" title="全屏">
+      <div class="ctrl-btn" @click="toggleFullscreen" :title="t('designer.viewerFullscreen')" :aria-label="t('designer.viewerFullscreen')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
         </svg>
@@ -49,9 +49,12 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile } from '../utils/carProfile.js'
+
+const { t } = useI18n()
 
 const props = defineProps({
   carParams: {

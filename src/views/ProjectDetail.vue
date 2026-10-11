@@ -578,4 +578,19 @@ watch(() => route.params.id, loadProject)
 .tech-section {
   margin-top: 8px;
 }
+
+/* ============ 响应式 ============ */
+.page-header { flex-wrap: wrap; gap: 10px; }
+.info-row { flex-wrap: wrap; }
+.info-card { min-width: 0; flex: 1 1 200px; }
+.header-actions { flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  .main-content { flex-direction: column; }
+  .left-panel { width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .info-card { flex: 1 1 100%; }
+}
 </style>

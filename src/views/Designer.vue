@@ -735,13 +735,15 @@ const generateCar = async () => {
       let quality = ''
       if (q.measured) {
         quality = q.g2_continuous
-          ? ' | G2 连续（实测）'
-          : ` | G2 未达标（实测：${q.n_flat_surfaces || 0} 个平面曲面）`
+          ? t('designer.msgG2Pass')
+          : t('designer.msgG2Fail', { n: q.n_flat_surfaces || 0 })
       }
       const type = q.g2_continuous === false ? 'warning' : 'success'
       ElMessage({
         type,
-        message: `已生成 ${data.components.length} 个部件 | ${nSurf} 个 NURBS 曲面 | ${nCp} 个控制点${quality}`,
+        message: t('designer.msgGenerated', {
+          parts: data.components.length, surfaces: nSurf, points: nCp
+        }) + quality,
         duration: 6000
       })
       // 保留实时质量快照，供面板/后续对照使用
@@ -918,7 +920,7 @@ onUnmounted(() => {
 <style scoped>
 .designer-page {
   width: 100%;
-  min-width: 1200px;
+  min-width: 0;
   height: calc(100vh - 52px);
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -2022,5 +2024,41 @@ onUnmounted(() => {
 
 .ai-cloud-card {
   border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* ============ 响应式 ============ */
+/* 平板：压缩三栏宽度（侧栏已转为抽屉，主区可用宽增加） */
+@media (max-width: 1200px) {
+  .main-layout { grid-template-columns: 220px 1fr 240px; }
+}
+
+/* 手机/窄平板：单列堆叠，3D 视口优先显示 */
+@media (max-width: 900px) {
+  .designer-page {
+    height: auto;
+    min-height: calc(100vh - 52px);
+    overflow: visible;
+  }
+  .main-layout {
+    grid-template-columns: 1fr;
+    overflow: visible;
+    padding: 8px;
+  }
+  .center-panel { order: 1; overflow: visible; }
+  .left-panel { order: 2; overflow: visible; }
+  .right-panel { order: 3; overflow: visible; }
+  .center-header { flex-wrap: wrap; gap: 8px; }
+  .viewport-row {
+    grid-template-columns: 1fr;
+    flex: none;
+    gap: 10px;
+  }
+  .viewport-row .viewport-card { height: 46vh; min-height: 300px; }
+  .bottom-row {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .bottom-row > * { min-height: 200px; }
+  .generate-btn { width: 100%; justify-content: center; }
 }
 </style>

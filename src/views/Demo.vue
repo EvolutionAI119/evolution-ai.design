@@ -66,9 +66,9 @@
               <el-icon><Promotion /></el-icon>
             </a>
             <ul class="invite-tips">
-              <li>OpenAI 兼容接口 · 聚合多家主流模型</li>
-              <li>推理价格低至 0.1 元 / 百万 tokens</li>
-              <li>注册即送推理额度，邀请好友额外奖励</li>
+              <li>{{ t('account.inviteTip1') }}</li>
+              <li>{{ t('account.inviteTip2') }}</li>
+              <li>{{ t('account.inviteTip3') }}</li>
             </ul>
           </div>
         </div>

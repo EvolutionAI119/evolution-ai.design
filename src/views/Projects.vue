@@ -817,4 +817,20 @@ onMounted(() => {
 .pagination :deep(.el-pagination__next:hover) {
   color: var(--accent);
 }
+
+/* ============ 响应式 ============ */
+.page-header { flex-wrap: wrap; gap: 10px; }
+.filter-bar { flex-wrap: wrap; }
+
+@media (max-width: 1024px) {
+  .projects-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .projects-grid { grid-template-columns: 1fr; }
+  .search-input { max-width: 100%; width: 100%; }
+  .filter-select,
+  .sort-select { min-width: 0; flex: 1 1 140px; }
+  .filter-bar :deep(.el-button) { margin-left: 0; }
+}
 </style>

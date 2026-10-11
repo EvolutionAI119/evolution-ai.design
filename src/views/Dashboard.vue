@@ -524,4 +524,26 @@ const getStatusLabel = (status) =>
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* ============ 响应式 ============ */
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .content-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .hero-content { padding: 24px 16px; }
+  .hero-title { font-size: 32px; letter-spacing: 1.5px; }
+  .hero-subtitle { font-size: 14px; }
+  .hero-stats { gap: 24px; flex-wrap: wrap; justify-content: center; }
+  .hero-actions { flex-direction: column; width: 100%; max-width: 280px; }
+  .hero-actions :deep(.el-button) { margin-left: 0 !important; width: 100%; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card :deep(.el-card__body) { padding: 14px; gap: 10px; }
+  .stat-icon { width: 40px; height: 40px; }
+  .stat-value { font-size: 22px; }
+  .stat-label { font-size: 12px; }
+  .content-card :deep(.el-card__header) { padding: 12px 14px; }
+  .content-card :deep(.el-card__body) { padding: 12px 14px; }
+}
 </style>

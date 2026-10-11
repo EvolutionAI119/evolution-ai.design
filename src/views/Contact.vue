@@ -121,4 +121,11 @@ const copyEmail = async () => {
 .mail-btn {
   min-width: 180px;
 }
+
+/* ============ 响应式 ============ */
+@media (max-width: 640px) {
+  .contact-card { padding: 32px 20px; }
+  .contact-email-row { flex-wrap: wrap; }
+  .contact-email { word-break: break-all; }
+}
 </style>

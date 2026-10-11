@@ -79,13 +79,15 @@ def chart_test_results():
     x0 = 150
     for i, (name, v, c, cl) in enumerate(data):
         x = x0 + i * 100
-        h = v / maxv * 220
+        # 小数值柱按 22px 最小高度渲染（标签仍为真实值，避免 2/3 用例退化为一条线）
+        h = max(v / maxv * 220, 22)
         y = base - h
         s += f'''    <rect x="{x}" y="{y}" width="72" height="{h}" rx="6" fill="{c}" opacity=".16"/>
     <rect x="{x}" y="{y}" width="72" height="{h}" rx="6" fill="none" stroke="{c}" stroke-width="1.4"/>
     <text x="{x+36}" y="{y-8}" fill="{cl}" font-size="15" font-weight="700" text-anchor="middle">{v}</text>
     <text x="{x+36}" y="{base+20}" fill="{LABEL}" font-size="12" font-weight="600" text-anchor="middle">{name}</text>
 '''
+    s += f'  <text x="150" y="385" fill="{MUTED}" font-size="9.5">注：拓扑封闭 12 / 游客模式 2 / 独立后台 3 的柱体按 ≥22px 最小高度渲染，柱顶标签为真实用例数</text>\n'
     # 右侧徽章
     s += f'''  <g text-anchor="middle">
     <rect x="680" y="80" width="240" height="64" rx="10" fill="#0F241C" stroke="{GREEN}"/>
@@ -114,9 +116,14 @@ def chart_regression_donut():
         ("预期失败 (xfail)", 2, YELLOW),
     ]
     total = sum(v for _, v, _ in segs)
+    # 小占比扇区（1 用例=1.05°、2 用例=2.09°）按 ≥4° 最小角度放大显示，
+    # 差额从最大扇区（pass）扣；精确占比以图例数字为准
+    raw = [v / total * 2 * math.pi for _, v, _ in segs]
+    min_ang = math.radians(4)
+    angles = [max(a, min_ang) for a in raw]
+    angles[raw.index(max(raw))] -= sum(angles) - 2 * math.pi
     start = -math.pi / 2
-    for name, v, c in segs:
-        ang = v / total * 2 * math.pi
+    for (name, v, c), ang in zip(segs, angles):
         end = start + ang
         x1 = cx + r * math.cos(start)
         y1 = cy + r * math.sin(start)
@@ -141,6 +148,7 @@ def chart_regression_donut():
   <text x="{lx+22}" y="{ly+28}" fill="{MUTED}" font-size="10.5">{v} 用例 · {pct:.2f}%</text>
 '''
         ly += 54
+    s += f'  <text x="420" y="306" fill="{MUTED}" font-size="9.5">注：skip / xfail 扇区按 ≥4° 最小角度放大显示，精确占比以图例数字为准</text>\n'
     s += f'''  <rect x="420" y="330" width="480" height="64" rx="10" fill="{PANEL}" stroke="{BORDER}"/>
   <text x="440" y="356" fill="{GREEN_LIGHT}" font-size="12.5" font-weight="600">结论：零非预期失败</text>
   <text x="440" y="378" fill="{SUB}" font-size="10.5">1 skip 需真实 SiliconFlow（RUN_REAL_LLM=1）；2 xfail 为已迁 SISA 的曲率管线，标注不再适用</text>
@@ -160,26 +168,28 @@ def chart_new_tests():
         ("test_admin_console.py", 3, RED, "#FCA5A5", "新增：后台托管+CSP边界"),
         ("test_guest_mode.py", 2, YELLOW, YELLOW_LIGHT, "新增：游客放行+生产fail-fast"),
     ]
-    y0 = 72
+    y0 = 76
     bar_h = 34
     gap = 14
-    label_x = 360
-    bar_x = 380
+    label_x = 300          # 文件名右对齐边界
+    bar_x = 316            # 条轨起点
+    track_w = 300          # 条轨宽度（与右侧注释列分离，杜绝文字压条）
+    note_x = bar_x + track_w + 16
     maxv = 15
     for i, (name, v, c, cl, note) in enumerate(data):
         y = y0 + i * (bar_h + gap)
-        w = v / maxv * 440
-        s += f'''  <text x="{label_x}" y="{y+18}" fill="{LABEL}" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">{name}</text>
-  <rect x="{bar_x}" y="{y}" width="460" height="{bar_h}" rx="6" fill="{PANEL}" stroke="{BORDER}"/>
+        w = v / maxv * track_w
+        s += f'''  <text x="{label_x}" y="{y+21}" fill="{LABEL}" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">{name}</text>
+  <rect x="{bar_x}" y="{y}" width="{track_w}" height="{bar_h}" rx="6" fill="{PANEL}" stroke="{BORDER}"/>
   <rect x="{bar_x}" y="{y}" width="{w}" height="{bar_h}" rx="6" fill="{c}" opacity=".2"/>
   <rect x="{bar_x}" y="{y}" width="{w}" height="{bar_h}" rx="6" fill="none" stroke="{c}" stroke-width="1.4"/>
   <text x="{bar_x+10}" y="{y+22}" fill="{cl}" font-size="13" font-weight="700">{v}</text>
-  <text x="{bar_x+450}" y="{y+22}" fill="{MUTED}" font-size="9.5" text-anchor="end">{note}</text>
+  <text x="{note_x}" y="{y+21}" fill="{MUTED}" font-size="9.5">{note}</text>
 '''
-    s += f'''  <text x="{bar_x}" y="308" fill="{SUB}" font-size="10.5">合计 {sum(v for _,v,_,_,_ in data)} 用例 · 覆盖拓扑封闭 / 游客模式 / 后台托管 / 路由守卫 / 身份状态</text>
-  <rect x="{bar_x}" y="326" width="460" height="56" rx="10" fill="{PANEL}" stroke="{BORDER}"/>
-  <text x="{bar_x+16}" y="352" fill="{GREEN_LIGHT}" font-size="12" font-weight="600">回归结论：483 项（341+142）零失败 · 历史用例无回退</text>
-  <text x="{bar_x+16}" y="372" fill="{MUTED}" font-size="10">pytest 强制 GUEST_MODE=false，防止 401/403 语义用例被游客旁路击穿</text>
+    s += f'''  <text x="{bar_x}" y="320" fill="{SUB}" font-size="10.5">合计 {sum(v for _,v,_,_,_ in data)} 用例 · 覆盖拓扑封闭 / 游客模式 / 后台托管 / 路由守卫 / 身份状态</text>
+  <rect x="{bar_x}" y="334" width="460" height="58" rx="10" fill="{PANEL}" stroke="{BORDER}"/>
+  <text x="{bar_x+16}" y="360" fill="{GREEN_LIGHT}" font-size="12" font-weight="600">回归结论：483 项（341+142）零失败 · 历史用例无回退</text>
+  <text x="{bar_x+16}" y="381" fill="{MUTED}" font-size="10">pytest 强制 GUEST_MODE=false，防止 401/403 语义用例被游客旁路击穿</text>
 '''
     save("october-new-tests.svg", s + FOOTER)
 
@@ -228,15 +238,13 @@ def chart_admin_flow():
             s += f'  <text x="{x+70}" y="{172+j*16}" fill="{SUB}" font-size="10" text-anchor="middle">{line}</text>\n'
         if i < 3:
             s += arrow(x + 140, 175, x + 155, 175)
-    # 登录门语义
-    s += f'''  <rect x="320" y="270" width="580" height="90" rx="10" fill="{PANEL}" stroke="{PURPLE}"/>
-  <text x="340" y="298" fill="{PURPLE_LIGHT}" font-size="12.5" font-weight="700">登录门语义</text>
+    # 登录门语义（三点单列排布，避免长文本右溢出 viewBox）
+    s += f'''  <rect x="320" y="268" width="580" height="102" rx="10" fill="{PANEL}" stroke="{PURPLE}"/>
+  <text x="340" y="294" fill="{PURPLE_LIGHT}" font-size="12.5" font-weight="700">登录门语义</text>
   <g font-size="10.5" fill="{SUB}">
-    <circle cx="340" cy="320" r="2.5" fill="{GREEN}"/><text x="350" y="324">游客模式：自动进入（guest/superadmin）</text>
-    <circle cx="340" cy="340" r="2.5" fill="{BLUE}"/><text x="350" y="344">生产环境：管理员邮箱口令登录，非管理员显示无权限</text>
-  </g>
-  <g font-size="10.5" fill="{SUB}">
-    <circle cx="700" cy="320" r="2.5" fill="{YELLOW}"/><text x="710" y="324">5 标签完整保留：登录记录 / 用户管理 / 后端错误 / 审计日志 / 影响证据</text>
+    <circle cx="340" cy="316" r="2.5" fill="{GREEN}"/><text x="350" y="320">游客模式：自动进入（guest/superadmin）</text>
+    <circle cx="340" cy="338" r="2.5" fill="{BLUE}"/><text x="350" y="342">生产环境：管理员邮箱口令登录，非管理员显示无权限</text>
+    <circle cx="340" cy="360" r="2.5" fill="{YELLOW}"/><text x="350" y="364">5 标签完整保留：登录记录 / 用户管理 / 后端错误 / 审计日志 / 影响证据</text>
   </g>
 '''
     save("october-admin-flow.svg", s + FOOTER)
@@ -247,44 +255,44 @@ def chart_admin_flow():
 # ─────────────────────────────────────────────────────────
 def chart_guest_arch():
     s = header("游客模式架构：全功能开放 + 生产防护", "Guest Mode Architecture", YELLOW)
-    # 访客
-    s += f'''  <rect x="40" y="180" width="120" height="70" rx="10" fill="{PANEL}" stroke="{MUTED}"/>
-  <text x="100" y="212" fill="{TEXT}" font-size="13" font-weight="700" text-anchor="middle">匿名访客</text>
-  <text x="100" y="232" fill="{SUB}" font-size="10" text-anchor="middle">无令牌访问</text>
+    # 访客（节点链整体上移至垂直居中，消除顶部大面积留白）
+    s += f'''  <rect x="40" y="150" width="120" height="70" rx="10" fill="{PANEL}" stroke="{MUTED}"/>
+  <text x="100" y="182" fill="{TEXT}" font-size="13" font-weight="700" text-anchor="middle">匿名访客</text>
+  <text x="100" y="202" fill="{SUB}" font-size="10" text-anchor="middle">无令牌访问</text>
 '''
     # 旁路判定
-    s += f'''  <rect x="220" y="170" width="160" height="90" rx="10" fill="#1A1230" stroke="{PURPLE}"/>
-  <text x="300" y="200" fill="{PURPLE_LIGHT}" font-size="12" font-weight="700" text-anchor="middle">GUEST_MODE 开关</text>
-  <text x="300" y="222" fill="{SUB}" font-size="10" text-anchor="middle">get_current_user 旁路</text>
-  <text x="300" y="240" fill="{MUTED}" font-size="9.5" text-anchor="middle">security.py</text>
+    s += f'''  <rect x="220" y="140" width="160" height="90" rx="10" fill="#1A1230" stroke="{PURPLE}"/>
+  <text x="300" y="170" fill="{PURPLE_LIGHT}" font-size="12" font-weight="700" text-anchor="middle">GUEST_MODE 开关</text>
+  <text x="300" y="192" fill="{SUB}" font-size="10" text-anchor="middle">get_current_user 旁路</text>
+  <text x="300" y="210" fill="{MUTED}" font-size="9.5" text-anchor="middle">security.py</text>
 '''
     # 内置 guest
-    s += f'''  <rect x="440" y="170" width="180" height="90" rx="10" fill="#0F241C" stroke="{GREEN}"/>
-  <text x="530" y="200" fill="{GREEN_LIGHT}" font-size="12" font-weight="700" text-anchor="middle">内置 guest 账户</text>
-  <text x="530" y="222" fill="{SUB}" font-size="10" text-anchor="middle">guest@evolution-ai.design</text>
-  <text x="530" y="240" fill="{MUTED}" font-size="9.5" text-anchor="middle">role=superadmin · 惰性幂等创建</text>
+    s += f'''  <rect x="440" y="140" width="180" height="90" rx="10" fill="#0F241C" stroke="{GREEN}"/>
+  <text x="530" y="170" fill="{GREEN_LIGHT}" font-size="12" font-weight="700" text-anchor="middle">内置 guest 账户</text>
+  <text x="530" y="192" fill="{SUB}" font-size="10" text-anchor="middle">guest@evolution-ai.design</text>
+  <text x="530" y="210" fill="{MUTED}" font-size="9.5" text-anchor="middle">role=superadmin · 惰性幂等创建</text>
 '''
     # 全功能
-    s += f'''  <rect x="680" y="160" width="240" height="110" rx="10" fill="{PANEL}" stroke="{BLUE}"/>
-  <text x="800" y="190" fill="{BLUE_LIGHT}" font-size="12.5" font-weight="700" text-anchor="middle">全功能可达</text>
+    s += f'''  <rect x="680" y="130" width="240" height="110" rx="10" fill="{PANEL}" stroke="{BLUE}"/>
+  <text x="800" y="160" fill="{BLUE_LIGHT}" font-size="12.5" font-weight="700" text-anchor="middle">全功能可达</text>
   <g font-size="10" fill="{SUB}">
-    <text x="700" y="214">• Designer / Projects / Quality</text>
-    <text x="700" y="232">• Deliver / DEMO / Community</text>
-    <text x="700" y="250">• /admin 后台（游客为 superadmin）</text>
+    <text x="700" y="184">• Designer / Projects / Quality</text>
+    <text x="700" y="202">• Deliver / DEMO / Community</text>
+    <text x="700" y="220">• /admin 后台（游客为 superadmin）</text>
   </g>
 '''
     def arrow(x1, y1, x2, y2, c=BLUE):
         return f'  <line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{c}" stroke-width="1.6" marker-end="url(#g)"/>\n'
     s += '''  <defs><marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker></defs>
 '''
-    s += arrow(160, 215, 220, 215) + arrow(380, 215, 440, 215) + arrow(620, 215, 680, 215)
+    s += arrow(160, 185, 220, 185) + arrow(380, 185, 440, 185) + arrow(620, 185, 680, 185)
 
     # 生产防护
-    s += f'''  <rect x="40" y="310" width="880" height="86" rx="10" fill="#2A1212" stroke="{RED}"/>
-  <text x="60" y="338" fill="{RED}" font-size="12.5" font-weight="700">生产环境防护（fail-fast）</text>
+    s += f'''  <rect x="40" y="272" width="880" height="84" rx="10" fill="#2A1212" stroke="{RED}"/>
+  <text x="60" y="300" fill="{RED}" font-size="12.5" font-weight="700">生产环境防护（fail-fast）</text>
   <g font-size="10.5" fill="{SUB}">
-    <circle cx="60" cy="362" r="2.5" fill="{RED}"/><text x="72" y="366">ENVIRONMENT=production 且 GUEST_MODE=true → 启动直接拒绝（与弱 SECRET_KEY 同级校验）</text>
-    <circle cx="60" cy="382" r="2.5" fill="{YELLOW}"/><text x="72" y="386">测试套件强制 GUEST_MODE=false（conftest），防止 401/403 语义用例被游客旁路击穿</text>
+    <circle cx="60" cy="322" r="2.5" fill="{RED}"/><text x="72" y="326">ENVIRONMENT=production 且 GUEST_MODE=true → 启动直接拒绝（与弱 SECRET_KEY 同级校验）</text>
+    <circle cx="60" cy="344" r="2.5" fill="{YELLOW}"/><text x="72" y="348">测试套件强制 GUEST_MODE=false（conftest），防止 401/403 语义用例被游客旁路击穿</text>
   </g>
 '''
     save("october-guest-arch.svg", s + FOOTER)

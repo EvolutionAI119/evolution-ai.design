@@ -1,9 +1,16 @@
 <template>
   <!-- 登录/注册页：无侧边栏的全屏布局 -->
   <router-view v-if="isLoginRoute" />
-  <div v-else class="app-container">
+  <div v-else class="app-container" :class="{ 'sidebar-open': sidebarOpen }">
+    <!-- 移动端抽屉遮罩 -->
+    <div
+      v-if="isMobile"
+      class="sidebar-overlay"
+      :class="{ show: sidebarOpen }"
+      @click="sidebarOpen = false"
+    ></div>
     <el-container>
-      <el-aside width="216px" class="sidebar">
+      <el-aside :width="isMobile ? '240px' : '216px'" class="sidebar">
         <div class="logo">
           <h2>EVOLUTION AI</h2>
           <p>{{ t('app.subtitle') }}</p>
@@ -15,6 +22,7 @@
           background-color="transparent"
           :text-color="menuTextColor"
           :active-text-color="activeMenuColor"
+          @select="sidebarOpen = false"
         >
           <template #default>
             <template v-for="group in menuGroups" :key="group.labelKey || 'ungrouped'">
@@ -34,6 +42,19 @@
       <el-container class="main-container">
         <el-header class="header">
           <div class="header-left">
+            <button
+              v-if="isMobile"
+              class="menu-toggle"
+              :title="t('menu.toggleSidebar')"
+              :aria-label="t('menu.toggleSidebar')"
+              @click="sidebarOpen = !sidebarOpen"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
             <span class="breadcrumb">EVOLUTION AI</span>
             <span class="sep">/</span>
             <span class="current-page">{{ currentPageName }}</span>
@@ -125,7 +146,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -146,6 +167,17 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
 
 const isDark = ref(true)
+
+// 移动端（≤1024px）侧栏转为 off-canvas 抽屉
+const isMobile = ref(false)
+const sidebarOpen = ref(false)
+let mobileMql = null
+const onMobileChange = (e) => {
+  isMobile.value = e.matches
+  if (!e.matches) sidebarOpen.value = false
+}
+// 路由切换后自动收起抽屉
+watch(() => route.path, () => { sidebarOpen.value = false })
 
 // 侧边栏文字颜色必须随主题切换（Element Plus 通过内联样式注入，CSS 无法覆盖）
 const menuTextColor = computed(() =>
@@ -240,6 +272,10 @@ onMounted(() => {
     document.documentElement.classList.add('light-theme')
   }
   document.documentElement.setAttribute('lang', locale.value === 'zh' ? 'zh-CN' : 'en')
+  // 响应式：监听移动端断点
+  mobileMql = window.matchMedia('(max-width: 1024px)')
+  isMobile.value = mobileMql.matches
+  mobileMql.addEventListener('change', onMobileChange)
   // 启动访问埋点（路由切换自动上报 + 停留时长）
   tracker.start(router)
   // 通知未读数轮询（60s）；游客模式下命中内置 guest 账户
@@ -250,6 +286,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   tracker.stop()
   if (notifTimer) clearInterval(notifTimer)
+  mobileMql?.removeEventListener('change', onMobileChange)
 })
 
 const baseMenuGroups = [
@@ -667,5 +704,61 @@ html.light-theme .notif-item:hover { background: rgba(0, 0, 0, 0.04); }
   font-size: 13px;
   line-height: 1.7;
   color: var(--text-secondary);
+}
+
+/* ============ 移动端抽屉导航（≤1024px） ============ */
+.menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.menu-toggle:hover { background: var(--hover-bg); }
+.menu-toggle svg { width: 20px; height: 20px; }
+
+.sidebar-overlay { display: none; }
+
+@media (max-width: 1024px) {
+  .menu-toggle { display: inline-flex; }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 240px !important;
+    max-width: 82vw;
+    z-index: 2001;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 28px rgba(0, 0, 0, 0.45);
+  }
+  .app-container.sidebar-open .sidebar { transform: translateX(0); }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
+}
+
+@media (max-width: 480px) {
+  .header { padding: 0 12px; }
+  /* 极窄屏仅保留当前页名，隐藏 EVOLUTION AI / 分隔符面包屑 */
+  .header .breadcrumb,
+  .header .sep { display: none; }
+  .main-content { padding: 10px; }
 }
 </style>

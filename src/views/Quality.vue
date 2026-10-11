@@ -541,4 +541,18 @@ const runG2Check = async () => {
 .g2-detail-card :deep(.el-table td) {
   border-bottom: 1px solid var(--border-color);
 }
+
+/* ============ 响应式 ============ */
+.page-header { flex-wrap: wrap; gap: 10px; }
+.header-actions { flex-wrap: wrap; }
+
+@media (max-width: 1024px) {
+  .check-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .check-cards { grid-template-columns: 1fr; }
+  .model-select { width: 100%; max-width: 100%; }
+  .header-actions { width: 100%; }
+}
 </style>

@@ -222,7 +222,7 @@
           <div class="step-body">
             <h4 class="step-title">{{ t('deliver.step3') }}</h4>
             <div class="export-controls">
-              <el-select v-model="exportFormats" multiple placeholder="Select formats" style="width: 320px">
+              <el-select v-model="exportFormats" multiple :placeholder="t('deliver.formatPlaceholder')" class="format-select">
                 <el-option v-for="f in exportFmtOptions" :key="f" :label="f.toUpperCase()" :value="f" />
               </el-select>
               <el-button type="success" @click="exportModel" :loading="loading.export">
@@ -410,7 +410,7 @@ const toggleFormat = (key) => {
 
 const prepareDelivery = async () => {
   if (!canPrepare.value) {
-    ElMessage.warning('Please select a model and at least one format')
+    ElMessage.warning(t('deliver.msgPrepareWarn'))
     return
   }
   try {
@@ -420,9 +420,9 @@ const prepareDelivery = async () => {
       precision: selectedPrecision.value
     })
     const result = response.data
-    ElMessage.success(`Delivery prepared successfully: ${result.files.length} files exported`)
+    ElMessage.success(t('deliver.msgPrepareOk', { count: result.files.length }))
   } catch (error) {
-    ElMessage.error('Delivery preparation failed')
+    ElMessage.error(t('deliver.msgPrepareFail'))
   }
 }
 
@@ -1067,6 +1067,23 @@ onMounted(() => {
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.format-select { width: 320px; max-width: 100%; }
+
+/* 平板/窄屏：主区与侧栏堆叠 */
+@media (max-width: 900px) {
+  .delivery-content { grid-template-columns: 1fr; }
+  .formats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* 窄屏：控件占满整行，避免固定宽度溢出 */
+@media (max-width: 640px) {
+  .format-select { width: 100%; }
+  .export-controls :deep(.el-button) { margin-left: 0; }
+  .import-meta :deep(.el-descriptions__label) { width: 110px; }
+  .precision-grid { grid-template-columns: repeat(2, 1fr); }
+  .delivery-card :deep(.el-card__body) { padding: 14px; }
 }
 
 .export-result {

@@ -19,6 +19,7 @@ const zh = {
     groupHome: '', groupDesign: '设计', groupWorkflow: '工作流',
     groupExplore: '探索', groupSupport: '支持',
     groupAdmin: '管理', admin: '管理后台',
+    toggleSidebar: '菜单',
     lightMode: '切换到浅色模式', darkMode: '切换到深色模式', language: '语言'
   },
   contact: {
@@ -241,6 +242,12 @@ const zh = {
     g2NoData: '缺数据', g2Error: '错误', g2Threshold: '判定标准',
     g2Standard: 'SOP-A SURF-001 §5.2（曲率比 0.8~1.2）',
     g2RunCheck: '执行 G2 检测', g2Checking: '正在检测…',
+    // 3D 视口控件提示
+    viewerReset: '重置视角', viewerWireframe: '线框模式', viewerAutoRotate: '自动旋转', viewerFullscreen: '全屏',
+    // 生成结果 toast（实测质量）
+    msgGenerated: '已生成 {parts} 个部件 | {surfaces} 个 NURBS 曲面 | {points} 个控制点',
+    msgG2Pass: ' | G2 连续（实测）',
+    msgG2Fail: ' | G2 未达标（实测：{n} 个平面曲面）',
     g2NoModelData: '该模型无车身数据，请先在设计器中生成',
   },
   parameters: {
@@ -552,6 +559,7 @@ const zh = {
     step3: '导出模型',
     exportBtn: '导出',
     snapshotBtn: '快照',
+    formatPlaceholder: '选择导出格式',
     exportSuccess: '导出完成',
     exportFailed: '导出失败',
     sessionsTitle: '活动会话',
@@ -576,6 +584,9 @@ const zh = {
     snapshotSuccess: '参数快照已导出',
     snapshotFailed: '快照导出失败',
     // 交互提示文案（统一英文i18n，避免中文 ElMessage 漏网）
+    msgPrepareWarn: '请选择车型和至少一种导出格式',
+    msgPrepareOk: '交付准备完成：已导出 {count} 个文件',
+    msgPrepareFail: '交付准备失败',
     msgJsonInvalid: 'JSON 格式无效，请检查输入',
     msgImportOk: '导入成功：{name}（{count} 个参数）',
     msgImportFail: '导入失败：{detail}',
@@ -873,6 +884,7 @@ const en = {
     groupHome: '', groupDesign: 'Design', groupWorkflow: 'Workflow',
     groupExplore: 'Explore', groupSupport: 'Support',
     groupAdmin: 'Admin', admin: 'Admin Console',
+    toggleSidebar: 'Menu',
     lightMode: 'Switch to light mode', darkMode: 'Switch to dark mode', language: 'Language'
   },
   contact: {
@@ -1095,6 +1107,12 @@ const en = {
     g2NoData: 'No Data', g2Error: 'Error', g2Threshold: 'Threshold',
     g2Standard: 'SOP-A SURF-001 §5.2 (curvature ratio 0.8–1.2)',
     g2RunCheck: 'Run G2 Check', g2Checking: 'Checking…',
+    // 3D viewport control tooltips
+    viewerReset: 'Reset view', viewerWireframe: 'Wireframe mode', viewerAutoRotate: 'Auto rotate', viewerFullscreen: 'Fullscreen',
+    // Generation result toast (measured quality)
+    msgGenerated: 'Generated {parts} parts | {surfaces} NURBS surfaces | {points} control points',
+    msgG2Pass: ' | G2 continuous (measured)',
+    msgG2Fail: ' | G2 not met (measured: {n} planar surfaces)',
     g2NoModelData: 'No car body data for this model. Generate one in the Designer first.',
   },
   parameters: {
@@ -1408,6 +1426,7 @@ const en = {
     step3: 'Export Model',
     exportBtn: 'Export',
     snapshotBtn: 'Snapshot',
+    formatPlaceholder: 'Select export formats',
     exportSuccess: 'Export completed',
     exportFailed: 'Export failed',
     sessionsTitle: 'Active Sessions',
@@ -1432,6 +1451,9 @@ const en = {
     snapshotSuccess: 'Parameter snapshot exported',
     snapshotFailed: 'Failed to export snapshot',
     // English ElMessage prompts
+    msgPrepareWarn: 'Please select a model and at least one export format',
+    msgPrepareOk: 'Delivery prepared successfully: {count} files exported',
+    msgPrepareFail: 'Delivery preparation failed',
     msgJsonInvalid: 'Invalid JSON. Please check your input.',
     msgImportOk: 'Imported: {name} ({count} params)',
     msgImportFail: 'Import failed: {detail}',

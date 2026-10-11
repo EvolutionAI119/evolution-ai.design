@@ -48,13 +48,11 @@
   <text x="835" y="172" fill="#94A3B8" font-size="10" text-anchor="middle">/admin 文档专用</text>
   <text x="835" y="188" fill="#94A3B8" font-size="10" text-anchor="middle">unsafe-eval 放行</text>
   <text x="835" y="204" fill="#94A3B8" font-size="10" text-anchor="middle">公开站保持严格</text>
-  <rect x="320" y="270" width="580" height="90" rx="10" fill="#0B101A" stroke="#A78BFA"/>
-  <text x="340" y="298" fill="#C4B5FD" font-size="12.5" font-weight="700">登录门语义</text>
+  <rect x="320" y="268" width="580" height="102" rx="10" fill="#0B101A" stroke="#A78BFA"/>
+  <text x="340" y="294" fill="#C4B5FD" font-size="12.5" font-weight="700">登录门语义</text>
   <g font-size="10.5" fill="#94A3B8">
-    <circle cx="340" cy="320" r="2.5" fill="#34D399"/><text x="350" y="324">游客模式：自动进入（guest/superadmin）</text>
-    <circle cx="340" cy="340" r="2.5" fill="#38BDF8"/><text x="350" y="344">生产环境：管理员邮箱口令登录，非管理员显示无权限</text>
-  </g>
-  <g font-size="10.5" fill="#94A3B8">
-    <circle cx="700" cy="320" r="2.5" fill="#FBBF24"/><text x="710" y="324">5 标签完整保留：登录记录 / 用户管理 / 后端错误 / 审计日志 / 影响证据</text>
+    <circle cx="340" cy="316" r="2.5" fill="#34D399"/><text x="350" y="320">游客模式：自动进入（guest/superadmin）</text>
+    <circle cx="340" cy="338" r="2.5" fill="#38BDF8"/><text x="350" y="342">生产环境：管理员邮箱口令登录，非管理员显示无权限</text>
+    <circle cx="340" cy="360" r="2.5" fill="#FBBF24"/><text x="350" y="364">5 标签完整保留：登录记录 / 用户管理 / 后端错误 / 审计日志 / 影响证据</text>
   </g>
 </svg>
