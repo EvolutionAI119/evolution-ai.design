@@ -167,13 +167,33 @@ const brandsRaw = [
   }
 ]
 
+// 车型 → CAR TYPE 映射：品牌认证车型与左侧车型宫格双向连动的数据源。
+// 依据各车型官方定位与几何特征归类（GT 轿跑如 Roma/Wraith 归 coupe），
+// mpv/pickup 品牌库暂无认证车型，选这两个类型时走通用参数兜底。
+const MODEL_CAR_TYPE = {
+  // Rolls-Royce
+  'phantom': 'sedan', 'ghost': 'sedan', 'cullinan': 'suv', 'wraith': 'coupe',
+  // Bentley
+  'continental-gt': 'coupe', 'continental-gtc': 'coupe',
+  'flying-spur': 'sedan', 'bentayga': 'suv',
+  // Bugatti
+  'chiron': 'sport', 'veyron': 'sport', 'divo': 'sport',
+  // Porsche
+  '911': 'sport', 'taycan': 'sedan', 'panamera': 'sedan',
+  'cayenne': 'suv', 'macan': 'suv',
+  // Ferrari
+  'sf90': 'sport', 'f8-tributo': 'sport', 'roma': 'coupe',
+}
+
 // 为每个 model 预置稳定的本地静态照片路径（/brands/{brand}/{model}.jpg）
 // 同时保留 image（远程 AI 生成图）作为可选。
 // 说明：localImage = 静态 JPG 照片路径，由 Vite public 目录直接提供，
 //       不受端口变更、HMR、网络抖动影响，彻底解决"照片丢失"老问题。
+// 同时注入 car_type 连动标注（缺失时置 null，视为不参与连动）。
 brandsRaw.forEach(brand => {
   brand.models.forEach(model => {
     model.localImage = getStaticBrandImagePath(brand.key, model.key)
+    model.car_type = MODEL_CAR_TYPE[model.key] || null
   })
 })
 

@@ -68,7 +68,14 @@
                 </div>
                 <div class="model-info">
                   <div class="model-name">{{ model.name }}</div>
-                  <div class="model-spec">{{ model.params.overall_length }}mm</div>
+                  <div class="model-meta">
+                    <span class="model-spec">{{ model.params.overall_length }}mm</span>
+                    <span
+                      v-if="model.car_type"
+                      class="model-type-tag"
+                      :class="{ linked: carType === model.car_type }"
+                    >{{ t('designer.' + (carTypes.find(ct => ct.key === model.car_type)?.name || model.car_type)) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1506,6 +1513,29 @@ onUnmounted(() => {
   font-size: 10px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* 车型卡连动徽章：显示所属 CAR TYPE，与左侧宫格高亮同步 */
+.model-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.model-type-tag {
+  font-size: 9px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.model-type-tag.linked {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .viewport-header {

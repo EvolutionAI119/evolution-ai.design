@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { carTypeParams, defaultCarParams } from '../config/carPresets'
+import { carTypeParams, defaultCarParams, brands } from '../config/carPresets'
 
 function snakeToCamel(obj) {
   if (!obj || typeof obj !== 'object') return obj
@@ -33,9 +33,24 @@ export const useDesignerStore = defineStore('designer', () => {
 
   function setCarType(type) {
     carType.value = type
-    selectedModel.value = null
     const typeParams = carTypeParams[type] || {}
-    params.value = { ...defaultCarParams, ...typeParams }
+    // 双向连动 →：切换车型类型时，在品牌认证库中定位该类型的代表车型
+    // （当前品牌优先——若当前品牌内有该类型车型则留在当前品牌，否则跳转到
+    // 第一个含该类型车型的品牌），并应用其 A 级认证实测参数。
+    const inCurrentBrand = brands.find(
+      b => b.key === brand.value && b.models.some(m => m.car_type === type))
+    const targetBrand = inCurrentBrand
+      || brands.find(b => b.models.some(m => m.car_type === type))
+    if (targetBrand) {
+      brand.value = targetBrand.key
+      const model = targetBrand.models.find(m => m.car_type === type)
+      selectedModel.value = model.key
+      params.value = { ...defaultCarParams, ...model.params }
+    } else {
+      // mpv/pickup 等暂无品牌认证车型的类型：回退通用类型参数
+      selectedModel.value = null
+      params.value = { ...defaultCarParams, ...typeParams }
+    }
   }
 
   function setBrand(b) {
@@ -45,6 +60,11 @@ export const useDesignerStore = defineStore('designer', () => {
 
   function selectModel(model) {
     selectedModel.value = model.key
+    // 双向连动 ←：选品牌认证车型时，左侧 CAR TYPE 宫格同步高亮该车型
+    // 所属类型（Roma → Coupe、Cayenne → SUV 等）
+    if (model.car_type) {
+      carType.value = model.car_type
+    }
     if (model.params) {
       params.value = { ...defaultCarParams, ...model.params }
     }
