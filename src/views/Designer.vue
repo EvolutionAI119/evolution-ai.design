@@ -151,7 +151,7 @@
                 @update:view-angle="previewViewAngle = $event"
               />
               <div v-else class="viewport-2d">
-                <Car2D :car-params="carParams" :car-type="carType" />
+                <Car2D :car-params="carParams" :car-type="carType" :show-sisa-reference="sisaRefOn" />
               </div>
             </div>
           </div>
@@ -199,9 +199,16 @@
           <div class="card wireframe-card">
             <div class="card-header">
               <span class="card-title">{{ t('designer.render2d') }}</span>
+              <button
+                class="sisa-toggle"
+                :class="{ active: sisaRefOn }"
+                :title="t('designer.toggleSisaRef')"
+                :aria-label="t('designer.toggleSisaRef')"
+                @click="sisaRefOn = !sisaRefOn"
+              >{{ t('designer.sisaRef') }}</button>
             </div>
             <div class="wireframe-container">
-              <Car2D :car-params="carParams" :car-type="carType" />
+              <Car2D :car-params="carParams" :car-type="carType" :show-sisa-reference="sisaRefOn" />
             </div>
           </div>
         </div>
@@ -518,6 +525,8 @@ const { carType, brand, selectedModel, selectedColor, params, generating } = sto
 const customColor = ref('')
 const baseModelTab = ref('nurbs')
 const previewTab = ref('3d')
+// SISA 真车参考线叠加开关（2D 渲染面板 / 预览 2D 共用）
+const sisaRefOn = ref(false)
 const paramTab = ref('dimensions')
 const baseViewAngle = ref('perspective')
 const previewViewAngle = ref('perspective')
@@ -1095,6 +1104,31 @@ onUnmounted(() => {
   letter-spacing: 1px;
   color: var(--text-secondary);
   text-transform: uppercase;
+}
+
+/* SISA 真车参考线开关 */
+.sisa-toggle {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sisa-toggle:hover {
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+}
+
+.sisa-toggle.active {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
 }
 
 .card-badge {
