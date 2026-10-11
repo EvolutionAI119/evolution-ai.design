@@ -179,6 +179,21 @@
 | Docker LLM service | Ready | `Dockerfile.llm` + `docker-compose.llm.yml` + `docker-llm.ps1` |
 | Git branch | `v1.01-reconstruct` | Latest commit `c6a65af3` |
 
+> The table above is the **2026-08-10 baseline**, kept unchanged as the historical record. For the 2026-10-11 snapshot see §4.1; the full supplementary audit is in Chapter VII.
+
+### 4.1 Key-metrics snapshot, 2026-10-11
+
+| Metric | Status | Note |
+|---|---|---|
+| Backend tests | **341 passed / 1 skipped / 2 xfail** | 26 test files; skip requires a real LLM (`RUN_REAL_LLM=1`); 2 xfails cover the curvature pipeline migrated to SISA |
+| Frontend tests | **142 / 142 pass** | 10 test files (4 specs in `src/tests/` + 6 tests in root `tests/`) |
+| Topology-closure tests | **12 / 12 pass** | `test_car_topology_closure.py`: opening closure, transverse-chain edge coincidence, plan taper, wheel-arch liners, etc. |
+| Guest-mode tests | 2 / 2 pass | Full access without a token; fail-fast when enabled in production |
+| Standalone-admin tests | 3 / 3 pass | `/admin/` hosting, assets on disk, scoped-CSP boundary |
+| Mainline branch | `main` | HEAD `864421d5` (8 feature commits merged by fast-forward) |
+| Public static site | `gh-pages` | HEAD `ba59fde9`; verified on https://evolution-ai.design |
+| Admin console | Served by backend at `/admin/` | Zero Admin code in the public frontend (route/menu/chunk all removed) |
+
 ---
 
 ## V. Remaining Items and Recommendations
@@ -229,3 +244,75 @@
 ### Archived Files
 
 - ~80+ non-core files moved to `_archive/` (see §2.2)
+
+---
+
+## VII. Supplementary Audit, October 10–11
+
+> Supplement date: 2026-10-11
+> Scope: 8 commits on `feature/nurbs-geometry-phase2` (`ea41ce3b..864421d5`), merged into `main` by fast-forward
+> Covers: NURBS full-body closure and streamlining, account-system suspension (guest mode), Admin module relocation, mainland-China compliance deployment preparation, gh-pages redeployment
+
+### 7.1 NURBS continuous-body geometry rebuild and full-body closure
+
+**Background**: the legacy `car_generator.py` had systematic geometry defects (fenders piercing the ground, parts violating the `car_layout.py` contract, misplaced trunk, doors on the center axis). Hard rule: keep developing on the main version only; no rollback.
+
+**Changes** (commits `ea41ce3b` / `6df66e06` / `4ab70371` / `7c128f4c`):
+
+- Phase-2 continuous-body geometry rebuild; paint-reflection tuning; wheel-arch flare fade-out removing the arch step
+- **All 7 opening categories sealed**: front center panel, tailgate panel, A/C-pillar triangular wedges, cowl seal, underbody tray, wheel-arch liners, interior shelves; all part dimensions, assembly relations and topology aligned to spec
+- **Streamlining**: plan-view taper + fastback rounding removing the boxy mechanical look; sculpted nose/tail panels
+- Fixed a call to a nonexistent `generate_pillar` method in `car.py`: now dispatches by `pillar_type`; invalid types return 400
+
+**Verification**: new `test_car_topology_closure.py` with 12 tests all passing (transverse-chain edge coincidence, cowl seal, shared pillar-wedge edges, underbody closure, front/rear sealing, deck-length conservation, plan taper, sculpted panels, door-sill overlap, arch liners, see-through blocking, part census); four-view browser re-check confirmed no holes or gaps.
+
+### 7.2 Account-system suspension and full-feature guest mode
+
+**Decision context**: WeChat QR login requires a fixed public domain (random cpolar free-tier domains cause error 10003); overseas/Hong Kong servers conflict with PIPL cross-border data rules; mainland servers require registrar transfer-in plus ICP filing (~1 month). Transition decision: **suspend the account system and open all features to guests**.
+
+| Layer | Change | Files |
+|---|---|---|
+| Backend switch | New `GUEST_MODE`: when on, protected endpoints bypass login and resolve to built-in `guest@evolution-ai.design` (superadmin; random non-login password; lazy idempotent creation) | `backend/app/config.py`, `backend/app/security.py` |
+| Production guard | `GUEST_MODE=true` in production fails fast at startup (same tier as weak SECRET_KEY) | `config.py` |
+| Test anti-regression | pytest forces `GUEST_MODE=false` so 401/403 semantic cases are not bypassed | `backend/tests/conftest.py` |
+| Frontend identity | Pinia ships with a guest (superadmin) identity; token in memory only; logout returns to guest state | `src/stores/auth.js` |
+| Routes/entry | Removed `/login`, `/account` routes and the top-bar user menu/login dialog (sources retained in `views/`); `/contact` replaces Account (email Icemtrainer@hotmail.com, mailto + one-click copy) | `src/router.js`, `src/App.vue`, `src/views/Contact.vue` |
+| Tests | 2 new guest-mode tests; 5 obsolete frontend cases rewritten to guest semantics | `test_guest_mode.py`, `authStore.spec.js`, `routerGuard.spec.js` |
+
+### 7.3 Admin module moved out of the public frontend (standalone backend hosting)
+
+**Risk**: with all features open to guests, the Admin page (user management, audit logs, backend errors, impact evidence) was reachable by anonymous visitors, and its complete code was publicly downloadable via the gh-pages static site.
+
+**Changes** (commits `c45d9ccc` / `864421d5`):
+
+- Main SPA: `/admin` route and the sidebar "Admin" group removed; the Admin chunk no longer enters the public build
+- New standalone build: `admin.html` + `src/admin_main.js` + `AdminGate.vue` (login gate), built by `vite.admin.config.js` into `backend/app/static/admin/` and served by FastAPI `StaticFiles` at `/admin`; artifacts are committed so the Docker image is self-contained
+- **Gate semantics**: no token shows an administrator login form (non-admins see an access-denied page); in guest mode entry is automatic; the original 5 tabs (login records / user management / backend errors / audit logs / impact evidence) keep full functionality
+- Production nginx template gains an `/admin` reverse-proxy rule (`deploy/default.conf.template`)
+- **Scoped CSP fix**: the vue-i18n message compiler uses the `Function` constructor, blocked wholesale by strict CSP (`script-src 'self'`), causing a white screen; a document-scoped CSP for `/admin` adds only `'unsafe-eval'`, while public API and main-site policies stay strict, with a regression test locking the boundary
+- 3 new hosting/CSP tests (`test_admin_console.py`)
+
+### 7.4 Mainland-China compliant production deployment preparation
+
+- New `deploy/jdcloud_2c4g_checklist.md`: a 9-step checklist (JD Cloud 2C4G purchase, domain transfer-in from an overseas registrar, ICP filing, DNS, four-service Docker stack, TLS, WeChat console settings, data migration)
+- New `deploy/server_bootstrap.sh`: one-shot Ubuntu 22.04 initialization (2G swap against OOM, Aliyun Docker mirror, DaoCloud registry accelerator, timezone, unattended-upgrades)
+- Architecture constraint: same-origin `/api` reverse proxy; any production environment with WeChat QR login must run on compliant mainland servers only
+
+### 7.5 Audit conclusion and regression data
+
+| Verification | Result | Reproducible path |
+|---|---|---|
+| Backend full regression | 341 passed / 1 skipped / 2 xfail | `cd backend && python -m pytest` |
+| Frontend full regression | 142 / 142 pass | `npm test` (10 test files) |
+| Main-site build | Passes; output contains no Admin code | After `npm run build`, no Admin chunk in `dist/assets/` |
+| Admin build | Passes (2 HTML + 6 assets) | `npm run build:admin` |
+| Admin browser test | All 5 tabs render; evidence charts OK; zero console errors | http://localhost:8000/admin/ |
+| Public site | Deployed and tested | gh-pages `ba59fde9`, https://evolution-ai.design |
+
+**Remaining / follow-up items**:
+
+| Priority | Item |
+|---|---|
+| High | JD Cloud purchase + domain transfer-in + ICP filing (checklist ready, ~1 month); after filing, production must disable GUEST_MODE and restore the account system |
+| Medium | SISA sync of the new `feature/nurbs-geometry-phase2` HEAD (currently blocked by the safety layer; needs explicit user approval to run `sync_open_source.ps1`) |
+| Medium | P1–P6 historical items in §4 of the Platform Test Report not re-tested specifically (DEMO animation hardcoded port, deprecated ElPagination usage); close them in the next dedicated frontend regression |

@@ -177,3 +177,88 @@ POST /api/v1/car/generate → 200 OK
 2. 初始化 SQLite 项目数据或修复 Projects 路由 500（P2）
 3. 批量修复 Element Plus 废弃 API 警告（P3）
 
+---
+
+# 第二轮平台测试（2026-10-11）
+
+**测试日期**: 2026-10-11
+**测试触发**: NURBS 整车封闭化/流线型造型（4 提交）、账号体系封存游客模式、Admin 模块后移、京东云部署清单等 8 个提交合入 `main`（`ea41ce3b..864421d5`）
+**测试环境**:
+- 操作系统: Windows
+- 前端: Vite 5 + Vue 3.4（http://127.0.0.1:5173）
+- 后端: FastAPI + Uvicorn（http://127.0.0.1:8000），`GUEST_MODE=true`（账号封存期）
+- 公网隧道: cpolar（本轮 https://5bb18d47.r30.cpolar.top）
+- 公开站点: https://evolution-ai.design（GitHub Pages，gh-pages `ba59fde9`）
+- 独立后台: http://127.0.0.1:8000/admin/（FastAPI StaticFiles 托管）
+
+## 7. 自动化测试总览（权威口径，当日实跑）
+
+| 层 | 命令 | 文件数 | 结果 |
+|------|------|------|------|
+| 后端集成 | `cd backend && python -m pytest` | 26 | **341 通过 / 1 跳过 / 2 预期失败** |
+| 前端组件/单元 | `npm test`（vitest） | 10 | **142 / 142 通过** |
+
+- 后端跳过项：设计意图真实 SiliconFlow 调用（设 `RUN_REAL_LLM=1` 启用）
+- 后端 2 项 xfail：Harness 曲率管线已迁 SISA，平台端无法 import，测试标注不再适用
+- 前端 10 文件 = `src/tests/` 4 个 `*.spec.js` + 仓库根 `tests/` 6 个 `*.test.js`
+
+## 8. 本轮新增/改写测试
+
+| 测试文件 | 用例数 | 覆盖点 |
+|------|------|------|
+| `backend/tests/test_car_topology_closure.py` | 12 | 横链边重合、cowl 封条、A/C 柱楔共边、底盘托盘封闭、前后封板、机头甲板长度守恒、俯视收窄、首尾雕塑化、门框压条、轮拱内衬、防透视搁板、零件普查 |
+| `backend/tests/test_guest_mode.py` | 2 | 无令牌全功能放行（guest/superadmin 幂等）；生产环境开启 GUEST_MODE 必须 fail-fast |
+| `backend/tests/test_admin_console.py` | 3 | `/admin/` 返回后台 HTML；`unsafe-eval` 仅出现于 /admin 文档 CSP；构建产物落盘 |
+| `src/tests/routerGuard.spec.js`（改写） | 5 | Login/Account/Admin 路由均不存在；Contact 存在；全站路径无重定向 |
+| `src/tests/authStore.spec.js`（改写） | 13 | 预置 guest(superadmin)、退出回游客态、三级角色 getter |
+
+**回归结论**: 全量 483 项（341 后端 + 142 前端）零失败，历史用例无回退。
+
+## 9. 管理后台迁移专项测试（浏览器实测）
+
+| 验证项 | 预期 | 结果 |
+|------|------|------|
+| 公开站主包 | 不含任何 Admin chunk/路由/菜单 | 🟢 `dist/assets/` 无 Admin 文件，侧栏无「管理」分组，顶栏无登录按钮 |
+| `GET /admin/` | 返回独立后台 HTML（`#admin-app`） | 🟢 200 |
+| 后台资源 | `/admin/assets/*.js` 可访问 | 🟢 200 |
+| 五个标签页 | 登录记录/用户管理/后端错误/审计日志/影响证据全部渲染 | 🟢 表格数据可见，guest 用户经 API 可查 |
+| 影响证据 | 7 张 KPI 卡 + 趋势/分布 ECharts 图表 | 🟢 数据线正常 |
+| 控制台 | 无红色错误 | 🟢 全新标签页零错误（首次发现的 CSP EvalError 已修复，见下） |
+| 公网可达 | 隧道 `/admin/` 可访问 | 🟢 HTTP 200 |
+
+**缺陷修复记录**: 首测时后台白屏，控制台报 `EvalError: 'unsafe-eval' is not an allowed source of script`——vue-i18n 消息编译器使用 `Function` 构造器，被全局严格 CSP（`script-src 'self'`）拦截。修复：为 `/admin` 文档作用域单独放行 `'unsafe-eval'`，公开 API 与主站 CSP 不变，并新增回归测试锁定边界（提交 `864421d5`）。
+
+## 10. 游客模式专项
+
+| 验证项 | 结果 |
+|------|------|
+| 默认进入首页无登录弹窗，游客身份 guest/superadmin | 🟢 |
+| 全站页面（Designer/Projects/Quality/Deliver/DEMO/Community/Help/Contact）无重定向 | 🟢 |
+| `/contact` 替代 Account：mailto 与一键复制 Icemtrainer@hotmail.com | 🟢 |
+| 生产 fail-fast：production + GUEST_MODE=true 启动即拒 | 🟢（单测覆盖） |
+| 测试套件不被游客旁路击穿：conftest 强制 GUEST_MODE=false | 🟢 401/403 用例语义保持 |
+
+## 11. 公网站点发布验证（强制校验环节）
+
+gh-pages 部署 `ba59fde9` 后对 https://evolution-ai.design 实测：
+
+| 验证项 | 结果 |
+|------|------|
+| 主包 hash 更新（`index-Bsn6kRdz.js`） | 🟢 |
+| 旧 Admin chunk 已不可访问（404） | 🟢 |
+| 页面正常渲染、无白屏 | 🟢 |
+| CNAME / .nojekyll / docs 目录在位 | 🟢 |
+
+## 12. 第二轮测试结论
+
+```
+■ 后端自动化： 341 PASS / 1 SKIP / 2 XFAIL（26 文件）
+■ 前端自动化： 142/142 PASS（10 文件），合计 483 项零失败
+■ 拓扑封闭：   12/12 PASS（整车 7 类开口封闭）
+■ 后台迁移：   公开站零 Admin 代码；/admin 五标签实测通过、控制台零错误
+■ 游客模式：   全站功能开放，生产 fail-fast 防护就位
+■ 公网发布：   evolution-ai.design 已实测与预期一致
+```
+
+**状态**: 平台核心功能可用，账号封存期（游客模式）功能完整；管理功能经独立后台保留，等待内地服务器 ICP 备案完成后恢复账号体系并关闭 GUEST_MODE。
+
