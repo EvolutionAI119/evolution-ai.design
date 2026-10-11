@@ -183,6 +183,24 @@ class NormalizeCorsAcaoMiddleware:
 #    BaseHTTPMiddleware 能覆盖 StreamingResponse / FileResponse /
 #    JSONResponse 以及所有 exception_handler 生成的响应。
 # =========================================================================
+
+# 独立管理后台文档专用 CSP：与默认策略唯一的差异是 script-src 增加 'unsafe-eval'。
+# 原因：vue-i18n 的消息编译器通过 Function 构造器生成翻译函数，
+# 严格 CSP（script-src 'self'）下后台页面脚本整体无法执行。
+# 该放宽仅作用于 /admin 受信文档（登录门后的内部控制台），公开 API 与主站不变。
+_ADMIN_CSP = (
+    "default-src 'self'; "
+    "img-src 'self' data: https: blob:; "
+    "script-src 'self' 'unsafe-eval'; "
+    "style-src 'self' 'unsafe-inline'; "
+    "font-src 'self' data:; "
+    "connect-src 'self' https: ws: wss:; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'; "
+    "form-action 'self'"
+)
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """为所有响应（包括 4xx/5xx/FileResponse）注入 HTTP 安全响应头。"""
 
@@ -206,7 +224,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # -- 安全响应头：仅在缺失时写入，允许特定路由按需覆盖 --
         self._ensure_header(headers, "X-Content-Type-Options", self.s.SEC_HEADER_XCTO)
         self._ensure_header(headers, "X-Frame-Options",        self.s.SEC_HEADER_XFO)
-        self._ensure_header(headers, "Content-Security-Policy", self.s.SEC_HEADER_CSP)
+        # /admin 文档使用作用域专用 CSP（允许 unsafe-eval 供 vue-i18n 编译）
+        _csp = _ADMIN_CSP if request.url.path.startswith("/admin") else self.s.SEC_HEADER_CSP
+        self._ensure_header(headers, "Content-Security-Policy", _csp)
         self._ensure_header(headers, "Referrer-Policy",        self.s.SEC_HEADER_RP)
         self._ensure_header(headers, "Permissions-Policy",     self.s.SEC_HEADER_PERM)
         if self.s.SEC_HEADER_HSTS_MAX_AGE and request.url.scheme == "https":
