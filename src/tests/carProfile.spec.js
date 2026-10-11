@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile } from '../utils/carProfile.js'
+import { deriveCarProfile, LINE_RATIOS } from '../utils/carProfile.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -30,8 +30,22 @@ describe('deriveCarProfile 全车型物理约束', () => {
   it('默认参数（无车型分支）也能合法推导', () => {
     const p = deriveCarProfile(defaultCarParams, 'sedan')
     assertUniversalConstraints(p, 'sedan')
-    // 车顶总高 = gc + H
-    expect(p.roofTopY - p.bodyBottomY).toBeCloseTo(defaultCarParams.overall_height / 1000, 5)
+    // 官方语义：overall_height = 离地总高（含离地间隙），车顶 Y = H
+    expect(p.roofTopY).toBeCloseTo(defaultCarParams.overall_height / 1000, 5)
+  })
+
+  it.each(ALL_TYPES)('%s 特征线高度 = H × LINE_RATIOS（离地语义，与 2D 同源）', (type) => {
+    const params = carTypeParams[type]
+    const p = deriveCarProfile(params, type)
+    const H = params.overall_height / 1000
+    const r = LINE_RATIOS[type]
+    expect(p.roofTopY).toBeCloseTo(H, 5)
+    expect(p.beltLineY).toBeCloseTo(H * r.belt, 5)
+    expect(p.hoodLineY).toBeCloseTo(H * r.hood, 5)
+    expect(p.trunkLineY).toBeCloseTo(H * (r.trunk ?? r.bed), 5)
+    // 特征线必须高于车身底边（侧裙），且低于车顶
+    expect(p.hoodLineY).toBeGreaterThan(p.bodyBottomY)
+    expect(p.beltLineY).toBeLessThan(p.roofTopY)
   })
 
   it.each(ALL_TYPES)('%s 满足全部通用拓扑约束', (type) => {
@@ -97,12 +111,19 @@ describe('sport：GT 尾翼落在后甲板上', () => {
 })
 
 describe('pickup：专属拓扑（短驾驶室 + 开放货箱）', () => {
-  it('驾驶室后缘位于后轮之后 0.25m，车顶不贯通', () => {
+  it('驾驶室后壁位于后轮中心朝车头 0.5m（F-150 基准），车顶不贯通', () => {
     const p = deriveCarProfile(carTypeParams.pickup, 'pickup')
     expect(p.pickup).not.toBeNull()
     const { cabRearX } = p.pickup
-    expect(cabRearX).toBeCloseTo(p.rearWheelX + 0.25, 5)
+    expect(cabRearX).toBeCloseTo(p.rearWheelX + 0.5, 5)
     expect(cabRearX).toBeGreaterThan(p.rearX)
+  })
+
+  it('货箱栏板上沿 = H × 0.58（≈F-150 栏板 1.09m），高于轮拱、低于腰带线', () => {
+    const p = deriveCarProfile(carTypeParams.pickup, 'pickup')
+    expect(p.pickup.bedWallY).toBeCloseTo(p.H * LINE_RATIOS.pickup.bed, 5)
+    expect(p.pickup.bedWallY).toBeGreaterThan(p.archY)
+    expect(p.pickup.bedWallY).toBeLessThan(p.beltLineY)
   })
 
   it('货箱栏板上沿高于轮拱，货箱完全落在车长范围内', () => {

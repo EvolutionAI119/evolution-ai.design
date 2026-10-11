@@ -8,21 +8,13 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { carTypeParams, defaultCarParams, brands } from '../src/config/carPresets'
 import { SISA_META, SISA_Z_TOP_NORM, evalTopRMSE, sampleTopNorm, toPlatformX } from '../src/config/sisaReference'
+import { LINE_RATIOS, deriveCarProfile } from '../src/utils/carProfile.js'
 
 const svgWidth = 800
 const svgHeight = 420
 const padTop = 30
 const dimAreaH = 84
 const groundY = svgHeight - dimAreaH
-
-const LINE_RATIOS = {
-  sedan:  { hood: 0.60, belt: 0.68, trunk: 0.64 },
-  suv:    { hood: 0.66, belt: 0.74, trunk: 0.70 },
-  coupe:  { hood: 0.62, belt: 0.66, trunk: 0.64 },
-  sport:  { hood: 0.66, belt: 0.68, trunk: 0.72 },
-  mpv:    { hood: 0.52, belt: 0.70, trunk: 0.74 },
-  pickup: { hood: 0.60, belt: 0.72, trunk: 0.80 }
-}
 
 function computeCar2D(params, carType = 'sedan') {
   const FO = params.front_overhang ?? 1000
@@ -32,8 +24,8 @@ function computeCar2D(params, carType = 'sedan') {
   const gc = params.ground_clearance ?? 140
   const actualLength = FO + WB + RO
 
-  // 双向自适应缩放：宽度（车长）与高度（离地 + 车高）共同约束
-  const scale = Math.min((svgWidth - 150) / actualLength, (groundY - padTop) / (H + gc))
+  // 双向自适应缩放：宽度（车长）与高度（离地总高 H，含离地间隙）共同约束
+  const scale = Math.min((svgWidth - 150) / actualLength, (groundY - padTop) / H)
   const s = (val) => val * scale
 
   const rearX = s(actualLength)
@@ -44,11 +36,12 @@ function computeCar2D(params, carType = 'sedan') {
   const wheelCY = groundY - wheelRadius
   const underbodyY = groundY - s(gc)
 
+  // 离地高度/H 语义（与组件同源：carProfile.js LINE_RATIOS）
   const r = LINE_RATIOS[carType] || LINE_RATIOS.sedan
-  const roofTopY = underbodyY - s(H)
-  const beltLineY = underbodyY - s(H * r.belt)
-  const hoodLineY = underbodyY - s(H * r.hood)
-  const trunkLineY = underbodyY - s(H * r.trunk)
+  const roofTopY = groundY - s(H)
+  const beltLineY = groundY - s(H * r.belt)
+  const hoodLineY = groundY - s(H * r.hood)
+  const trunkLineY = groundY - s(H * (r.trunk ?? r.bed ?? 0.60))
 
   const hoodEndX = Math.min(s(params.hood_length ?? 1000), rearX * 0.42)
   // Cowl 斜坡：机盖面上升至风挡底（与组件同式）
@@ -65,12 +58,17 @@ function computeCar2D(params, carType = 'sedan') {
   const maxRoofLength = rearX - tailReserve - windshieldTopX
   const minRoof = Math.min(maxRoofLength, Math.max(s(400), maxRoofLength * 0.25))
   const roofLen = Math.max(maxRoofLength * (1 - slantFactor * 0.6), minRoof)
-  const rearWindowTopX = windshieldTopX + roofLen
+
+  // 皮卡：车顶止于驾驶室后壁（后轮中心朝车头 0.5m），后窗近直立微向前收
+  const cabRearX2d = Math.max(rearWheelCX - s(500), windshieldTopX + s(300))
+  const rearWindowTopX = carType === 'pickup' ? cabRearX2d : windshieldTopX + roofLen
 
   const rwVertH = (beltLineY - roofTopY) * (0.5 + slantFactor * 0.35)
   const tanR = Math.tan(rearWindowAngleRad)
   const rwRun = tanR > 0.05 ? rwVertH / tanR : (rearX - tailReserve - rearWindowTopX)
-  const rearWindowBottomX = Math.min(Math.max(rearWindowTopX + rwRun, rearWindowTopX + s(30)), rearX - tailReserve)
+  const rearWindowBottomX = carType === 'pickup'
+    ? cabRearX2d - s(120)
+    : Math.min(Math.max(rearWindowTopX + rwRun, rearWindowTopX + s(30)), rearX - tailReserve)
 
   return {
     scale,
@@ -88,6 +86,7 @@ function computeCar2D(params, carType = 'sedan') {
     trunkLineY,
     hoodEndX,
     cowlStartX,
+    cabRearX2d,
     slantFactor,
     roofLen,
     windshieldTopX,
@@ -121,12 +120,12 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
   })
 
   describe('2. 高度线层次验证', () => {
-    it('所有车型应具有正确的三层高度线（车顶 < 腰带 < 引擎盖，尾箱 < 引擎盖）', () => {
+    it('所有车型应具有正确的三层高度线（车顶 < 腰带 < 引擎盖，尾箱/栏板 < 腰带）', () => {
       for (const type of Object.keys(carTypeParams)) {
         const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
         expect(result.roofTopY).toBeLessThan(result.beltLineY)
         expect(result.beltLineY).toBeLessThan(result.hoodLineY)
-        expect(result.trunkLineY).toBeLessThan(result.hoodLineY)
+        expect(result.trunkLineY).toBeGreaterThan(result.beltLineY) // 尾箱/栏板顶低于腰带线
         expect(result.heightLines.distanceRoofToBelt).toBeGreaterThan(0)
         expect(result.heightLines.distanceBeltToHood).toBeGreaterThan(0)
       }
@@ -262,8 +261,26 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       for (const r of Object.values(LINE_RATIOS)) {
         expect(1 - r.belt).toBeGreaterThanOrEqual(0.26) // 玻璃区高度不低于车高 26%
         expect(r.belt).toBeGreaterThan(r.hood)          // 腰带高于引擎盖
-        expect(r.trunk).toBeGreaterThan(r.hood)         // 尾部高于引擎盖
+        expect(r.trunk ?? r.bed).toBeLessThan(r.belt)   // 尾箱/栏板低于腰带
       }
+    })
+
+    it('特征线离地高度符合官方基准（E级 / Cayenne / F-150，±60mm 容差）', () => {
+      // sedan≈奔驰E级：腰带≈990mm、引擎盖≈905mm
+      const sedan = carTypeParams.sedan.overall_height
+      expect(sedan * LINE_RATIOS.sedan.belt).toBeGreaterThan(930)
+      expect(sedan * LINE_RATIOS.sedan.belt).toBeLessThan(1050)
+      expect(sedan * LINE_RATIOS.sedan.hood).toBeGreaterThan(845)
+      expect(sedan * LINE_RATIOS.sedan.hood).toBeLessThan(965)
+      // suv≈Cayenne：腰带≈1210mm
+      const suv = carTypeParams.suv.overall_height
+      expect(suv * LINE_RATIOS.suv.belt).toBeGreaterThan(1150)
+      expect(suv * LINE_RATIOS.suv.belt).toBeLessThan(1270)
+      // pickup≈F-150：货箱栏板≈1090mm、低于腰带
+      const pk = carTypeParams.pickup.overall_height
+      expect(pk * LINE_RATIOS.pickup.bed).toBeGreaterThan(1030)
+      expect(pk * LINE_RATIOS.pickup.bed).toBeLessThan(1150)
+      expect(LINE_RATIOS.pickup.bed).toBeLessThan(LINE_RATIOS.pickup.belt)
     })
 
     it('Cowl 斜坡位于风挡底之前（玻璃下缘落在车身表面）', () => {
@@ -299,6 +316,49 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       expect(src).toContain('dimY3')
       expect(src).toContain('H {{ overallHeight }}mm')
       expect(src).toContain('W {{ overallWidth }}mm')
+    })
+  })
+
+  describe('12. 皮卡拓扑与 2D/3D 比例一致性（F-150 基准）', () => {
+    it('驾驶室后壁 = 后轮中心朝车头 0.5m，车顶不贯通、货箱段 ≥1.5m', () => {
+      const params = { ...defaultCarParams, ...carTypeParams.pickup }
+      const result = computeCar2D(params, 'pickup')
+      expect(result.cabRearX2d).toBeCloseTo(result.rearWheelCX - result.scale * 500, 6)
+      expect(result.cabRearX2d).toBeGreaterThan(result.windshieldTopX)   // 车顶长度为正
+      expect(result.rearWindowTopX).toBeCloseTo(result.cabRearX2d, 6)    // 车顶止于驾驶室后壁
+      expect(result.rearX - result.cabRearX2d).toBeGreaterThan(result.scale * 1500) // 货箱段 ≈1.6m（F-150 1676mm 等比）
+      expect(result.rearWindowBottomX).toBeLessThan(result.cabRearX2d)   // 后窗下沿微向前收
+    })
+
+    it('2D 与 3D 关键比例逐点一致（carProfile 同源推导）', () => {
+      const params = { ...defaultCarParams, ...carTypeParams.pickup }
+      const r2d = computeCar2D(params, 'pickup')
+      const p3d = deriveCarProfile(carTypeParams.pickup, 'pickup')
+      // 驾驶室后壁：3D X+ 朝车头 → 前保险杠到后壁距离（mm）应等于 2D 同名量
+      const cabRearFromFrontMm = (p3d.frontX - p3d.pickup.cabRearX) * 1000
+      expect(r2d.cabRearX2d / r2d.scale).toBeCloseTo(cabRearFromFrontMm, 1)
+      // 特征线离地高度：2D/3D 同为 H × LINE_RATIOS
+      expect((r2d.groundY - r2d.roofTopY) / r2d.scale).toBeCloseTo(p3d.roofTopY * 1000, 1)
+      expect((r2d.groundY - r2d.beltLineY) / r2d.scale).toBeCloseTo(p3d.beltLineY * 1000, 1)
+      expect((r2d.groundY - r2d.hoodLineY) / r2d.scale).toBeCloseTo(p3d.hoodLineY * 1000, 1)
+      expect((r2d.groundY - r2d.trunkLineY) / r2d.scale).toBeCloseTo(p3d.pickup.bedWallY * 1000, 1)
+    })
+
+    it('六车型 2D/3D 车顶与腰带离地高度全部一致', () => {
+      for (const type of Object.keys(carTypeParams)) {
+        const params = { ...defaultCarParams, ...carTypeParams[type] }
+        const r2d = computeCar2D(params, type)
+        const p3d = deriveCarProfile(carTypeParams[type], type)
+        expect((r2d.groundY - r2d.roofTopY) / r2d.scale).toBeCloseTo(p3d.roofTopY * 1000, 1)
+        expect((r2d.groundY - r2d.beltLineY) / r2d.scale).toBeCloseTo(p3d.beltLineY * 1000, 1)
+      }
+    })
+
+    it('Car2D.vue 源码含皮卡专属拓扑分支（isPickup / cabRearX2d）', () => {
+      const src = readFileSync(resolve(process.cwd(), 'src/components/Car2D.vue'), 'utf8')
+      expect(src).toContain('isPickup')
+      expect(src).toContain('cabRearX2d')
+      expect(src).toContain("from '../utils/carProfile.js'")
     })
   })
 })

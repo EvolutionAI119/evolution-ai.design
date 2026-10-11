@@ -9,6 +9,18 @@
 //   2. 车顶后缘必须位于后围/甲板起点之前，保留至少 0.15m 余量
 //   3. 后窗下缘不得越过甲板起点（trunkStartX）→ 杜绝窗角突出车身形成「悬浮」
 //   4. 皮卡为专属拓扑：短驾驶室 + 开放货箱，车顶不允许贯通
+//
+// 高度分层比例（LINE_RATIOS）为 2D/3D 共享唯一来源：
+//   语义 = 该特征线「离地高度 / 整车高度 H」（行业侧视图惯例，官方参数可直接对照）
+//   校准基准：sedan≈E级 / suv≈Cayenne / coupe≈911 / sport≈488 / mpv≈V级 / pickup≈F-150
+export const LINE_RATIOS = {
+  sedan:  { hood: 0.62, belt: 0.68, trunk: 0.60 },
+  suv:    { hood: 0.64, belt: 0.68, trunk: 0.62 },
+  coupe:  { hood: 0.60, belt: 0.66, trunk: 0.60 },
+  sport:  { hood: 0.62, belt: 0.66, trunk: 0.62 },
+  mpv:    { hood: 0.56, belt: 0.66, trunk: 0.62 },
+  pickup: { hood: 0.62, belt: 0.66, bed: 0.58 }
+}
 export function deriveCarProfile(rawParams, carType = 'sedan') {
   const p = rawParams || {}
   const num = (v, d) => (Number.isFinite(+v) ? +v : d)
@@ -37,11 +49,14 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
   const rearX = rearWheelX - RO
 
   // ---------- 3. 高度（m，自地面起） ----------
+  // 官方语义：overall_height = 离地总高（含离地间隙），车顶 Y = H；
+  // 特征线离地高度 = H × LINE_RATIOS（与 2D Car2D.vue 同源，禁止再加 bodyBottomY）
   const bodyBottomY = gc
-  const roofTopY = bodyBottomY + H
-  const beltLineY = bodyBottomY + H * 0.76
-  const hoodLineY = bodyBottomY + H * 0.62
-  const trunkLineY = bodyBottomY + H * 0.66
+  const roofTopY = H
+  const lineRatios = LINE_RATIOS[carType] || LINE_RATIOS.sedan
+  const beltLineY = H * lineRatios.belt
+  const hoodLineY = H * lineRatios.hood
+  const trunkLineY = H * (lineRatios.trunk ?? lineRatios.bed ?? 0.60)
 
   // ---------- 4. 发动机舱与后甲板 X 锚点 ----------
   const hoodEndX = frontX - hoodLen
@@ -72,9 +87,11 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
   // ---------- 8. 皮卡专属拓扑（覆盖通用车顶/后窗推导） ----------
   let pickup = null
   if (carType === 'pickup') {
-    const bedWallY = gc + wheelR + 0.32                 // 货箱栏板上沿（轮拱之上）
-    // 通常驾驶室后壁落在后轮中心之后 0.25m；若轴距过小则向前收，保证货箱 ≥0.5m
-    const cabRearX = Math.max(rearWheelX + 0.25, rearX + 0.38)
+    // 货箱栏板上沿 = H × bed 比例（≈F-150 栏板高 1.09m，高于轮拱、低于腰带线）
+    const bedWallY = H * (lineRatios.bed ?? 0.58)
+    // 驾驶室后壁在后轮中心朝车头 0.5m（F-150：货箱前端位于后轴上方）；
+    // 若轴距过小则向前收，保证货箱 ≥0.5m
+    const cabRearX = Math.max(rearWheelX + 0.5, rearX + 0.38)
     const cabWindowBottomX = cabRearX + 0.12            // 驾驶室后窗下沿微向前收
     pickup = {
       bedWallY,
