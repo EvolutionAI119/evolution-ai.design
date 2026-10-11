@@ -11,7 +11,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/en/test-pyramid.svg" alt="Platform test pyramid" loading="lazy">
-  <figcaption><strong>Fig. 1 Platform test pyramid: four verification layers and layering principles</strong>How to read: The pyramid stacks bottom-up 200 algorithm unit tests, 111 frontend components, 178 backend integrations and a slim E2E layer — lower layers are faster and steadier, upper ones highest-value; right panel lists layering rules; bottom badges: 489/489 passing and full LLM benchmark hits.</figcaption>
+  <figcaption><strong>Fig. 1 ｜ Platform test pyramid: four verification layers and layering principles</strong> How to read: The pyramid stacks bottom-up 200 algorithm unit tests, 111 frontend components, 178 backend integrations and a slim E2E layer — lower layers are faster and steadier, upper ones highest-value; right panel lists layering rules; bottom badges: 489/489 passing and full LLM benchmark hits.</figcaption>
 </figure>
 
 ---
@@ -186,7 +186,7 @@ POST /api/v1/car/generate → 200 OK
 - Frontend: Vite 5 + Vue 3.4 (http://127.0.0.1:5173)
 - Backend: FastAPI + Uvicorn (http://127.0.0.1:8000), `GUEST_MODE=true` (account suspension period)
 - Public tunnel: cpolar (this round https://5bb18d47.r30.cpolar.top)
-- Public site: https://evolution-ai.design (GitHub Pages, gh-pages `ba59fde9`)
+- Public site: https://evolution-ai.design (GitHub Pages, gh-pages `215e94e8`)
 - Standalone admin: http://127.0.0.1:8000/admin/ (served by FastAPI StaticFiles)
 
 ## 7. Automated test overview (authoritative figures, same-day runs)
@@ -202,7 +202,7 @@ POST /api/v1/car/generate → 200 OK
 
 <figure class="doc-figure">
   <img src="docs/images/october-regression-donut.svg" alt="Backend regression breakdown" loading="lazy">
-  <figcaption><strong>Fig. 7-1 ｜ Backend regression breakdown (344 cases)</strong>How to read: the donut shows the makeup of the 344 backend cases — 341 pass (99.13%), 1 skip (0.29%, requires a real LLM), 2 xfail (0.58%, pipeline migrated to SISA); conclusion: zero unexpected failures.</figcaption>
+  <figcaption><strong>Fig. 7-1 ｜ Backend regression breakdown (344 cases)</strong> How to read: the donut shows the makeup of the 344 backend cases — 341 pass (99.13%), 1 skip (0.29%, requires a real LLM), 2 xfail (0.58%, pipeline migrated to SISA); conclusion: zero unexpected failures.</figcaption>
 </figure>
 
 ## 8. New / rewritten tests this round
@@ -219,7 +219,7 @@ POST /api/v1/car/generate → 200 OK
 
 <figure class="doc-figure">
   <img src="docs/images/october-new-tests.svg" alt="New and rewritten tests this round" loading="lazy">
-  <figcaption><strong>Fig. 8-1 ｜ New / rewritten test cases this round</strong>How to read: the horizontal bars list 5 test files by case count descending — authStore 13, topology closure 12, router guard 5, standalone admin 3, guest mode 2; 35 cases total covering topology, guest mode, admin hosting, routing and identity.</figcaption>
+  <figcaption><strong>Fig. 8-1 ｜ New / rewritten test cases this round</strong> How to read: the horizontal bars list 5 test files by case count descending — authStore 13, topology closure 12, router guard 5, standalone admin 3, guest mode 2; 35 cases total covering topology, guest mode, admin hosting, routing and identity.</figcaption>
 </figure>
 
 ## 9. Admin-console relocation test (browser verification)
@@ -248,12 +248,12 @@ POST /api/v1/car/generate → 200 OK
 
 <figure class="doc-figure">
   <img src="docs/images/october-guest-arch.svg" alt="Guest-mode architecture" loading="lazy">
-  <figcaption><strong>Fig. 10-1 ｜ Guest-mode architecture</strong>How to read: an anonymous visitor goes through the `GUEST_MODE` bypass and resolves to the built-in guest (superadmin) to reach all features; the red block at the bottom covers the production fail-fast guard and the test-suite anti-bypass mechanism.</figcaption>
+  <figcaption><strong>Fig. 10-1 ｜ Guest-mode architecture</strong> How to read: an anonymous visitor goes through the `GUEST_MODE` bypass and resolves to the built-in guest (superadmin) to reach all features; the red block at the bottom covers the production fail-fast guard and the test-suite anti-bypass mechanism.</figcaption>
 </figure>
 
 ## 11. Public-site release verification (mandatory gate)
 
-After gh-pages deployment `ba59fde9`, https://evolution-ai.design was verified:
+After gh-pages deployment `215e94e8`, https://evolution-ai.design was verified:
 
 | Check | Result |
 |---|---|
@@ -274,3 +274,36 @@ After gh-pages deployment `ba59fde9`, https://evolution-ai.design was verified:
 ```
 
 **Status**: core platform functions are usable; full feature coverage during the account-suspension (guest-mode) period; administration retained via the standalone backend console. Next: restore the account system and disable GUEST_MODE after mainland-server ICP filing completes.
+
+---
+
+## 13. Compliance Review (2026-10-11)
+
+### 13.1 Secrets and Credentials
+
+| Item | Result | Note |
+|------|--------|------|
+| Hardcoded secrets | ✅ None | No `sk-`-prefixed real secrets in backend/frontend source |
+| `.env` protection | ✅ Compliant | `.env` / `.env.*` all gitignored; only `.env.example` tracked |
+| Key registry | ✅ Compliant | `backend/.key-registry.json` stores metadata only, no plaintext secrets, gitignored |
+| Production SECRET_KEY | ✅ Compliant | Default value forbidden, min 32 chars; fail-fast on violation |
+| LLM platform key isolation | ✅ Compliant | Each platform has independent `EVOAI_{PROVIDER}_KEY` slot; no sharing |
+
+### 13.2 Cross-Border Data and PIPL
+
+| Item | Result | Note |
+|------|--------|------|
+| WeChat QR login | ✅ Suspended | Frontend routes removed; backend routes gated by `WECHAT_APPID`/`WECHAT_SECRET`, auto-disabled when unset |
+| Production deployment | ✅ Compliant | Production with WeChat QR login limited to compliant mainland servers |
+| Guest mode | ✅ Compliant | Built-in guest (superadmin) with random password; production `GUEST_MODE=true` triggers fail-fast |
+| Contact email | ✅ Fixed | `Icemtrainer@hotmail.com` |
+
+### 13.3 Frontend Security
+
+| Item | Result | Note |
+|------|--------|------|
+| Admin code isolation | ✅ Compliant | Public build has zero Admin chunks; backend `/admin/` standalone hosting |
+| CSP scoping | ✅ Compliant | Public site strict CSP; only `/admin` adds `'unsafe-eval'` |
+| Login entry | ✅ Removed | No login button/dialog in top bar; defaults to guest state |
+
+**Compliance conclusion**: secrets management, cross-border data, and frontend security reviews all pass. Pending ICP filing to disable GUEST_MODE and restore the account system.

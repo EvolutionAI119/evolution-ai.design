@@ -166,7 +166,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/en/validation-metrics.svg" alt="Key metrics at audit time" loading="lazy">
-  <figcaption><strong>Fig. 4-1 Key metrics at audit time: three-layer test scale and pass rate</strong>How to read: Bars snapshot the audit-time test scale — 200 algorithm / 178 backend / 111 frontend / 5 self-check, 489 cases all passing; right badges correspond to the audit conclusion of a consistent fact baseline.</figcaption>
+  <figcaption><strong>Fig. 4-1 ｜ Key metrics at audit time: three-layer test scale and pass rate</strong> How to read: Bars snapshot the audit-time test scale — 200 algorithm / 178 backend / 111 frontend / 5 self-check, 489 cases all passing; right badges correspond to the audit conclusion of a consistent fact baseline.</figcaption>
 </figure>
 
 | Metric | Status | Note |
@@ -190,13 +190,13 @@
 | Topology-closure tests | **12 / 12 pass** | `test_car_topology_closure.py`: opening closure, transverse-chain edge coincidence, plan taper, wheel-arch liners, etc. |
 | Guest-mode tests | 2 / 2 pass | Full access without a token; fail-fast when enabled in production |
 | Standalone-admin tests | 3 / 3 pass | `/admin/` hosting, assets on disk, scoped-CSP boundary |
-| Mainline branch | `main` | HEAD `864421d5` (8 feature commits merged by fast-forward) |
-| Public static site | `gh-pages` | HEAD `ba59fde9`; verified on https://evolution-ai.design |
+| Mainline branch | `main` | HEAD `2a87fcd9` (8 feature commits + 2 documentation commits merged by fast-forward) |
+| Public static site | `gh-pages` | HEAD `215e94e8`; verified on https://evolution-ai.design |
 | Admin console | Served by backend at `/admin/` | Zero Admin code in the public frontend (route/menu/chunk all removed) |
 
 <figure class="doc-figure">
   <img src="docs/images/october-test-results.svg" alt="October test scale and results" loading="lazy">
-  <figcaption><strong>Fig. 4-2 ｜ October test scale and results</strong>How to read: the bar chart shows the five test layers run on the same day — backend 341 / frontend 142 / topology 12 / guest mode 2 / standalone admin 3; the right-side badges give the combined 483 cases with zero failures and the backend 341 pass / 1 skip / 2 xfail breakdown.</figcaption>
+  <figcaption><strong>Fig. 4-2 ｜ October test scale and results</strong> How to read: the bar chart shows the five test layers run on the same day — backend 341 / frontend 142 / topology 12 / guest mode 2 / standalone admin 3; the right-side badges give the combined 483 cases with zero failures and the backend 341 pass / 1 skip / 2 xfail breakdown.</figcaption>
 </figure>
 
 ---
@@ -273,7 +273,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/october-closure.svg" alt="Seven body opening categories sealed" loading="lazy">
-  <figcaption><strong>Fig. 7-1 ｜ Seven body opening categories sealed</strong>How to read: front center panel / tailgate panel / A·C pillar triangular wedges / cowl seal / underbody tray / wheel-arch liners / interior shelves — all seven opening categories are sealed, with every part's dimensions, assembly and topology aligned to spec.</figcaption>
+  <figcaption><strong>Fig. 7-1 ｜ Seven body opening categories sealed</strong> How to read: front center panel / tailgate panel / A·C pillar triangular wedges / cowl seal / underbody tray / wheel-arch liners / interior shelves — all seven opening categories are sealed, with every part's dimensions, assembly and topology aligned to spec.</figcaption>
 </figure>
 
 ### 7.2 Account-system suspension and full-feature guest mode
@@ -291,7 +291,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/october-guest-arch.svg" alt="Guest-mode architecture" loading="lazy">
-  <figcaption><strong>Fig. 7-2 ｜ Guest-mode architecture</strong>How to read: an anonymous visitor goes through the `GUEST_MODE` bypass and resolves to the built-in `guest@evolution-ai.design` (superadmin) to reach all features; the red block at the bottom is the production fail-fast guard (production + GUEST_MODE=true is rejected at startup).</figcaption>
+  <figcaption><strong>Fig. 7-2 ｜ Guest-mode architecture</strong> How to read: an anonymous visitor goes through the `GUEST_MODE` bypass and resolves to the built-in `guest@evolution-ai.design` (superadmin) to reach all features; the red block at the bottom is the production fail-fast guard (production + GUEST_MODE=true is rejected at startup).</figcaption>
 </figure>
 
 ### 7.3 Admin module moved out of the public frontend (standalone backend hosting)
@@ -309,12 +309,12 @@
 
 <figure class="doc-figure">
   <img src="docs/images/october-admin-flow.svg" alt="Admin relocation flow" loading="lazy">
-  <figcaption><strong>Fig. 7-3 ｜ Admin relocation flow</strong>How to read: the old state (the public frontend ships `/admin`) moves through four steps — remove from main site → standalone build → backend hosting → CSP scoping — to the new state (FastAPI serves `/admin` standalone; the public site carries zero Admin code); the bottom block describes the login-gate semantics.</figcaption>
+  <figcaption><strong>Fig. 7-3 ｜ Admin relocation flow</strong> How to read: the old state (the public frontend ships `/admin`) moves through four steps — remove from main site → standalone build → backend hosting → CSP scoping — to the new state (FastAPI serves `/admin` standalone; the public site carries zero Admin code); the bottom block describes the login-gate semantics.</figcaption>
 </figure>
 
 <figure class="doc-figure">
   <img src="docs/images/october-csp-scope.svg" alt="CSP scoping" loading="lazy">
-  <figcaption><strong>Fig. 7-4 ｜ CSP scoping</strong>How to read: public APIs and the main site keep strict `script-src 'self'`; only the `/admin` document scope adds `'unsafe-eval'` for vue-i18n compilation, selected by the middleware per request path; the bottom records the first-run white-screen defect and the fix path.</figcaption>
+  <figcaption><strong>Fig. 7-4 ｜ CSP scoping</strong> How to read: public APIs and the main site keep strict `script-src 'self'`; only the `/admin` document scope adds `'unsafe-eval'` for vue-i18n compilation, selected by the middleware per request path; the bottom records the first-run white-screen defect and the fix path.</figcaption>
 </figure>
 
 ### 7.4 Mainland-China compliant production deployment preparation
@@ -325,7 +325,7 @@
 
 <figure class="doc-figure">
   <img src="docs/images/october-deployment.svg" alt="Production deployment topology" loading="lazy">
-  <figcaption><strong>Fig. 7-5 ｜ Production deployment topology</strong>How to read: the browser goes through Nginx (TLS) same-origin reverse proxy — `/` to the GitHub Pages static site, `/api` and `/admin` to the FastAPI backend; data layer PostgreSQL + Redis; all hosted on a JD Cloud 2C4G compliant mainland server satisfying PIPL data-residency rules.</figcaption>
+  <figcaption><strong>Fig. 7-5 ｜ Production deployment topology</strong> How to read: the browser goes through Nginx (TLS) same-origin reverse proxy — `/` to the GitHub Pages static site, `/api` and `/admin` to the FastAPI backend; data layer PostgreSQL + Redis; all hosted on a JD Cloud 2C4G compliant mainland server satisfying PIPL data-residency rules.</figcaption>
 </figure>
 
 ### 7.5 Audit conclusion and regression data
@@ -337,17 +337,96 @@
 | Main-site build | Passes; output contains no Admin code | After `npm run build`, no Admin chunk in `dist/assets/` |
 | Admin build | Passes (2 HTML + 6 assets) | `npm run build:admin` |
 | Admin browser test | All 5 tabs render; evidence charts OK; zero console errors | http://localhost:8000/admin/ |
-| Public site | Deployed and tested | gh-pages `ba59fde9`, https://evolution-ai.design |
+| Public site | Deployed and tested | gh-pages `215e94e8`, https://evolution-ai.design |
 
 **Remaining / follow-up items**:
 
 | Priority | Item |
 |---|---|
 | High | JD Cloud purchase + domain transfer-in + ICP filing (checklist ready, ~1 month); after filing, production must disable GUEST_MODE and restore the account system |
-| Medium | SISA sync of the new `feature/nurbs-geometry-phase2` HEAD (currently blocked by the safety layer; needs explicit user approval to run `sync_open_source.ps1`) |
+| ~~Medium~~ ✅ | SISA sync of the new `feature/nurbs-geometry-phase2` HEAD (completed 2026-10-11, HEAD `2a87fcd9`, 15 assets synced; SISA isolation tests 6/6, topology closure tests 10/10 passing) |
 | Medium | P1–P6 historical items in §4 of the Platform Test Report not re-tested specifically (DEMO animation hardcoded port, deprecated ElPagination usage); close them in the next dedicated frontend regression |
 
 <figure class="doc-figure">
   <img src="docs/images/october-timeline.svg" alt="October iteration timeline" loading="lazy">
-  <figcaption><strong>Fig. 7-6 ｜ October iteration timeline</strong>How to read: the 8 commits merged to main over time — the first four cover NURBS closure and streamlining, the middle two cover account suspension and JD Cloud deployment, the last two cover Admin relocation and the CSP fix; mainline HEAD is `864421d5`.</figcaption>
+  <figcaption><strong>Fig. 7-6 ｜ October iteration timeline</strong> How to read: the 8 commits merged to main over time — the first four cover NURBS closure and streamlining, the middle two cover account suspension and JD Cloud deployment, the last two cover Admin relocation and the CSP fix; mainline HEAD is `2a87fcd9` (including subsequent documentation commits).</figcaption>
 </figure>
+
+---
+
+## VIII. Report Visualization Standardization (2026-10-11)
+
+> Commit: `2a87fcd9`
+> Scope: full-coverage charting of key metrics, conclusions, and logical relationships in the audit and test reports
+
+### 8.1 Visualization Approach
+
+**Technology**: native SVG (zero dependencies, renders directly on GitHub Pages, committable), generator `tools/gen_october_charts.py` (Python); all figures come from same-day real test runs.
+
+**Design system** (inherits existing `docs/images/` charts):
+- Dark background `#0F1622`, border `#1E2A3A`, canvas 960×440, rounded corners rx=14
+- Four accent colors: green `#34D399` / blue `#38BDF8` / purple `#A78BFA` / yellow `#FBBF24`
+- Fonts Segoe UI / Microsoft YaHei; titles with a 12×12 color-block indicator
+
+### 8.2 Chart Inventory (9 SVGs)
+
+| File | Type | Content |
+|------|------|---------|
+| `october-test-results.svg` | Bar chart | Five test layers, 483 cases, zero failures |
+| `october-regression-donut.svg` | Donut | Backend 344-case breakdown (341 pass / 1 skip / 2 xfail) |
+| `october-new-tests.svg` | Horizontal bar | Case distribution across 5 new/rewritten test files |
+| `october-admin-flow.svg` | Flow chart | Admin relocation four-step flow |
+| `october-guest-arch.svg` | Architecture | Guest-mode bypass + production fail-fast |
+| `october-timeline.svg` | Timeline | 8-commit evolution |
+| `october-closure.svg` | Card grid | 7 body opening categories sealed |
+| `october-deployment.svg` | Topology | Production deployment topology |
+| `october-csp-scope.svg` | Two-column | CSP scoping relationship |
+
+### 8.3 Quality Red Lines
+
+- XML must be well-formed (`save()` stage escapes `&` → `&amp;`, preserving existing entities)
+- Each chart has title, data labels, units/notes, and legend
+- No more than 4 colors per chart
+- All data traceable to `pytest` / `npm test` runs
+- Captions include a "How to read" note
+
+### 8.4 Embedding and Release Verification
+
+- Chinese audit report embeds 7 charts (Fig. 4-2 + Fig. 7-1~7-6); Chinese test report embeds 3
+- English reports reuse the same SVGs (Chinese labels inside); only figcaptions are in English
+- Mandatory public-network check: all 9 SVGs return 200; Help Center browser test confirms all render correctly
+
+---
+
+## IX. Compliance Review (2026-10-11)
+
+### 9.1 Secrets and Credentials
+
+| Item | Result | Note |
+|------|--------|------|
+| Hardcoded secret scan | ✅ None | No `sk-`-prefixed real secrets in backend/frontend source |
+| `.env` protection | ✅ Compliant | `.env` / `.env.*` all gitignored; only `.env.example` is tracked |
+| Key registry | ✅ Compliant | `backend/.key-registry.json` stores metadata only (version/status/timestamp), no plaintext secrets, and is gitignored |
+| Production SECRET_KEY check | ✅ Compliant | Default value forbidden, minimum 32 chars; violation triggers fail-fast |
+| Platform key isolation | ✅ Compliant | Each LLM platform has an independent `EVOAI_{PROVIDER}_KEY` slot; no cross-platform sharing |
+
+### 9.2 Cross-Border Data and PIPL
+
+| Item | Result | Note |
+|------|--------|------|
+| WeChat QR login | ✅ Suspended | Frontend `/login`, `/account` routes removed; backend WeChat routes gated by `WECHAT_APPID`/`WECHAT_SECRET` env vars, auto-disabled when unset |
+| Production deployment constraint | ✅ Compliant | Any production environment with WeChat QR login must run on compliant mainland servers only |
+| Guest mode | ✅ Compliant | Built-in `guest@evolution-ai.design` (superadmin, random non-login password); production `GUEST_MODE=true` triggers fail-fast |
+| Contact email | ✅ Fixed | `Icemtrainer@hotmail.com`, supports mailto + one-click copy |
+
+### 9.3 Frontend Security
+
+| Item | Result | Note |
+|------|--------|------|
+| Admin code isolation | ✅ Compliant | Admin module moved out of public frontend; served standalone by FastAPI at `/admin/`; public build contains zero Admin chunks |
+| CSP scoping | ✅ Compliant | Public site keeps strict `script-src 'self'`; only `/admin` document scope adds `'unsafe-eval'` (for vue-i18n compilation), with a regression test locking the boundary |
+| Login entry | ✅ Removed | No login button/dialog in the top bar; defaults to guest state on the home page |
+
+### 9.4 Compliance Conclusion
+
+The platform is currently in the **account-suspension period (guest mode)**, with all features open to guests and administration retained via the standalone backend console. Secrets management, cross-border data, and frontend security reviews all pass. **Pending**: after mainland-server ICP filing completes, production must disable `GUEST_MODE` and restore the account system.
