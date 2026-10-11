@@ -17,6 +17,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 import json
@@ -240,12 +241,16 @@ def _clamp(name: str, value: Any, warnings_out: List[str], m: Dict[str, Any]) ->
 
 
 def sanitize_intent(raw: Dict[str, Any], prompt: str = "",
-                    lang: str = "zh") -> Dict[str, Any]:
+                    lang: str = "zh",
+                    enforce_car_type: str | None = None) -> Dict[str, Any]:
     """把 LLM 原始输出校验为合法方案；任何坏字段都安全降级而非抛异常。
 
     返回结构含 warnings 列表，记录所有被修正的字段（可追溯）。
     prompt 非空时，用其中的强信号词对车型做确定性校正。
     lang 决定词表、默认值与警告语言（zh / en）。
+    enforce_car_type：多车型范式模式下指定目标车型——直接锁定 car_type，
+    跳过 prompt 车型词校正（否则一句话里提到的车型词会把所有候选
+    都改写成同一车型，范式对比失效）。
     """
     m = _MSG_PACK[normalize_lang(lang)]
     warnings_out: List[str] = []
@@ -255,15 +260,19 @@ def sanitize_intent(raw: Dict[str, Any], prompt: str = "",
         warnings_out.append(m["bad_type"].format(v=car_type))
         car_type = "sedan"
 
-    # prompt 明确车型词 → 覆盖模型判断（用户意图优先）
-    ptext = prompt or ""
-    for hinted, words in m["hints"]:
-        if any(w in ptext for w in words):
-            if car_type != hinted:
-                warnings_out.append(m["correction"].format(
-                    old=car_type, new=hinted))
-                car_type = hinted
-            break
+    if enforce_car_type in CAR_TYPES:
+        # 范式模式：锁定目标车型，不做 prompt 词校正
+        car_type = enforce_car_type
+    else:
+        # prompt 明确车型词 → 覆盖模型判断（用户意图优先）
+        ptext = prompt or ""
+        for hinted, words in m["hints"]:
+            if any(w in ptext for w in words):
+                if car_type != hinted:
+                    warnings_out.append(m["correction"].format(
+                        old=car_type, new=hinted))
+                    car_type = hinted
+                break
 
     raw_params = raw.get("params") or {}
     if not isinstance(raw_params, dict):
@@ -327,11 +336,23 @@ def sanitize_intent(raw: Dict[str, Any], prompt: str = "",
 
 
 # ── LLM 调用（封装以便测试 monkeypatch） ────────────────
-async def invoke_llm(prompt: str, lang: str = "zh") -> Dict[str, Any]:
+_CAR_TYPE_DIRECTIVE_ZH = ("【范式约束】本次方案的目标车型强制为「{ct}」："
+                          "请完全以该车型范式的比例与姿态诠释用户需求，"
+                          "car_type 字段必须输出 \"{ct}\"。")
+_CAR_TYPE_DIRECTIVE_EN = ("[Paradigm constraint] The target car type for this plan is "
+                          "forced to \"{ct}\": interpret the user's intent entirely in "
+                          "the proportions and stance of that paradigm; the car_type "
+                          "field must be \"{ct}\".")
+
+
+async def invoke_llm(prompt: str, lang: str = "zh",
+                     car_type_hint: str | None = None) -> Dict[str, Any]:
     """调用 SiliconFlow 让模型输出 JSON；返回解析后的 dict。
 
     无 Key → 503；上游故障 → 502；坏 JSON → 502。
     lang 决定系统提示词语言。
+    car_type_hint：多车型范式模式下强制目标车型（在用户消息前注入
+    约束指令；即使模型偏离，sanitize_intent 的 enforce 也会兜底）。
     """
     api_key = os.getenv("EVOAI_SILICONFLOW_KEY", "").strip()
     if not api_key:
@@ -340,12 +361,18 @@ async def invoke_llm(prompt: str, lang: str = "zh") -> Dict[str, Any]:
             detail="未配置 EVOAI_SILICONFLOW_KEY，设计意图引擎不可用",
         )
 
-    m = _MSG_PACK[normalize_lang(lang)]
+    lang_norm = normalize_lang(lang)
+    m = _MSG_PACK[lang_norm]
+    user_content = prompt
+    if car_type_hint in CAR_TYPES:
+        directive = (_CAR_TYPE_DIRECTIVE_ZH if lang_norm == "zh"
+                     else _CAR_TYPE_DIRECTIVE_EN)
+        user_content = f"{directive.format(ct=car_type_hint)}\n{prompt}"
     payload = {
         "model": _LLM_MODEL,
         "messages": [
             {"role": "system", "content": m["system_prompt"]},
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": user_content},
         ],
         "temperature": 0.4,
         "max_tokens": 900,
@@ -413,3 +440,42 @@ async def parse_intent(req: ParseRequest, request: Request):
     result = sanitize_intent(raw, req.prompt, lang)
     result["source"] = f"siliconflow:{_LLM_MODEL}"
     return result
+
+
+# ── 多车型范式端点 ──────────────────────────────────────
+class VariantsRequest(BaseModel):
+    prompt: str = Field(..., min_length=2, max_length=1000,
+                        description="自然语言设计需求")
+    lang: str = Field("zh", description="输出语言：zh / en")
+    types: List[str] = Field(
+        default_factory=list,
+        description="目标车型范式列表；缺省 = 全部 6 种车型")
+
+
+@router.post("/parse-variants")
+@limit(settings.RATE_LIMIT_AI)
+async def parse_variants(req: VariantsRequest, request: Request):
+    """一句话 → 多车型范式方案组（旧版 Variants 能力的 Copilot 化）。
+
+    对每种目标车型并发调用一次意图引擎，并以 enforce_car_type 锁定
+    车型（跳过 prompt 车型词校正），让同一意图在六种整车范式下各产出
+    一份可对比、可应用的完整方案。单个范式失败不拖垮整组：该范式返回
+    {"error": ...} 占位，其余照常输出。
+    """
+    lang = normalize_lang(req.lang)
+    types = [t for t in req.types if t in CAR_TYPES] or list(CAR_TYPES)
+
+    async def _one(ct: str) -> Dict[str, Any]:
+        try:
+            raw = await invoke_llm(req.prompt, lang, car_type_hint=ct)
+            plan = sanitize_intent(raw, req.prompt, lang, enforce_car_type=ct)
+            return plan
+        except HTTPException as exc:
+            return {"car_type": ct, "error": str(exc.detail)}
+
+    plans = await asyncio.gather(*(_one(ct) for ct in types))
+    return {
+        "source": f"siliconflow:{_LLM_MODEL}",
+        "types": types,
+        "variants": list(plans),
+    }

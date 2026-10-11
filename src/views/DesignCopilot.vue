@@ -41,93 +41,114 @@
       </div>
     </el-card>
 
-    <!-- 结果区 -->
-    <template v-if="plan">
-      <el-card class="result-card" shadow="never">
-        <div class="result-head">
-          <div class="result-tags">
-            <el-tag size="large" type="success" effect="dark">
-              {{ t('deepLearning.carTypes.' + plan.car_type) }}
-            </el-tag>
-            <el-tag
-              v-for="tag in plan.style_tags"
-              :key="tag"
-              size="large"
-              effect="plain"
-              class="style-tag"
-            >{{ tag }}</el-tag>
-          </div>
-          <div class="confidence">
-            <span class="conf-label">{{ t('copilot.confidence') }}</span>
-            <el-progress
-              :percentage="Math.round(plan.confidence * 100)"
-              :stroke-width="8"
-              style="width: 120px"
-            />
-          </div>
+    <!-- 结果区：多车型范式候选 -->
+    <template v-if="variants.length">
+      <div class="variants-head">
+        <div class="variants-title">
+          <el-tag size="large" effect="dark" type="primary">{{ t('copilot.variants') }}</el-tag>
+          <span class="variants-hint">{{ t('copilot.variantsHint') }}</span>
         </div>
-
-        <div class="color-row">
-          <div class="color-swatch" :style="{ background: plan.color.hex }" />
-          <span class="color-name">{{ plan.color.name }}</span>
-          <span class="color-hex">{{ plan.color.hex }}</span>
-        </div>
-
-        <el-alert
-          class="rationale"
-          type="info"
-          :closable="false"
-          :title="plan.rationale"
-        />
-
-        <!-- 参数表 -->
-        <div class="param-groups">
-          <div v-for="g in paramGroups" :key="g.key" class="param-group">
-            <h4>{{ t(g.titleKey) }}</h4>
-            <div
-              v-for="name in g.keys"
-              :key="name"
-              class="param-line"
-            >
-              <span class="param-name">{{ t('deepLearning.paramNames.' + name) }}</span>
-              <span class="param-value">
-                {{ plan.params[name] }}
-                <em>{{ name.includes('angle') ? '°' : 'mm' }}</em>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <el-alert
-          v-if="plan.warnings.length"
-          class="warnings"
+        <el-tag
+          v-if="failedCount"
           type="warning"
-          :closable="false"
-          show-icon
-        >
-          <template #title>{{ t('copilot.warnings') }} ({{ plan.warnings.length }})</template>
-          <ul class="warning-list">
-            <li v-for="(w, i) in plan.warnings" :key="i">{{ w }}</li>
-          </ul>
-        </el-alert>
+          effect="plain"
+        >{{ failedCount }} {{ t('copilot.variantFailed') }}</el-tag>
+      </div>
 
-        <div class="result-actions">
-          <el-button type="primary" size="large" @click="applyToDesigner">
-            <el-icon class="btn-icon"><Brush /></el-icon>
-            {{ t('copilot.apply') }}
-          </el-button>
-          <el-button size="large" @click="copyJson">
-            <el-icon class="btn-icon"><CopyDocument /></el-icon>
-            {{ t('copilot.copy') }}
-          </el-button>
-        </div>
-      </el-card>
+      <div class="variants-grid">
+        <el-card
+          v-for="plan in variants"
+          :key="plan.car_type"
+          class="variant-card"
+          :class="{ 'is-failed': !!plan.error }"
+          shadow="never"
+        >
+          <!-- 失败占位卡 -->
+          <template v-if="plan.error">
+            <div class="failed-body">
+              <el-tag type="danger" effect="plain">
+                {{ t('deepLearning.carTypes.' + plan.car_type) }}
+              </el-tag>
+              <p class="failed-msg">{{ plan.error }}</p>
+            </div>
+          </template>
+
+          <!-- 正常方案卡 -->
+          <template v-else>
+            <div class="card-head">
+              <el-tag size="large" type="success" effect="dark">
+                {{ t('deepLearning.carTypes.' + plan.car_type) }}
+              </el-tag>
+              <div class="confidence">
+                <span class="conf-label">{{ t('copilot.confidence') }}</span>
+                <el-progress
+                  :percentage="Math.round(plan.confidence * 100)"
+                  :stroke-width="6"
+                  style="width: 84px"
+                />
+              </div>
+            </div>
+
+            <div class="tag-row">
+              <el-tag
+                v-for="tag in plan.style_tags"
+                :key="tag"
+                size="small"
+                effect="plain"
+              >{{ tag }}</el-tag>
+            </div>
+
+            <div class="color-row">
+              <div class="color-swatch" :style="{ background: plan.color.hex }" />
+              <span class="color-name">{{ plan.color.name }}</span>
+              <span class="color-hex">{{ plan.color.hex }}</span>
+            </div>
+
+            <div class="key-params">
+              <div v-for="k in keyParamKeys" :key="k" class="key-param">
+                <span class="kp-name">{{ t('deepLearning.paramNames.' + k) }}</span>
+                <span class="kp-value">
+                  {{ plan.params[k] }}
+                  <em>{{ k.includes('angle') ? '°' : 'mm' }}</em>
+                </span>
+              </div>
+            </div>
+
+            <p class="rationale-text">{{ plan.rationale }}</p>
+
+            <el-tooltip
+              v-if="plan.warnings.length"
+              :content="plan.warnings.join('；')"
+              placement="top"
+            >
+              <el-tag size="small" type="warning" effect="plain" class="warn-badge">
+                {{ t('copilot.warnings') }} ({{ plan.warnings.length }})
+              </el-tag>
+            </el-tooltip>
+
+            <div class="card-actions">
+              <el-button
+                type="primary"
+                size="small"
+                @click="applyToDesigner(plan)"
+              >
+                <el-icon class="btn-icon"><Brush /></el-icon>
+                {{ t('copilot.apply') }}
+              </el-button>
+              <el-button size="small" @click="copyJson(plan)">
+                <el-icon class="btn-icon"><CopyDocument /></el-icon>
+                {{ t('copilot.copy') }}
+              </el-button>
+            </div>
+          </template>
+        </el-card>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
@@ -142,19 +163,15 @@ const designer = useDesignerStore()
 const prompt = ref('')
 const examples = ref([])
 const loading = ref(false)
-const plan = ref(null)
+const variants = ref([])
 
-const paramGroups = [
-  { key: 'size', titleKey: 'copilot.groupSize',
-    keys: ['overall_length', 'overall_width', 'overall_height',
-           'wheel_base', 'track_width', 'ground_clearance'] },
-  { key: 'body', titleKey: 'copilot.groupBody',
-    keys: ['hood_length', 'roof_height', 'wheel_diameter'] },
-  { key: 'angle', titleKey: 'copilot.groupAngle',
-    keys: ['windshield_angle', 'rear_window_angle', 'rear_slant_angle'] },
-  { key: 'overhang', titleKey: 'copilot.groupOverhang',
-    keys: ['front_overhang', 'rear_overhang'] }
+// 范式卡片的摘要参数（全量 14 参数通过复制 JSON / 设计器查看）
+const keyParamKeys = [
+  'overall_length', 'wheel_base', 'overall_height', 'windshield_angle'
 ]
+
+const okCount = computed(() => variants.value.filter(v => !v.error).length)
+const failedCount = computed(() => variants.value.filter(v => !!v.error).length)
 
 const loadExamples = async () => {
   try {
@@ -169,10 +186,15 @@ const onGenerate = async () => {
   if (prompt.value.trim().length < 2 || loading.value) return
   loading.value = true
   try {
-    const { data } = await designIntentAPI.parse(prompt.value.trim(), locale.value)
-    plan.value = data
-    if (!data.warnings.length) {
-      ElMessage.success(t('copilot.success'))
+    const { data } = await designIntentAPI.parseVariants(prompt.value.trim(), locale.value)
+    variants.value = data.variants || []
+    if (okCount.value && !failedCount.value) {
+      ElMessage.success(t('copilot.variantsSuccess', { n: okCount.value }))
+    } else if (okCount.value) {
+      ElMessage.warning(t('copilot.variantsPartial',
+        { ok: okCount.value, fail: failedCount.value }))
+    } else {
+      ElMessage.error(t('copilot.failed'))
     }
   } catch (e) {
     ElMessage.error(t(e.errorKey || 'copilot.failed'))
@@ -185,21 +207,20 @@ const onGenerate = async () => {
 // 保证英文界面下不残留后端旧语言的标签、颜色名与设计说明
 watch(locale, async () => {
   await loadExamples()
-  if (plan.value && prompt.value.trim().length >= 2) await onGenerate()
+  if (prompt.value.trim().length >= 2) await onGenerate()
 })
 
-const applyToDesigner = () => {
-  designer.setCarType(plan.value.car_type)
-  designer.updateParams(plan.value.params)
-  designer.selectColor(plan.value.color.hex)
+const applyToDesigner = (plan) => {
+  designer.setCarType(plan.car_type)
+  designer.updateParams(plan.params)
+  designer.selectColor(plan.color.hex)
   ElMessage.success(t('copilot.applied'))
   router.push('/designer')
 }
 
-const copyJson = async () => {
+const copyJson = async (plan) => {
   const text = JSON.stringify(
-    { car_type: plan.value.car_type, params: plan.value.params,
-      color: plan.value.color }, null, 2)
+    { car_type: plan.car_type, params: plan.params, color: plan.color }, null, 2)
   try {
     await navigator.clipboard.writeText(text)
     ElMessage.success(t('copilot.copied'))
@@ -216,7 +237,7 @@ const copyJson = async () => {
 .copilot-title { font-size: 24px; font-weight: 800; margin: 0 0 6px; }
 .copilot-subtitle { color: var(--text-secondary); font-size: 13px; margin: 0; }
 
-.input-card, .result-card {
+.result-card, .variant-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -236,50 +257,69 @@ const copyJson = async () => {
 .example-tag:hover { border-color: var(--accent); }
 
 .result-card { margin-top: 16px; }
-.result-head {
+
+/* ── 多车型范式候选区 ── */
+.variants-head {
   display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+  flex-wrap: wrap; gap: 10px; margin: 20px 0 12px;
 }
-.result-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.style-tag { font-size: 13px; }
-.confidence { display: flex; align-items: center; gap: 10px; }
-.conf-label { font-size: 12px; color: var(--text-secondary); }
+.variants-title { display: flex; align-items: center; gap: 10px; }
+.variants-hint { color: var(--text-secondary); font-size: 12px; }
 
-.color-row {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+.variants-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 14px; align-items: start;
 }
+.variant-card { transition: border-color 0.2s; }
+.variant-card:hover { border-color: var(--accent); }
+.variant-card.is-failed { opacity: 0.75; }
+
+.failed-body { display: flex; flex-direction: column; gap: 10px; }
+.failed-msg {
+  color: var(--text-muted); font-size: 12px; margin: 0;
+  word-break: break-all; line-height: 1.6;
+}
+
+.card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; margin-bottom: 10px;
+}
+.confidence { display: flex; align-items: center; gap: 8px; }
+.conf-label { font-size: 11px; color: var(--text-secondary); }
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+
+.color-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .color-swatch {
-  width: 34px; height: 34px; border-radius: 8px;
-  border: 1px solid var(--border-color);
+  width: 26px; height: 26px; border-radius: 6px;
+  border: 1px solid var(--border-color); flex: none;
 }
-.color-name { font-size: 14px; font-weight: 600; }
-.color-hex { color: var(--text-muted); font-size: 12px; font-family: monospace; }
+.color-name { font-size: 13px; font-weight: 600; }
+.color-hex { color: var(--text-muted); font-size: 11px; font-family: monospace; }
 
-.rationale { margin-bottom: 18px; border-radius: 8px; }
-
-.param-groups {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 16px;
-}
-.param-group h4 {
-  font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px;
-  color: var(--text-muted); margin: 0 0 8px;
-}
-.param-line {
+.key-params { margin-bottom: 12px; }
+.key-param {
   display: flex; justify-content: space-between; align-items: baseline;
-  padding: 5px 0; border-bottom: 1px solid var(--border-color);
+  padding: 4px 0; border-bottom: 1px solid var(--border-color);
 }
-.param-name { font-size: 13px; color: var(--text-secondary); }
-.param-value { font-size: 13px; font-weight: 600; }
-.param-value em {
-  font-style: normal; color: var(--text-muted); font-size: 11px; margin-left: 3px;
+.kp-name { font-size: 12px; color: var(--text-secondary); }
+.kp-value { font-size: 13px; font-weight: 600; }
+.kp-value em {
+  font-style: normal; color: var(--text-muted); font-size: 10px; margin-left: 2px;
 }
 
-.warnings { margin-bottom: 16px; border-radius: 8px; }
-.warning-list { margin: 4px 0 0; padding-left: 18px; font-size: 12px; line-height: 1.8; }
+.rationale-text {
+  color: var(--text-secondary); font-size: 12px; line-height: 1.7;
+  margin: 0 0 12px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
-.result-actions { display: flex; gap: 12px; margin-top: 4px; }
+.warn-badge { cursor: help; }
 
-@media (max-width: 720px) {
-  .param-groups { grid-template-columns: 1fr; }
+.card-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+@media (max-width: 860px) {
+  .variants-grid { grid-template-columns: 1fr; }
 }
 </style>

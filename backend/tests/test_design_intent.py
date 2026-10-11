@@ -312,3 +312,97 @@ def test_real_llm_roundtrip(client):
     data = resp.json()
     assert data["car_type"] in di.CAR_TYPES
     assert len(data["params"]) == 14
+
+
+# ── 6. 多车型范式（/parse-variants + enforce_car_type） ─
+def test_enforce_car_type_locks_and_skips_hint():
+    # 即使 prompt 明确"轿跑"，enforce 也会锁定 suv（范式模式语义）
+    out = di.sanitize_intent({**GOOD_RAW, "car_type": "coupe"},
+                             "我要一台深色轿跑", enforce_car_type="suv")
+    assert out["car_type"] == "suv"
+    # 无校正警告（跳过 hint 逻辑）
+    assert not any("校正" in w or "Corrected" in w for w in out["warnings"])
+    # 其余字段照常校验
+    assert set(out["params"]) == set(di.PARAM_BOUNDS)
+
+
+def test_enforce_invalid_type_still_sanitized():
+    # 非法 enforce 值不锁定，走普通路径
+    out = di.sanitize_intent(GOOD_RAW, enforce_car_type="van")
+    assert out["car_type"] == "coupe"
+
+
+def test_invoke_llm_injects_car_type_directive(monkeypatch):
+    # car_type_hint 注入范式约束指令到用户消息
+    captured = {}
+
+    async def fake_post(self, url, json=None, headers=None):
+        captured["messages"] = json["messages"]
+
+        class _Resp:
+            status_code = 200
+            def json(self):
+                return {"choices": [{"message": {"content": "{}"}}]}
+        return _Resp()
+
+    monkeypatch.setenv("EVOAI_SILICONFLOW_KEY", "test-key")
+    monkeypatch.setattr(di.httpx.AsyncClient, "post", fake_post)
+
+    async def _call():
+        async with di.httpx.AsyncClient() as c:
+            # 直接驱动 fake_post：替换 post 后 AsyncClient 上下文可用
+            await di.invoke_llm("一台稳重的车", "zh", car_type_hint="mpv")
+    import asyncio as _aio
+    _aio.run(_call())
+
+    user_msg = captured["messages"][1]["content"]
+    assert "mpv" in user_msg
+    assert "范式约束" in user_msg
+    assert user_msg.endswith("一台稳重的车")
+
+
+def test_parse_variants_endpoint_all_types(client, monkeypatch):
+    # 默认 6 范式全并发返回；每个范式 car_type 被锁定为对应目标
+    seen_hints = []
+
+    async def fake_invoke(prompt, lang="zh", car_type_hint=None):
+        seen_hints.append(car_type_hint)
+        return {**GOOD_RAW, "car_type": car_type_hint or "sedan"}
+    monkeypatch.setattr(di, "invoke_llm", fake_invoke)
+
+    resp = client.post("/api/v1/design-intent/parse-variants",
+                       json={"prompt": "一台适合长途旅行的车"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["source"] == f"siliconflow:{di._LLM_MODEL}"
+    assert data["types"] == list(di.CAR_TYPES)
+    assert len(data["variants"]) == 6
+    assert sorted(seen_hints) == sorted(di.CAR_TYPES)
+    by_type = {v["car_type"]: v for v in data["variants"]}
+    assert set(by_type) == set(di.CAR_TYPES)
+    for ct in di.CAR_TYPES:
+        v = by_type[ct]
+        assert "error" not in v
+        assert len(v["params"]) == 14
+
+
+def test_parse_variants_selected_types_and_partial_failure(client, monkeypatch):
+    # 指定 types 子集 + 单范式失败返回 error 占位不拖垮整组
+    async def fake_invoke(prompt, lang="zh", car_type_hint=None):
+        if car_type_hint == "suv":
+            from fastapi import HTTPException
+            raise HTTPException(status_code=504, detail="意图引擎超时（45s）")
+        return {**GOOD_RAW, "car_type": car_type_hint or "sedan"}
+    monkeypatch.setattr(di, "invoke_llm", fake_invoke)
+
+    resp = client.post("/api/v1/design-intent/parse-variants",
+                       json={"prompt": "一台家用车",
+                             "types": ["sedan", "suv", "pickup", "bogus"]})
+    assert resp.status_code == 200
+    data = resp.json()
+    # 非法类型 bogus 被白名单过滤
+    assert data["types"] == ["sedan", "suv", "pickup"]
+    by_type = {v["car_type"]: v for v in data["variants"]}
+    assert "error" in by_type["suv"]
+    assert by_type["sedan"]["car_type"] == "sedan"
+    assert by_type["pickup"]["car_type"] == "pickup"

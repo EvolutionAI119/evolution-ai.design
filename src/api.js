@@ -511,6 +511,8 @@ export const analyticsAPI = {
 // AI 设计意图引擎：自然语言 → 结构化整车方案
 export const designIntentAPI = {
   parse: (prompt, lang = 'zh') => api.post('/design-intent/parse', { prompt, lang }),
+  parseVariants: (prompt, lang = 'zh', types = []) =>
+    api.post('/design-intent/parse-variants', { prompt, lang, types }),
   examples: (lang = 'zh') => api.get('/design-intent/examples', { params: { lang } })
 }
 
