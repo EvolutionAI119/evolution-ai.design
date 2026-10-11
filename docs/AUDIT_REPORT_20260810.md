@@ -179,6 +179,21 @@
 | Docker LLM 服务 | 就绪 | `Dockerfile.llm` + `docker-compose.llm.yml` + `docker-llm.ps1` |
 | Git 分支 | `v1.01-reconstruct` | 最新 commit `c6a65af3` |
 
+> 上表为 **2026-08-10 时点基线**，原始记录保留不回改。2026-10-11 最新快照见 4.1 节，完整增补审计见第七章。
+
+### 4.1 2026-10-11 关键指标快照
+
+| 指标 | 状态 | 说明 |
+|------|------|------|
+| 后端测试 | **341 通过 / 1 跳过 / 2 预期失败** | 26 个测试文件；跳过项需真实 LLM（`RUN_REAL_LLM=1`），2 项 xfail 为已迁 SISA 的曲率管线 |
+| 前端测试 | **142 / 142 通过** | 10 个测试文件（`src/tests/` 4 个 spec + 根 `tests/` 6 个 test） |
+| 拓扑封闭测试 | **12 / 12 通过** | `test_car_topology_closure.py`：开口封闭、横链边重合、俯视收窄、轮拱内衬等 |
+| 游客模式测试 | 2 / 2 通过 | 无令牌全功能放行 + 生产环境开启 fail-fast |
+| 独立后台测试 | 3 / 3 通过 | `/admin/` 托管、资产落盘、CSP 作用域边界 |
+| 主线分支 | `main` | HEAD `864421d5`（feature 分支 8 个提交快进合入） |
+| 公开静态站 | `gh-pages` | HEAD `ba59fde9`，https://evolution-ai.design 已验证 |
+| 管理后台 | 后端 `/admin/` 独立托管 | 公开前端零 Admin 代码（路由/菜单/chunk 均已移除） |
+
 ---
 
 ## 五、遗留事项与建议
@@ -229,3 +244,75 @@
 ### 归档文件
 
 - ~80+ 个非核心文件移至 `_archive/`（详见 2.2 节）
+
+---
+
+## 七、10 月 10–11 日增补审计
+
+> 增补日期: 2026-10-11
+> 审计范围: `feature/nurbs-geometry-phase2` 分支 8 个提交（`ea41ce3b..864421d5`），已快进合入 `main` 主线
+> 涵盖: NURBS 整车封闭化与流线型造型、账号体系封存（游客模式）、Admin 模块后移、内地合规生产部署准备、gh-pages 重新部署
+
+### 7.1 NURBS 连续车身几何重构与整车封闭化
+
+**背景**: 旧版 `car_generator.py` 存在系统性几何缺陷（翼子板穿透地面、零件越出 `car_layout.py` 布局契约、行李箱错位、车门贴中轴线）；铁律：只能基于 main 版本继续开发，不得回退。
+
+**改造内容**（提交 `ea41ce3b` / `6df66e06` / `4ab70371` / `7c128f4c`）:
+
+- 第二阶段连续车身几何重构，车漆反光调优，轮眉渐隐消除轮拱台阶
+- **7 类开口全部封闭**：前脸中央封板、尾门封板、A/C 柱三角楔、cowl 封条、底盘托盘、轮拱内衬、内饰搁板；所有零件尺寸、装配关系、拓扑结构对齐规范
+- **流线型造型**：俯视收窄 + 斜背圆角，消除方盒子机械感；首尾封板雕塑化
+- 修复 `car.py` 调用不存在的 `generate_pillar` 方法的 bug：改为按 `pillar_type` 分发到对应生成函数，非法柱型返回 400
+
+**验证**: 新增 `test_car_topology_closure.py` 共 12 项测试全部通过（横链边重合、cowl 封条、柱楔共边、底盘封闭、前后封板、俯视收窄、门框压条、轮拱内衬、防透视搁板、零件普查等）；四视角浏览器复验无破洞、无空隙。
+
+### 7.2 账号体系封存与全功能游客模式
+
+**决策背景**: 微信扫码登录依赖固定公网域名（cpolar 免费版随机域名导致 10003）；境外/香港服务器因用户数据跨境不符合《个人信息保护法》；内地服务器需域名转入 + ICP 备案（约 1 个月周期）。过渡期决策：**封存账号体系，全功能游客开放**。
+
+| 层 | 改动 | 文件 |
+|------|------|------|
+| 后端开关 | 新增 `GUEST_MODE`：开启后受保护接口免登录、统一落到内置 `guest@evolution-ai.design`（superadmin，随机不可登录口令，惰性幂等创建） | `backend/app/config.py`、`backend/app/security.py` |
+| 生产防护 | 生产环境开启 `GUEST_MODE=true` 直接 fail-fast（与弱 SECRET_KEY 同级启动校验） | `config.py` |
+| 测试防回归 | pytest 强制 `GUEST_MODE=false`，防止 401/403 语义用例被游客旁路击穿 | `backend/tests/conftest.py` |
+| 前端身份 | Pinia 预置 guest(superadmin) 身份，令牌仅存内存；退出即回游客态 | `src/stores/auth.js` |
+| 路由/入口 | 移除 `/login`、`/account` 路由与顶栏用户菜单/登录弹窗（源码封存于 `views/`）；`/contact` 替代 Account（邮箱 Icemtrainer@hotmail.com，mailto + 一键复制） | `src/router.js`、`src/App.vue`、`src/views/Contact.vue` |
+| 测试 | 新增 2 项游客模式测试；前端 5 项失效用例改写为游客态语义 | `test_guest_mode.py`、`authStore.spec.js`、`routerGuard.spec.js` |
+
+### 7.3 Admin 模块移出公开前端（后端独立托管）
+
+**风险**: 游客全功能开放后，含用户管理/审计日志/后端错误/影响证据的 Admin 页面对匿名访客可达，且其完整代码随 gh-pages 静态站公开可下载。
+
+**改造内容**（提交 `c45d9ccc` / `864421d5`）:
+
+- 主站 SPA 移除 `/admin` 路由与侧栏「管理」分组；Admin chunk 不再进入公开构建
+- 新增独立构建：`admin.html` + `src/admin_main.js` + `AdminGate.vue`（登录门），`vite.admin.config.js` 构建至 `backend/app/static/admin/`，FastAPI `StaticFiles` 在 `/admin` 托管；产物入库保证 Docker 镜像自包含
+- **登录门语义**：无令牌出示管理员登录表单（非管理员显示无权限页）；游客模式下自动进入；原 5 个标签（登录记录/用户管理/后端错误/审计日志/影响证据）功能完整保留
+- 生产 nginx 模板新增 `/admin` 反代规则（`deploy/default.conf.template`）
+- **CSP 作用域修复**：vue-i18n 消息编译器依赖 `Function` 构造器，严格 CSP（`script-src 'self'`）下后台脚本被整体拦截白屏；新增 `/admin` 文档专用 CSP 仅追加 `'unsafe-eval'`，公开 API 与主站策略不变，并有测试锁定该边界
+- 新增 3 项托管/CSP 测试（`test_admin_console.py`）
+
+### 7.4 内地合规生产部署准备
+
+- 新增 `deploy/jdcloud_2c4g_checklist.md`：9 步清单（京东云 2C4G 购买、域名由境外注册商转入境内、ICP 备案、DNS、Docker 四服务栈、TLS、微信后台、数据迁移）
+- 新增 `deploy/server_bootstrap.sh`：Ubuntu 22.04 一键初始化（2G swap 防 OOM、Docker 阿里云源、DaoCloud 镜像加速、时区、unattended-upgrades）
+- 架构约束：同域 `/api` 反代；含微信扫码的生产环境只允许内地合规服务器
+
+### 7.5 审计结论与回归数据
+
+| 验证项 | 结果 | 可复现路径 |
+|------|------|------|
+| 后端全量回归 | 341 通过 / 1 跳过 / 2 xfail | `cd backend && python -m pytest` |
+| 前端全量回归 | 142 / 142 通过 | `npm test`（10 个测试文件） |
+| 主站构建 | 通过，产物不含 Admin 代码 | `npm run build` 后 `dist/assets/` 无 Admin chunk |
+| 后台构建 | 通过（2 HTML + 6 资产） | `npm run build:admin` |
+| 后台浏览器实测 | 5 标签全渲染、影响证据图表正常、控制台零错误 | http://localhost:8000/admin/ |
+| 公网站点 | 已部署并实测 | gh-pages `ba59fde9`，https://evolution-ai.design |
+
+**遗留/后续事项**:
+
+| 优先级 | 事项 |
+|------|------|
+| 高 | 京东云购买 + 域名转入 + ICP 备案（清单已备，约 1 个月）；备案完成后生产环境必须关闭 GUEST_MODE 并恢复账号体系 |
+| 中 | `feature/nurbs-geometry-phase2` 新 HEAD 的 SISA 同步（安全层拦截中，需用户明确批准后执行 `sync_open_source.ps1`） |
+| 中 | 《平台测试报告》第 4 节 P1–P6 历史问题中未专项复测的条目（DEMO 动画端口硬编码、ElPagination 过期用法），下次前端专项回归时核销 |

@@ -174,3 +174,88 @@ POST /api/v1/car/generate → 200 OK
 1. Add the DEMO animation resource (fix P1 + P5)
 2. Initialize SQLite project data or fix the Projects 500 (P2)
 3. Batch-fix Element Plus deprecation warnings (P3)
+
+---
+
+# Second Platform Test Round (2026-10-11)
+
+**Test date**: 2026-10-11
+**Trigger**: NURBS full-body closure/streamlining (4 commits), account-system suspension with guest mode, Admin relocation, JD Cloud deployment checklist — 8 commits merged to `main` (`ea41ce3b..864421d5`)
+**Environment**:
+- OS: Windows
+- Frontend: Vite 5 + Vue 3.4 (http://127.0.0.1:5173)
+- Backend: FastAPI + Uvicorn (http://127.0.0.1:8000), `GUEST_MODE=true` (account suspension period)
+- Public tunnel: cpolar (this round https://5bb18d47.r30.cpolar.top)
+- Public site: https://evolution-ai.design (GitHub Pages, gh-pages `ba59fde9`)
+- Standalone admin: http://127.0.0.1:8000/admin/ (served by FastAPI StaticFiles)
+
+## 7. Automated test overview (authoritative figures, same-day runs)
+
+| Layer | Command | Files | Result |
+|---|---|---|---|
+| Backend integration | `cd backend && python -m pytest` | 26 | **341 passed / 1 skipped / 2 xfail** |
+| Frontend component/unit | `npm test` (vitest) | 10 | **142 / 142 pass** |
+
+- Backend skip: design-intent test requiring a real SiliconFlow call (enable with `RUN_REAL_LLM=1`)
+- Backend 2 xfails: the Harness curvature pipeline migrated to SISA and cannot be imported on the platform; the cases are marked no longer applicable
+- Frontend 10 files = 4 `*.spec.js` in `src/tests/` + 6 `*.test.js` in root `tests/`
+
+## 8. New / rewritten tests this round
+
+| Test file | Cases | Coverage |
+|---|---|---|
+| `backend/tests/test_car_topology_closure.py` | 12 | Transverse-chain edge coincidence, cowl seal, shared A/C-pillar wedge edges, underbody tray closure, front/rear sealing, deck-length conservation, plan taper, sculpted nose/tail, door-sill overlap, wheel-arch liners, see-through blocking shelves, part census |
+| `backend/tests/test_guest_mode.py` | 2 | Full access without a token (idempotent guest/superadmin); enabling GUEST_MODE in production must fail fast |
+| `backend/tests/test_admin_console.py` | 3 | `/admin/` returns console HTML; `unsafe-eval` appears only in /admin document CSP; build artifacts on disk |
+| `src/tests/routerGuard.spec.js` (rewritten) | 5 | Login/Account/Admin routes all absent; Contact present; no redirects for any site path |
+| `src/tests/authStore.spec.js` (rewritten) | 13 | Preset guest (superadmin), logout returns to guest, three-tier role getters |
+
+**Regression result**: all 483 cases (341 backend + 142 frontend) pass with zero failures; no historical regression.
+
+## 9. Admin-console relocation test (browser verification)
+
+| Check | Expected | Result |
+|---|---|---|
+| Public main bundle | No Admin chunk/route/menu anywhere | 🟢 No Admin file in `dist/assets/`; no "Admin" sidebar group; no login button in the top bar |
+| `GET /admin/` | Returns standalone console HTML (`#admin-app`) | 🟢 200 |
+| Console assets | `/admin/assets/*.js` reachable | 🟢 200 |
+| Five tabs | Login records / user management / backend errors / audit logs / impact evidence all render | 🟢 Table data visible; guest user queryable via API |
+| Impact evidence | 7 KPI cards + trend/distribution ECharts | 🟢 Data lines render |
+| Console | No red errors | 🟢 Zero errors in a fresh tab (the first-run CSP EvalError was fixed; see below) |
+| Public reachability | Tunnel `/admin/` accessible | 🟢 HTTP 200 |
+
+**Defect-fix record**: the first test showed a white screen with `EvalError: 'unsafe-eval' is not an allowed source of script` — the vue-i18n message compiler uses the `Function` constructor, blocked by the global strict CSP (`script-src 'self'`). Fix: a document-scoped CSP allowing `'unsafe-eval'` only for `/admin`; public API and main-site CSP stay strict, with a new regression test locking the boundary (commit `864421d5`).
+
+## 10. Guest-mode checks
+
+| Check | Result |
+|---|---|
+| Landing on the home page shows no login dialog; identity is guest/superadmin | 🟢 |
+| No redirects across all pages (Designer/Projects/Quality/Deliver/DEMO/Community/Help/Contact) | 🟢 |
+| `/contact` replaces Account: mailto and one-click copy of Icemtrainer@hotmail.com | 🟢 |
+| Production fail-fast: production + GUEST_MODE=true rejected at startup | 🟢 (unit-tested) |
+| Test suite not bypassed: conftest forces GUEST_MODE=false | 🟢 401/403 semantics preserved |
+
+## 11. Public-site release verification (mandatory gate)
+
+After gh-pages deployment `ba59fde9`, https://evolution-ai.design was verified:
+
+| Check | Result |
+|---|---|
+| Main bundle hash updated (`index-Bsn6kRdz.js`) | 🟢 |
+| Old Admin chunk no longer accessible (404) | 🟢 |
+| Page renders normally, no white screen | 🟢 |
+| CNAME / .nojekyll / docs directory in place | 🟢 |
+
+## 12. Second-round conclusion
+
+```
+■ Backend automation:  341 PASS / 1 SKIP / 2 XFAIL (26 files)
+■ Frontend automation: 142/142 PASS (10 files); 483 cases total, zero failures
+■ Topology closure:    12/12 PASS (all 7 body opening categories sealed)
+■ Admin relocation:    zero Admin code on the public site; /admin five tabs pass browser test with zero console errors
+■ Guest mode:          all site features open; production fail-fast guard in place
+■ Public release:      evolution-ai.design verified consistent with expectations
+```
+
+**Status**: core platform functions are usable; full feature coverage during the account-suspension (guest-mode) period; administration retained via the standalone backend console. Next: restore the account system and disable GUEST_MODE after mainland-server ICP filing completes.
