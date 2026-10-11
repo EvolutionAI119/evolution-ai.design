@@ -2,6 +2,18 @@
   <!-- 登录/注册页：无侧边栏的全屏布局 -->
   <router-view v-if="isLoginRoute" />
   <div v-else class="app-container" :class="{ 'sidebar-open': sidebarOpen }">
+    <!-- 演示模式横幅：静态站未连接后端时一次性说明（探测见 utils/apiProbe.js） -->
+    <transition name="demo-fade">
+      <div v-if="demoMode && !demoDismissed" class="demo-banner" role="status">
+        <span class="demo-banner-tag">DEMO</span>
+        <span class="demo-banner-text">{{ t('app.demoBanner') }}</span>
+        <button
+          class="demo-banner-close"
+          :aria-label="t('common.close')"
+          @click="demoDismissed = true"
+        >✕</button>
+      </div>
+    </transition>
     <!-- 移动端抽屉遮罩 -->
     <div
       v-if="isMobile"
@@ -160,6 +172,7 @@ import enLocale from 'element-plus/dist/locale/en.mjs'
 import { useAuthStore } from './stores/auth'
 import { analyticsAPI } from './api'
 import { tracker } from './utils/tracker'
+import { demoMode, demoDismissed, probeApi } from './utils/apiProbe'
 
 const route = useRoute()
 const router = useRouter()
@@ -281,6 +294,8 @@ onMounted(() => {
   // 通知未读数轮询（60s）；游客模式下命中内置 guest 账户
   pollUnreadCount()
   notifTimer = setInterval(pollUnreadCount, 60000)
+  // API 可达性探测（公网静态站 → 演示模式横幅；本地/隧道 → 静默）
+  probeApi()
 })
 
 onBeforeUnmount(() => {
@@ -387,7 +402,40 @@ body {
 
 #app { height: 100vh; width: 100%; }
 
-.app-container { height: 100vh; width: 100%; }
+.app-container {
+  height: 100vh; width: 100%;
+  display: flex; flex-direction: column;
+}
+/* 演示模式横幅之下，主布局占满剩余高度（不影响侧栏/内容区滚动） */
+.app-container > .el-container { flex: 1; min-height: 0; }
+
+/* ── 演示模式横幅 ── */
+.demo-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 16px;
+  background: color-mix(in srgb, #f59e0b 14%, var(--bg-secondary));
+  border-bottom: 1px solid color-mix(in srgb, #f59e0b 45%, transparent);
+  font-size: 12.5px; line-height: 1.5;
+  flex-shrink: 0;
+}
+.demo-banner-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  color: #f59e0b;
+  border: 1px solid #f59e0b; border-radius: 4px;
+  padding: 2px 6px; flex-shrink: 0;
+}
+.demo-banner-text { color: var(--text-primary); flex: 1; min-width: 0; }
+.demo-banner-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 13px; line-height: 1;
+  padding: 4px 6px; border-radius: 4px; flex-shrink: 0;
+}
+.demo-banner-close:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+}
+.demo-fade-enter-active, .demo-fade-leave-active { transition: opacity .25s; }
+.demo-fade-enter-from, .demo-fade-leave-to { opacity: 0; }
 
 .sidebar {
   background: var(--bg-secondary);

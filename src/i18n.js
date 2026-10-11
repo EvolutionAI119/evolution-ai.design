@@ -6,6 +6,7 @@ const zh = {
   app: {
     title: 'EVOLUTION AI',
     subtitle: 'A级曲面开发平台',
+    demoBanner: '演示版：当前为静态演示站点，AI 生成 / 训练 / 导出等动态功能需连接后端服务后可用',
     dashboard: '仪表盘', designer: '模型生成', projects: '项目管理', models: '模型管理',
     export: '模型导出', variants: '模型变体', workflow: '工作流', quality: '质量检查',
     parameters: '参数管理', reports: '报告中心', handover: '数据交接', modify: '模型修改',
@@ -512,6 +513,7 @@ const zh = {
     target: '目标', actual: '实际', passed: '通过', failed: '失败', start: '开始执行', completed: '完成',
     actions: '操作', close: '关闭', adminOnly: '仅管理员可访问该页面',
     errors: {
+      demoOffline: '演示版未连接后端服务，该功能在连接后端后可用',
       e400: '请求参数有误，请检查后重试',
       e401: '登录已过期，请重新登录',
       e403: '您没有权限执行此操作',
@@ -876,6 +878,7 @@ const en = {
   app: {
     title: 'EVOLUTION AI',
     subtitle: 'Class A Surface Development Platform',
+    demoBanner: 'Demo mode: this is a static demo site. AI generation / training / export require a connected backend service.',
     dashboard: 'Dashboard', designer: 'Model Generator', projects: 'Project Management', models: 'Model Management',
     export: 'Model Export', variants: 'Model Variants', workflow: 'Workflow', quality: 'Quality Check',
     parameters: 'Parameter Management', reports: 'Report Center', handover: 'Data Handover', modify: 'Model Modify',
@@ -1382,6 +1385,7 @@ const en = {
     target: 'Target', actual: 'Actual', passed: 'Passed', failed: 'Failed', start: 'Starting', completed: 'Completed',
     actions: 'Actions', close: 'Close', adminOnly: 'Only administrators can access this page',
     errors: {
+      demoOffline: 'Demo mode: backend service not connected. This feature requires a backend connection.',
       e400: 'Invalid request parameters, please check and retry',
       e401: 'Session expired, please log in again',
       e403: 'You do not have permission to perform this action',
