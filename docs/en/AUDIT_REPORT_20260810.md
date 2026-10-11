@@ -194,6 +194,11 @@
 | Public static site | `gh-pages` | HEAD `ba59fde9`; verified on https://evolution-ai.design |
 | Admin console | Served by backend at `/admin/` | Zero Admin code in the public frontend (route/menu/chunk all removed) |
 
+<figure class="doc-figure">
+  <img src="docs/images/october-test-results.svg" alt="October test scale and results" loading="lazy">
+  <figcaption><strong>Fig. 4-2 ｜ October test scale and results</strong>How to read: the bar chart shows the five test layers run on the same day — backend 341 / frontend 142 / topology 12 / guest mode 2 / standalone admin 3; the right-side badges give the combined 483 cases with zero failures and the backend 341 pass / 1 skip / 2 xfail breakdown.</figcaption>
+</figure>
+
 ---
 
 ## V. Remaining Items and Recommendations
@@ -266,6 +271,11 @@
 
 **Verification**: new `test_car_topology_closure.py` with 12 tests all passing (transverse-chain edge coincidence, cowl seal, shared pillar-wedge edges, underbody closure, front/rear sealing, deck-length conservation, plan taper, sculpted panels, door-sill overlap, arch liners, see-through blocking, part census); four-view browser re-check confirmed no holes or gaps.
 
+<figure class="doc-figure">
+  <img src="docs/images/october-closure.svg" alt="Seven body opening categories sealed" loading="lazy">
+  <figcaption><strong>Fig. 7-1 ｜ Seven body opening categories sealed</strong>How to read: front center panel / tailgate panel / A·C pillar triangular wedges / cowl seal / underbody tray / wheel-arch liners / interior shelves — all seven opening categories are sealed, with every part's dimensions, assembly and topology aligned to spec.</figcaption>
+</figure>
+
 ### 7.2 Account-system suspension and full-feature guest mode
 
 **Decision context**: WeChat QR login requires a fixed public domain (random cpolar free-tier domains cause error 10003); overseas/Hong Kong servers conflict with PIPL cross-border data rules; mainland servers require registrar transfer-in plus ICP filing (~1 month). Transition decision: **suspend the account system and open all features to guests**.
@@ -278,6 +288,11 @@
 | Frontend identity | Pinia ships with a guest (superadmin) identity; token in memory only; logout returns to guest state | `src/stores/auth.js` |
 | Routes/entry | Removed `/login`, `/account` routes and the top-bar user menu/login dialog (sources retained in `views/`); `/contact` replaces Account (email Icemtrainer@hotmail.com, mailto + one-click copy) | `src/router.js`, `src/App.vue`, `src/views/Contact.vue` |
 | Tests | 2 new guest-mode tests; 5 obsolete frontend cases rewritten to guest semantics | `test_guest_mode.py`, `authStore.spec.js`, `routerGuard.spec.js` |
+
+<figure class="doc-figure">
+  <img src="docs/images/october-guest-arch.svg" alt="Guest-mode architecture" loading="lazy">
+  <figcaption><strong>Fig. 7-2 ｜ Guest-mode architecture</strong>How to read: an anonymous visitor goes through the `GUEST_MODE` bypass and resolves to the built-in `guest@evolution-ai.design` (superadmin) to reach all features; the red block at the bottom is the production fail-fast guard (production + GUEST_MODE=true is rejected at startup).</figcaption>
+</figure>
 
 ### 7.3 Admin module moved out of the public frontend (standalone backend hosting)
 
@@ -292,11 +307,26 @@
 - **Scoped CSP fix**: the vue-i18n message compiler uses the `Function` constructor, blocked wholesale by strict CSP (`script-src 'self'`), causing a white screen; a document-scoped CSP for `/admin` adds only `'unsafe-eval'`, while public API and main-site policies stay strict, with a regression test locking the boundary
 - 3 new hosting/CSP tests (`test_admin_console.py`)
 
+<figure class="doc-figure">
+  <img src="docs/images/october-admin-flow.svg" alt="Admin relocation flow" loading="lazy">
+  <figcaption><strong>Fig. 7-3 ｜ Admin relocation flow</strong>How to read: the old state (the public frontend ships `/admin`) moves through four steps — remove from main site → standalone build → backend hosting → CSP scoping — to the new state (FastAPI serves `/admin` standalone; the public site carries zero Admin code); the bottom block describes the login-gate semantics.</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/october-csp-scope.svg" alt="CSP scoping" loading="lazy">
+  <figcaption><strong>Fig. 7-4 ｜ CSP scoping</strong>How to read: public APIs and the main site keep strict `script-src 'self'`; only the `/admin` document scope adds `'unsafe-eval'` for vue-i18n compilation, selected by the middleware per request path; the bottom records the first-run white-screen defect and the fix path.</figcaption>
+</figure>
+
 ### 7.4 Mainland-China compliant production deployment preparation
 
 - New `deploy/jdcloud_2c4g_checklist.md`: a 9-step checklist (JD Cloud 2C4G purchase, domain transfer-in from an overseas registrar, ICP filing, DNS, four-service Docker stack, TLS, WeChat console settings, data migration)
 - New `deploy/server_bootstrap.sh`: one-shot Ubuntu 22.04 initialization (2G swap against OOM, Aliyun Docker mirror, DaoCloud registry accelerator, timezone, unattended-upgrades)
 - Architecture constraint: same-origin `/api` reverse proxy; any production environment with WeChat QR login must run on compliant mainland servers only
+
+<figure class="doc-figure">
+  <img src="docs/images/october-deployment.svg" alt="Production deployment topology" loading="lazy">
+  <figcaption><strong>Fig. 7-5 ｜ Production deployment topology</strong>How to read: the browser goes through Nginx (TLS) same-origin reverse proxy — `/` to the GitHub Pages static site, `/api` and `/admin` to the FastAPI backend; data layer PostgreSQL + Redis; all hosted on a JD Cloud 2C4G compliant mainland server satisfying PIPL data-residency rules.</figcaption>
+</figure>
 
 ### 7.5 Audit conclusion and regression data
 
@@ -316,3 +346,8 @@
 | High | JD Cloud purchase + domain transfer-in + ICP filing (checklist ready, ~1 month); after filing, production must disable GUEST_MODE and restore the account system |
 | Medium | SISA sync of the new `feature/nurbs-geometry-phase2` HEAD (currently blocked by the safety layer; needs explicit user approval to run `sync_open_source.ps1`) |
 | Medium | P1–P6 historical items in §4 of the Platform Test Report not re-tested specifically (DEMO animation hardcoded port, deprecated ElPagination usage); close them in the next dedicated frontend regression |
+
+<figure class="doc-figure">
+  <img src="docs/images/october-timeline.svg" alt="October iteration timeline" loading="lazy">
+  <figcaption><strong>Fig. 7-6 ｜ October iteration timeline</strong>How to read: the 8 commits merged to main over time — the first four cover NURBS closure and streamlining, the middle two cover account suspension and JD Cloud deployment, the last two cover Admin relocation and the CSP fix; mainline HEAD is `864421d5`.</figcaption>
+</figure>

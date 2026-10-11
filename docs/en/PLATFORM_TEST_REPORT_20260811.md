@@ -200,6 +200,11 @@ POST /api/v1/car/generate → 200 OK
 - Backend 2 xfails: the Harness curvature pipeline migrated to SISA and cannot be imported on the platform; the cases are marked no longer applicable
 - Frontend 10 files = 4 `*.spec.js` in `src/tests/` + 6 `*.test.js` in root `tests/`
 
+<figure class="doc-figure">
+  <img src="docs/images/october-regression-donut.svg" alt="Backend regression breakdown" loading="lazy">
+  <figcaption><strong>Fig. 7-1 ｜ Backend regression breakdown (344 cases)</strong>How to read: the donut shows the makeup of the 344 backend cases — 341 pass (99.13%), 1 skip (0.29%, requires a real LLM), 2 xfail (0.58%, pipeline migrated to SISA); conclusion: zero unexpected failures.</figcaption>
+</figure>
+
 ## 8. New / rewritten tests this round
 
 | Test file | Cases | Coverage |
@@ -211,6 +216,11 @@ POST /api/v1/car/generate → 200 OK
 | `src/tests/authStore.spec.js` (rewritten) | 13 | Preset guest (superadmin), logout returns to guest, three-tier role getters |
 
 **Regression result**: all 483 cases (341 backend + 142 frontend) pass with zero failures; no historical regression.
+
+<figure class="doc-figure">
+  <img src="docs/images/october-new-tests.svg" alt="New and rewritten tests this round" loading="lazy">
+  <figcaption><strong>Fig. 8-1 ｜ New / rewritten test cases this round</strong>How to read: the horizontal bars list 5 test files by case count descending — authStore 13, topology closure 12, router guard 5, standalone admin 3, guest mode 2; 35 cases total covering topology, guest mode, admin hosting, routing and identity.</figcaption>
+</figure>
 
 ## 9. Admin-console relocation test (browser verification)
 
@@ -235,6 +245,11 @@ POST /api/v1/car/generate → 200 OK
 | `/contact` replaces Account: mailto and one-click copy of Icemtrainer@hotmail.com | 🟢 |
 | Production fail-fast: production + GUEST_MODE=true rejected at startup | 🟢 (unit-tested) |
 | Test suite not bypassed: conftest forces GUEST_MODE=false | 🟢 401/403 semantics preserved |
+
+<figure class="doc-figure">
+  <img src="docs/images/october-guest-arch.svg" alt="Guest-mode architecture" loading="lazy">
+  <figcaption><strong>Fig. 10-1 ｜ Guest-mode architecture</strong>How to read: an anonymous visitor goes through the `GUEST_MODE` bypass and resolves to the built-in guest (superadmin) to reach all features; the red block at the bottom covers the production fail-fast guard and the test-suite anti-bypass mechanism.</figcaption>
+</figure>
 
 ## 11. Public-site release verification (mandatory gate)
 

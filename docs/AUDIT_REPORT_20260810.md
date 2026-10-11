@@ -194,6 +194,11 @@
 | 公开静态站 | `gh-pages` | HEAD `ba59fde9`，https://evolution-ai.design 已验证 |
 | 管理后台 | 后端 `/admin/` 独立托管 | 公开前端零 Admin 代码（路由/菜单/chunk 均已移除） |
 
+<figure class="doc-figure">
+  <img src="docs/images/october-test-results.svg" alt="10 月测试规模与结果对比" loading="lazy">
+  <figcaption><strong>图 4-2 ｜ 10 月测试规模与结果对比</strong>读图：柱状图为当日实跑的五层测试——后端集成 341 / 前端组件 142 / 拓扑封闭 12 / 游客模式 2 / 独立后台 3；右侧徽章给出合计 483 项零失败与后端 341 pass / 1 skip / 2 xfail 的构成说明。</figcaption>
+</figure>
+
 ---
 
 ## 五、遗留事项与建议
@@ -266,6 +271,11 @@
 
 **验证**: 新增 `test_car_topology_closure.py` 共 12 项测试全部通过（横链边重合、cowl 封条、柱楔共边、底盘封闭、前后封板、俯视收窄、门框压条、轮拱内衬、防透视搁板、零件普查等）；四视角浏览器复验无破洞、无空隙。
 
+<figure class="doc-figure">
+  <img src="docs/images/october-closure.svg" alt="整车 7 类开口封闭" loading="lazy">
+  <figcaption><strong>图 7-1 ｜ 整车 7 类开口封闭</strong>读图：前脸中央封板 / 尾门封板 / A·C 柱三角楔 / cowl 封条 / 底盘托盘 / 轮拱内衬 / 内饰搁板七类开口全部封闭，所有零件的尺寸、装配关系、拓扑结构对齐规范。</figcaption>
+</figure>
+
 ### 7.2 账号体系封存与全功能游客模式
 
 **决策背景**: 微信扫码登录依赖固定公网域名（cpolar 免费版随机域名导致 10003）；境外/香港服务器因用户数据跨境不符合《个人信息保护法》；内地服务器需域名转入 + ICP 备案（约 1 个月周期）。过渡期决策：**封存账号体系，全功能游客开放**。
@@ -278,6 +288,11 @@
 | 前端身份 | Pinia 预置 guest(superadmin) 身份，令牌仅存内存；退出即回游客态 | `src/stores/auth.js` |
 | 路由/入口 | 移除 `/login`、`/account` 路由与顶栏用户菜单/登录弹窗（源码封存于 `views/`）；`/contact` 替代 Account（邮箱 Icemtrainer@hotmail.com，mailto + 一键复制） | `src/router.js`、`src/App.vue`、`src/views/Contact.vue` |
 | 测试 | 新增 2 项游客模式测试；前端 5 项失效用例改写为游客态语义 | `test_guest_mode.py`、`authStore.spec.js`、`routerGuard.spec.js` |
+
+<figure class="doc-figure">
+  <img src="docs/images/october-guest-arch.svg" alt="游客模式架构" loading="lazy">
+  <figcaption><strong>图 7-2 ｜ 游客模式架构</strong>读图：匿名访客经 `GUEST_MODE` 旁路统一落到内置 `guest@evolution-ai.design`（superadmin），从而全功能可达；底部红色区块为生产环境 fail-fast 防护（production + GUEST_MODE=true 直接拒绝启动）。</figcaption>
+</figure>
 
 ### 7.3 Admin 模块移出公开前端（后端独立托管）
 
@@ -292,11 +307,26 @@
 - **CSP 作用域修复**：vue-i18n 消息编译器依赖 `Function` 构造器，严格 CSP（`script-src 'self'`）下后台脚本被整体拦截白屏；新增 `/admin` 文档专用 CSP 仅追加 `'unsafe-eval'`，公开 API 与主站策略不变，并有测试锁定该边界
 - 新增 3 项托管/CSP 测试（`test_admin_console.py`）
 
+<figure class="doc-figure">
+  <img src="docs/images/october-admin-flow.svg" alt="Admin 模块后移流程" loading="lazy">
+  <figcaption><strong>图 7-3 ｜ Admin 模块后移流程</strong>读图：左侧为旧状态（公开前端内置 /admin），经四步（主站移除 → 独立构建 → 后端托管 → CSP 作用域）迁移到新状态（FastAPI /admin 独立托管，公开站零 Admin 代码）；底部为登录门语义。</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/october-csp-scope.svg" alt="CSP 作用域关系" loading="lazy">
+  <figcaption><strong>图 7-4 ｜ CSP 作用域关系</strong>读图：公开 API 与主站保持严格 `script-src 'self'`；仅 `/admin` 文档作用域追加 `'unsafe-eval'` 供 vue-i18n 编译，由中间件按路径选择策略；底部记录了首测白屏缺陷与修复路径。</figcaption>
+</figure>
+
 ### 7.4 内地合规生产部署准备
 
 - 新增 `deploy/jdcloud_2c4g_checklist.md`：9 步清单（京东云 2C4G 购买、域名由境外注册商转入境内、ICP 备案、DNS、Docker 四服务栈、TLS、微信后台、数据迁移）
 - 新增 `deploy/server_bootstrap.sh`：Ubuntu 22.04 一键初始化（2G swap 防 OOM、Docker 阿里云源、DaoCloud 镜像加速、时区、unattended-upgrades）
 - 架构约束：同域 `/api` 反代；含微信扫码的生产环境只允许内地合规服务器
+
+<figure class="doc-figure">
+  <img src="docs/images/october-deployment.svg" alt="生产部署拓扑" loading="lazy">
+  <figcaption><strong>图 7-5 ｜ 生产部署拓扑</strong>读图：浏览器经 Nginx（TLS）同域反代——`/` 走 GitHub Pages 静态站，`/api` 与 `/admin` 走 FastAPI 后端；数据层 PostgreSQL + Redis；整体承载于京东云 2C4G 内地合规服务器，满足 PIPL 数据不出境。</figcaption>
+</figure>
 
 ### 7.5 审计结论与回归数据
 
@@ -316,3 +346,8 @@
 | 高 | 京东云购买 + 域名转入 + ICP 备案（清单已备，约 1 个月）；备案完成后生产环境必须关闭 GUEST_MODE 并恢复账号体系 |
 | 中 | `feature/nurbs-geometry-phase2` 新 HEAD 的 SISA 同步（安全层拦截中，需用户明确批准后执行 `sync_open_source.ps1`） |
 | 中 | 《平台测试报告》第 4 节 P1–P6 历史问题中未专项复测的条目（DEMO 动画端口硬编码、ElPagination 过期用法），下次前端专项回归时核销 |
+
+<figure class="doc-figure">
+  <img src="docs/images/october-timeline.svg" alt="10 月迭代时间线" loading="lazy">
+  <figcaption><strong>图 7-6 ｜ 10 月迭代时间线</strong>读图：合入 main 的 8 个提交按时间分布——前 4 项为 NURBS 封闭化与流线型造型，中间 2 项为账号封存与京东云部署，后 2 项为 Admin 后移与 CSP 修复；主线 HEAD 为 `864421d5`。</figcaption>
+</figure>
