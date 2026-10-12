@@ -392,6 +392,85 @@ const createCar = () => {
 
   const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
 
+  // ---- 座舱玻璃划分（与 2D Car2D windowPath 同源锚点：玻璃与车身两种状态） ----
+  // 前后风挡贴合拉伸体侧壁（壁面被 bevel 外扩 bodyThickness），侧窗贴合端盖外缘；
+  // 玻璃统一用独立透明材质与车身漆面区分；B 柱在 55% 分段处保留车身色立柱（与 2D pillarX 同源）
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0x87ceeb,
+    transparent: true,
+    opacity: 0.5,
+    metalness: 0,
+    roughness: 0.06,
+    envMapIntensity: 1.2,
+    side: THREE.DoubleSide,
+    wireframe: wireframeMode.value
+  })
+
+  // 斜面玻璃带：(x1,y1)=底缘 → (x2,y2)=顶缘，沿外法线（朝上）抬离车身侧壁；
+  // topInset：顶缘沿斜线下退（避开 A/C 柱顶 G1 圆角，留出车身色顶带）
+  const addBandGlass = (x1, y1, x2, y2, width, topInset = 0) => {
+    const dx = x2 - x1
+    const dy = y2 - y1
+    const len = Math.hypot(dx, dy) || 1
+    if (topInset > 0) {
+      const t = Math.min(topInset / len, 0.9)
+      x2 -= dx * t
+      y2 -= dy * t
+    }
+    let nx = dy / len
+    let ny = -dx / len
+    if (ny < 0) { nx = -nx; ny = -ny }   // 法线统一朝上（外表面）
+    const off = bodyThickness + 0.001
+    const cx1 = x1 + nx * off
+    const cy1 = y1 + ny * off
+    const cx2 = x2 + nx * off
+    const cy2 = y2 + ny * off
+    const hw = width / 2
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+      cx1, cy1, -hw, cx1, cy1, hw, cx2, cy2, -hw,
+      cx1, cy1, hw, cx2, cy2, hw, cx2, cy2, -hw
+    ]), 3))
+    g.computeVertexNormals()
+    const m = new THREE.Mesh(g, glassMat)
+    m.userData.noCastShadow = true
+    group.add(m)
+  }
+
+  // 前风挡：底缘 = COWL（hoodEndX/beltLineY），顶缘 = 车顶前缘（与 2D A 柱线同源）
+  addBandGlass(hoodEndX, beltLineY, windshieldTopX, roofTopY, W * 0.9, 0.09)
+  // 后风挡：顶缘 = 车顶后缘，底缘 = 行李箱前缘（皮卡驾驶室后壁为车身，无后风挡）
+  if (!pickup) addBandGlass(rearWindowBottomX, beltLineY, rearWindowTopX, roofTopY, W * 0.88, 0.09)
+
+  // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角
+  const dloTopRear = pickup ? pickup.cabRearX : rearWindowTopX
+  const dloBotRear = pickup ? pickup.cabWindowBottomX : rearWindowBottomX
+  const dlo = [
+    [hoodEndX, beltLineY + 0.008],
+    [windshieldTopX + 0.012, roofTopY - 0.035],
+    [dloTopRear - 0.012, roofTopY - 0.035],
+    [dloBotRear, beltLineY + 0.008]
+  ]
+  const dloShape = new THREE.Shape(dlo.map(([x, y]) => new THREE.Vector2(x, y)))
+  const dloGeom = new THREE.ShapeGeometry(dloShape)
+  for (const zSide of [1, -1]) {
+    const panel = new THREE.Mesh(dloGeom, glassMat)
+    panel.position.z = zSide * (bodyExtentZ + 0.002)
+    panel.userData.noCastShadow = true
+    group.add(panel)
+  }
+
+  // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）
+  const pillarTopY = roofTopY - 0.05
+  const pillarBotY = beltLineY + 0.035
+  const pillarGeom = new THREE.BoxGeometry(0.022, pillarTopY - pillarBotY, 0.008)
+  const pillarX = windshieldTopX + (dloTopRear - windshieldTopX) * 0.55
+  for (const zSide of [1, -1]) {
+    const pillar = new THREE.Mesh(pillarGeom, bodyMat)
+    pillar.position.set(pillarX, (pillarTopY + pillarBotY) / 2, zSide * (bodyExtentZ + 0.004))
+    group.add(pillar)
+  }
+
   const createWheel = (x, z) => {
     const wheelGroup = new THREE.Group()
     
@@ -639,7 +718,7 @@ const initScene = () => {
   carGroup = createCar()
   carGroup.traverse((child) => {
     if (child.isMesh) {
-      child.castShadow = true
+      child.castShadow = !child.userData.noCastShadow   // 玻璃不投实心影
       child.receiveShadow = true
     }
   })
@@ -817,7 +896,7 @@ const updateCar = () => {
   carGroup = createCar()
   carGroup.traverse((child) => {
     if (child.isMesh) {
-      child.castShadow = true
+      child.castShadow = !child.userData.noCastShadow   // 玻璃不投实心影
       child.receiveShadow = true
     }
   })
