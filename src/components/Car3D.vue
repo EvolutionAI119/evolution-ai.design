@@ -53,6 +53,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
+import { bandGlassEndpoints, deriveCabinGlass } from '../utils/carGlass.js'
 
 const { t } = useI18n()
 
@@ -406,30 +407,14 @@ const createCar = () => {
     wireframe: wireframeMode.value
   })
 
-  // 斜面玻璃带：(x1,y1)=底缘 → (x2,y2)=顶缘，沿外法线（朝上）抬离车身侧壁；
-  // topInset：顶缘沿斜线下退（避开 A/C 柱顶 G1 圆角，留出车身色顶带）
+  // 斜面玻璃带：端点/法线/顶缘下退的计算在 utils/carGlass.js 纯函数中（可单测）
   const addBandGlass = (x1, y1, x2, y2, width, topInset = 0) => {
-    const dx = x2 - x1
-    const dy = y2 - y1
-    const len = Math.hypot(dx, dy) || 1
-    if (topInset > 0) {
-      const t = Math.min(topInset / len, 0.9)
-      x2 -= dx * t
-      y2 -= dy * t
-    }
-    let nx = dy / len
-    let ny = -dx / len
-    if (ny < 0) { nx = -nx; ny = -ny }   // 法线统一朝上（外表面）
-    const off = bodyThickness + 0.001
-    const cx1 = x1 + nx * off
-    const cy1 = y1 + ny * off
-    const cx2 = x2 + nx * off
-    const cy2 = y2 + ny * off
+    const { a, b } = bandGlassEndpoints(x1, y1, x2, y2, topInset, bodyThickness + 0.001)
     const hw = width / 2
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-      cx1, cy1, -hw, cx1, cy1, hw, cx2, cy2, -hw,
-      cx1, cy1, hw, cx2, cy2, hw, cx2, cy2, -hw
+      a[0], a[1], -hw, a[0], a[1], hw, b[0], b[1], -hw,
+      a[0], a[1], hw, b[0], b[1], hw, b[0], b[1], -hw
     ]), 3))
     g.computeVertexNormals()
     const m = new THREE.Mesh(g, glassMat)
@@ -437,21 +422,20 @@ const createCar = () => {
     group.add(m)
   }
 
-  // 前风挡：底缘 = COWL（hoodEndX/beltLineY），顶缘 = 车顶前缘（与 2D A 柱线同源）
-  addBandGlass(hoodEndX, beltLineY, windshieldTopX, roofTopY, W * 0.9, 0.09)
+  // 面板布局与 2D windowPath/pillarX 同源（deriveCabinGlass 纯函数）
+  const cabin = deriveCabinGlass(P)
+
+  // 前风挡：底缘 = COWL，顶缘 = 车顶前缘（与 2D A 柱线同源）
+  const ws = cabin.windshield
+  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width, ws.topInset)
   // 后风挡：顶缘 = 车顶后缘，底缘 = 行李箱前缘（皮卡驾驶室后壁为车身，无后风挡）
-  if (!pickup) addBandGlass(rearWindowBottomX, beltLineY, rearWindowTopX, roofTopY, W * 0.88, 0.09)
+  if (cabin.rearWindow) {
+    const rw = cabin.rearWindow
+    addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width, rw.topInset)
+  }
 
   // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角
-  const dloTopRear = pickup ? pickup.cabRearX : rearWindowTopX
-  const dloBotRear = pickup ? pickup.cabWindowBottomX : rearWindowBottomX
-  const dlo = [
-    [hoodEndX, beltLineY + 0.008],
-    [windshieldTopX + 0.012, roofTopY - 0.035],
-    [dloTopRear - 0.012, roofTopY - 0.035],
-    [dloBotRear, beltLineY + 0.008]
-  ]
-  const dloShape = new THREE.Shape(dlo.map(([x, y]) => new THREE.Vector2(x, y)))
+  const dloShape = new THREE.Shape(cabin.dlo.map(([x, y]) => new THREE.Vector2(x, y)))
   const dloGeom = new THREE.ShapeGeometry(dloShape)
   for (const zSide of [1, -1]) {
     const panel = new THREE.Mesh(dloGeom, glassMat)
@@ -461,13 +445,10 @@ const createCar = () => {
   }
 
   // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）
-  const pillarTopY = roofTopY - 0.05
-  const pillarBotY = beltLineY + 0.035
-  const pillarGeom = new THREE.BoxGeometry(0.022, pillarTopY - pillarBotY, 0.008)
-  const pillarX = windshieldTopX + (dloTopRear - windshieldTopX) * 0.55
+  const pillarGeom = new THREE.BoxGeometry(0.022, cabin.pillar.topY - cabin.pillar.botY, 0.008)
   for (const zSide of [1, -1]) {
     const pillar = new THREE.Mesh(pillarGeom, bodyMat)
-    pillar.position.set(pillarX, (pillarTopY + pillarBotY) / 2, zSide * (bodyExtentZ + 0.004))
+    pillar.position.set(cabin.pillar.x, (cabin.pillar.topY + cabin.pillar.botY) / 2, zSide * (bodyExtentZ + 0.004))
     group.add(pillar)
   }
 
