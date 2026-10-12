@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Test scale vs results (run 2026-10-11)</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Test Results</text>
+  <line x1="100" y1="340" x2="640" y2="340" stroke="#334155" stroke-width="1.2"/>
+  <line x1="100" y1="340" x2="100" y2="70" stroke="#334155" stroke-width="1.2"/>
+  <g stroke="#1E2A3A" stroke-width="1">
+    <line x1="100" y1="285" x2="640" y2="285"/><line x1="100" y1="230" x2="640" y2="230"/>
+    <line x1="100" y1="175" x2="640" y2="175"/><line x1="100" y1="120" x2="640" y2="120"/>
+  </g>
+  <g fill="#64748B" font-size="10" text-anchor="end">
+    <text x="92" y="344">0</text><text x="92" y="289">75</text>
+    <text x="92" y="234">150</text><text x="92" y="179">225</text>
+    <text x="92" y="124">300</text>
+  </g>
+  <text x="62" y="205" fill="#94A3B8" font-size="10.5" transform="rotate(-90 62 205)" text-anchor="middle">Cases</text>
+    <rect x="150" y="131.61111111111111" width="72" height="208.38888888888889" rx="6" fill="#38BDF8" opacity=".16"/>
+    <rect x="150" y="131.61111111111111" width="72" height="208.38888888888889" rx="6" fill="none" stroke="#38BDF8" stroke-width="1.4"/>
+    <text x="186" y="123.61111111111111" fill="#7DD3FC" font-size="15" font-weight="700" text-anchor="middle">341</text>
+    <text x="186" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">Backend</text>
+    <rect x="250" y="253.22222222222223" width="72" height="86.77777777777777" rx="6" fill="#34D399" opacity=".16"/>
+    <rect x="250" y="253.22222222222223" width="72" height="86.77777777777777" rx="6" fill="none" stroke="#34D399" stroke-width="1.4"/>
+    <text x="286" y="245.22222222222223" fill="#6EE7B7" font-size="15" font-weight="700" text-anchor="middle">142</text>
+    <text x="286" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">Frontend</text>
+    <rect x="350" y="318" width="72" height="22" rx="6" fill="#A78BFA" opacity=".16"/>
+    <rect x="350" y="318" width="72" height="22" rx="6" fill="none" stroke="#A78BFA" stroke-width="1.4"/>
+    <text x="386" y="310" fill="#C4B5FD" font-size="15" font-weight="700" text-anchor="middle">12</text>
+    <text x="386" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">Topology</text>
+    <rect x="450" y="318" width="72" height="22" rx="6" fill="#FBBF24" opacity=".16"/>
+    <rect x="450" y="318" width="72" height="22" rx="6" fill="none" stroke="#FBBF24" stroke-width="1.4"/>
+    <text x="486" y="310" fill="#FCD34D" font-size="15" font-weight="700" text-anchor="middle">2</text>
+    <text x="486" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">Guest</text>
+    <rect x="550" y="318" width="72" height="22" rx="6" fill="#F87171" opacity=".16"/>
+    <rect x="550" y="318" width="72" height="22" rx="6" fill="none" stroke="#F87171" stroke-width="1.4"/>
+    <text x="586" y="310" fill="#FCA5A5" font-size="15" font-weight="700" text-anchor="middle">3</text>
+    <text x="586" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">Admin</text>
+  <text x="150" y="385" fill="#64748B" font-size="9.5">Note: Topology 12 / Guest 2 / Admin 3 bars rendered at ≥22px min height; top labels show real case counts</text>
+  <g text-anchor="middle">
+    <rect x="680" y="80" width="240" height="64" rx="10" fill="#0F241C" stroke="#34D399"/>
+    <text x="800" y="108" fill="#6EE7B7" font-size="17" font-weight="700">483 cases, 0 failures</text>
+    <text x="800" y="128" fill="#94A3B8" font-size="10.5">341 backend + 142 frontend · 0 failed</text>
+    <rect x="680" y="158" width="240" height="64" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="800" y="186" fill="#7DD3FC" font-size="13" font-weight="600">Backend 341 pass / 1 skip / 2 xfail</text>
+    <text x="800" y="206" fill="#64748B" font-size="10">skip=needs real LLM · xfail=SISA-migrated pipeline</text>
+    <rect x="680" y="236" width="240" height="64" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="800" y="264" fill="#6EE7B7" font-size="13" font-weight="600">Frontend 142 / 142 all pass</text>
+    <text x="800" y="284" fill="#64748B" font-size="10.5">10 test files (4 spec + 6 test)</text>
+  </g>
+</svg>

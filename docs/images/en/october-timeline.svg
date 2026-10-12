@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">October iteration timeline (8 commits merged to main)</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Iteration Timeline</text>
+  <line x1="80" y1="230" x2="880" y2="230" stroke="#334155" stroke-width="2"/>
+  <text x="80.0" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-10</text>
+  <circle cx="80.0" cy="230" r="7" fill="#0F1622" stroke="#34D399" stroke-width="2.4"/>
+  <circle cx="80.0" cy="230" r="3" fill="#34D399"/>
+  <rect x="8.0" y="260" width="144" height="62" rx="8" fill="#0B101A" stroke="#34D399"/>
+  <text x="80.0" y="280" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">NURBS body rebuild</text>
+  <text x="80.0" y="300" fill="#94A3B8" font-size="9" text-anchor="middle">Stage 2 + render fixes</text>
+  <text x="80.0" y="315" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">ea41ce3b</text>
+  <text x="194.28571428571428" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-10</text>
+  <circle cx="194.28571428571428" cy="230" r="7" fill="#0F1622" stroke="#34D399" stroke-width="2.4"/>
+  <circle cx="194.28571428571428" cy="230" r="3" fill="#34D399"/>
+  <rect x="122.28571428571428" y="134" width="144" height="62" rx="8" fill="#0B101A" stroke="#34D399"/>
+  <text x="194.28571428571428" y="154" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">Paint gloss tuning</text>
+  <text x="194.28571428571428" y="174" fill="#94A3B8" font-size="9" text-anchor="middle">Fender-lip fade fixed</text>
+  <text x="194.28571428571428" y="189" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">6df66e06</text>
+  <text x="308.57142857142856" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-10</text>
+  <circle cx="308.57142857142856" cy="230" r="7" fill="#0F1622" stroke="#34D399" stroke-width="2.4"/>
+  <circle cx="308.57142857142856" cy="230" r="3" fill="#34D399"/>
+  <rect x="236.57142857142856" y="260" width="144" height="62" rx="8" fill="#0B101A" stroke="#34D399"/>
+  <text x="308.57142857142856" y="280" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">Body fully sealed</text>
+  <text x="308.57142857142856" y="300" fill="#94A3B8" font-size="9" text-anchor="middle">7 openings closed</text>
+  <text x="308.57142857142856" y="315" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">4ab70371</text>
+  <text x="422.8571428571429" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-10</text>
+  <circle cx="422.8571428571429" cy="230" r="7" fill="#0F1622" stroke="#34D399" stroke-width="2.4"/>
+  <circle cx="422.8571428571429" cy="230" r="3" fill="#34D399"/>
+  <rect x="350.8571428571429" y="134" width="144" height="62" rx="8" fill="#0B101A" stroke="#34D399"/>
+  <text x="422.8571428571429" y="154" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">Streamlined styling</text>
+  <text x="422.8571428571429" y="174" fill="#94A3B8" font-size="9" text-anchor="middle">Plan taper + fastback</text>
+  <text x="422.8571428571429" y="189" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">7c128f4c</text>
+  <text x="537.1428571428571" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-11</text>
+  <circle cx="537.1428571428571" cy="230" r="7" fill="#0F1622" stroke="#FBBF24" stroke-width="2.4"/>
+  <circle cx="537.1428571428571" cy="230" r="3" fill="#FBBF24"/>
+  <rect x="465.1428571428571" y="260" width="144" height="62" rx="8" fill="#0B101A" stroke="#FBBF24"/>
+  <text x="537.1428571428571" y="280" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">Accounts archived</text>
+  <text x="537.1428571428571" y="300" fill="#94A3B8" font-size="9" text-anchor="middle">Full guest mode+Contact</text>
+  <text x="537.1428571428571" y="315" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">6040bac4</text>
+  <text x="651.4285714285714" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-11</text>
+  <circle cx="651.4285714285714" cy="230" r="7" fill="#0F1622" stroke="#38BDF8" stroke-width="2.4"/>
+  <circle cx="651.4285714285714" cy="230" r="3" fill="#38BDF8"/>
+  <rect x="579.4285714285714" y="134" width="144" height="62" rx="8" fill="#0B101A" stroke="#38BDF8"/>
+  <text x="651.4285714285714" y="154" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">JD Cloud deploy kit</text>
+  <text x="651.4285714285714" y="174" fill="#94A3B8" font-size="9" text-anchor="middle">2C4G one-click setup</text>
+  <text x="651.4285714285714" y="189" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">a40226e6</text>
+  <text x="765.7142857142858" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-11</text>
+  <circle cx="765.7142857142858" cy="230" r="7" fill="#0F1622" stroke="#F87171" stroke-width="2.4"/>
+  <circle cx="765.7142857142858" cy="230" r="3" fill="#F87171"/>
+  <rect x="693.7142857142858" y="260" width="144" height="62" rx="8" fill="#0B101A" stroke="#F87171"/>
+  <text x="765.7142857142858" y="280" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">Admin relocation</text>
+  <text x="765.7142857142858" y="300" fill="#94A3B8" font-size="9" text-anchor="middle">/admin hosting + gate</text>
+  <text x="765.7142857142858" y="315" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">c45d9ccc</text>
+  <text x="880.0" y="216" fill="#64748B" font-size="10" text-anchor="middle">10-11</text>
+  <circle cx="880.0" cy="230" r="7" fill="#0F1622" stroke="#F87171" stroke-width="2.4"/>
+  <circle cx="880.0" cy="230" r="3" fill="#F87171"/>
+  <rect x="808.0" y="134" width="144" height="62" rx="8" fill="#0B101A" stroke="#F87171"/>
+  <text x="880.0" y="154" fill="#E2E8F0" font-size="10.5" font-weight="700" text-anchor="middle">CSP scope fix</text>
+  <text x="880.0" y="174" fill="#94A3B8" font-size="9" text-anchor="middle">unsafe-eval /admin only</text>
+  <text x="880.0" y="189" fill="#64748B" font-size="8.5" text-anchor="middle" font-family="Consolas,monospace">864421d5</text>
+  <rect x="80" y="350" width="800" height="50" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="100" y="374" fill="#6EE7B7" font-size="11.5" font-weight="600">Mainline HEAD: 864421d5 (feature branch fast-forwarded into main)</text>
+  <text x="100" y="392" fill="#64748B" font-size="9.5">First 4 = NURBS closure &amp; styling · middle 2 = accounts &amp; deploy · last 2 = Admin relocation &amp; CSP fix</text>
+</svg>

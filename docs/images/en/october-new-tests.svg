@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#A78BFA"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">New / rewritten test cases this round</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">New &amp; Rewritten Tests</text>
+  <text x="300" y="97" fill="#CBD5E1" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">test_car_topology_closure.py</text>
+  <rect x="316" y="76" width="300" height="34" rx="6" fill="#0B101A" stroke="#1E2A3A"/>
+  <rect x="316" y="76" width="240.0" height="34" rx="6" fill="#A78BFA" opacity=".2"/>
+  <rect x="316" y="76" width="240.0" height="34" rx="6" fill="none" stroke="#A78BFA" stroke-width="1.4"/>
+  <text x="326" y="98" fill="#C4B5FD" font-size="13" font-weight="700">12</text>
+  <text x="632" y="97" fill="#64748B" font-size="9.5">New: 7 body openings sealed</text>
+  <text x="300" y="145" fill="#CBD5E1" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">authStore.spec.js</text>
+  <rect x="316" y="124" width="300" height="34" rx="6" fill="#0B101A" stroke="#1E2A3A"/>
+  <rect x="316" y="124" width="260.0" height="34" rx="6" fill="#34D399" opacity=".2"/>
+  <rect x="316" y="124" width="260.0" height="34" rx="6" fill="none" stroke="#34D399" stroke-width="1.4"/>
+  <text x="326" y="146" fill="#6EE7B7" font-size="13" font-weight="700">13</text>
+  <text x="632" y="145" fill="#64748B" font-size="9.5">Rewrite: guest-state semantics</text>
+  <text x="300" y="193" fill="#CBD5E1" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">routerGuard.spec.js</text>
+  <rect x="316" y="172" width="300" height="34" rx="6" fill="#0B101A" stroke="#1E2A3A"/>
+  <rect x="316" y="172" width="100.0" height="34" rx="6" fill="#38BDF8" opacity=".2"/>
+  <rect x="316" y="172" width="100.0" height="34" rx="6" fill="none" stroke="#38BDF8" stroke-width="1.4"/>
+  <text x="326" y="194" fill="#7DD3FC" font-size="13" font-weight="700">5</text>
+  <text x="632" y="193" fill="#64748B" font-size="9.5">Rewrite: Admin/Login routes removed</text>
+  <text x="300" y="241" fill="#CBD5E1" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">test_admin_console.py</text>
+  <rect x="316" y="220" width="300" height="34" rx="6" fill="#0B101A" stroke="#1E2A3A"/>
+  <rect x="316" y="220" width="60.0" height="34" rx="6" fill="#F87171" opacity=".2"/>
+  <rect x="316" y="220" width="60.0" height="34" rx="6" fill="none" stroke="#F87171" stroke-width="1.4"/>
+  <text x="326" y="242" fill="#FCA5A5" font-size="13" font-weight="700">3</text>
+  <text x="632" y="241" fill="#64748B" font-size="9.5">New: admin hosting + CSP boundary</text>
+  <text x="300" y="289" fill="#CBD5E1" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">test_guest_mode.py</text>
+  <rect x="316" y="268" width="300" height="34" rx="6" fill="#0B101A" stroke="#1E2A3A"/>
+  <rect x="316" y="268" width="40.0" height="34" rx="6" fill="#FBBF24" opacity=".2"/>
+  <rect x="316" y="268" width="40.0" height="34" rx="6" fill="none" stroke="#FBBF24" stroke-width="1.4"/>
+  <text x="326" y="290" fill="#FCD34D" font-size="13" font-weight="700">2</text>
+  <text x="632" y="289" fill="#64748B" font-size="9.5">New: guest pass + prod fail-fast</text>
+  <text x="316" y="320" fill="#94A3B8" font-size="10.5">Total 35 cases · topology closure / guest mode / admin hosting / router guard / auth state</text>
+  <rect x="316" y="334" width="460" height="58" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="332" y="360" fill="#6EE7B7" font-size="12" font-weight="600">Regression: 483 cases (341+142) zero failures · no historical regressions</text>
+  <text x="332" y="381" fill="#64748B" font-size="9.5">pytest enforces GUEST_MODE=false so 401/403 semantic cases are not guest-bypassed</text>
+</svg>
