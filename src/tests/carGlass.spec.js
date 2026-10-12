@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, SIDE_GLASS_TILT } from '../utils/carGlass.js'
 import { carTypeParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -132,5 +132,53 @@ describe('deriveCabinGlass 与 2D Car2D windowPath/pillarX 逐点同源', () => 
     // B 柱严格落在 DLO 水平跨度内（55% 插值朝车尾方向）
     expect(g.pillar.x).toBeLessThan(P.windshieldTopX)
     expect(g.pillar.x).toBeGreaterThan(g.dloTopRear)
+  })
+})
+
+describe('侧玻璃倾角（tumblehome，前视车肩造型）', () => {
+  it('SIDE_GLASS_TILT 六车型角度均在真车合理区间（5~30°）', () => {
+    for (const type of ALL_TYPES) {
+      expect(SIDE_GLASS_TILT[type]).toBeGreaterThan(5)
+      expect(SIDE_GLASS_TILT[type]).toBeLessThan(30)
+    }
+  })
+
+  it('运动/轿跑倾角大于 SUV/皮卡（前视车肩更窄）', () => {
+    expect(SIDE_GLASS_TILT.sport).toBeGreaterThan(SIDE_GLASS_TILT.suv)
+    expect(SIDE_GLASS_TILT.coupe).toBeGreaterThan(SIDE_GLASS_TILT.suv)
+    expect(SIDE_GLASS_TILT.suv).toBeGreaterThan(SIDE_GLASS_TILT.pickup)
+  })
+
+  it.each(ALL_TYPES)('%s 输出 tiltDeg=车型默认，dloTopInsetZ = DLO高差 × tan(tilt)', (type) => {
+    const P = deriveCarProfile(carTypeParams[type], type)
+    const g = deriveCabinGlass(P, { carType: type })
+    expect(g.tiltDeg).toBeCloseTo(SIDE_GLASS_TILT[type], 10)
+    const dloTopY = P.roofTopY - 0.035
+    const dloBotY = P.beltLineY + 0.008
+    const expected = (dloTopY - dloBotY) * Math.tan((SIDE_GLASS_TILT[type] * Math.PI) / 180)
+    expect(g.dloTopInsetZ).toBeCloseTo(expected, 12)
+    // 内收量为正且远小于半车宽（不越过车身中线）
+    expect(g.dloTopInsetZ).toBeGreaterThan(0)
+    expect(g.dloTopInsetZ).toBeLessThan(P.W / 2)
+  })
+
+  it('carParams.side_glass_angle 显式覆盖车型默认', () => {
+    const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const g = deriveCabinGlass(P, { carType: 'sedan', sideGlassAngle: 30 })
+    expect(g.tiltDeg).toBeCloseTo(30, 10)
+  })
+
+  it('非法覆盖（NaN / 越界 / 负值）自动回退车型默认', () => {
+    const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    for (const bad of [NaN, 0, -5, 45, 100]) {
+      const g = deriveCabinGlass(P, { carType: 'sedan', sideGlassAngle: bad })
+      expect(g.tiltDeg).toBeCloseTo(SIDE_GLASS_TILT.sedan, 10)
+    }
+  })
+
+  it('carType 缺省时由 P.pickup 推断皮卡倾角', () => {
+    const P = deriveCarProfile(carTypeParams.pickup, 'pickup')
+    const g = deriveCabinGlass(P)
+    expect(g.tiltDeg).toBeCloseTo(SIDE_GLASS_TILT.pickup, 10)
   })
 })

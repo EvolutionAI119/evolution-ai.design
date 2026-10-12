@@ -422,8 +422,12 @@ const createCar = () => {
     group.add(m)
   }
 
-  // 面板布局与 2D windowPath/pillarX 同源（deriveCabinGlass 纯函数）
-  const cabin = deriveCabinGlass(P)
+  // 面板布局与 2D windowPath/pillarX 同源（deriveCabinGlass 纯函数）；
+  // 侧玻璃倾角（tumblehome）：carParams.side_glass_angle 可覆盖，默认按车型表
+  const cabin = deriveCabinGlass(P, {
+    carType: props.carType,
+    sideGlassAngle: props.carParams?.side_glass_angle
+  })
 
   // 前风挡：底缘 = COWL，顶缘 = 车顶前缘（与 2D A 柱线同源）
   const ws = cabin.windshield
@@ -434,21 +438,37 @@ const createCar = () => {
     addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width, rw.topInset)
   }
 
-  // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角
+  // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
+  // 顶边沿 Z 向内收（tumblehome 倾角），前视呈上窄下宽的真车车肩
   const dloShape = new THREE.Shape(cabin.dlo.map(([x, y]) => new THREE.Vector2(x, y)))
-  const dloGeom = new THREE.ShapeGeometry(dloShape)
+  const dloZBase = bodyExtentZ + 0.002
+  const dloYBot = cabin.dlo[0][1]
+  const dloYSpan = cabin.dlo[1][1] - dloYBot
   for (const zSide of [1, -1]) {
+    const dloGeom = new THREE.ShapeGeometry(dloShape)
+    const pos = dloGeom.attributes.position
+    for (let i = 0; i < pos.count; i++) {
+      const t = Math.min(Math.max((pos.getY(i) - dloYBot) / dloYSpan, 0), 1)
+      pos.setZ(i, zSide * (dloZBase - t * cabin.dloTopInsetZ))
+    }
+    pos.needsUpdate = true
+    dloGeom.computeVertexNormals()
     const panel = new THREE.Mesh(dloGeom, glassMat)
-    panel.position.z = zSide * (bodyExtentZ + 0.002)
     panel.userData.noCastShadow = true
     group.add(panel)
   }
 
-  // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）
-  const pillarGeom = new THREE.BoxGeometry(0.022, cabin.pillar.topY - cabin.pillar.botY, 0.008)
+  // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）；
+  // 与侧窗共面同倾角：底部锚定该高度处的玻璃面，绕底旋转 tiltDeg
+  const pillarH = cabin.pillar.topY - cabin.pillar.botY
+  const pillarGeom = new THREE.BoxGeometry(0.022, pillarH, 0.008)
+  pillarGeom.translate(0, pillarH / 2, 0)   // 底部置于原点，便于绕底倾斜
+  const pillarT = (cabin.pillar.botY - dloYBot) / dloYSpan
+  const tiltRad = (cabin.tiltDeg * Math.PI) / 180
   for (const zSide of [1, -1]) {
     const pillar = new THREE.Mesh(pillarGeom, bodyMat)
-    pillar.position.set(cabin.pillar.x, (cabin.pillar.topY + cabin.pillar.botY) / 2, zSide * (bodyExtentZ + 0.004))
+    pillar.position.set(cabin.pillar.x, cabin.pillar.botY, zSide * (dloZBase - pillarT * cabin.dloTopInsetZ))
+    pillar.rotation.x = -zSide * tiltRad
     group.add(pillar)
   }
 
