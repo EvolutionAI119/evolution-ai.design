@@ -42,7 +42,7 @@
     <text x="800" y="128" fill="#94A3B8" font-size="10.5">341 后端 + 142 前端 · 0 失败</text>
     <rect x="680" y="158" width="240" height="64" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
     <text x="800" y="186" fill="#7DD3FC" font-size="13" font-weight="600">后端 341 pass / 1 skip / 2 xfail</text>
-    <text x="800" y="206" fill="#64748B" font-size="10.5">skip=需真实LLM · xfail=SISA迁移管线</text>
+    <text x="800" y="206" fill="#64748B" font-size="10">skip=需真实LLM · xfail=SISA迁移管线</text>
     <rect x="680" y="236" width="240" height="64" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
     <text x="800" y="264" fill="#6EE7B7" font-size="13" font-weight="600">前端 142 / 142 全通过</text>
     <text x="800" y="284" fill="#64748B" font-size="10.5">10 测试文件（4 spec + 6 test）</text>

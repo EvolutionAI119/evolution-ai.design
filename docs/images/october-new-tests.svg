@@ -36,5 +36,5 @@
   <text x="316" y="320" fill="#94A3B8" font-size="10.5">合计 35 用例 · 覆盖拓扑封闭 / 游客模式 / 后台托管 / 路由守卫 / 身份状态</text>
   <rect x="316" y="334" width="460" height="58" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
   <text x="332" y="360" fill="#6EE7B7" font-size="12" font-weight="600">回归结论：483 项（341+142）零失败 · 历史用例无回退</text>
-  <text x="332" y="381" fill="#64748B" font-size="10">pytest 强制 GUEST_MODE=false，防止 401/403 语义用例被游客旁路击穿</text>
+  <text x="332" y="381" fill="#64748B" font-size="9.5">pytest 强制 GUEST_MODE=false，防止 401/403 语义用例被游客旁路击穿</text>
 </svg>
