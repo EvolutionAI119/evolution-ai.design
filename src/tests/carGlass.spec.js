@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, SIDE_GLASS_TILT } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, SIDE_GLASS_TILT } from '../utils/carGlass.js'
 import { carTypeParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -180,5 +180,78 @@ describe('侧玻璃倾角（tumblehome，前视车肩造型）', () => {
     const P = deriveCarProfile(carTypeParams.pickup, 'pickup')
     const g = deriveCabinGlass(P)
     expect(g.tiltDeg).toBeCloseTo(SIDE_GLASS_TILT.pickup, 10)
+  })
+})
+
+describe('dloZAt DLO 倾斜面 Z 插值（tumblehome 消费端几何）', () => {
+  // 简单框架：底边 z=1.05，跨 0.4m，内收 0.1m
+  const F = { dloYBot: 0.8, dloYSpan: 0.4, dloTopInsetZ: 0.1, dloZBase: 1.05 }
+
+  it('底边高度返回 dloZBase（不内收）', () => {
+    expect(dloZAt(0.8, F, 1)).toBeCloseTo(1.05, 12)
+  })
+
+  it('顶边高度内收 dloTopInsetZ', () => {
+    expect(dloZAt(1.2, F, 1)).toBeCloseTo(0.95, 12)
+  })
+
+  it('中点线性插值（半内收）', () => {
+    expect(dloZAt(1.0, F, 1)).toBeCloseTo(1.0, 12)
+  })
+
+  it('超出 [底, 顶] 的高度按边界钳位（不外扩）', () => {
+    expect(dloZAt(0.5, F, 1)).toBeCloseTo(1.05, 12)   // 低于底边 → 底边值
+    expect(dloZAt(2.0, F, 1)).toBeCloseTo(0.95, 12)   // 高于顶边 → 顶边值
+  })
+
+  it('zSide=-1 严格镜像（|z| 相等、符号相反）', () => {
+    for (const y of [0.8, 0.9, 1.0, 1.1, 1.2]) {
+      expect(dloZAt(y, F, -1)).toBeCloseTo(-dloZAt(y, F, 1), 12)
+    }
+  })
+
+  it('dloYSpan=0 不抛异常（|| 1 保护：底边→dloZBase，1m 后钳位到顶边）', () => {
+    const F0 = { dloYBot: 0.8, dloYSpan: 0, dloTopInsetZ: 0.1, dloZBase: 1.05 }
+    expect(dloZAt(0.8, F0, 1)).toBeCloseTo(1.05, 12)   // t=0（底边）
+    expect(dloZAt(1.8, F0, 1)).toBeCloseTo(0.95, 12)   // t=clamp(1/1)=1（顶边值）
+  })
+})
+
+describe('pillarPlacement B 柱定位（与 DLO 共面同倾角）', () => {
+  const P = deriveCarProfile(carTypeParams.sport, 'sport')
+  const cabin = deriveCabinGlass(P, { carType: 'sport' })
+  const dloYBot = cabin.dlo[0][1]
+  const dloYSpan = cabin.dlo[1][1] - dloYBot
+  const dloZBase = 1.05
+
+  it('底部 Z 锚点与 dloZAt(botY) 完全一致（共面性）', () => {
+    const pp = pillarPlacement(cabin, dloYBot, dloYSpan, dloZBase)
+    const glassZ = Math.abs(dloZAt(cabin.pillar.botY, { dloYBot, dloYSpan, dloTopInsetZ: cabin.dloTopInsetZ, dloZBase }, 1))
+    expect(pp.baseZ).toBeCloseTo(glassZ, 12)
+  })
+
+  it('底部锚点位于 DLO 底边与顶边之间（B 柱下端低于顶边内收量）', () => {
+    const pp = pillarPlacement(cabin, dloYBot, dloYSpan, dloZBase)
+    expect(pp.baseZ).toBeLessThan(dloZBase)
+    expect(pp.baseZ).toBeGreaterThan(dloZBase - cabin.dloTopInsetZ)
+  })
+
+  it('tiltRad = tiltDeg 的弧度转换，立柱几何透传', () => {
+    const pp = pillarPlacement(cabin, dloYBot, dloYSpan, dloZBase)
+    expect(pp.tiltRad).toBeCloseTo((cabin.tiltDeg * Math.PI) / 180, 12)
+    expect(pp.x).toBeCloseTo(cabin.pillar.x, 12)
+    expect(pp.botY).toBeCloseTo(cabin.pillar.botY, 12)
+    expect(pp.height).toBeCloseTo(cabin.pillar.topY - cabin.pillar.botY, 12)
+    expect(pp.height).toBeGreaterThan(0)
+  })
+
+  it('皮卡同样满足共面性（专属拓扑下 B 柱锚定驾驶室玻璃面）', () => {
+    const Pk = deriveCarProfile(carTypeParams.pickup, 'pickup')
+    const ck = deriveCabinGlass(Pk, { carType: 'pickup' })
+    const yBot = ck.dlo[0][1]
+    const ySpan = ck.dlo[1][1] - yBot
+    const pp = pillarPlacement(ck, yBot, ySpan, dloZBase)
+    const glassZ = Math.abs(dloZAt(ck.pillar.botY, { dloYBot: yBot, dloYSpan: ySpan, dloTopInsetZ: ck.dloTopInsetZ, dloZBase }, 1))
+    expect(pp.baseZ).toBeCloseTo(glassZ, 12)
   })
 })

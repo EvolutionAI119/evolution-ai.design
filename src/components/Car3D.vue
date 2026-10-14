@@ -53,7 +53,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement } from '../utils/carGlass.js'
 
 const { t } = useI18n()
 
@@ -440,16 +440,19 @@ const createCar = () => {
 
   // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
   // 顶边沿 Z 向内收（tumblehome 倾角），前视呈上窄下宽的真车车肩
+  // （z 插值/钳位/镜像在 utils/carGlass.js dloZAt 纯函数中，可单测）
   const dloShape = new THREE.Shape(cabin.dlo.map(([x, y]) => new THREE.Vector2(x, y)))
-  const dloZBase = bodyExtentZ + 0.002
-  const dloYBot = cabin.dlo[0][1]
-  const dloYSpan = cabin.dlo[1][1] - dloYBot
+  const dloFrame = {
+    dloYBot: cabin.dlo[0][1],
+    dloYSpan: cabin.dlo[1][1] - cabin.dlo[0][1],
+    dloTopInsetZ: cabin.dloTopInsetZ,
+    dloZBase: bodyExtentZ + 0.002
+  }
   for (const zSide of [1, -1]) {
     const dloGeom = new THREE.ShapeGeometry(dloShape)
     const pos = dloGeom.attributes.position
     for (let i = 0; i < pos.count; i++) {
-      const t = Math.min(Math.max((pos.getY(i) - dloYBot) / dloYSpan, 0), 1)
-      pos.setZ(i, zSide * (dloZBase - t * cabin.dloTopInsetZ))
+      pos.setZ(i, dloZAt(pos.getY(i), dloFrame, zSide))
     }
     pos.needsUpdate = true
     dloGeom.computeVertexNormals()
@@ -459,16 +462,14 @@ const createCar = () => {
   }
 
   // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）；
-  // 与侧窗共面同倾角：底部锚定该高度处的玻璃面，绕底旋转 tiltDeg
-  const pillarH = cabin.pillar.topY - cabin.pillar.botY
-  const pillarGeom = new THREE.BoxGeometry(0.022, pillarH, 0.008)
-  pillarGeom.translate(0, pillarH / 2, 0)   // 底部置于原点，便于绕底倾斜
-  const pillarT = (cabin.pillar.botY - dloYBot) / dloYSpan
-  const tiltRad = (cabin.tiltDeg * Math.PI) / 180
+  // 与侧窗共面同倾角：底部锚定该高度处的玻璃面，绕底旋转 tiltDeg（pillarPlacement 纯函数）
+  const pp = pillarPlacement(cabin, dloFrame.dloYBot, dloFrame.dloYSpan, dloFrame.dloZBase)
+  const pillarGeom = new THREE.BoxGeometry(0.022, pp.height, 0.008)
+  pillarGeom.translate(0, pp.height / 2, 0)   // 底部置于原点，便于绕底倾斜
   for (const zSide of [1, -1]) {
     const pillar = new THREE.Mesh(pillarGeom, bodyMat)
-    pillar.position.set(cabin.pillar.x, cabin.pillar.botY, zSide * (dloZBase - pillarT * cabin.dloTopInsetZ))
-    pillar.rotation.x = -zSide * tiltRad
+    pillar.position.set(pp.x, pp.botY, zSide * pp.baseZ)
+    pillar.rotation.x = -zSide * pp.tiltRad
     group.add(pillar)
   }
 

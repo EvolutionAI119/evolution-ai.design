@@ -121,3 +121,37 @@ export function deriveCabinGlass(P, opts = {}) {
     dloTopInsetZ
   }
 }
+
+/**
+ * DLO 倾斜面在高度 y 处的 Z 坐标（tumblehome 线性内收）。
+ * 底边（y = dloYBot）位于 dloZBase，顶边（y = dloYBot + dloYSpan）内收 dloTopInsetZ，
+ * 超出 [dloYBot, dloYBot + dloYSpan] 的高度按边界钳位（不外扩）。
+ * zSide=1 为左片（+Z），zSide=-1 为右片镜像。
+ * @param {number} y 目标高度
+ * @param {{ dloYBot: number, dloYSpan: number, dloTopInsetZ: number, dloZBase: number }} f DLO 框架参数
+ * @param {1|-1} zSide 侧别
+ * @returns {number} 该高度的 Z 坐标（带侧别符号）
+ */
+export function dloZAt(y, f, zSide) {
+  const span = f.dloYSpan || 1
+  const t = Math.min(Math.max((y - f.dloYBot) / span, 0), 1)
+  return zSide * (f.dloZBase - t * f.dloTopInsetZ)
+}
+
+/**
+ * B 柱定位与姿态（与侧窗 DLO 共面同倾角）。
+ * 底部锚定 DLO 面在 pillar.botY 高度处的 Z（与 dloZAt 同公式，保证共面），
+ * 绕底旋转 tiltDeg（rotation.x = -zSide × tiltRad）。
+ * @returns {{ x, botY, height, baseZ, tiltRad }} baseZ 为 zSide=1 时底部 |Z|
+ */
+export function pillarPlacement(cabin, dloYBot, dloYSpan, dloZBase) {
+  const span = dloYSpan || 1
+  const pillarT = (cabin.pillar.botY - dloYBot) / span
+  return {
+    x: cabin.pillar.x,
+    botY: cabin.pillar.botY,
+    height: cabin.pillar.topY - cabin.pillar.botY,
+    baseZ: dloZBase - pillarT * cabin.dloTopInsetZ,
+    tiltRad: (cabin.tiltDeg * Math.PI) / 180
+  }
+}
