@@ -210,6 +210,11 @@ brandsRaw.forEach(brand => {
   brand.models.forEach(model => {
     model.localImage = getStaticBrandImagePath(brand.key, model.key)
     model.car_type = MODEL_CAR_TYPE[model.key] || null
+    // 玻璃三参数按官方定位 car_type 从车型表补齐（模型自带显式玻璃参数时以模型为准），
+    // 保证 setCarType/selectModel 双向连动应用 model.params 时玻璃滑块随车型联动
+    if (model.car_type && glassParams(model.car_type)) {
+      model.params = { ...glassParams(model.car_type), ...model.params }
+    }
   })
 })
 

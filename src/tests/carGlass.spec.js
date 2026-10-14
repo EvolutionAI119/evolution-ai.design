@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile } from '../utils/carProfile.js'
 import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
-import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
+import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
 
@@ -299,6 +299,22 @@ describe('SIDE_GLASS_BARREL 玻璃桶面（前视玻璃鼓肚造型）', () => {
       expect(p.glass_barrel_angle).toBe(SIDE_GLASS_BARREL[type].angle)
       expect(p.glass_barrel_radius).toBe(SIDE_GLASS_BARREL[type].radius)
     }
+  })
+
+  it('carPresets 契约：19 款品牌认证车型 params 均携带与其 car_type 一致的玻璃三参数', () => {
+    // 回归保护：setCarType/selectModel 双向连动应用 model.params，
+    // 若品牌车型缺玻璃字段，切换车型后滑块会停留在 sedan 默认值
+    let count = 0
+    for (const b of brands) {
+      for (const m of b.models) {
+        expect(m.car_type, `${b.key}/${m.key} 应标注 car_type`).toBeTruthy()
+        expect(m.params.side_glass_angle).toBe(SIDE_GLASS_TILT[m.car_type])
+        expect(m.params.glass_barrel_angle).toBe(SIDE_GLASS_BARREL[m.car_type].angle)
+        expect(m.params.glass_barrel_radius).toBe(SIDE_GLASS_BARREL[m.car_type].radius)
+        count++
+      }
+    }
+    expect(count).toBe(19)
   })
 
   it('glassBarrelAngle / glassBarrelRadius 显式覆盖车型默认（radius 单位 mm → 内部米）', () => {
