@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -381,5 +381,92 @@ describe('SIDE_GLASS_BARREL 玻璃桶面（前视玻璃鼓肚造型）', () => {
       }, 1))
       expect(pp.baseZ).toBeCloseTo(glassZ, 12)
     }
+  })
+})
+
+describe('buildDloFrame / buildDloStrip DLO 条带网格（Car3D 消费端纯函数）', () => {
+  const P = deriveCarProfile(carTypeParams.sport, 'sport')
+  const cabin = deriveCabinGlass(P, { carType: 'sport' })
+
+  it('buildDloFrame：字段派生正确（跨度/弧度换算/Z 基准透传）', () => {
+    const f = buildDloFrame(cabin, 1.05)
+    expect(f.dloYBot).toBeCloseTo(cabin.dlo[0][1], 12)
+    expect(f.dloYSpan).toBeCloseTo(cabin.dlo[1][1] - cabin.dlo[0][1], 12)
+    expect(f.tiltInsetZ).toBeCloseTo(cabin.tiltInsetZ, 12)
+    expect(f.barrelRad).toBeCloseTo((cabin.barrelAngle * Math.PI) / 180, 12)
+    expect(f.barrelRadius).toBeCloseTo(cabin.barrelRadius, 12)
+    expect(f.dloZBase).toBe(1.05)
+  })
+
+  it('buildDloStrip：顶点数 = rows × 18，首顶点 = DLO 底前角（t=0）', () => {
+    const rows = 8
+    const f = buildDloFrame(cabin, 1.05)
+    const pos = buildDloStrip(cabin.dlo, f, rows, 1)
+    expect(pos.length).toBe(rows * 18)
+    expect(pos[0]).toBeCloseTo(cabin.dlo[0][0], 12)
+    expect(pos[1]).toBeCloseTo(f.dloYBot, 12)
+    expect(pos[2]).toBeCloseTo(f.dloZBase, 12)
+  })
+
+  it('buildDloStrip：末行顶点落在 DLO 顶缘（t=1 处 x/y 与 dlo 顶角一致）', () => {
+    const rows = 8
+    const f = buildDloFrame(cabin, 1.05)
+    const pos = buildDloStrip(cabin.dlo, f, rows, 1)
+    const last = pos.slice(pos.length - 9)   // 行内最后 3 顶点：[rx0,y0,z0, rx1,y1,z1, fx1,y1,z1]
+    expect(last[6]).toBeCloseTo(cabin.dlo[1][0], 12)         // 前上角 x（第 6 顶点）
+    expect(last[7]).toBeCloseTo(f.dloYBot + f.dloYSpan, 12)  // 顶缘 y
+    // 顶缘 Z = 全额内收（倾角 + 桶面），桶面使其低于纯线性内收
+    const topZ = f.dloZBase - f.tiltInsetZ - f.barrelRadius * (1 - Math.cos(f.barrelRad))
+    expect(last[8]).toBeCloseTo(topZ, 12)
+    expect(last[8]).toBeLessThan(f.dloZBase - f.tiltInsetZ)
+  })
+
+  it('buildDloStrip：行边界 y 均匀递进，每行 Z 与 dloZAt 同公式', () => {
+    const rows = 16
+    const f = buildDloFrame(cabin, 1.05)
+    const pos = buildDloStrip(cabin.dlo, f, rows, 1)
+    for (let r = 0; r < rows; r++) {
+      const y0 = f.dloYBot + (r / rows) * f.dloYSpan
+      const b = r * 18
+      expect(pos[b + 1]).toBeCloseTo(y0, 12)                       // 首顶点 y
+      expect(pos[b + 2]).toBeCloseTo(dloZAt(y0, f, 1), 12)         // 首顶点 z
+      expect(pos[b + 5]).toBeCloseTo(dloZAt(y0, f, 1), 12)         // 第二顶点 z（同行）
+    }
+  })
+
+  it('buildDloStrip：zSide=-1 严格镜像（x/y 相同，z 逐点取反）', () => {
+    const f = buildDloFrame(cabin, 1.05)
+    const left = buildDloStrip(cabin.dlo, f, 6, 1)
+    const right = buildDloStrip(cabin.dlo, f, 6, -1)
+    expect(left.length).toBe(right.length)
+    for (let i = 0; i < left.length; i += 3) {
+      expect(right[i]).toBeCloseTo(left[i], 12)
+      expect(right[i + 1]).toBeCloseTo(left[i + 1], 12)
+      expect(right[i + 2]).toBeCloseTo(-left[i + 2], 12)
+    }
+  })
+
+  it('dloZAt 桶面下越界高度同样钳位（底部桶面贡献为零、顶部全额内收）', () => {
+    const F = { dloYBot: 0.8, dloYSpan: 0.4, tiltInsetZ: 0.1, barrelRad: (10 * Math.PI) / 180, barrelRadius: 0.9, dloZBase: 1.05 }
+    const topZ = 1.05 - 0.1 - 0.9 * (1 - Math.cos((10 * Math.PI) / 180))
+    expect(dloZAt(0.5, F, 1)).toBeCloseTo(1.05, 12)    // 低于底边 → 底边值（t=0）
+    expect(dloZAt(2.0, F, 1)).toBeCloseTo(topZ, 12)    // 高于顶边 → 顶边值（t=1）
+  })
+
+  it('dloZAt 桶面下 zSide=-1 严格镜像', () => {
+    const F = { dloYBot: 0.8, dloYSpan: 0.4, tiltInsetZ: 0.1, barrelRad: (10 * Math.PI) / 180, barrelRadius: 0.9, dloZBase: 1.05 }
+    for (const y of [0.8, 0.9, 1.0, 1.1, 1.2, 1.5]) {
+      expect(dloZAt(y, F, -1)).toBeCloseTo(-dloZAt(y, F, 1), 12)
+    }
+  })
+
+  it('仅覆盖 glassBarrelRadius 时角度回退车型默认，反之亦然（两字段独立校验）', () => {
+    const Ps = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const gR = deriveCabinGlass(Ps, { carType: 'sedan', glassBarrelRadius: 3000 })
+    expect(gR.barrelAngle).toBeCloseTo(SIDE_GLASS_BARREL.sedan.angle, 10)
+    expect(gR.barrelRadius).toBeCloseTo(3, 10)
+    const gA = deriveCabinGlass(Ps, { carType: 'sedan', glassBarrelAngle: 15 })
+    expect(gA.barrelAngle).toBeCloseTo(15, 10)
+    expect(gA.barrelRadius).toBeCloseTo(SIDE_GLASS_BARREL.sedan.radius / 1000, 10)
   })
 })

@@ -53,7 +53,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip } from '../utils/carGlass.js'
 
 const { t } = useI18n()
 
@@ -444,38 +444,11 @@ const createCar = () => {
   // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
   // Z 轮廓 = tumblehome 线性内收 + barrel 桶面圆弧鼓肚（dloZAt 纯函数，可单测）。
   // 面片沿高度细分成条带网格——四角面片无法表达桶面曲率
-  const dloFrame = {
-    dloYBot: cabin.dlo[0][1],
-    dloYSpan: cabin.dlo[1][1] - cabin.dlo[0][1],
-    tiltInsetZ: cabin.tiltInsetZ,
-    barrelRad: (cabin.barrelAngle * Math.PI) / 180,
-    barrelRadius: cabin.barrelRadius,
-    dloZBase: bodyExtentZ + 0.002
-  }
+  // （框架构建/条带顶点生成在 utils/carGlass.js buildDloFrame / buildDloStrip 纯函数中，可单测）
+  const dloFrame = buildDloFrame(cabin, bodyExtentZ + 0.002)
   const DLO_ROWS = 16
-  // 四角 X 边界（dlo = [底前, 顶前, 顶后, 底后]），前后 X 边随高度线性收拢（与原四边形边界一致）
-  const bfx = cabin.dlo[0][0]
-  const tfx = cabin.dlo[1][0]
-  const brxB = cabin.dlo[3][0]
-  const trx = cabin.dlo[2][0]
   for (const zSide of [1, -1]) {
-    const positions = []
-    for (let r = 0; r < DLO_ROWS; r++) {
-      const t0 = r / DLO_ROWS
-      const t1 = (r + 1) / DLO_ROWS
-      const y0 = dloFrame.dloYBot + t0 * dloFrame.dloYSpan
-      const y1 = dloFrame.dloYBot + t1 * dloFrame.dloYSpan
-      const z0 = dloZAt(y0, dloFrame, zSide)
-      const z1 = dloZAt(y1, dloFrame, zSide)
-      const fx0 = bfx + (tfx - bfx) * t0
-      const fx1 = bfx + (tfx - bfx) * t1
-      const rx0 = brxB + (trx - brxB) * t0
-      const rx1 = brxB + (trx - brxB) * t1
-      positions.push(
-        fx0, y0, z0, rx0, y0, z0, fx1, y1, z1,
-        rx0, y0, z0, rx1, y1, z1, fx1, y1, z1
-      )
-    }
+    const positions = buildDloStrip(cabin.dlo, dloFrame, DLO_ROWS, zSide)
     const dloGeom = new THREE.BufferGeometry()
     dloGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
     dloGeom.computeVertexNormals()

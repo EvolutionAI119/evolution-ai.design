@@ -208,3 +208,56 @@ export function pillarPlacement(cabin, dloYBot, dloYSpan, dloZBase) {
     tiltRad: (cabin.tiltDeg * Math.PI) / 180
   }
 }
+
+/**
+ * DLO 条带网格框架（由 deriveCabinGlass 结果 + 底边 Z 基准构建），
+ * 供 dloZAt / buildDloStrip 消费：角度→弧度换算在此集中完成。
+ * @param {object} cabin deriveCabinGlass 返回值
+ * @param {number} zBase DLO 底边 Z 基准（米，车身侧壁外表面）
+ * @returns {{ dloYBot, dloYSpan, tiltInsetZ, barrelRad, barrelRadius, dloZBase }}
+ */
+export function buildDloFrame(cabin, zBase) {
+  return {
+    dloYBot: cabin.dlo[0][1],
+    dloYSpan: cabin.dlo[1][1] - cabin.dlo[0][1],
+    tiltInsetZ: cabin.tiltInsetZ,
+    barrelRad: ((cabin.barrelAngle || 0) * Math.PI) / 180,
+    barrelRadius: cabin.barrelRadius || 0,
+    dloZBase: zBase
+  }
+}
+
+/**
+ * DLO 条带网格顶点序列（沿高度 rows 段细分，每段两三角形，表达桶面曲率）。
+ * 四角 X 边界（dlo = [底前, 顶前, 顶后, 底后]）随高度线性收拢（与原四边形边界一致），
+ * Z 由 dloZAt 按行插值（倾角 + 桶面）。每行 6 顶点 × 3 分量 = 18 个数值。
+ * @param {number[][]} dlo 四角坐标
+ * @param {object} frame buildDloFrame 返回值
+ * @param {number} rows 细分行数（≥1）
+ * @param {1|-1} zSide 侧别
+ * @returns {number[]} 长度 = rows × 18 的顶点序列（x,y,z 交错）
+ */
+export function buildDloStrip(dlo, frame, rows, zSide) {
+  const bfx = dlo[0][0]
+  const tfx = dlo[1][0]
+  const brxB = dlo[3][0]
+  const trx = dlo[2][0]
+  const positions = []
+  for (let r = 0; r < rows; r++) {
+    const t0 = r / rows
+    const t1 = (r + 1) / rows
+    const y0 = frame.dloYBot + t0 * frame.dloYSpan
+    const y1 = frame.dloYBot + t1 * frame.dloYSpan
+    const z0 = dloZAt(y0, frame, zSide)
+    const z1 = dloZAt(y1, frame, zSide)
+    const fx0 = bfx + (tfx - bfx) * t0
+    const fx1 = bfx + (tfx - bfx) * t1
+    const rx0 = brxB + (trx - brxB) * t0
+    const rx1 = brxB + (trx - brxB) * t1
+    positions.push(
+      fx0, y0, z0, rx0, y0, z0, fx1, y1, z1,
+      rx0, y0, z0, rx1, y1, z1, fx1, y1, z1
+    )
+  }
+  return positions
+}
