@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -468,5 +468,52 @@ describe('buildDloFrame / buildDloStrip DLO 条带网格（Car3D 消费端纯函
     const gA = deriveCabinGlass(Ps, { carType: 'sedan', glassBarrelAngle: 15 })
     expect(gA.barrelAngle).toBeCloseTo(15, 10)
     expect(gA.barrelRadius).toBeCloseTo(SIDE_GLASS_BARREL.sedan.radius / 1000, 10)
+  })
+})
+
+describe('greenhouseInsetAt 车身 greenhouse 收窄（A/B/C 柱与车顶随玻璃角度联动）', () => {
+  const F = { dloYBot: 0.8, dloYSpan: 0.4, tiltInsetZ: 0.1, barrelRad: (10 * Math.PI) / 180, barrelRadius: 0.9, dloZBase: 1.05 }
+
+  it('DLO 底边处内收为 0（车身侧壁与玻璃面同锚）', () => {
+    expect(greenhouseInsetAt(0.8, F)).toBeCloseTo(0, 12)
+  })
+
+  it('DLO 顶边处内收 = 倾角 + 桶面全额', () => {
+    const expected = 0.1 + 0.9 * (1 - Math.cos((10 * Math.PI) / 180))
+    expect(greenhouseInsetAt(1.2, F)).toBeCloseTo(expected, 12)
+  })
+
+  it('恒等式：inset(y) = dloZBase − |dloZAt(y, f, 1)|（车身与玻璃面共享轮廓）', () => {
+    for (const y of [0.8, 0.9, 1.0, 1.1, 1.2, 1.5]) {
+      expect(greenhouseInsetAt(y, F)).toBeCloseTo(F.dloZBase - Math.abs(dloZAt(y, F, 1)), 12)
+    }
+  })
+
+  it('barrel>0 时内收为凸函数：中段内收小于端点弦中点（对应玻璃 Z 鼓肚）', () => {
+    const bottom = greenhouseInsetAt(0.8, F)
+    const top = greenhouseInsetAt(1.2, F)
+    const mid = greenhouseInsetAt(1.0, F)
+    // 精确值：t=0.5 → 0.5×倾角分量 + R(1−cos(β/2))
+    expect(mid).toBeCloseTo(0.05 + 0.9 * (1 - Math.cos((10 * Math.PI) / 180 * 0.5)), 12)
+    // 凸性：内收先慢后快，中段低于端点连线中点
+    expect(mid).toBeLessThan((bottom + top) / 2)
+  })
+
+  it('无 barrel 字段时严格线性（纯倾角，向后兼容）', () => {
+    const Fs = { dloYBot: 0.8, dloYSpan: 0.4, dloTopInsetZ: 0.1, dloZBase: 1.05 }
+    expect(greenhouseInsetAt(0.8, Fs)).toBeCloseTo(0, 12)
+    expect(greenhouseInsetAt(1.0, Fs)).toBeCloseTo(0.05, 12)
+    expect(greenhouseInsetAt(1.2, Fs)).toBeCloseTo(0.1, 12)
+    expect(greenhouseInsetAt(1.5, Fs)).toBeCloseTo(0.1, 12)  // 越界钳位到全额
+  })
+
+  it('真实车型：DLO 顶边内收等于 cabin.dloTopInsetZ（buildDloFrame 衔接）', () => {
+    for (const type of ALL_TYPES) {
+      const P = deriveCarProfile(carTypeParams[type], type)
+      const cabin = deriveCabinGlass(P, { carType: type })
+      const f = buildDloFrame(cabin, 1.0)
+      expect(greenhouseInsetAt(cabin.dlo[1][1], f)).toBeCloseTo(cabin.dloTopInsetZ, 12)
+      expect(greenhouseInsetAt(cabin.dlo[0][1] - 0.5, f)).toBeCloseTo(0, 12)
+    }
   })
 })

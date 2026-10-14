@@ -53,7 +53,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt } from '../utils/carGlass.js'
 
 const { t } = useI18n()
 
@@ -359,6 +359,7 @@ const createCar = () => {
 
   const bodyDepth = W
   const bodyThickness = 0.03
+  const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
 
   const extrudeSettings = {
     depth: bodyDepth,
@@ -371,7 +372,31 @@ const createCar = () => {
 
   const bodyGeom = new THREE.ExtrudeGeometry(bodyShape, extrudeSettings)
   bodyGeom.translate(0, 0, -bodyDepth / 2)
-  
+
+  // 座舱玻璃划分（与 2D Car2D windowPath 同源锚点）；倾角/桶面参数先于车身变形计算，
+  // 供车身 greenhouse 收窄与玻璃面板共用同一轮廓公式
+  const cabin = deriveCabinGlass(P, {
+    carType: props.carType,
+    sideGlassAngle: props.carParams?.side_glass_angle,
+    glassBarrelAngle: props.carParams?.glass_barrel_angle,
+    glassBarrelRadius: props.carParams?.glass_barrel_radius
+  })
+  const dloFrame = buildDloFrame(cabin, bodyExtentZ + 0.002)
+
+  // 车身 greenhouse 收窄：DLO 底边（腰带线）以上的侧壁/车顶按与 DLO 玻璃面同公式
+  // 内收——A/B/C 柱剪影与车顶随玻璃角度/桶面联动，玻璃面始终位于车身外侧同间隙
+  // （greenhouseInsetAt 纯函数，可单测；k 为按高度的比例因子，避免内部顶点越过中线）
+  const taperK = (y) => Math.max(1 - greenhouseInsetAt(y, dloFrame) / bodyExtentZ, 0.35)
+  const applyGreenhouseTaper = (geom) => {
+    const pos = geom.attributes.position
+    for (let i = 0; i < pos.count; i++) {
+      pos.setZ(i, pos.getZ(i) * taperK(pos.getY(i)))
+    }
+    pos.needsUpdate = true
+    geom.computeVertexNormals()
+  }
+  applyGreenhouseTaper(bodyGeom)
+
   const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat)
   bodyMesh.castShadow = true
   bodyMesh.receiveShadow = true
@@ -391,8 +416,6 @@ const createCar = () => {
     group.add(bed)
   }
 
-  const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
-
   // ---- 座舱玻璃划分（与 2D Car2D windowPath 同源锚点：玻璃与车身两种状态） ----
   // 前后风挡贴合拉伸体侧壁（壁面被 bevel 外扩 bodyThickness），侧窗贴合端盖外缘；
   // 玻璃统一用独立透明材质与车身漆面区分；B 柱在 55% 分段处保留车身色立柱（与 2D pillarX 同源）
@@ -407,30 +430,26 @@ const createCar = () => {
     wireframe: wireframeMode.value
   })
 
-  // 斜面玻璃带：端点/法线/顶缘下退的计算在 utils/carGlass.js 纯函数中（可单测）
+  // 斜面玻璃带：端点/法线/顶缘下退的计算在 utils/carGlass.js 纯函数中（可单测）；
+  // Z 向随高度按 taperK 收窄（与车身 greenhouse 同公式），顶缘不越过收窄后的车身
   const addBandGlass = (x1, y1, x2, y2, width, topInset = 0) => {
     const { a, b } = bandGlassEndpoints(x1, y1, x2, y2, topInset, bodyThickness + 0.001)
     const hw = width / 2
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+    const raw = [
       a[0], a[1], -hw, a[0], a[1], hw, b[0], b[1], -hw,
       a[0], a[1], hw, b[0], b[1], hw, b[0], b[1], -hw
-    ]), 3))
+    ]
+    const verts = []
+    for (let i = 0; i < raw.length; i += 3) {
+      verts.push(raw[i], raw[i + 1], raw[i + 2] * taperK(raw[i + 1]))
+    }
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3))
     g.computeVertexNormals()
     const m = new THREE.Mesh(g, glassMat)
     m.userData.noCastShadow = true
     group.add(m)
   }
-
-  // 面板布局与 2D windowPath/pillarX 同源（deriveCabinGlass 纯函数）；
-  // 侧玻璃倾角/桶面：carParams.side_glass_angle / glass_barrel_angle / glass_barrel_radius
-  // 可覆盖，默认按车型表（SIDE_GLASS_TILT / SIDE_GLASS_BARREL）
-  const cabin = deriveCabinGlass(P, {
-    carType: props.carType,
-    sideGlassAngle: props.carParams?.side_glass_angle,
-    glassBarrelAngle: props.carParams?.glass_barrel_angle,
-    glassBarrelRadius: props.carParams?.glass_barrel_radius
-  })
 
   // 前风挡：底缘 = COWL，顶缘 = 车顶前缘（与 2D A 柱线同源）
   const ws = cabin.windshield
@@ -445,7 +464,6 @@ const createCar = () => {
   // Z 轮廓 = tumblehome 线性内收 + barrel 桶面圆弧鼓肚（dloZAt 纯函数，可单测）。
   // 面片沿高度细分成条带网格——四角面片无法表达桶面曲率
   // （框架构建/条带顶点生成在 utils/carGlass.js buildDloFrame / buildDloStrip 纯函数中，可单测）
-  const dloFrame = buildDloFrame(cabin, bodyExtentZ + 0.002)
   const DLO_ROWS = 16
   for (const zSide of [1, -1]) {
     const positions = buildDloStrip(cabin.dlo, dloFrame, DLO_ROWS, zSide)

@@ -261,3 +261,16 @@ export function buildDloStrip(dlo, frame, rows, zSide) {
   }
   return positions
 }
+
+/**
+ * 车身 greenhouse 在高度 y 处的侧壁内收量（米）。
+ * 与 DLO 玻璃面同公式（倾角线性 + 桶面圆弧，t 按 [dloYBot, dloYBot+dloYSpan] 钳位），
+ * 供车身挤出体/玻璃带做 Z 向收窄变形——车身侧壁、车顶、柱剪影随玻璃角度联动，
+ * 玻璃面（dloZAt，基准 dloZBase）始终位于收窄后车身外侧同一间隙。
+ * @param {number} y 目标高度
+ * @param {object} frame buildDloFrame 返回值
+ * @returns {number} 内收量（≥0，底边处为 0）
+ */
+export function greenhouseInsetAt(y, frame) {
+  return frame.dloZBase - Math.abs(dloZAt(y, frame, 1))
+}
