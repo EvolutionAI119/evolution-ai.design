@@ -26,6 +26,22 @@ export const SIDE_GLASS_TILT = {
 }
 
 /**
+ * 侧玻璃桶面（barrel）：玻璃沿高度的圆弧弯曲参数，决定前视玻璃鼓肚（外凸）造型。
+ * angle = 玻璃底缘→顶缘的圆弧张角（度，0 = 平直），radius = 圆弧半径（mm）。
+ * 顶缘额外内收量 = radius × (1 − cos angle)；可用 carParams.glass_barrel_angle /
+ * glass_barrel_radius 显式覆盖（非法值自动回退车型默认）。
+ * 参考真车：911/488 ≈ 10°/900mm（鼓肚明显），F-150 ≈ 4°/2200mm（近平直）
+ */
+export const SIDE_GLASS_BARREL = {
+  sedan: { angle: 8, radius: 1200 },
+  suv: { angle: 6, radius: 1600 },
+  coupe: { angle: 10, radius: 900 },
+  sport: { angle: 10, radius: 900 },
+  mpv: { angle: 5, radius: 2000 },
+  pickup: { angle: 4, radius: 2200 }
+}
+
+/**
  * 斜面玻璃带几何。
  * 底缘 (x1,y1) → 顶缘 (x2,y2)，顶缘按 topInset 沿斜线下退（避开柱顶 G1 圆角），
  * 两端再沿外法线抬离 offset（贴合被 bevel 外扩的车身侧壁）。
@@ -56,8 +72,10 @@ export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0) {
 /**
  * 由 deriveCarProfile 结果派生座舱玻璃面板布局（纯函数）。
  * @param {object} P deriveCarProfile 返回值
- * @param {object} [opts] 可选项：carType（车型，决定默认倾角）、
- *   sideGlassAngle（carParams.side_glass_angle 显式覆盖，非法值自动回退）
+ * @param {object} [opts] 可选项：carType（车型，决定默认倾角/桶面）、
+ *   sideGlassAngle（carParams.side_glass_angle 覆盖，非法值自动回退）、
+ *   glassBarrelAngle（carParams.glass_barrel_angle 覆盖，0≤角≤20°）、
+ *   glassBarrelRadius（carParams.glass_barrel_radius 覆盖，400≤半径≤5000mm）
  * @returns {{
  *   windshield: { x1, y1, x2, y2, width, topInset },
  *   rearWindow: { x1, y1, x2, y2, width, topInset } | null,  // 皮卡为 null（驾驶室后壁为车身）
@@ -66,7 +84,10 @@ export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0) {
  *   dloBotRear: number,
  *   pillar: { x, topY, botY },  // B 柱（车身色）中心线与上下端
  *   tiltDeg: number,            // 侧玻璃倾角（度，B 柱与侧窗共面同角）
- *   dloTopInsetZ: number        // DLO 顶边相对底边的 Z 向内收量（米，正值=向内）
+ *   tiltInsetZ: number,         // 倾角单独引起的顶边 Z 内收（米）
+ *   barrelAngle: number,        // 侧玻璃桶面角（度）
+ *   barrelRadius: number,       // 侧玻璃桶面半径（米）
+ *   dloTopInsetZ: number        // DLO 顶边相对底边的 Z 向总内收（米）= tiltInsetZ + 桶面内收
  * }}
  */
 export function deriveCabinGlass(P, opts = {}) {
@@ -85,9 +106,24 @@ export function deriveCabinGlass(P, opts = {}) {
   const tiltDeg = (Number.isFinite(raw) && raw > 0 && raw < 45)
     ? raw
     : (SIDE_GLASS_TILT[carType] ?? 15)
+
+  // 侧玻璃桶面：显式覆盖优先（角 0~20°、半径 400~5000mm 合法），否则按车型默认
+  const barrelDefault = SIDE_GLASS_BARREL[carType] ?? { angle: 8, radius: 1200 }
+  const rawBA = Number(opts.glassBarrelAngle)
+  const rawBR = Number(opts.glassBarrelRadius)
+  const barrelAngle = (Number.isFinite(rawBA) && rawBA >= 0 && rawBA <= 20)
+    ? rawBA
+    : barrelDefault.angle
+  const barrelRadiusMm = (Number.isFinite(rawBR) && rawBR >= 400 && rawBR <= 5000)
+    ? rawBR
+    : barrelDefault.radius
+  const barrelRadius = barrelRadiusMm / 1000
+
   const dloTopY = roofTopY - 0.035
   const dloBotY = beltLineY + 0.008
-  const dloTopInsetZ = (dloTopY - dloBotY) * Math.tan((tiltDeg * Math.PI) / 180)
+  const tiltInsetZ = (dloTopY - dloBotY) * Math.tan((tiltDeg * Math.PI) / 180)
+  const barrelInsetZ = barrelRadius * (1 - Math.cos((barrelAngle * Math.PI) / 180))
+  const dloTopInsetZ = tiltInsetZ + barrelInsetZ
 
   return {
     // 前风挡：底缘 = COWL，顶缘 = 车顶前缘；顶缘下退 0.09m 留出车身色顶带
@@ -118,40 +154,57 @@ export function deriveCabinGlass(P, opts = {}) {
       botY: beltLineY + 0.035
     },
     tiltDeg,
+    tiltInsetZ,
+    barrelAngle,
+    barrelRadius,
     dloTopInsetZ
   }
 }
 
 /**
- * DLO 倾斜面在高度 y 处的 Z 坐标（tumblehome 线性内收）。
- * 底边（y = dloYBot）位于 dloZBase，顶边（y = dloYBot + dloYSpan）内收 dloTopInsetZ，
- * 超出 [dloYBot, dloYBot + dloYSpan] 的高度按边界钳位（不外扩）。
+ * DLO 玻璃面在高度 y 处的 Z 坐标（tumblehome 线性内收 + barrel 圆弧鼓肚）。
+ * 内收量 inset(t) = t × tiltInsetZ + radius × (1 − cos(barrelRad × t))，t ∈ [0,1]：
+ *   - barrelRad/barrelRadius 缺省或为 0 时退化为纯倾角线性内收（向后兼容）；
+ *   - 桶面使中段相对端点连线外凸（真车玻璃鼓肚），顶边总内收 = tiltInsetZ + radius×(1−cos barrelRad)。
+ * 底边（y = dloYBot）位于 dloZBase，超出 [dloYBot, dloYBot + dloYSpan] 的高度按边界钳位。
+ * 框架参数兼容两种写法：tiltInsetZ（纯倾角内收）优先，缺省回退 dloTopInsetZ（总内收）。
  * zSide=1 为左片（+Z），zSide=-1 为右片镜像。
  * @param {number} y 目标高度
- * @param {{ dloYBot: number, dloYSpan: number, dloTopInsetZ: number, dloZBase: number }} f DLO 框架参数
+ * @param {{ dloYBot: number, dloYSpan: number, tiltInsetZ?: number, dloTopInsetZ?: number,
+ *           barrelRad?: number, barrelRadius?: number, dloZBase: number }} f DLO 框架参数
  * @param {1|-1} zSide 侧别
  * @returns {number} 该高度的 Z 坐标（带侧别符号）
  */
 export function dloZAt(y, f, zSide) {
   const span = f.dloYSpan || 1
   const t = Math.min(Math.max((y - f.dloYBot) / span, 0), 1)
-  return zSide * (f.dloZBase - t * f.dloTopInsetZ)
+  const tiltInset = f.tiltInsetZ ?? f.dloTopInsetZ ?? 0
+  const br = f.barrelRad || 0
+  const bR = f.barrelRadius || 0
+  const barrel = (br > 0 && bR > 0) ? bR * (1 - Math.cos(br * t)) : 0
+  return zSide * (f.dloZBase - t * tiltInset - barrel)
 }
 
 /**
- * B 柱定位与姿态（与侧窗 DLO 共面同倾角）。
- * 底部锚定 DLO 面在 pillar.botY 高度处的 Z（与 dloZAt 同公式，保证共面），
+ * B 柱定位与姿态（底部锚定 DLO 玻璃面在 pillar.botY 高度处的 Z，与 dloZAt 同公式保证共面），
  * 绕底旋转 tiltDeg（rotation.x = -zSide × tiltRad）。
  * @returns {{ x, botY, height, baseZ, tiltRad }} baseZ 为 zSide=1 时底部 |Z|
  */
 export function pillarPlacement(cabin, dloYBot, dloYSpan, dloZBase) {
   const span = dloYSpan || 1
-  const pillarT = (cabin.pillar.botY - dloYBot) / span
+  const baseZ = Math.abs(dloZAt(cabin.pillar.botY, {
+    dloYBot,
+    dloYSpan,
+    dloZBase,
+    tiltInsetZ: span * Math.tan((cabin.tiltDeg * Math.PI) / 180),
+    barrelRad: ((cabin.barrelAngle || 0) * Math.PI) / 180,
+    barrelRadius: cabin.barrelRadius || 0
+  }, 1))
   return {
     x: cabin.pillar.x,
     botY: cabin.pillar.botY,
     height: cabin.pillar.topY - cabin.pillar.botY,
-    baseZ: dloZBase - pillarT * cabin.dloTopInsetZ,
+    baseZ,
     tiltRad: (cabin.tiltDeg * Math.PI) / 180
   }
 }

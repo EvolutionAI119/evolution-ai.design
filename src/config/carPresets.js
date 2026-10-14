@@ -1,4 +1,13 @@
 // name 字段为 i18n 键（designer 域），渲染时通过 t('designer.' + name) 翻译
+import { SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+
+// 玻璃三参数（UI 可调）：倾角取 carGlass 车型表，保证 UI 默认与 3D 几何回退值不漂移
+const glassParams = (type) => ({
+  side_glass_angle: SIDE_GLASS_TILT[type],
+  glass_barrel_angle: SIDE_GLASS_BARREL[type].angle,
+  glass_barrel_radius: SIDE_GLASS_BARREL[type].radius
+})
+
 export const carTypes = [
   { key: 'sedan', name: 'carSedan', desc: 'Classic sedan' },
   { key: 'suv', name: 'carSuv', desc: 'Sport utility' },
@@ -21,6 +30,7 @@ export const defaultCarParams = {
   windshield_angle: 30,
   rear_window_angle: 25,
   rear_slant_angle: 15,
+  ...glassParams('sedan'),
   front_overhang: 1100,
   rear_overhang: 1118
 }
@@ -31,6 +41,7 @@ export const carTypeParams = {
     wheel_base: 2890, track_width: 1600, ground_clearance: 140,
     hood_length: 1050, roof_height: 550, wheel_diameter: 680,
     windshield_angle: 35, rear_window_angle: 28, rear_slant_angle: 18,
+    ...glassParams('sedan'),
     front_overhang: 950, rear_overhang: 1110
   },
   suv: {
@@ -38,6 +49,7 @@ export const carTypeParams = {
     wheel_base: 2950, track_width: 1680, ground_clearance: 210,
     hood_length: 1150, roof_height: 850, wheel_diameter: 760,
     windshield_angle: 28, rear_window_angle: 22, rear_slant_angle: 12,
+    ...glassParams('suv'),
     front_overhang: 980, rear_overhang: 1120
   },
   coupe: {
@@ -45,6 +57,7 @@ export const carTypeParams = {
     wheel_base: 2780, track_width: 1620, ground_clearance: 120,
     hood_length: 1350, roof_height: 420, wheel_diameter: 700,
     windshield_angle: 40, rear_window_angle: 35, rear_slant_angle: 40,
+    ...glassParams('coupe'),
     front_overhang: 1020, rear_overhang: 1000
   },
   sport: {
@@ -52,6 +65,7 @@ export const carTypeParams = {
     wheel_base: 2700, track_width: 1700, ground_clearance: 100,
     hood_length: 1500, roof_height: 350, wheel_diameter: 720,
     windshield_angle: 45, rear_window_angle: 42, rear_slant_angle: 50,
+    ...glassParams('sport'),
     front_overhang: 950, rear_overhang: 950
   },
   mpv: {
@@ -59,6 +73,7 @@ export const carTypeParams = {
     wheel_base: 3100, track_width: 1640, ground_clearance: 160,
     hood_length: 850, roof_height: 950, wheel_diameter: 700,
     windshield_angle: 25, rear_window_angle: 15, rear_slant_angle: 8,
+    ...glassParams('mpv'),
     front_overhang: 880, rear_overhang: 1220
   },
   pickup: {
@@ -66,6 +81,7 @@ export const carTypeParams = {
     wheel_base: 3450, track_width: 1680, ground_clearance: 230,
     hood_length: 1350, roof_height: 750, wheel_diameter: 780,
     windshield_angle: 28, rear_window_angle: 20, rear_slant_angle: 15,
+    ...glassParams('pickup'),
     front_overhang: 1050, rear_overhang: 1100
   }
 }

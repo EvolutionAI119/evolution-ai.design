@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, SIDE_GLASS_TILT } from '../utils/carGlass.js'
-import { carTypeParams } from '../config/carPresets.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
 
@@ -149,14 +149,19 @@ describe('侧玻璃倾角（tumblehome，前视车肩造型）', () => {
     expect(SIDE_GLASS_TILT.suv).toBeGreaterThan(SIDE_GLASS_TILT.pickup)
   })
 
-  it.each(ALL_TYPES)('%s 输出 tiltDeg=车型默认，dloTopInsetZ = DLO高差 × tan(tilt)', (type) => {
+  it.each(ALL_TYPES)('%s 输出 tiltDeg/barrelAngle=车型默认，dloTopInsetZ = 倾角内收 + 桶面内收', (type) => {
     const P = deriveCarProfile(carTypeParams[type], type)
     const g = deriveCabinGlass(P, { carType: type })
     expect(g.tiltDeg).toBeCloseTo(SIDE_GLASS_TILT[type], 10)
+    expect(g.barrelAngle).toBeCloseTo(SIDE_GLASS_BARREL[type].angle, 10)
+    expect(g.barrelRadius).toBeCloseTo(SIDE_GLASS_BARREL[type].radius / 1000, 10)
     const dloTopY = P.roofTopY - 0.035
     const dloBotY = P.beltLineY + 0.008
-    const expected = (dloTopY - dloBotY) * Math.tan((SIDE_GLASS_TILT[type] * Math.PI) / 180)
-    expect(g.dloTopInsetZ).toBeCloseTo(expected, 12)
+    const tiltInset = (dloTopY - dloBotY) * Math.tan((SIDE_GLASS_TILT[type] * Math.PI) / 180)
+    const barrelInset = (SIDE_GLASS_BARREL[type].radius / 1000) * (1 - Math.cos((SIDE_GLASS_BARREL[type].angle * Math.PI) / 180))
+    expect(g.tiltInsetZ).toBeCloseTo(tiltInset, 12)
+    expect(g.dloTopInsetZ).toBeCloseTo(tiltInset + barrelInset, 12)
+    expect(g.dloTopInsetZ).toBeGreaterThan(g.tiltInsetZ)   // 桶面使总内收大于纯倾角
     // 内收量为正且远小于半车宽（不越过车身中线）
     expect(g.dloTopInsetZ).toBeGreaterThan(0)
     expect(g.dloTopInsetZ).toBeLessThan(P.W / 2)
@@ -224,9 +229,19 @@ describe('pillarPlacement B 柱定位（与 DLO 共面同倾角）', () => {
   const dloYSpan = cabin.dlo[1][1] - dloYBot
   const dloZBase = 1.05
 
+  // 与 pillarPlacement 内部一致的全参框架（倾角 + 桶面）
+  const glassFrame = (c, yBot, ySpan, zBase) => ({
+    dloYBot: yBot,
+    dloYSpan: ySpan,
+    dloZBase: zBase,
+    tiltInsetZ: ySpan * Math.tan((c.tiltDeg * Math.PI) / 180),
+    barrelRad: (c.barrelAngle * Math.PI) / 180,
+    barrelRadius: c.barrelRadius
+  })
+
   it('底部 Z 锚点与 dloZAt(botY) 完全一致（共面性）', () => {
     const pp = pillarPlacement(cabin, dloYBot, dloYSpan, dloZBase)
-    const glassZ = Math.abs(dloZAt(cabin.pillar.botY, { dloYBot, dloYSpan, dloTopInsetZ: cabin.dloTopInsetZ, dloZBase }, 1))
+    const glassZ = Math.abs(dloZAt(cabin.pillar.botY, glassFrame(cabin, dloYBot, dloYSpan, dloZBase), 1))
     expect(pp.baseZ).toBeCloseTo(glassZ, 12)
   })
 
@@ -251,7 +266,104 @@ describe('pillarPlacement B 柱定位（与 DLO 共面同倾角）', () => {
     const yBot = ck.dlo[0][1]
     const ySpan = ck.dlo[1][1] - yBot
     const pp = pillarPlacement(ck, yBot, ySpan, dloZBase)
-    const glassZ = Math.abs(dloZAt(ck.pillar.botY, { dloYBot: yBot, dloYSpan: ySpan, dloTopInsetZ: ck.dloTopInsetZ, dloZBase }, 1))
+    const glassZ = Math.abs(dloZAt(ck.pillar.botY, glassFrame(ck, yBot, ySpan, dloZBase), 1))
     expect(pp.baseZ).toBeCloseTo(glassZ, 12)
+  })
+})
+
+describe('SIDE_GLASS_BARREL 玻璃桶面（前视玻璃鼓肚造型）', () => {
+  it('六车型桶面参数均在真车合理区间（角 0~20°、半径 400~5000mm）', () => {
+    for (const type of ALL_TYPES) {
+      const b = SIDE_GLASS_BARREL[type]
+      expect(b.angle).toBeGreaterThanOrEqual(0)
+      expect(b.angle).toBeLessThanOrEqual(20)
+      expect(b.radius).toBeGreaterThanOrEqual(400)
+      expect(b.radius).toBeLessThanOrEqual(5000)
+    }
+  })
+
+  it('运动/轿跑桶面角大于 SUV/皮卡（鼓肚更明显）', () => {
+    expect(SIDE_GLASS_BARREL.sport.angle).toBeGreaterThan(SIDE_GLASS_BARREL.suv.angle)
+    expect(SIDE_GLASS_BARREL.coupe.angle).toBeGreaterThan(SIDE_GLASS_BARREL.pickup.angle)
+  })
+
+  it('carPresets 契约：defaultCarParams 与六车型均携带三个玻璃字段且与车型表一致', () => {
+    const keys = ['side_glass_angle', 'glass_barrel_angle', 'glass_barrel_radius']
+    for (const k of keys) {
+      expect(defaultCarParams).toHaveProperty(k)
+    }
+    expect(defaultCarParams.side_glass_angle).toBe(SIDE_GLASS_TILT.sedan)
+    for (const type of ALL_TYPES) {
+      const p = carTypeParams[type]
+      expect(p.side_glass_angle).toBe(SIDE_GLASS_TILT[type])
+      expect(p.glass_barrel_angle).toBe(SIDE_GLASS_BARREL[type].angle)
+      expect(p.glass_barrel_radius).toBe(SIDE_GLASS_BARREL[type].radius)
+    }
+  })
+
+  it('glassBarrelAngle / glassBarrelRadius 显式覆盖车型默认（radius 单位 mm → 内部米）', () => {
+    const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const g = deriveCabinGlass(P, { carType: 'sedan', glassBarrelAngle: 14, glassBarrelRadius: 800 })
+    expect(g.barrelAngle).toBeCloseTo(14, 10)
+    expect(g.barrelRadius).toBeCloseTo(0.8, 10)
+  })
+
+  it('非法桶面覆盖（NaN / 负值 / 超上限）自动回退车型默认', () => {
+    const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    for (const bad of [NaN, -2, 21, 100]) {
+      const g = deriveCabinGlass(P, { carType: 'sedan', glassBarrelAngle: bad })
+      expect(g.barrelAngle).toBeCloseTo(SIDE_GLASS_BARREL.sedan.angle, 10)
+    }
+    for (const bad of [NaN, 100, 399, 6000]) {
+      const g = deriveCabinGlass(P, { carType: 'sedan', glassBarrelRadius: bad })
+      expect(g.barrelRadius).toBeCloseTo(SIDE_GLASS_BARREL.sedan.radius / 1000, 10)
+    }
+  })
+
+  it('barrelAngle=0 时桶面内收为零，dloTopInsetZ 退化为纯倾角（向后兼容）', () => {
+    const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const g = deriveCabinGlass(P, { carType: 'sedan', glassBarrelAngle: 0 })
+    expect(g.dloTopInsetZ).toBeCloseTo(g.tiltInsetZ, 12)
+  })
+
+  it('dloZAt 桶面轮廓：顶边总内收 = 倾角 + R(1−cos β)，中段相对端点连线外凸（鼓肚）', () => {
+    const F = { dloYBot: 0.8, dloYSpan: 0.4, tiltInsetZ: 0.1, barrelRad: (10 * Math.PI) / 180, barrelRadius: 0.9, dloZBase: 1.05 }
+    // 顶边（t=1）：0.1 + 0.9 × (1 − cos10°)
+    const topExpected = 1.05 - 0.1 - 0.9 * (1 - Math.cos((10 * Math.PI) / 180))
+    expect(dloZAt(1.2, F, 1)).toBeCloseTo(topExpected, 12)
+    // 底边不内收
+    expect(dloZAt(0.8, F, 1)).toBeCloseTo(1.05, 12)
+    // 中段鼓肚：z(t=0.5) 高于端点连线（线性插值）在中点的值
+    const chordMid = (1.05 + topExpected) / 2
+    expect(dloZAt(1.0, F, 1)).toBeGreaterThan(chordMid)
+    // 单调内收：高度越高 |Z| 越小
+    for (const y of [0.85, 0.95, 1.05, 1.15]) {
+      expect(dloZAt(y, F, 1)).toBeLessThan(dloZAt(y - 0.05, F, 1))
+    }
+  })
+
+  it('dloZAt 无桶面字段时与旧线性公式逐点一致（向后兼容）', () => {
+    const F = { dloYBot: 0.8, dloYSpan: 0.4, dloTopInsetZ: 0.1, dloZBase: 1.05 }
+    for (const y of [0.8, 0.9, 1.0, 1.1, 1.2, 1.5]) {
+      const t = Math.min(Math.max((y - 0.8) / 0.4, 0), 1)
+      expect(dloZAt(y, F, 1)).toBeCloseTo(1.05 - t * 0.1, 12)
+    }
+  })
+
+  it('桶面下 pillarPlacement 仍与玻璃面共面（barrel=0 与 barrel>0 两态）', () => {
+    const P = deriveCarProfile(carTypeParams.coupe, 'coupe')
+    for (const barrel of [0, 14]) {
+      const c = deriveCabinGlass(P, { carType: 'coupe', glassBarrelAngle: barrel })
+      const yBot = c.dlo[0][1]
+      const ySpan = c.dlo[1][1] - yBot
+      const pp = pillarPlacement(c, yBot, ySpan, 1.05)
+      const glassZ = Math.abs(dloZAt(c.pillar.botY, {
+        dloYBot: yBot, dloYSpan: ySpan, dloZBase: 1.05,
+        tiltInsetZ: ySpan * Math.tan((c.tiltDeg * Math.PI) / 180),
+        barrelRad: (c.barrelAngle * Math.PI) / 180,
+        barrelRadius: c.barrelRadius
+      }, 1))
+      expect(pp.baseZ).toBeCloseTo(glassZ, 12)
+    }
   })
 })

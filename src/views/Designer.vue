@@ -427,7 +427,7 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
-                  <span class="param-name">Rear Slant Angle</span>
+                  <span class="param-name">{{ t('designer.rearSlantAngle') }}</span>
                   <span class="param-value">{{ carParams.rear_slant_angle }}°</span>
                 </div>
                 <input
@@ -436,6 +436,48 @@
                   min="5"
                   max="60"
                   step="1"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.sideGlassTumblehome') }}</span>
+                  <span class="param-value">{{ carParams.side_glass_angle }}°</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.side_glass_angle"
+                  min="1"
+                  max="40"
+                  step="1"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.glassBarrelAngle') }}</span>
+                  <span class="param-value">{{ carParams.glass_barrel_angle }}°</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.glass_barrel_angle"
+                  min="0"
+                  max="20"
+                  step="1"
+                  class="param-slider"
+                />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.glassBarrelRadius') }}</span>
+                  <span class="param-value">{{ carParams.glass_barrel_radius }} mm</span>
+                </div>
+                <input
+                  type="range"
+                  v-model.number="carParams.glass_barrel_radius"
+                  min="500"
+                  max="4000"
+                  step="50"
                   class="param-slider"
                 />
               </div>

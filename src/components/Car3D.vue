@@ -423,10 +423,13 @@ const createCar = () => {
   }
 
   // 面板布局与 2D windowPath/pillarX 同源（deriveCabinGlass 纯函数）；
-  // 侧玻璃倾角（tumblehome）：carParams.side_glass_angle 可覆盖，默认按车型表
+  // 侧玻璃倾角/桶面：carParams.side_glass_angle / glass_barrel_angle / glass_barrel_radius
+  // 可覆盖，默认按车型表（SIDE_GLASS_TILT / SIDE_GLASS_BARREL）
   const cabin = deriveCabinGlass(P, {
     carType: props.carType,
-    sideGlassAngle: props.carParams?.side_glass_angle
+    sideGlassAngle: props.carParams?.side_glass_angle,
+    glassBarrelAngle: props.carParams?.glass_barrel_angle,
+    glassBarrelRadius: props.carParams?.glass_barrel_radius
   })
 
   // 前风挡：底缘 = COWL，顶缘 = 车顶前缘（与 2D A 柱线同源）
@@ -439,22 +442,42 @@ const createCar = () => {
   }
 
   // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
-  // 顶边沿 Z 向内收（tumblehome 倾角），前视呈上窄下宽的真车车肩
-  // （z 插值/钳位/镜像在 utils/carGlass.js dloZAt 纯函数中，可单测）
-  const dloShape = new THREE.Shape(cabin.dlo.map(([x, y]) => new THREE.Vector2(x, y)))
+  // Z 轮廓 = tumblehome 线性内收 + barrel 桶面圆弧鼓肚（dloZAt 纯函数，可单测）。
+  // 面片沿高度细分成条带网格——四角面片无法表达桶面曲率
   const dloFrame = {
     dloYBot: cabin.dlo[0][1],
     dloYSpan: cabin.dlo[1][1] - cabin.dlo[0][1],
-    dloTopInsetZ: cabin.dloTopInsetZ,
+    tiltInsetZ: cabin.tiltInsetZ,
+    barrelRad: (cabin.barrelAngle * Math.PI) / 180,
+    barrelRadius: cabin.barrelRadius,
     dloZBase: bodyExtentZ + 0.002
   }
+  const DLO_ROWS = 16
+  // 四角 X 边界（dlo = [底前, 顶前, 顶后, 底后]），前后 X 边随高度线性收拢（与原四边形边界一致）
+  const bfx = cabin.dlo[0][0]
+  const tfx = cabin.dlo[1][0]
+  const brxB = cabin.dlo[3][0]
+  const trx = cabin.dlo[2][0]
   for (const zSide of [1, -1]) {
-    const dloGeom = new THREE.ShapeGeometry(dloShape)
-    const pos = dloGeom.attributes.position
-    for (let i = 0; i < pos.count; i++) {
-      pos.setZ(i, dloZAt(pos.getY(i), dloFrame, zSide))
+    const positions = []
+    for (let r = 0; r < DLO_ROWS; r++) {
+      const t0 = r / DLO_ROWS
+      const t1 = (r + 1) / DLO_ROWS
+      const y0 = dloFrame.dloYBot + t0 * dloFrame.dloYSpan
+      const y1 = dloFrame.dloYBot + t1 * dloFrame.dloYSpan
+      const z0 = dloZAt(y0, dloFrame, zSide)
+      const z1 = dloZAt(y1, dloFrame, zSide)
+      const fx0 = bfx + (tfx - bfx) * t0
+      const fx1 = bfx + (tfx - bfx) * t1
+      const rx0 = brxB + (trx - brxB) * t0
+      const rx1 = brxB + (trx - brxB) * t1
+      positions.push(
+        fx0, y0, z0, rx0, y0, z0, fx1, y1, z1,
+        rx0, y0, z0, rx1, y1, z1, fx1, y1, z1
+      )
     }
-    pos.needsUpdate = true
+    const dloGeom = new THREE.BufferGeometry()
+    dloGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
     dloGeom.computeVertexNormals()
     const panel = new THREE.Mesh(dloGeom, glassMat)
     panel.userData.noCastShadow = true
