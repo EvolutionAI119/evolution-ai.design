@@ -82,6 +82,9 @@ def test_pillar_wedges_share_glass_and_window_edges(car, gen):
         tip = a[3][0]
         assert abs(tip[0] - (gen.hp["x_wstop"] - gen.L / 2)) <= 2, f"A柱尖 {tip}"
         assert abs(tip[2] - gen.hp["z_wstop"]) <= 2
+        # 顶点落在侧窗玻璃面上（tumblehome 三参数联动内收，非固定 0.46W）
+        assert abs(tip[1]) == pytest.approx(
+            gen._greenhouse_lat(gen.hp["z_wstop"]), abs=2), "A柱尖未贴玻璃面"
         foot = a[0][-1]
         assert abs(foot[0] - (gen.hp["x_cowl"] + 40 - gen.L / 2)) <= 2
         assert abs(foot[2] - gen.waist * 0.98) <= 2
@@ -92,9 +95,11 @@ def test_pillar_wedges_share_glass_and_window_edges(car, gen):
         foot_c = c[0][-1]
         assert abs(foot_c[0] - (gen.hp["x_rwbot"] - 40 - gen.L / 2)) <= 2
         assert abs(foot_c[2] - gen.waist * 0.98) <= 2
-        # 楔外缘贴风挡/后窗半宽带（0.45~0.46W）
+        # 楔底缘贴风挡/后窗半宽带（0.45~0.46W）；顶点内收至玻璃面
+        # （tumblehome 三参数联动后楔尖 = _greenhouse_lat(顶高)，与玻璃共面）
         lats = np.abs(np.concatenate([a[:, :, 1].ravel(), c[:, :, 1].ravel()]))
-        assert lats.min() >= gen.W * 0.44, "柱楔内缘缩入玻璃区"
+        assert lats.min() >= gen._greenhouse_lat(gen.hp["z_wstop"]) - 2, \
+            "柱楔顶点未达玻璃面"
         assert lats.max() <= gen.W * 0.47 + 2, "柱楔外缘超出窗带"
 
 

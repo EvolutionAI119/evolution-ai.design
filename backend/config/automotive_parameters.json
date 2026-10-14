@@ -35,6 +35,7 @@
       "wheel_arch_radius": {"name": "轮拱半径", "value": 350, "unit": "mm", "type": "radius", "min_value": 280, "max_value": 420, "category": "exterior"},
       "wheel_diameter": {"name": "轮毂直径", "value": 450, "unit": "mm", "type": "diameter", "min_value": 350, "max_value": 600, "category": "chassis"},
       "wheel_width": {"name": "轮毂宽度", "value": 225, "unit": "mm", "type": "width", "min_value": 185, "max_value": 355, "category": "chassis"},
+      "glass_barrel_radius": {"name": "玻璃桶面半径", "value": 1200, "unit": "mm", "type": "radius", "min_value": 400, "max_value": 5000, "category": "exterior"},
       "mirror_width": {"name": "后视镜宽度", "value": 200, "unit": "mm", "type": "width", "min_value": 150, "max_value": 280, "category": "exterior"},
       "mirror_height": {"name": "后视镜高度", "value": 150, "unit": "mm", "type": "height", "min_value": 100, "max_value": 200, "category": "exterior"},
       "mirror_depth": {"name": "后视镜深度", "value": 120, "unit": "mm", "type": "distance", "min_value": 80, "max_value": 180, "category": "exterior"},
@@ -46,7 +47,9 @@
       "rear_window_angle": {"name": "后风挡角度", "value": 25, "unit": "deg", "type": "angle", "min_value": 10, "max_value": 60, "category": "exterior"},
       "rear_slant_angle": {"name": "后倾角度", "value": 18, "unit": "deg", "type": "angle", "min_value": 5, "max_value": 60, "category": "exterior"},
       "a_pillar_angle": {"name": "A柱角度", "value": 10, "unit": "deg", "type": "angle", "min_value": 5, "max_value": 20, "category": "exterior"},
-      "c_pillar_angle": {"name": "C柱角度", "value": 30, "unit": "deg", "type": "angle", "min_value": 20, "max_value": 45, "category": "exterior"}
+      "c_pillar_angle": {"name": "C柱角度", "value": 30, "unit": "deg", "type": "angle", "min_value": 20, "max_value": 45, "category": "exterior"},
+      "side_glass_angle": {"name": "侧玻璃倾角Tumblehome", "value": 18, "unit": "deg", "type": "angle", "min_value": 1, "max_value": 40, "category": "exterior"},
+      "glass_barrel_angle": {"name": "玻璃桶面角", "value": 8, "unit": "deg", "type": "angle", "min_value": 0, "max_value": 20, "category": "exterior"}
     },
     "A级曲面参数": {
       "curvature_tolerance": {"name": "曲率公差", "value": 0.01, "unit": "1/mm", "type": "tolerance", "category": "quality"},

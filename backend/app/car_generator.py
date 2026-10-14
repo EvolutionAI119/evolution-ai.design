@@ -181,6 +181,17 @@ class NURBSCarBodyGenerator:
         # 既露出胎冠又处处让开门外的轮胎圆周（余量经逐点核算）。
         wheel_r = self._p('车身部件', 'wheel_diameter') / 2.0
         self._arch_H = wheel_r * 2.0 - 30.0
+        # ---- 侧玻璃 tumblehome + 桶面（前端三滑块直通，字段名与
+        #      carPresets.js 完全一致，经 resolve_overrides 扁平索引命中）----
+        # 防御性钳位（与前端 UI 范围/deriveCabinGlass 校验一致）
+        self._tilt_deg = float(np.clip(self._p('造型角度', 'side_glass_angle'), 1.0, 40.0))
+        self._barrel_deg = float(np.clip(self._p('造型角度', 'glass_barrel_angle'), 0.0, 20.0))
+        self._barrel_R = float(np.clip(self._p('车身部件', 'glass_barrel_radius'), 400.0, 5000.0))
+        self._tilt_rad = np.radians(self._tilt_deg)
+        self._barrel_rad = np.radians(self._barrel_deg)
+        # 座舱高度区间：腰线 → 风挡顶（侧窗所在），t 在此区间归一
+        self._gh_span = max(self.hp['z_wstop'] - waist, 1.0)
+        self._glass_lat_low = self.half_w * 0.928   # 玻璃底沿半宽（嵌入门顶沿之下）
 
     # ---- 共享剖面函数（shell / 车门 / 翼子板共用，保证贴合） ----
     @staticmethod
@@ -249,6 +260,22 @@ class NURBSCarBodyGenerator:
         base = hw * (0.985 - 0.05 * ratio)          # 上沿内收
         bulge = 16.0 * (self._arch_lift(x) / max(self._arch_H, 1.0))
         return (base + bulge) * self._plan_taper(x)
+
+    # ---- 侧玻璃 tumblehome + 桶面（与前端 src/utils/carGlass.js 同公式） ----
+    def _greenhouse_inset(self, z):
+        """座舱区高度 z(author) 处相对腰线的横向内收量（mm）。
+
+        inset(t) = t·span·tan(tilt) + R·(1−cos(β·t))，t=(z−waist)/span 按
+        [0,1] 钳位——t=1 处总内收 = span·tan + R(1−cosβ)，与前端
+        deriveCabinGlass 的 dloTopInsetZ 完全一致；腰线以下内收为 0。
+        """
+        t = min(max((z - self.waist) / self._gh_span, 0.0), 1.0)
+        return (t * self._gh_span * np.tan(self._tilt_rad)
+                + self._barrel_R * (1.0 - np.cos(self._barrel_rad * t)))
+
+    def _greenhouse_lat(self, z):
+        """侧窗玻璃/座舱侧壁在高度 z 处的半宽（mm）：底沿半宽 − 内收量"""
+        return self._glass_lat_low - self._greenhouse_inset(z)
 
 
     def _p(self, group, key):
@@ -390,7 +417,7 @@ class NURBSCarBodyGenerator:
         x0, x1 = hp['x_cowl'], hp['x_wstop']
         z0, z1 = hp['z_cowl'], hp['z_wstop']
         w_bot = self.W * 0.90
-        w_top = self.W * 0.92
+        w_top = 2.0 * self._greenhouse_lat(z1)   # 顶边与车顶前缘/侧窗上沿同面（tumblehome 联动）
         nu, nv = 6, 7
         cps = []
         for i in range(nu):
@@ -410,12 +437,14 @@ class NURBSCarBodyGenerator:
                                     '#87CEEB', opacity=0.55)
 
     def generate_roof(self):
-        """车顶：前缘=风挡顶，后缘=后窗顶（共享硬点）"""
+        """车顶：前缘=风挡顶，后缘=后窗顶（共享硬点）
+
+        两侧边缘半宽按 _greenhouse_lat(边缘高度) 联动——前缘与风挡顶/
+        侧窗上沿同面，后缘与后窗顶同面，随玻璃倾角/桶面收窄。
+        """
         hp = self.hp
         x0, x1 = hp['x_wstop'], hp['x_cab_end']
         z0, z1 = hp['z_wstop'], hp['z_roof_r']
-        w_front = self.W * 0.92          # 契约 ±0.92hw，与风挡顶同值
-        w_rear = self.W * 0.92
         crown = max(self._p('车身部件', 'roof_height'), 30)
         nu, nv = 9, 7
         cps = []
@@ -426,7 +455,8 @@ class NURBSCarBodyGenerator:
                 v = j / (nv - 1)
                 x = x0 + u * (x1 - x0)
                 z = z0 + u * (z1 - z0) + crown * np.sin(u * np.pi) * (1 - (2 * v - 1) ** 2)
-                z_lat = (v - 0.5) * (w_front + u * (w_rear - w_front))
+                w_edge = 2.0 * self._greenhouse_lat(z0 + u * (z1 - z0))   # 边缘半宽 tumblehome 联动
+                z_lat = (v - 0.5) * w_edge
                 row.append((x, z, z_lat))
             cps.append(row)
         return self._grid_component('车顶', 'roof', cps, 'roof',
@@ -438,7 +468,7 @@ class NURBSCarBodyGenerator:
         hp = self.hp
         x0, x1 = hp['x_cab_end'], hp['x_rwbot']
         z0, z1 = hp['z_roof_r'], hp['z_rwbot']
-        w_top = self.W * 0.92            # 与车顶后缘同值
+        w_top = 2.0 * self._greenhouse_lat(z0)   # 顶边与车顶后缘/侧窗上沿同面（tumblehome 联动）
         w_bot = self.W * 0.90            # 与行李箱前缘同值
         nu, nv = 6, 7
         cps = []
@@ -581,10 +611,11 @@ class NURBSCarBodyGenerator:
         若只用均匀站，NURBS 会在锚点间过冲，侧窗上沿冒出车顶线呈锯齿。
         下沿统一 z=waist*0.98、半宽 hw*0.928：玻璃内缩于门顶沿
         （门 z_top=waist*0.995、lat=outer+4）之下，窗台无缝。
+        横向半宽按高度取 _greenhouse_lat(z)（tumblehome 倾角 + 桶面
+        圆弧，随 side_glass_angle / glass_barrel_* 参数联动）。
         """
         z_low = self.waist * 0.98
-        lat_low = self.half_w * 0.928
-        top_z_chain, top_lat_chain = top_pts[:, [0, 1]], top_pts[:, [0, 2]]
+        top_z_chain = top_pts[:, [0, 1]]
         anchors = top_pts[:, 0]
         nu_per_seg = max(2, int(np.ceil(nu / max(len(anchors) - 1, 1))))
         xs = []
@@ -595,13 +626,11 @@ class NURBSCarBodyGenerator:
         for x in xs:
             x = float(x)
             z_top = self._chain_lookup(x, top_z_chain)
-            lat_top = self._chain_lookup(x, top_lat_chain)
             row = []
             for j in range(nv):
                 v = j / (nv - 1)
                 z = z_low + v * (z_top - z_low)
-                lat = lat_low + v * (lat_top - lat_low)
-                row.append((x, z, sgn * lat))
+                row.append((x, z, sgn * self._greenhouse_lat(z)))
             grid.append(row)
         return grid
 
@@ -644,7 +673,7 @@ class NURBSCarBodyGenerator:
         x0, x1 = mid - 22, mid + 22
         z_bot, z_top = self.waist * 0.995, self.hp['z_wstop'] - 2
         lat_bot = self._outer_half_width(mid, z_bot) + 4   # 与门顶沿同面
-        lat_top = self.W * 0.92 * 0.5 - 2                  # 与侧窗上沿同值
+        lat_top = self._greenhouse_lat(z_top)              # 与侧窗上沿同面（tumblehome 联动）
         cps = []
         for i in range(4):
             u = i / 3.0
@@ -702,7 +731,7 @@ class NURBSCarBodyGenerator:
         sgn = 1.0 if side == 'left' else -1.0
         hp = self.hp
         p1 = (hp['x_cowl'], hp['z_cowl'], sgn * self.W * 0.45)
-        p2 = (hp['x_wstop'], hp['z_wstop'], sgn * self.W * 0.46)
+        p2 = (hp['x_wstop'], hp['z_wstop'], sgn * self._greenhouse_lat(hp['z_wstop']))  # 顶点与侧窗/车顶前缘同面
         p3 = (hp['x_cowl'] + 40, self.waist * 0.98, sgn * self.half_w * 0.928)
         return self._corner_wedge(f'{side}A柱', p1, p2, p3, '#1a1a1a')
 
@@ -711,7 +740,7 @@ class NURBSCarBodyGenerator:
         sgn = 1.0 if side == 'left' else -1.0
         hp = self.hp
         p1 = (hp['x_rwbot'], hp['z_rwbot'], sgn * self.W * 0.45)
-        p2 = (hp['x_cab_end'], hp['z_roof_r'], sgn * self.W * 0.46)
+        p2 = (hp['x_cab_end'], hp['z_roof_r'], sgn * self._greenhouse_lat(hp['z_roof_r']))  # 顶点与侧窗/车顶后缘同面
         p3 = (hp['x_rwbot'] - 40, self.waist * 0.98, sgn * self.half_w * 0.928)
         return self._corner_wedge(f'{side}C柱', p1, p2, p3, '#1a1a1a')
 
