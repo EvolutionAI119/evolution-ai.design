@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://evolution-ai.design/sitemap.xml
