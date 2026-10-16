@@ -1,11 +1,23 @@
 // name 字段为 i18n 键（designer 域），渲染时通过 t('designer.' + name) 翻译
 import { SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { FLIGHT_PRESETS } from '../utils/flightPhysics.js'
 
 // 玻璃三参数（UI 可调）：倾角取 carGlass 车型表，保证 UI 默认与 3D 几何回退值不漂移
 const glassParams = (type) => ({
   side_glass_angle: SIDE_GLASS_TILT[type],
   glass_barrel_angle: SIDE_GLASS_BARREL[type].angle,
   glass_barrel_radius: SIDE_GLASS_BARREL[type].radius
+})
+
+// 飞行参数（UI 可调，字段名与后端 飞行参数 组同名 → resolve_overrides 直通）：
+// enable_vtol 为能力开关（默认开启=具备飞行功能），悬浮高度/暗能量/暗物质/风扇数
+// 取 flightPhysics 车型表，保证 UI 默认与 3D 飞行动画回退值不漂移
+const flightParams = (type) => ({
+  enable_vtol: true,
+  hover_altitude: FLIGHT_PRESETS[type].hoverAltitude,
+  exotic_drive_ratio: FLIGHT_PRESETS[type].exoticRatio,
+  dark_matter_ratio: FLIGHT_PRESETS[type].darkMatterRatio,
+  lift_fan_count: FLIGHT_PRESETS[type].liftFans
 })
 
 export const carTypes = [
@@ -31,6 +43,7 @@ export const defaultCarParams = {
   rear_window_angle: 25,
   rear_slant_angle: 15,
   ...glassParams('sedan'),
+  ...flightParams('sedan'),
   front_overhang: 1100,
   rear_overhang: 1118
 }
@@ -42,6 +55,7 @@ export const carTypeParams = {
     hood_length: 1050, roof_height: 550, wheel_diameter: 680,
     windshield_angle: 35, rear_window_angle: 28, rear_slant_angle: 18,
     ...glassParams('sedan'),
+    ...flightParams('sedan'),
     front_overhang: 950, rear_overhang: 1110
   },
   suv: {
@@ -50,6 +64,7 @@ export const carTypeParams = {
     hood_length: 1150, roof_height: 850, wheel_diameter: 760,
     windshield_angle: 28, rear_window_angle: 22, rear_slant_angle: 12,
     ...glassParams('suv'),
+    ...flightParams('suv'),
     front_overhang: 980, rear_overhang: 1120
   },
   coupe: {
@@ -58,6 +73,7 @@ export const carTypeParams = {
     hood_length: 1350, roof_height: 420, wheel_diameter: 700,
     windshield_angle: 40, rear_window_angle: 35, rear_slant_angle: 40,
     ...glassParams('coupe'),
+    ...flightParams('coupe'),
     front_overhang: 1020, rear_overhang: 1000
   },
   sport: {
@@ -66,6 +82,7 @@ export const carTypeParams = {
     hood_length: 1500, roof_height: 350, wheel_diameter: 720,
     windshield_angle: 45, rear_window_angle: 42, rear_slant_angle: 50,
     ...glassParams('sport'),
+    ...flightParams('sport'),
     front_overhang: 950, rear_overhang: 950
   },
   mpv: {
@@ -74,6 +91,7 @@ export const carTypeParams = {
     hood_length: 850, roof_height: 950, wheel_diameter: 700,
     windshield_angle: 25, rear_window_angle: 15, rear_slant_angle: 8,
     ...glassParams('mpv'),
+    ...flightParams('mpv'),
     front_overhang: 880, rear_overhang: 1220
   },
   pickup: {
@@ -82,6 +100,7 @@ export const carTypeParams = {
     hood_length: 1350, roof_height: 750, wheel_diameter: 780,
     windshield_angle: 28, rear_window_angle: 20, rear_slant_angle: 15,
     ...glassParams('pickup'),
+    ...flightParams('pickup'),
     front_overhang: 1050, rear_overhang: 1100
   }
 }
@@ -213,7 +232,9 @@ brandsRaw.forEach(brand => {
     // 玻璃三参数按官方定位 car_type 从车型表补齐（模型自带显式玻璃参数时以模型为准），
     // 保证 setCarType/selectModel 双向连动应用 model.params 时玻璃滑块随车型联动
     if (model.car_type && glassParams(model.car_type)) {
-      model.params = { ...glassParams(model.car_type), ...model.params }
+      // 飞行参数同步按 car_type 注入（显式模型参数优先），保证车型切换时
+      // 飞行滑块与 3D 飞行动画随官方定位联动（与玻璃三参数同模式）
+      model.params = { ...glassParams(model.car_type), ...flightParams(model.car_type), ...model.params }
     }
   })
 })

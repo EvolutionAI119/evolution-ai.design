@@ -51,6 +51,13 @@
       "side_glass_angle": {"name": "侧玻璃倾角Tumblehome", "value": 18, "unit": "deg", "type": "angle", "min_value": 1, "max_value": 40, "category": "exterior"},
       "glass_barrel_angle": {"name": "玻璃桶面角", "value": 8, "unit": "deg", "type": "angle", "min_value": 0, "max_value": 20, "category": "exterior"}
     },
+    "飞行参数": {
+      "enable_vtol": {"name": "启用垂直起降", "value": false, "unit": "", "type": "switch", "min_value": 0, "max_value": 1, "category": "exterior"},
+      "hover_altitude": {"name": "悬浮高度", "value": 1600, "unit": "mm", "type": "distance", "min_value": 400, "max_value": 3000, "category": "exterior"},
+      "exotic_drive_ratio": {"name": "暗能量驱动占比", "value": 0.15, "unit": "", "type": "ratio", "min_value": 0.0, "max_value": 0.3, "category": "exterior"},
+      "dark_matter_ratio": {"name": "暗物质惯性配比", "value": 0.2, "unit": "", "type": "ratio", "min_value": 0.0, "max_value": 0.3, "category": "exterior"},
+      "lift_fan_count": {"name": "升力风扇数量", "value": 4, "unit": "", "type": "count", "min_value": 2, "max_value": 8, "category": "exterior"}
+    },
     "A级曲面参数": {
       "curvature_tolerance": {"name": "曲率公差", "value": 0.01, "unit": "1/mm", "type": "tolerance", "category": "quality"},
       "continuity_g0": {"name": "G0连续性容差", "value": 0.1, "unit": "mm", "type": "tolerance", "category": "quality"},

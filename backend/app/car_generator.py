@@ -1079,6 +1079,44 @@ class NURBSCarBodyGenerator:
             self.params = backup
             self._init_coords()
 
+    # ------------------------------------------------------------------
+    # 平稳垂直起降（VTOL）飞行分支 —— 纯数学包线（全部公式可复现）
+    # ------------------------------------------------------------------
+    def flight_envelope(self):
+        """VTOL 飞行包线（工程估算）：几何零改动，只输出物理/数学指标。
+
+        与前端 src/utils/flightPhysics.js 同公式：
+          - 整备质量 m ≈ 120 kg/m³ × 包络体积（L×W×H，紧凑级整车密度外推）
+          - 有效重力 g_eff = g·(1−0.35η_dark)：暗能量负压类比（状态方程 w≈−1），
+            工程上限 0.35·η，η∈[0,0.3] 受界
+          - 阻尼比 ζ = 1 + 0.6·η_cdm ≥ 1：暗物质惯性配比 → 临界/过阻尼，
+            零超调振荡（无眩晕数学保证）
+          - 悬浮推力 T = m·g_eff（推重比 T/(mg) = 1/(1−0.35η) ≥ 1 充要）；
+            起飞推力含 1.2 安全系数（垂直爬升余量）
+        """
+        g0 = 9.81
+        eta_dark = float(np.clip(self._p('飞行参数', 'exotic_drive_ratio'), 0.0, 0.3))
+        eta_cdm = float(np.clip(self._p('飞行参数', 'dark_matter_ratio'), 0.0, 0.3))
+        hover_mm = float(np.clip(self._p('飞行参数', 'hover_altitude'), 400.0, 3000.0))
+        fans = int(np.clip(self._p('飞行参数', 'lift_fan_count'), 2, 8))
+        H = float(self._p('整车尺寸', 'overall_height'))
+        mass = self.L * self.W * H / 1e9 * 120.0          # kg
+        g_eff = g0 * (1.0 - 0.35 * eta_dark)              # m/s²
+        zeta = 1.0 + 0.6 * eta_cdm
+        thrust = mass * g_eff / 1000.0                    # kN
+        return {
+            'enabled': bool(self._p('飞行参数', 'enable_vtol')),
+            'curb_mass_kg': round(mass, 1),
+            'effective_gravity': round(g_eff, 3),
+            'thrust_required_kn': round(thrust, 2),
+            'thrust_takeoff_kn': round(thrust * 1.2, 2),
+            'thrust_to_weight': round(1.0 / (1.0 - 0.35 * eta_dark), 4),
+            'damping_ratio': round(zeta, 3),
+            'hover_altitude_mm': hover_mm,
+            'lift_fans': fans,
+            'vertigo_free': bool(zeta >= 1.0),
+        }
+
     def _generate_current(self):
         """按当前参数生成完整车身（实际生成逻辑）
 
@@ -1137,6 +1175,8 @@ class NURBSCarBodyGenerator:
             'total_surfaces': len(components),
             'nurbs_quality': self._measure_nurbs_quality(components, nurbs_count,
                                                          cp_total),
+            # 平稳垂直起降分支：几何零改动（默认关闭），仅附加物理/数学包线
+            'flight_envelope': self.flight_envelope(),
         }
 
     def _measure_nurbs_quality(self, components, nurbs_count, cp_total,

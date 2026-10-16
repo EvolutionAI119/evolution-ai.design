@@ -38,11 +38,26 @@
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
         </svg>
       </div>
+      <div
+        v-if="flightAvailable"
+        class="ctrl-btn vtol-btn"
+        :class="{ active: flightEngaged }"
+        :title="flightEngaged ? t('designer.vtolDisengage') : t('designer.vtolEngage')"
+        :aria-label="flightEngaged ? t('designer.vtolDisengage') : t('designer.vtolEngage')"
+        @click="toggleFlight"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20V7"/>
+          <path d="M8 11l4-4 4 4"/>
+          <path d="M4 20h16"/>
+        </svg>
+      </div>
     </div>
     <div class="status-bar">
       <span class="view-label">{{ currentViewLabel }}</span>
       <span class="status-item">DAYLIGHT</span>
       <span class="status-item">PERSPECTIVE</span>
+      <span v-if="flightEngaged" class="status-item vtol-status">VTOL HOVER</span>
     </div>
   </div>
 </template>
@@ -54,6 +69,7 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
 import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt } from '../utils/carGlass.js'
+import { resolveFlightParams, quinticSmoothstep, hoverBobOffset } from '../utils/flightPhysics.js'
 
 const { t } = useI18n()
 
@@ -112,6 +128,17 @@ const currentViewLabel = computed(() => {
 })
 
 let scene, camera, renderer, carGroup
+
+// ---- 平稳垂直起降（VTOL）分支状态 ----
+// flightProgress ∈ [0,1]：0=地面，1=稳态悬浮；推进速率 = dt/liftDuration，
+// 高度 = hoverAltitude × quinticSmoothstep(progress)（C² 连续，端点加速度为零）；
+// 全程纯垂直运动 + 相机零滚转 + 过阻尼呼吸（ζ≥1）→ 无眩晕
+const flightEngaged = ref(false)
+const flightAvailable = computed(() => props.carParams?.enable_vtol !== false)
+let flightProgress = 0
+let flightLastMs = 0
+let flightRings = []          // 升力风扇环（carGroup 子对象，随车升降）
+let flightGroundGlow = null   // 地面能量场（scene 子对象，随高度衰减）
 let animationId = null
 let isDragging = false
 let previousMousePosition = { x: 0, y: 0 }
@@ -802,8 +829,98 @@ const onWindowResize = () => {
   renderer.setSize(w, h)
 }
 
+// ---- VTOL 特效：升力风扇环（随车）+ 地面能量场（贴地衰减）----
+const disposeFlightFx = () => {
+  if (flightGroundGlow) {
+    scene.remove(flightGroundGlow)
+    disposeObject(flightGroundGlow)
+    flightGroundGlow = null
+  }
+  flightRings = []   // 环为 carGroup 子对象，随 carGroup 一起被 dispose
+}
+
+const ensureFlightFx = () => {
+  if (!scene || !carGroup || flightRings.length) return
+  const fp = resolveFlightParams(props.carType, props.carParams)
+  const P = deriveCarProfile(props.carParams, props.carType)
+  const ringMat = () => new THREE.MeshBasicMaterial({
+    color: 0x38bdf8, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  })
+  const ringGeo = new THREE.TorusGeometry(0.26, 0.022, 10, 40)
+  // 风扇环布局：四角（6 风扇车型在中门位补 2 环），贴于车身底面之下
+  const xs = fp.liftFans === 6
+    ? [P.frontWheelX, 0, P.rearWheelX]
+    : [P.frontWheelX, P.rearWheelX]
+  const zs = P.halfTrack * 0.92
+  const yLow = P.bodyBottomY - 0.06
+  for (const x of xs) {
+    for (const sgn of [1, -1]) {
+      const ring = new THREE.Mesh(ringGeo, ringMat())
+      ring.rotation.x = Math.PI / 2
+      ring.position.set(x, yLow, sgn * zs)
+      ring.userData.noCastShadow = true
+      ring.visible = false
+      carGroup.add(ring)
+      flightRings.push(ring)
+    }
+  }
+  // 地面能量场：半径随车长缩放，绿色翡翠（品牌主色），悬浮越高越弱
+  const glowR = Math.max(2.0, (props.carParams.overall_length || 4800) / 1000 * 0.42)
+  const glowGeo = new THREE.CircleGeometry(glowR, 48)
+  flightGroundGlow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({
+    color: 0x10b981, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  }))
+  flightGroundGlow.rotation.x = -Math.PI / 2
+  flightGroundGlow.position.y = 0.02
+  flightGroundGlow.visible = false
+  scene.add(flightGroundGlow)
+}
+
+const toggleFlight = () => {
+  if (!flightAvailable.value) return
+  flightEngaged.value = !flightEngaged.value
+}
+
 const animate = () => {
   animationId = requestAnimationFrame(animate)
+
+  // ---- VTOL 飞行动画（无眩晕：C² 平滑起升 + 过阻尼悬浮呼吸 + 零滚转）----
+  const vnow = performance.now()
+  const vdt = flightLastMs ? Math.min((vnow - flightLastMs) / 1000, 0.05) : 0
+  flightLastMs = vnow
+  if (carGroup && flightAvailable.value) {
+    ensureFlightFx()
+    const fp = resolveFlightParams(props.carType, props.carParams)
+    const target = flightEngaged.value ? 1 : 0
+    if (flightProgress !== target) {
+      const step = vdt / Math.max(fp.liftDuration, 0.1)
+      flightProgress = target > flightProgress
+        ? Math.min(flightProgress + step, 1)
+        : Math.max(flightProgress - step, 0)
+    }
+    const lift = quinticSmoothstep(flightProgress)
+    // 悬浮呼吸：振幅随 lift² 衰减（地面为零），频率 < 0.2Hz 远离晕动敏感频段
+    const bob = hoverBobOffset(vnow / 1000, fp) * lift * lift
+    carGroup.position.y = (fp.hoverAltitude * lift + bob) / 1000
+    // 特效：风扇环脉冲（蓝），地面能量场随高度衰减（绿）
+    const pulse = 0.5 + 0.5 * Math.sin(vnow / 1000 * Math.PI * 2 * 0.8)
+    const ringOn = flightProgress > 0.001
+    for (const r of flightRings) {
+      r.visible = ringOn
+      r.material.opacity = ringOn ? 0.55 * (0.35 + 0.65 * pulse) * (0.3 + 0.7 * lift) : 0
+      const s = 1 + 0.10 * pulse
+      r.scale.set(s, s, 1)
+    }
+    if (flightGroundGlow) {
+      flightGroundGlow.visible = ringOn
+      flightGroundGlow.material.opacity = ringOn
+        ? 0.22 * (1 - 0.72 * lift) * (0.4 + 0.6 * pulse) : 0
+      const gs = 1 + 0.35 * (1 - lift)
+      flightGroundGlow.scale.set(gs, gs, 1)
+    }
+  }
 
   if (autoRotate.value && !isDragging && currentView.value === 'perspective') {
     targetRotation.y += 0.004
@@ -907,6 +1024,7 @@ const disposeObject = (obj) => {
 const updateCar = () => {
   if (!scene || !carGroup) return
   scene.remove(carGroup)
+  disposeFlightFx()
   disposeObject(carGroup)
   carGroup = null
   carGroup = createCar()
@@ -953,6 +1071,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (animationId) cancelAnimationFrame(animationId)
+  disposeFlightFx()
   const container = containerRef.value
   if (container && renderer) {
     container.removeEventListener('mousedown', onMouseDown)
@@ -1071,6 +1190,30 @@ onUnmounted(() => {
   background: rgba(59, 130, 246, 0.2);
   color: #3b82f6;
   border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* VTOL 飞行分支：翡翠绿主色（品牌一致），激活时呼吸辉光 */
+.ctrl-btn.vtol-btn:hover {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.ctrl-btn.vtol-btn.active {
+  background: rgba(16, 185, 129, 0.22);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.5);
+  animation: vtol-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes vtol-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.25); }
+  50% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.55); }
+}
+
+.status-item.vtol-status {
+  color: #10b981;
+  letter-spacing: 0.12em;
 }
 
 .status-bar {

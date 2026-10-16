@@ -43,6 +43,7 @@ GROUP_ZH_TO_EN = {
     "造型角度": "styling_angles",
     "A级曲面参数": "class_a_params",
     "比例参数": "proportions",
+    "飞行参数": "flight_parameters",
 }
 GROUP_EN_TO_ZH = {v: k for k, v in GROUP_ZH_TO_EN.items()}
 

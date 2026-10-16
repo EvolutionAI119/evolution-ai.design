@@ -89,6 +89,9 @@ const zh = {
     previewHint: '提示：使用导出功能下载 GLB 文件后在 3D 查看器中打开', carType: '车型选择',
     trackWidth: '轮距 (mm)', groundClearance: '离地间隙 (mm)', rearSlantAngle: '后溜角度 (°)',
     sideGlassTumblehome: '侧玻璃倾角 Tumblehome (°)', glassBarrelAngle: '玻璃桶面角 (°)', glassBarrelRadius: '玻璃桶面半径 (mm)',
+    vtolBranch: '垂直起降分支 (VTOL)', vtolEnable: '启用飞行能力', hoverAltitude: '悬浮高度 (mm)',
+    exoticDriveRatio: '暗能量驱动占比', darkMatterRatio: '暗物质惯性配比', liftFanCount: '升力风扇数量',
+    vtolEngage: '垂直起飞（平稳 VTOL）', vtolDisengage: '平稳降落',
     realtimePreview: '实时预览', bodyColor: '车身颜色', invalidColor: '无效的颜色格式，请输入十六进制颜色值',
     colorTechBlue: '科技蓝', colorAuroraPurple: '极光紫', colorFlameRed: '烈焰红',
     colorEmeraldGreen: '翡翠绿', colorAmberGold: '琥珀金', colorChampagneGold: '香槟金',
@@ -623,6 +626,7 @@ const zh = {
     styling_angles: '造型角度',
     class_a_params: 'A 级曲面参数',
     proportions: '比例参数',
+    flight_parameters: '飞行参数',
   },
   params: {
     overall_length: '整车长度',
@@ -962,6 +966,9 @@ const en = {
     previewHint: 'Tip: Download GLB file using export function and open in 3D viewer', carType: 'Car Type',
     trackWidth: 'Track Width (mm)', groundClearance: 'Ground Clearance (mm)', rearSlantAngle: 'Rear Slant Angle (°)',
     sideGlassTumblehome: 'Side Glass Tumblehome (°)', glassBarrelAngle: 'Glass Barrel Angle (°)', glassBarrelRadius: 'Glass Barrel Radius (mm)',
+    vtolBranch: 'VTOL Flight Branch', vtolEnable: 'Enable Flight', hoverAltitude: 'Hover Altitude (mm)',
+    exoticDriveRatio: 'Dark Energy Drive Ratio', darkMatterRatio: 'Dark Matter Inertia Ratio', liftFanCount: 'Lift Fan Count',
+    vtolEngage: 'Smooth Lift-Off (VTOL)', vtolDisengage: 'Smooth Landing',
     realtimePreview: 'Realtime Preview', bodyColor: 'Body Color', invalidColor: 'Invalid color format, please enter hex color value',
     colorTechBlue: 'Tech Blue', colorAuroraPurple: 'Aurora Purple', colorFlameRed: 'Flame Red',
     colorEmeraldGreen: 'Emerald Green', colorAmberGold: 'Amber Gold', colorChampagneGold: 'Champagne Gold',
@@ -1500,6 +1507,7 @@ const en = {
     styling_angles: 'Styling Angles',
     class_a_params: 'Class-A Surface Quality',
     proportions: 'Proportions',
+    flight_parameters: 'Flight Parameters',
   },
 
   // ============ 50 Automotive parameters EN ============

@@ -481,6 +481,73 @@
                   class="param-slider"
                 />
               </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.vtolBranch') }}</span>
+                  <label class="param-toggle">
+                    <input type="checkbox" v-model="carParams.enable_vtol" />
+                    <span>{{ t('designer.vtolEnable') }}</span>
+                  </label>
+                </div>
+              </div>
+              <template v-if="carParams.enable_vtol">
+                <div class="param-item">
+                  <div class="param-label-row">
+                    <span class="param-name">{{ t('designer.hoverAltitude') }}</span>
+                    <span class="param-value">{{ carParams.hover_altitude }} mm</span>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="carParams.hover_altitude"
+                    min="400"
+                    max="3000"
+                    step="50"
+                    class="param-slider"
+                  />
+                </div>
+                <div class="param-item">
+                  <div class="param-label-row">
+                    <span class="param-name">{{ t('designer.exoticDriveRatio') }}</span>
+                    <span class="param-value">{{ (carParams.exotic_drive_ratio * 100).toFixed(0) }}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="carParams.exotic_drive_ratio"
+                    min="0"
+                    max="0.3"
+                    step="0.01"
+                    class="param-slider"
+                  />
+                </div>
+                <div class="param-item">
+                  <div class="param-label-row">
+                    <span class="param-name">{{ t('designer.darkMatterRatio') }}</span>
+                    <span class="param-value">{{ (carParams.dark_matter_ratio * 100).toFixed(0) }}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="carParams.dark_matter_ratio"
+                    min="0"
+                    max="0.3"
+                    step="0.01"
+                    class="param-slider"
+                  />
+                </div>
+                <div class="param-item">
+                  <div class="param-label-row">
+                    <span class="param-name">{{ t('designer.liftFanCount') }}</span>
+                    <span class="param-value">{{ carParams.lift_fan_count }}</span>
+                  </div>
+                  <input
+                    type="range"
+                    v-model.number="carParams.lift_fan_count"
+                    min="2"
+                    max="8"
+                    step="2"
+                    class="param-slider"
+                  />
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -1923,6 +1990,22 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
   outline: none;
+  cursor: pointer;
+}
+
+/* VTOL 飞行能力开关（翡翠绿品牌主色） */
+.param-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #9ca3af;
+  cursor: pointer;
+  user-select: none;
+}
+
+.param-toggle input {
+  accent-color: #10b981;
   cursor: pointer;
 }
 
