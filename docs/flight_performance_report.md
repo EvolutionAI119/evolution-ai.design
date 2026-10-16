@@ -3,7 +3,7 @@
 > 反重力飞控系统 · 五项技术目标 · 六车型全量数据核验
 > 报告日期：2026-10-16 · 数据平台版本：VTOL + 反重力飞控全栈（main 974bad89）
 
-**完整可视化版（7 张数据图表 + 2 幅结构示意图，自包含单文件 HTML）**：
+**完整可视化版（7 张数据图表 + 3 幅结构示意图，含「反重力驱动技术理论推导」专章，自包含单文件 HTML）**：
 
 - 中文版：<a href="docs/flight_performance_analysis.html" target="_blank" rel="noopener">飞行性能实测数据分析报告（可视化全文）</a>
 - English: <a href="docs/en/flight_performance_analysis.html" target="_blank" rel="noopener">Flight Performance Data Analysis (full visual report)</a>
