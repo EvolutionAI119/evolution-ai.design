@@ -3,7 +3,7 @@
 > Anti-Gravity Flight Control System · Five Technical Targets · Full Data Verification Across Six Vehicle Types
 > Report date: 2026-10-16 · Platform version: VTOL + full-stack anti-gravity flight control (main 974bad89)
 
-**Full visual edition (7 data charts + 2 structural diagrams, self-contained single-file HTML)**:
+**Full visual edition (7 data charts + 3 structural diagrams, incl. a dedicated "Theoretical Derivation of the Anti-Gravity Drive" chapter, self-contained single-file HTML)**:
 
 - English: <a href="../en/flight_performance_analysis.html" target="_blank" rel="noopener">Flight Performance Data Analysis (full visual report)</a>
 - 中文版：<a href="../flight_performance_analysis.html" target="_blank" rel="noopener">飞行性能实测数据分析报告（可视化全文）</a>
