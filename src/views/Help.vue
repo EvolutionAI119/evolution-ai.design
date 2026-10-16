@@ -303,6 +303,10 @@ const docs = [
     title: { en: 'Module Integration Flow', zh: '模块集成流程' },
     summary: { en: 'Login auth → Token-based training → workflow review: cross-module data contracts, API specs, and the ownership-checked review state machine.',
                zh: '登录认证 → Token 训练 → 工作流审核：跨模块数据契约、接口规范与归属校验的审核状态机。' } },
+  { id: 'flight_report', category: 'quality', file: 'flight_performance_report.md', date: '2026-10-16',
+    title: { en: 'Flight Performance Data Analysis', zh: '飞行性能实测数据分析报告' },
+    summary: { en: 'Anti-gravity flight control: all five technical targets measured across six vehicle types — attitude ±0.76°, 360° turn 15.0 s, endurance ×3.17–3.83, peak ×1.14–1.17, latency 76–80 ms — with a 7/7 live verification pass on the public site.',
+               zh: '反重力飞控五项技术目标六车型全量实测：姿态 ±0.76°、360° 转向 15.0 s、续航 ×3.17~3.83、峰值 ×1.14~1.17、延迟 76~80 ms，公网 7/7 项校验通过。' } },
   { id: 'validation', category: 'quality', file: 'VALIDATION_REPORT_20260927.md', date: '2026-09-27',
     title: { en: 'Validation Report', zh: '验证报告' },
     summary: { en: '489 cases all green, 15-round Bayesian convergence, Class-A quality measurements, and fact-baseline reconciliation.',
@@ -350,6 +354,7 @@ const graphEdges = [
   { a: 'arch', b: 'integration_flow', type: 'intra' },
   { a: 'api', b: 'integration_flow', type: 'intra' },
   // L4 质量层：验证报告总摄，审计基线与平台测试构成完整证据链
+  { a: 'validation', b: 'flight_report', type: 'intra' },
   { a: 'validation', b: 'audit', type: 'intra' },
   { a: 'validation', b: 'platform_test', type: 'intra' },
   { a: 'audit', b: 'platform_test', type: 'intra' },
