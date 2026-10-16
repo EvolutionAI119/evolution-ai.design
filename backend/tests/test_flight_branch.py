@@ -6,6 +6,8 @@
 几何本体不受飞行分支影响 —— 封闭化普查（44 NURBS/51 组件）由
 test_car_topology_closure.py 继续守护。
 """
+import math
+
 import numpy as np
 import pytest
 
@@ -102,3 +104,75 @@ def test_override_is_stateless(gen):
         "enable_vtol": True, "hover_altitude": 2500, "exotic_drive_ratio": 0.3})
     e1 = gen.flight_envelope()
     assert e0 == e1
+
+
+# ============ 反重力飞控系统（五项技术目标） ============
+# 与前端 src/utils/flightPhysics.js 同公式：场升力份额 / 能耗模型 / 姿态 / 延迟
+
+@pytest.fixture(scope="module")
+def fc_default(gen):
+    return gen.flight_envelope()["flight_control"]
+
+
+def test_flight_control_energy_model_reproducible(gen, fc_default):
+    """能耗模型公式可复现：P_base=55·(m/t)^1.2、场份额 s=2.6η_e+1.8η_cdm（钳位 0.75）"""
+    mass_kg = gen.flight_envelope()["curb_mass_kg"]
+    eta_e = float(gen._p("飞行参数", "exotic_drive_ratio"))
+    eta_c = float(gen._p("飞行参数", "dark_matter_ratio"))
+    share = min(2.6 * eta_e + 1.8 * eta_c, 0.75)
+    assert fc_default["field_lift_share"] == pytest.approx(share, abs=1e-3)
+    p_base = 55.0 * (mass_kg / 1000.0) ** 1.2
+    assert fc_default["base_power_kw"] == pytest.approx(p_base, abs=0.05)
+    p_hover = p_base * (1 - share) ** 1.5 + 12.0 * mass_kg * share / 1000.0
+    assert fc_default["hover_power_kw"] == pytest.approx(p_hover, abs=0.05)
+
+
+def test_flight_control_endurance_target_3x(gen, fc_default):
+    """目标 3：默认预设续航倍数 ≥3（同电量 vs 同量级传统动力基准）"""
+    assert fc_default["endurance_multiple"] >= 3.0
+    assert fc_default["endurance_antigravity_h"] > fc_default["endurance_base_h"]
+    # 换算自洽：时长比 = 倍数
+    assert fc_default["endurance_antigravity_h"] / fc_default["endurance_base_h"] == \
+        pytest.approx(fc_default["endurance_multiple"], abs=0.02)
+
+
+def test_flight_control_no_energy_peaks(gen, fc_default):
+    """目标 4：全工况峰值因子 ≤1.25（起飞峰值/转向差动均受界，无明显能耗峰值）"""
+    assert fc_default["peak_factor"] <= 1.25
+    assert fc_default["takeoff_peak_kw"] > fc_default["hover_power_kw"]   # 峰值在起飞（如实的物理）
+    assert fc_default["turn_power_kw"] == pytest.approx(
+        fc_default["hover_power_kw"] * 1.05, abs=0.05)
+
+
+def test_flight_control_attitude_and_latency(gen, fc_default):
+    """目标 1+5：姿态 ±2° 包络（过阻尼无超调）与响应延迟 ≤100ms"""
+    zeta = 1.0 + 0.6 * float(gen._p("飞行参数", "dark_matter_ratio"))
+    tau = 1000.0 / (zeta * 2.0 * math.pi * 2.5)
+    assert fc_default["attitude_time_constant_ms"] == pytest.approx(tau, abs=0.1)
+    assert fc_default["attitude_recovery_ms"] == pytest.approx(tau * math.log(4.0), abs=0.1)
+    assert fc_default["control_latency_ms"] <= 100.0
+    assert fc_default["attitude_limit_deg"] == 2.0
+
+
+def test_flight_control_turn_360(gen, fc_default):
+    """目标 2：360° 原地转向 = 1.875·360/45°/s = 15s（峰值角速度舒适限内）"""
+    assert fc_default["full_turn_s"] == pytest.approx(15.0, abs=0.01)
+    assert fc_default["turn_peak_rate_dps"] == 45.0
+
+
+def test_flight_control_targets_all_met_default(gen, fc_default):
+    """默认预设下五项技术目标全部达标（targets_met 全真）"""
+    assert all(fc_default["targets_met"].values()), fc_default["targets_met"]
+
+
+def test_flight_control_extreme_params_reported_honestly(gen):
+    """极端调参（η 归零）→ 达标判定如实转假，不虚假报告"""
+    car = gen.generate_complete_car(params_override={
+        "enable_vtol": True, "exotic_drive_ratio": 0.0, "dark_matter_ratio": 0.0})
+    fc = car["flight_envelope"]["flight_control"]
+    assert fc["field_lift_share"] == 0.0
+    assert fc["endurance_multiple"] == pytest.approx(1.0, abs=0.01)   # 退化为传统动力
+    assert fc["targets_met"]["endurance_3x"] is False
+    assert fc["targets_met"]["attitude_2deg"] is True                  # 姿态不受 η 影响
+    # 几何仍零改动
+    assert car["total_surfaces"] == 51

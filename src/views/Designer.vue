@@ -547,6 +547,35 @@
                     class="param-slider"
                   />
                 </div>
+                <div v-if="flightMetrics" class="param-item flight-metrics">
+                  <div class="flight-metrics-title">{{ t('designer.flightMetrics') }}</div>
+                  <div class="flight-metric-grid">
+                    <div class="flight-metric" :class="{ ok: flightMetrics.enduranceOk }">
+                      <span class="metric-label">{{ t('designer.enduranceMultiple') }}</span>
+                      <span class="metric-value">×{{ flightMetrics.enduranceMultiple.toFixed(2) }}</span>
+                    </div>
+                    <div class="flight-metric">
+                      <span class="metric-label">{{ t('designer.hoverPower') }}</span>
+                      <span class="metric-value">{{ flightMetrics.hoverPowerKw }} kW</span>
+                    </div>
+                    <div class="flight-metric" :class="{ ok: flightMetrics.attitudeOk }">
+                      <span class="metric-label">{{ t('designer.attitudeStability') }}</span>
+                      <span class="metric-value">±{{ flightMetrics.attitudePeakDeg.toFixed(2) }}°</span>
+                    </div>
+                    <div class="flight-metric" :class="{ ok: flightMetrics.latencyOk }">
+                      <span class="metric-label">{{ t('designer.controlLatency') }}</span>
+                      <span class="metric-value">{{ flightMetrics.latencyMs }} ms</span>
+                    </div>
+                    <div class="flight-metric" :class="{ ok: flightMetrics.peakOk }">
+                      <span class="metric-label">{{ t('designer.peakFactor') }}</span>
+                      <span class="metric-value">×{{ flightMetrics.peakFactor.toFixed(2) }}</span>
+                    </div>
+                    <div class="flight-metric">
+                      <span class="metric-label">{{ t('designer.fullTurn') }}</span>
+                      <span class="metric-value">{{ flightMetrics.fullTurnSec.toFixed(1) }}s</span>
+                    </div>
+                  </div>
+                </div>
               </template>
             </div>
           </div>
@@ -617,6 +646,7 @@ import { carAPI, buildAPI, aiAPI } from '../api'
 import { useDesignerStore } from '../stores/designer'
 import { useAuthStore } from '../stores/auth'
 import { generateCarSvg, generatePlaceholderSvg, getModelInitials } from '../utils/imageGenerator.js'
+import { resolveFlightParams, flightControlEnvelope } from '../utils/flightPhysics.js'
 import {
   normalizeCarImageUrl,
   markUrlFailed,
@@ -650,6 +680,18 @@ const nurbsQuality = ref(null)
 const nurbsMeshData = ref(null)
 
 const carParams = params
+
+// 反重力飞控指标卡（与后端 flight_envelope.flight_control 同公式）：
+// 续航倍数 ≥3× / 姿态 ±2° / 延迟 ≤100ms / 峰值因子 ≤1.25 —— 随参数实时联动
+const flightMetrics = computed(() => {
+  const p = params.value
+  if (!p || !p.enable_vtol) return null
+  return flightControlEnvelope({
+    overall_length: p.overall_length,
+    overall_width: p.overall_width,
+    overall_height: p.overall_height
+  }, resolveFlightParams(carType.value, p))
+})
 
 const currentBrand = computed(() => {
   return brands.find(b => b.key === brand.value)
@@ -2007,6 +2049,48 @@ onUnmounted(() => {
 .param-toggle input {
   accent-color: #10b981;
   cursor: pointer;
+}
+
+/* 反重力飞控指标卡：目标达标翡翠绿、未达标琥珀（如实呈现用户调参后果） */
+.flight-metrics {
+  border-top: 1px dashed rgba(16, 185, 129, 0.25);
+  padding-top: 10px;
+}
+
+.flight-metrics-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #10b981;
+  margin-bottom: 8px;
+}
+
+.flight-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+}
+
+.flight-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.flight-metric .metric-label {
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.flight-metric .metric-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d1d5db;
+  font-variant-numeric: tabular-nums;
+}
+
+.flight-metric.ok .metric-value {
+  color: #10b981;
 }
 
 .param-slider::-webkit-slider-thumb {

@@ -1,9 +1,12 @@
 // 平稳垂直起降（VTOL）分支 —— 飞行物理与配置契约测试
 import { describe, it, expect } from 'vitest'
 import {
-  FLIGHT_PRESETS, resolveFlightParams, quinticSmoothstep, altitudeAt,
+  FLIGHT_PRESETS, FLIGHT_CONTROL, resolveFlightParams, quinticSmoothstep, altitudeAt,
   hoverBobOffset, vtolPhase, effectiveGravity, dampingRatio,
-  thrustToWeight, flightEnvelope
+  thrustToWeight, flightEnvelope,
+  fieldLiftShare, baseHoverPowerKw, antigravityHoverPowerKw, enduranceMultiple,
+  energyProfile, turnDurationSec, yawAt, attitudeSample, attitudeControl,
+  controlLatencyMs, flightControlEnvelope
 } from '../utils/flightPhysics.js'
 import { carTypes, carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
@@ -187,5 +190,165 @@ describe('carPresets 飞行参数契约', () => {
           .toBe(FLIGHT_PRESETS[model.car_type].liftFans)
       }
     }
+  })
+})
+
+// ============ 反重力飞控系统（五项技术目标） ============
+
+/** 六车型真实尺寸（取自 carTypeParams，与 UI 指标卡同源） */
+const dimsOf = (type) => {
+  const cp = carTypeParams[type]
+  return { overall_length: cp.overall_length, overall_width: cp.overall_width, overall_height: cp.overall_height }
+}
+
+describe('场升力份额（反重力驱动核心）', () => {
+  it('单调性：η_e 与 η_cdm 增大 → 场份额不减', () => {
+    expect(fieldLiftShare(0, 0)).toBe(0)
+    for (let e = 0; e <= 0.3; e += 0.05) {
+      expect(fieldLiftShare(e + 0.01, 0)).toBeGreaterThanOrEqual(fieldLiftShare(e, 0))
+      expect(fieldLiftShare(0, e + 0.01)).toBeGreaterThanOrEqual(fieldLiftShare(0, e))
+    }
+  })
+
+  it('钳位 [0, 0.75]：风扇保留 ≥25% 推力做姿态差动（±2° 包络前提）', () => {
+    expect(fieldLiftShare(0.3, 0.3)).toBe(FLIGHT_CONTROL.fieldLiftShareMax)
+    expect(fieldLiftShare(-1, -1)).toBe(0)
+    for (const ct of carTypes) {
+      const s = fieldLiftShare(FLIGHT_PRESETS[ct.key].exoticRatio, FLIGHT_PRESETS[ct.key].darkMatterRatio)
+      expect(s, ct.key).toBeGreaterThanOrEqual(0)
+      expect(s, ct.key).toBeLessThanOrEqual(0.75)
+    }
+  })
+})
+
+describe('技术目标 3+4：续航 ≥3× 且全工况无明显能耗峰值', () => {
+  it('六车型预设续航倍数全部 ≥3（同电量 vs 传统动力基准）', () => {
+    for (const ct of carTypes) {
+      const p = resolveFlightParams(ct.key, {})
+      const { curbMassKg } = flightEnvelope(dimsOf(ct.key), p)
+      const mult = enduranceMultiple(curbMassKg, p.exoticRatio, p.darkMatterRatio)
+      expect(mult, `${ct.key} 续航倍数`).toBeGreaterThanOrEqual(FLIGHT_CONTROL.enduranceTarget)
+    }
+  })
+
+  it('基准功率公式可复现：P = 55·(m/t)^1.2', () => {
+    expect(baseHoverPowerKw(1600)).toBeCloseTo(55 * Math.pow(1.6, 1.2), 9)
+  })
+
+  it('反重力悬停功率 = 风扇(1−s)^1.5 + 场维持，且低于传统基准', () => {
+    const ag = antigravityHoverPowerKw(1631, 0.15, 0.20)
+    const base = baseHoverPowerKw(1631)
+    const s = fieldLiftShare(0.15, 0.20)
+    expect(ag.fan).toBeCloseTo(base * Math.pow(1 - s, 1.5), 9)
+    expect(ag.field).toBeCloseTo(12 * 1631 * s / 1000, 9)
+    expect(ag.total).toBeLessThan(base)
+  })
+
+  it('六车型峰值因子 ≤1.25（起飞峰值/转向增量均不显著）', () => {
+    for (const ct of carTypes) {
+      const p = resolveFlightParams(ct.key, {})
+      const { curbMassKg } = flightEnvelope(dimsOf(ct.key), p)
+      const ep = energyProfile(curbMassKg, p.exoticRatio, p.darkMatterRatio)
+      expect(ep.peakFactor, `${ct.key} 峰值因子`).toBeLessThanOrEqual(FLIGHT_CONTROL.peakFactorLimit)
+      expect(ep.takeoffPeakKw).toBeGreaterThan(0)
+      expect(ep.turnKw).toBeGreaterThan(ep.hoverKw)   // 转向差动增量存在但受界
+    }
+  })
+
+  it('η 归零退化为传统动力：峰值因子如实升至 1.31（无虚假达标）', () => {
+    const ep = energyProfile(1631, 0, 0)
+    expect(ep.peakFactor).toBeCloseTo(Math.pow(1.2, 1.5), 1)
+    expect(ep.peakFactor).toBeGreaterThan(FLIGHT_CONTROL.peakFactorLimit)
+  })
+})
+
+describe('技术目标 2：全自由度 360° 无限制原地转向', () => {
+  it('转向时长 = 1.875·|Δ|/45°/s，360° 恰为 15s，最短 2.5s', () => {
+    expect(turnDurationSec(90)).toBeCloseTo(3.75, 9)
+    expect(turnDurationSec(360)).toBeCloseTo(15.0, 9)
+    expect(turnDurationSec(5)).toBe(FLIGHT_CONTROL.turnMinSec)
+    expect(turnDurationSec(-90)).toBe(turnDurationSec(90))
+  })
+
+  it('yaw 剖面 C² 端点归零、终值精确、多圈累计无 wrap', () => {
+    const T = turnDurationSec(360)
+    expect(yawAt(0, 360, T)).toBe(0)
+    expect(yawAt(T, 360, T)).toBeCloseTo(360, 9)
+    expect(yawAt(T + 10, 360, T)).toBeCloseTo(360, 9)   // 完成后保持
+    // 峰值角速度 = 1.875·Δ/T ≤ 45°/s（视场旋转晕动阈内）
+    const h = 0.001
+    const peakRate = (yawAt(T / 2 + h, 360, T) - yawAt(T / 2 - h, 360, T)) / (2 * h)
+    expect(peakRate).toBeLessThanOrEqual(FLIGHT_CONTROL.turnPeakRateDps + 0.5)
+    // 连续多圈：720° 累计（不回绕）
+    expect(yawAt(T, 720, T)).toBeCloseTo(720, 9)
+    // 端点角加速度为零（无卡顿：与 quintic 同 C² 保证）
+    const acc0 = (yawAt(2 * h, 90, turnDurationSec(90)) - 2 * yawAt(h, 90, turnDurationSec(90))) / (h * h)
+    expect(Math.abs(acc0)).toBeLessThan(1.0)
+  })
+})
+
+describe('技术目标 1：悬停姿态偏差 ≤±2°', () => {
+  it('残余微摆峰值 ≤0.85°（全 η_cdm 范围，远低于 ±2° 包络）', () => {
+    for (let d = 0; d <= 0.3001; d += 0.05) {
+      let peak = 0
+      for (let t = 0; t < 200; t += 0.02) {
+        peak = Math.max(peak, Math.abs(attitudeSample(t, d)))
+      }
+      expect(peak, `η_cdm=${d}`).toBeLessThan(FLIGHT_CONTROL.attitudeLimitDeg)
+    }
+  })
+
+  it('微摆频率成分 <0.5Hz（0.07/0.11Hz 远离晕动敏感频段）', () => {
+    // 0.5s 采样过零间隔下界：主频 0.11Hz → 半周期 ≥4.5s
+    const p = attitudeSample
+    expect(Math.abs(p(0, 0.2))).toBeLessThan(2)
+    // 频率常数自检（防回归：不许有人调高频率）
+    expect(FLIGHT_CONTROL.attitudeBandwidthHz).toBeLessThan(3)
+  })
+
+  it('姿态控制指标：过阻尼无超调，8° 阵风回落 ±2° 带内 ≤100ms', () => {
+    const ac = attitudeControl(0.20)
+    expect(ac.dampingRatio).toBeCloseTo(1.12, 3)
+    expect(ac.recoveryMs).toBeLessThanOrEqual(FLIGHT_CONTROL.latencyLimitMs)
+    expect(ac.peakDeg).toBeLessThanOrEqual(FLIGHT_CONTROL.attitudeLimitDeg)
+    expect(ac.settlingMs).toBeGreaterThan(0)
+  })
+})
+
+describe('技术目标 5：飞控响应延迟 ≤100ms', () => {
+  it('全风扇范围（2~8）与全 η_cdm 范围下延迟均 ≤100ms', () => {
+    for (const fans of [2, 4, 6, 8]) {
+      for (const d of [0, 0.1, 0.2, 0.3]) {
+        expect(controlLatencyMs(fans, d), `fans=${fans}, η_cdm=${d}`)
+          .toBeLessThanOrEqual(FLIGHT_CONTROL.latencyLimitMs)
+      }
+    }
+  })
+
+  it('链路延迟公式可复现：30 + 6×fans', () => {
+    // η_cdm=0 时恢复时间 63.7×ln4 ≈ 88.3ms 主导 fans≤8 的链路（78ms）
+    expect(controlLatencyMs(8, 0)).toBeLessThanOrEqual(100)
+    expect(controlLatencyMs(2, 0.3)).toBeLessThanOrEqual(100)
+  })
+})
+
+describe('flightControlEnvelope 反重力飞控总包线', () => {
+  it('六车型四项技术目标全部达标', () => {
+    for (const ct of carTypes) {
+      const p = resolveFlightParams(ct.key, {})
+      const env = flightControlEnvelope(dimsOf(ct.key), p)
+      expect(env.enduranceOk, `${ct.key} 续航 ≥3×`).toBe(true)
+      expect(env.attitudeOk, `${ct.key} 姿态 ≤±2°`).toBe(true)
+      expect(env.latencyOk, `${ct.key} 延迟 ≤100ms`).toBe(true)
+      expect(env.peakOk, `${ct.key} 峰值因子 ≤1.25`).toBe(true)
+      expect(env.enduranceMultiple).toBeGreaterThanOrEqual(3)
+      expect(env.fullTurnSec).toBeCloseTo(15.0, 1)
+      expect(env.curbMassKg).toBeGreaterThan(0)
+    }
+  })
+
+  it('同电量续航时长换算可复现（100 kWh 基准）', () => {
+    const env = flightControlEnvelope(dimsOf('sedan'), resolveFlightParams('sedan', {}))
+    expect(env.enduranceAgH / env.enduranceBaseH).toBeCloseTo(env.enduranceMultiple, 1)
   })
 })

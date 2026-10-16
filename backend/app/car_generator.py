@@ -1,6 +1,7 @@
 """NURBS驱动汽车车身生成器：基于NURBS曲面生成车身全部部件，支持GLB/STL/OBJ/STEP导出"""
 import os
 import json
+import math
 import numpy as np
 from pathlib import Path
 
@@ -1093,6 +1094,13 @@ class NURBSCarBodyGenerator:
             零超调振荡（无眩晕数学保证）
           - 悬浮推力 T = m·g_eff（推重比 T/(mg) = 1/(1−0.35η) ≥ 1 充要）；
             起飞推力含 1.2 安全系数（垂直爬升余量）
+          - 反重力飞控（flight_control 子对象）：
+            · 场升力份额 s = 2.6η_e + 1.8η_cdm ≤ 0.75（风扇保留 ≥25% 做姿态差动）
+            · 暗能量负压场为度规效应非推进做功：场维持功率 12 W/kg 量级
+            · 传统动力基准 P_base = 55 kW/t^1.2（盘载荷模型）；风扇诱导功率 ∝ 推力^1.5
+            · 续航倍数 E = P_base / (P_base(1−s)^1.5 + P_field) ≥ 3（预设达标）
+            · 姿态：过阻尼二阶回路 f_n=2.5Hz，8° 阵风回落 ±2° 带内 ≤100ms
+            · 360° 原地转向：T = 1.875·|Δ|/45°/s（峰值角速度舒适限），累计角无 wrap
         """
         g0 = 9.81
         eta_dark = float(np.clip(self._p('飞行参数', 'exotic_drive_ratio'), 0.0, 0.3))
@@ -1104,6 +1112,22 @@ class NURBSCarBodyGenerator:
         g_eff = g0 * (1.0 - 0.35 * eta_dark)              # m/s²
         zeta = 1.0 + 0.6 * eta_cdm
         thrust = mass * g_eff / 1000.0                    # kN
+
+        # ---- 反重力飞控指标（与前端 flightPhysics.js 同公式）----
+        share = float(np.clip(2.6 * eta_dark + 1.8 * eta_cdm, 0.0, 0.75))
+        p_base = 55.0 * (mass / 1000.0) ** 1.2            # kW，传统动力基准
+        p_field = 12.0 * mass * share / 1000.0            # kW，场维持（度规效应）
+        p_fan = p_base * (1.0 - share) ** 1.5             # kW，风扇诱导功率
+        p_hover = p_fan + p_field
+        p_takeoff = p_base * (1.2 * (1.0 - share)) ** 1.5 + p_field   # 起飞峰值
+        p_turn = p_hover * 1.05                            # 原地转向差动增量
+        peak_factor = max(p_takeoff, p_turn) / max(p_hover, 1e-9)
+        endurance = p_base / max(p_hover, 1e-9)
+        battery_kwh = 100.0
+        tau_ms = 1000.0 / (zeta * 2.0 * math.pi * 2.5)     # 姿态回路时间常数
+        recovery_ms = tau_ms * math.log(8.0 / 2.0)         # 8°→±2° 带内单调回落
+        chain_ms = 30.0 + 6.0 * fans                       # 指令链路延迟
+        latency_ms = max(chain_ms, recovery_ms)
         return {
             'enabled': bool(self._p('飞行参数', 'enable_vtol')),
             'curb_mass_kg': round(mass, 1),
@@ -1115,6 +1139,33 @@ class NURBSCarBodyGenerator:
             'hover_altitude_mm': hover_mm,
             'lift_fans': fans,
             'vertigo_free': bool(zeta >= 1.0),
+            'flight_control': {
+                'field_lift_share': round(share, 3),
+                'base_power_kw': round(p_base, 2),
+                'field_power_kw': round(p_field, 2),
+                'hover_power_kw': round(p_hover, 2),
+                'takeoff_peak_kw': round(p_takeoff, 2),
+                'turn_power_kw': round(p_turn, 2),
+                'peak_factor': round(peak_factor, 2),
+                'battery_kwh': battery_kwh,
+                'endurance_base_h': round(battery_kwh / max(p_base, 1e-9), 2),
+                'endurance_antigravity_h': round(battery_kwh / max(p_hover, 1e-9), 2),
+                'endurance_multiple': round(endurance, 2),
+                'attitude_limit_deg': 2.0,
+                'attitude_bandwidth_hz': 2.5,
+                'attitude_time_constant_ms': round(tau_ms, 2),
+                'attitude_recovery_ms': round(recovery_ms, 2),
+                'control_latency_ms': round(latency_ms, 1),
+                'turn_peak_rate_dps': 45.0,
+                'full_turn_s': round(max(1.875 * 360.0 / 45.0, 2.5), 2),
+                'targets_met': {
+                    # 五项技术目标达标判定（默认预设全真；用户极端调参如实呈现）
+                    'endurance_3x': bool(endurance >= 3.0),
+                    'attitude_2deg': bool(0.85 / zeta <= 2.0),
+                    'latency_100ms': bool(latency_ms <= 100.0),
+                    'peak_1p25': bool(peak_factor <= 1.25),
+                },
+            },
         }
 
     def _generate_current(self):

@@ -52,12 +52,39 @@
           <path d="M4 20h16"/>
         </svg>
       </div>
+      <template v-if="flightEngaged">
+        <div
+          class="ctrl-btn turn-btn"
+          :class="{ busy: yawTurning }"
+          :title="t('designer.turnLeft90')"
+          :aria-label="t('designer.turnLeft90')"
+          @click="startTurn(-90)"
+        >↺</div>
+        <div
+          class="ctrl-btn turn-btn"
+          :class="{ busy: yawTurning }"
+          :title="t('designer.turnRight90')"
+          :aria-label="t('designer.turnRight90')"
+          @click="startTurn(90)"
+        >↻</div>
+        <div
+          class="ctrl-btn turn-btn turn-full"
+          :class="{ busy: yawTurning }"
+          :title="t('designer.fullTurn360')"
+          :aria-label="t('designer.fullTurn360')"
+          @click="startTurn(360)"
+        >360°</div>
+      </template>
     </div>
     <div class="status-bar">
       <span class="view-label">{{ currentViewLabel }}</span>
       <span class="status-item">DAYLIGHT</span>
       <span class="status-item">PERSPECTIVE</span>
       <span v-if="flightEngaged" class="status-item vtol-status">VTOL HOVER</span>
+      <span
+        v-if="flightEngaged && flightEnergy"
+        class="status-item vtol-status energy-status"
+      >{{ flightEnergy.kw }} kW · ×{{ flightEnergy.mult.toFixed(1) }}</span>
     </div>
   </div>
 </template>
@@ -69,7 +96,8 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
 import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt } from '../utils/carGlass.js'
-import { resolveFlightParams, quinticSmoothstep, hoverBobOffset } from '../utils/flightPhysics.js'
+import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
+  turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
 
 const { t } = useI18n()
 
@@ -139,6 +167,39 @@ let flightProgress = 0
 let flightLastMs = 0
 let flightRings = []          // 升力风扇环（carGroup 子对象，随车升降）
 let flightGroundGlow = null   // 地面能量场（scene 子对象，随高度衰减）
+
+// ---- 反重力飞控：360° 原地转向 + 姿态微摆 ----
+// 偏航为累计角（无 wrap）：连续指令多圈累加，全自由度无限制；
+// 转向剖面 Δ·quintic(t/T) —— C² 端点归零（角速度/角加速度平滑起落，无卡顿无失稳）
+const yawTurning = ref(false)
+let flightYawCurrent = 0      // 当前累计偏航角（deg，落地后保留 → 原地掉头朝向生效）
+let flightYawFrom = 0
+let flightYawTarget = 0
+let flightYawProgress = 1     // 1 = 就绪（可接受新转向指令）
+let flightYawDuration = 1
+
+/** 能耗 HUD（悬停功率 + 续航倍数，公式与后端 flight_envelope 同源） */
+const flightEnergy = computed(() => {
+  if (!flightAvailable.value || !props.carParams) return null
+  const fp = resolveFlightParams(props.carType, props.carParams)
+  const dims = {
+    overall_length: props.carParams.overall_length,
+    overall_width: props.carParams.overall_width,
+    overall_height: props.carParams.overall_height
+  }
+  const env = flightControlEnvelope(dims, fp)
+  return { kw: env.hoverPowerKw, mult: env.enduranceMultiple, ok: env.enduranceOk }
+})
+
+/** 原地转向指令：Δ∈(-∞,∞) 累计；时长按峰值角速度 45°/s 舒适限动态计算 */
+const startTurn = (delta) => {
+  if (yawTurning.value || !flightEngaged.value) return
+  flightYawFrom = flightYawTarget
+  flightYawTarget += delta
+  flightYawDuration = turnDurationSec(delta)
+  flightYawProgress = 0
+  yawTurning.value = true
+}
 let animationId = null
 let isDragging = false
 let previousMousePosition = { x: 0, y: 0 }
@@ -904,6 +965,23 @@ const animate = () => {
     // 悬浮呼吸：振幅随 lift² 衰减（地面为零），频率 < 0.2Hz 远离晕动敏感频段
     const bob = hoverBobOffset(vnow / 1000, fp) * lift * lift
     carGroup.position.y = (fp.hoverAltitude * lift + bob) / 1000
+    // ---- 反重力飞控：360° 原地转向（累计角无 wrap，C² 剖面无卡顿）----
+    if (flightYawProgress < 1) {
+      flightYawProgress = Math.min(1, flightYawProgress + vdt / Math.max(flightYawDuration, 0.1))
+      const eased = quinticSmoothstep(flightYawProgress)
+      flightYawCurrent = flightYawFrom + (flightYawTarget - flightYawFrom) * eased
+      if (flightYawProgress >= 1) {
+        flightYawCurrent = flightYawTarget
+        yawTurning.value = false
+      }
+    }
+    carGroup.rotation.y = flightYawCurrent * Math.PI / 180
+    // 姿态微摆（roll/pitch 双低频谱，峰值 ≤0.85°/ζ < ±2° 包络；振幅随 lift² 衰减）：
+    // 原地转向零向心加速度 → 零侧倾耦合，roll 与 yaw 解耦（全自由度姿态稳定）
+    const attRoll = attitudeSample(vnow / 1000, fp.darkMatterRatio) * lift * lift
+    const attPitch = attitudeSample(vnow / 1000 + 17.3, fp.darkMatterRatio) * lift * lift
+    carGroup.rotation.z = attRoll * Math.PI / 180
+    carGroup.rotation.x = attPitch * Math.PI / 180
     // 特效：风扇环脉冲（蓝），地面能量场随高度衰减（绿）
     const pulse = 0.5 + 0.5 * Math.sin(vnow / 1000 * Math.PI * 2 * 0.8)
     const ringOn = flightProgress > 0.001
@@ -1214,6 +1292,33 @@ onUnmounted(() => {
 .status-item.vtol-status {
   color: #10b981;
   letter-spacing: 0.12em;
+}
+
+/* 反重力飞控：原地转向按钮（悬停态出现；字号缩小承载度数文本） */
+.ctrl-btn.turn-btn {
+  color: #10b981;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.ctrl-btn.turn-btn:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.ctrl-btn.turn-btn.busy {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.ctrl-btn.turn-btn.turn-full {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.status-item.energy-status {
+  letter-spacing: 0.04em;
 }
 
 .status-bar {
