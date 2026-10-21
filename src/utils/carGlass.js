@@ -3,13 +3,31 @@
 // 职责：由 deriveCarProfile 的结果派生 3D 座舱「玻璃 / 车身」两种状态的几何参数，
 //       供 Car3D.vue 兜底路径（ExtrudeGeometry）构建玻璃网格与 B 柱使用。
 //
-// 与 2D Car2D.vue 逐点同源（windowPath / pillarX）：
-//   前风挡带  hoodEndX/beltLineY → windshieldTopX/roofTopY（A 柱线）
+// 拓扑约定（3D 玻璃按车身轮廓 G1 圆角修裁，2D Car2D windowPath 为理论框示意）：
+//   前风挡带  hoodEndX/beltLineY → windshieldTopX/roofTopY（A 柱线），
+//             底缘 bottomInset 沿带下退避开 COWL 直角 bevel 外扩角
 //   后风挡带  rearWindowBottomX/beltLineY → rearWindowTopX/roofTopY（C 柱线，皮卡无）
-//   侧窗 DLO  windowPath 四点，顶部两角内收避开 G1 圆角
-//   B 柱      windshieldTopX → dloTopRear 的 55% 分段（与 2D pillarX 同源）
+//   侧窗 DLO  四角精确落于轮廓内：底前角在 A 柱斜线上、顶后角在车顶后缘圆角
+//             （filletXAtY 解二次贝塞尔）、底后角沿 C 柱斜线上退避开圆角切线区
+//   B 柱      windshieldTopX → dloTopRear 的 55% 分段（与 2D pillarX 同源），
+//             顶端搭入 DLO 顶边之下（不悬浮于玻璃面外）
 //
 // 坐标约定同 carProfile.js：X+ 指向车头，Y+ 竖直向上，地面 Y=0，单位米。
+import { filletCorner } from './carProfile.js'
+
+/**
+ * 车顶三角 G1 圆角半径单一真源（米）。Car3D.vue bodyShape 与 deriveCabinGlass
+ * 共用同一组半径，保证 DLO/风挡带修裁量与轮廓圆角始终一致。
+ * 常规车：A 柱顶 0.09 / 车顶后缘 0.09 / C 柱底 0.06；
+ * 皮卡：驾驶室顶 0.09 / 后壁顶 0.05 / 后壁底 0.03。
+ */
+export const ROOF_FILLETS = {
+  aPillarTop: 0.09,
+  roofRear: 0.09,
+  cPillarBottom: 0.06,
+  pickupCabTop: 0.05,
+  pickupCabBottom: 0.03
+}
 
 /**
  * 侧玻璃倾角（tumblehome，度）：侧窗面顶部向车身中线内收的角度，决定前视车肩造型。
@@ -44,14 +62,17 @@ export const SIDE_GLASS_BARREL = {
 /**
  * 斜面玻璃带几何。
  * 底缘 (x1,y1) → 顶缘 (x2,y2)，顶缘按 topInset 沿斜线下退（避开柱顶 G1 圆角），
+ * 底缘按 bottomInset 沿斜线上退（避开 COWL 直角 bevel 外扩角），
  * 两端再沿外法线抬离 offset（贴合被 bevel 外扩的车身侧壁）。
  * 法线统一朝上（ny ≥ 0，指向外表面），与下坡方向无关。
  * @returns {{ a: number[], b: number[], normal: number[] }} 抬升后的两端点与单位法线
  */
-export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0) {
+export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0, bottomInset = 0) {
   const dx = x2 - x1
   const dy = y2 - y1
   const len = Math.hypot(dx, dy) || 1
+  let tx1 = x1
+  let ty1 = y1
   let tx2 = x2
   let ty2 = y2
   if (topInset > 0) {
@@ -59,14 +80,62 @@ export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0) {
     tx2 -= dx * t
     ty2 -= dy * t
   }
+  if (bottomInset > 0) {
+    const t = Math.min(bottomInset / len, 0.9)
+    tx1 += dx * t
+    ty1 += dy * t
+  }
   let nx = dy / len
   let ny = -dx / len
   if (ny < 0) { nx = -nx; ny = -ny }   // 法线统一朝上（外表面）
   return {
-    a: [x1 + nx * offset, y1 + ny * offset],
+    a: [tx1 + nx * offset, ty1 + ny * offset],
     b: [tx2 + nx * offset, ty2 + ny * offset],
     normal: [nx, ny]
   }
+}
+
+/**
+ * 求圆角二次贝塞尔曲线上指定高度 y 处的 X 坐标。
+ * filletCorner 的 ctrl = 角点本身，轮廓圆角实为二次贝塞尔
+ * P(t) = (1−t)²a + 2t(1−t)ctrl + t²b；本函数解 y(t) = y 的参数 t ∈ [0,1]，
+ * 再代入 x(t)。供 DLO 顶后角等修裁点精确贴合圆角轮廓（避免台阶/戳出）。
+ * @param {{ a: number[], ctrl: number[], b: number[] }} f filletCorner 返回值
+ * @param {number} y 目标高度（须在 a_y 与 b_y 之间，越界按端点钳位语义处理）
+ * @returns {number|null} 该高度的 X；无 [0,1] 内的根（y 超出曲线高度范围）返回 null
+ */
+export function filletXAtY(f, y) {
+  const [ax, ay] = f.a
+  const [cx, cy] = f.ctrl
+  const [bx, by] = f.b
+  // y(t) = A2·t² + B2·t + C2，A2 = a_y − 2c_y + b_y，B2 = 2(c_y − a_y)，C2 = a_y − y
+  const A2 = ay - 2 * cy + by
+  const B2 = 2 * (cy - ay)
+  const C2 = ay - y
+  const EPS = 1e-12
+  const roots = []
+  if (Math.abs(A2) < EPS) {
+    if (Math.abs(B2) > EPS) {
+      roots.push(-C2 / B2)
+    } else if (Math.abs(C2) < EPS) {
+      roots.push(0)   // 整条曲线与 y 同高（全水平圆角）：取起点 t=0
+    }
+  } else {
+    const D = B2 * B2 - 4 * A2 * C2
+    if (D >= 0) {
+      const sq = Math.sqrt(D)
+      roots.push((-B2 - sq) / (2 * A2), (-B2 + sq) / (2 * A2))
+    }
+  }
+  // 取 [0,1] 内离 t=0 最近的根（轮廓圆角 y 向单调，实际至多一个有效根）
+  const valid = roots
+    .filter((t) => t >= -EPS && t <= 1 + EPS)
+    .map((t) => Math.min(Math.max(t, 0), 1))
+    .sort((p, q) => p - q)
+  if (!valid.length) return null
+  const t = valid[0]
+  const omt = 1 - t
+  return omt * omt * ax + 2 * t * omt * cx + t * t * bx
 }
 
 /**
@@ -77,7 +146,7 @@ export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0) {
  *   glassBarrelAngle（carParams.glass_barrel_angle 覆盖，0≤角≤20°）、
  *   glassBarrelRadius（carParams.glass_barrel_radius 覆盖，400≤半径≤5000mm）
  * @returns {{
- *   windshield: { x1, y1, x2, y2, width, topInset },
+ *   windshield: { x1, y1, x2, y2, width, topInset, bottomInset },
  *   rearWindow: { x1, y1, x2, y2, width, topInset } | null,  // 皮卡为 null（驾驶室后壁为车身）
  *   dlo: number[][],            // 侧窗四边形 [底前, 顶前, 顶后, 底后]
  *   dloTopRear: number,
@@ -125,32 +194,75 @@ export function deriveCabinGlass(P, opts = {}) {
   const barrelInsetZ = barrelRadius * (1 - Math.cos((barrelAngle * Math.PI) / 180))
   const dloTopInsetZ = tiltInsetZ + barrelInsetZ
 
+  // ---- 车顶三角 G1 圆角（与 Car3D.vue bodyShape 同参同源，ROOF_FILLETS 单一真源）----
+  // f2 = 车顶后缘圆角（DLO 顶后角修裁量依据）；f3 = C 柱底圆角（DLO 底后角修裁量依据）
+  const f2 = pickup
+    ? filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY,
+        pickup.cabWindowBottomX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
+    : filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY,
+        rearWindowBottomX, beltLineY, ROOF_FILLETS.roofRear)
+  const f3 = pickup
+    ? null   // 皮卡 DLO 底后角审计干净，无需修裁
+    : (() => {
+        const tailCtrlX = P.rearX + 0.02
+        const tailCtrlY = P.trunkLineY - 0.016
+        return filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY,
+          tailCtrlX, tailCtrlY, ROOF_FILLETS.cPillarBottom)
+      })()
+
+  // DLO 顶后角 X：精确落于车顶后缘圆角轮廓内侧 6mm（filletXAtY 解贝塞尔）；
+  // y 超出圆角范围（null）时回退：角点 → 底后角直线插值（轮廓无该圆角的几何退化）
+  const f2xAtTop = filletXAtY(f2, dloTopY)
+  const dlo2X = f2xAtTop !== null
+    ? f2xAtTop + 0.006
+    : dloTopRear + (dloBotRear - dloTopRear) * ((roofTopY - dloTopY) / ((roofTopY - beltLineY) || 1))
+
+  // DLO 底后角：非皮卡沿 C 柱斜线上退 min(r3+0.014, 斜线长×0.45) 避开圆角切线区，
+  // 再向车头方向内移 4mm 落入轮廓内（皮卡保持驾驶室后壁锚点不变）
+  let dlo3X = dloBotRear
+  let dlo3Y = dloBotY
+  if (!pickup) {
+    const cdx = rearWindowTopX - rearWindowBottomX
+    const cdy = roofTopY - beltLineY
+    const clen = Math.hypot(cdx, cdy) || 1
+    const back = Math.min(ROOF_FILLETS.cPillarBottom + 0.014, clen * 0.45)
+    dlo3X = rearWindowBottomX + (cdx / clen) * back + 0.004
+    dlo3Y = beltLineY + (cdy / clen) * back
+  }
+
+  // DLO 底前角：精确落于 A 柱斜线上再向车尾内移 4mm（原锚 hoodEndX 角点
+  // 在 y=dloBotY 高度已越过斜线轮廓 6~20mm）
+  const guardSpan = (roofTopY - beltLineY) || 1
+  const rakeAtBot = hoodEndX + (windshieldTopX - hoodEndX) * ((dloBotY - beltLineY) / guardSpan)
+
   return {
-    // 前风挡：底缘 = COWL，顶缘 = 车顶前缘；顶缘下退 0.09m 留出车身色顶带
+    // 前风挡：底缘 = COWL，顶缘 = 车顶前缘；顶缘下退留出车身色顶带（A 柱顶圆角），
+    // 底缘下退避开 COWL 直角 bevel 外扩角（cowl 面板裸露符合真车）
     windshield: {
       x1: hoodEndX, y1: beltLineY,
       x2: windshieldTopX, y2: roofTopY,
-      width: W * 0.9, topInset: 0.09
+      width: W * 0.9, topInset: ROOF_FILLETS.aPillarTop, bottomInset: 0.06
     },
     // 后风挡：顶缘 = 车顶后缘，底缘 = 行李箱前缘
     rearWindow: pickup ? null : {
       x1: rearWindowBottomX, y1: beltLineY,
       x2: rearWindowTopX, y2: roofTopY,
-      width: W * 0.88, topInset: 0.09
+      width: W * 0.88, topInset: ROOF_FILLETS.roofRear
     },
-    // 侧窗 DLO：与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角
+    // 侧窗 DLO：四角按轮廓 G1 圆角修裁（3D 拓扑合法；2D windowPath 为理论框示意）
     dlo: [
-      [hoodEndX, beltLineY + 0.008],
-      [windshieldTopX + 0.012, roofTopY - 0.035],
-      [dloTopRear - 0.012, roofTopY - 0.035],
-      [dloBotRear, beltLineY + 0.008]
+      [rakeAtBot - 0.004, dloBotY],
+      [windshieldTopX + 0.012, dloTopY],
+      [dlo2X, dloTopY],
+      [dlo3X, dlo3Y]
     ],
     dloTopRear,
     dloBotRear,
-    // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）
+    // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）；
+    // 顶端搭入 DLO 顶边之下 2mm（原 roofTopY−0.05 悬浮于玻璃面外 15mm）
     pillar: {
       x: windshieldTopX + (dloTopRear - windshieldTopX) * 0.55,
-      topY: roofTopY - 0.05,
+      topY: dloTopY + 0.002,
       botY: beltLineY + 0.035
     },
     tiltDeg,

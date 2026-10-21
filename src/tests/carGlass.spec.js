@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -55,7 +55,9 @@ describe('deriveCabinGlass 与 2D Car2D windowPath/pillarX 逐点同源', () => 
     expect(g.windshield.x2).toBeCloseTo(P.windshieldTopX, 10)
     expect(g.windshield.y2).toBeCloseTo(P.roofTopY, 10)
     expect(g.windshield.width).toBeCloseTo(P.W * 0.9, 10)
-    expect(g.windshield.topInset).toBeCloseTo(0.09, 10)
+    // 顶缘下退 = A 柱顶圆角半径；底缘下退避开 COWL 直角 bevel 外扩角
+    expect(g.windshield.topInset).toBeCloseTo(ROOF_FILLETS.aPillarTop, 10)
+    expect(g.windshield.bottomInset).toBeCloseTo(0.06, 10)
   })
 
   it('三厢车后风挡存在，锚点 = C 柱线，宽度 = W × 0.88', () => {
@@ -67,23 +69,36 @@ describe('deriveCabinGlass 与 2D Car2D windowPath/pillarX 逐点同源', () => 
     expect(g.rearWindow.x2).toBeCloseTo(P.rearWindowTopX, 10)
     expect(g.rearWindow.y2).toBeCloseTo(P.roofTopY, 10)
     expect(g.rearWindow.width).toBeCloseTo(P.W * 0.88, 10)
+    expect(g.rearWindow.topInset).toBeCloseTo(ROOF_FILLETS.roofRear, 10)
   })
 
-  it('DLO 四边形与 2D windowPath 同源：上下边水平、顶角内收 12mm、顶边下落 35mm、底边抬升 8mm', () => {
+  it('DLO 四边形与轮廓 G1 圆角同源：底前角在 A 柱斜线上、顶后角由圆角贝塞尔求解、底后角沿 C 柱斜线上退', () => {
     const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
     const g = deriveCabinGlass(P)
     const [p0, p1, p2, p3] = g.dlo
-    // 底边：hoodEndX / rearWindowBottomX，均抬升 8mm（与 2D windowPath 底缘同源）
-    expect(p0).toEqual([P.hoodEndX, P.beltLineY + 0.008])
-    expect(p3).toEqual([P.rearWindowBottomX, P.beltLineY + 0.008])
-    // 顶边：水平，两端各内收 12mm，较车顶下落 35mm（避开 G1 圆角）
-    expect(p1).toEqual([P.windshieldTopX + 0.012, P.roofTopY - 0.035])
-    expect(p2).toEqual([P.rearWindowTopX - 0.012, P.roofTopY - 0.035])
-    expect(p1[1]).toBeCloseTo(p2[1], 10)
-    expect(p0[1]).toBeCloseTo(p3[1], 10)
+    const dloTopY = P.roofTopY - 0.035
+    const dloBotY = P.beltLineY + 0.008
+    // 底前角：A 柱斜线（COWL→车顶前缘）在 dloBotY 高度的 X，再向车尾内移 4mm
+    const rakeAtBot = P.hoodEndX + (P.windshieldTopX - P.hoodEndX) * (0.008 / (P.roofTopY - P.beltLineY))
+    expect(p0[0]).toBeCloseTo(rakeAtBot - 0.004, 12)
+    expect(p0[1]).toBeCloseTo(dloBotY, 12)
+    // 顶前角：车顶前缘内收 12mm（A 柱顶圆角切线区前为直线段，保持原修裁）
+    expect(p1).toEqual([P.windshieldTopX + 0.012, dloTopY])
+    // 顶后角：车顶后缘圆角贝塞尔在 dloTopY 高度的 X，再向座舱内移 6mm
+    const f2 = filletCorner(P.windshieldTopX, P.roofTopY, P.rearWindowTopX, P.roofTopY,
+      P.rearWindowBottomX, P.beltLineY, ROOF_FILLETS.roofRear)
+    expect(p2[0]).toBeCloseTo(filletXAtY(f2, dloTopY) + 0.006, 10)
+    expect(p2[1]).toBeCloseTo(dloTopY, 10)
+    // 底后角：沿 C 柱斜线上退 min(r3+0.014, 45% 斜线长) 避开圆角切线区，再向车头内移 4mm
+    const cdx = P.rearWindowTopX - P.rearWindowBottomX
+    const cdy = P.roofTopY - P.beltLineY
+    const clen = Math.hypot(cdx, cdy)
+    const back = Math.min(ROOF_FILLETS.cPillarBottom + 0.014, clen * 0.45)
+    expect(p3[0]).toBeCloseTo(P.rearWindowBottomX + (cdx / clen) * back + 0.004, 10)
+    expect(p3[1]).toBeCloseTo(P.beltLineY + (cdy / clen) * back, 10)
   })
 
-  it('B 柱 = DLO 顶跨 55% 分段（与 2D pillarX 同公式），落在 DLO 范围内', () => {
+  it('B 柱 = DLO 顶跨 55% 分段（与 2D pillarX 同公式），顶端搭入 DLO 顶边消除悬浮', () => {
     const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
     const g = deriveCabinGlass(P)
     expect(g.pillar.x).toBeCloseTo(
@@ -92,21 +107,26 @@ describe('deriveCabinGlass 与 2D Car2D windowPath/pillarX 逐点同源', () => 
     // 55% 插值朝车尾方向（dloTopRear < windshieldTopX，X+ 为车头）
     expect(g.pillar.x).toBeLessThan(P.windshieldTopX)
     expect(g.pillar.x).toBeGreaterThan(g.dloTopRear)
-    // 立柱上下端均收进玻璃面内（不越过车顶圆角/腰带）
-    expect(g.pillar.topY).toBeCloseTo(P.roofTopY - 0.05, 10)
+    // 顶端越过 DLO 顶边 2mm（搭接玻璃面，消除 15mm 悬浮缝隙），仍低于车顶线
+    expect(g.pillar.topY).toBeCloseTo(P.roofTopY - 0.033, 10)
+    expect(g.pillar.topY).toBeGreaterThanOrEqual(g.dlo[1][1])
+    expect(g.pillar.topY).toBeLessThan(P.roofTopY)
     expect(g.pillar.botY).toBeCloseTo(P.beltLineY + 0.035, 10)
     expect(g.pillar.topY).toBeGreaterThan(g.pillar.botY)
-    expect(g.pillar.topY).toBeLessThan(g.dlo[1][1])
     expect(g.pillar.botY).toBeGreaterThan(g.dlo[0][1])
   })
 
-  it('皮卡专属拓扑：无后风挡，DLO 止于驾驶室后壁', () => {
+  it('皮卡专属拓扑：无后风挡，DLO 止于驾驶室后壁（顶后角按驾驶室圆角修裁）', () => {
     const P = deriveCarProfile(carTypeParams.pickup, 'pickup')
     const g = deriveCabinGlass(P)
     expect(g.rearWindow).toBeNull()
     expect(g.dloTopRear).toBeCloseTo(P.pickup.cabRearX, 10)
     expect(g.dloBotRear).toBeCloseTo(P.pickup.cabWindowBottomX, 10)
-    expect(g.dlo[2]).toEqual([P.pickup.cabRearX - 0.012, P.roofTopY - 0.035])
+    const dloTopY = P.roofTopY - 0.035
+    const f2p = filletCorner(P.windshieldTopX, P.roofTopY, P.pickup.cabRearX, P.roofTopY,
+      P.pickup.cabWindowBottomX, P.pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
+    expect(g.dlo[2][0]).toBeCloseTo(filletXAtY(f2p, dloTopY) + 0.006, 10)
+    expect(g.dlo[2][1]).toBeCloseTo(dloTopY, 10)
     expect(g.dlo[3]).toEqual([P.pickup.cabWindowBottomX, P.beltLineY + 0.008])
     expect(g.pillar.x).toBeCloseTo(
       P.windshieldTopX + (P.pickup.cabRearX - P.windshieldTopX) * 0.55, 10
@@ -515,5 +535,208 @@ describe('greenhouseInsetAt 车身 greenhouse 收窄（A/B/C 柱与车顶随玻�
       expect(greenhouseInsetAt(cabin.dlo[1][1], f)).toBeCloseTo(cabin.dloTopInsetZ, 12)
       expect(greenhouseInsetAt(cabin.dlo[0][1] - 0.5, f)).toBeCloseTo(0, 12)
     }
+  })
+})
+
+describe('filletXAtY 圆角贝塞尔求值（DLO 顶后角修裁依据）', () => {
+  // 手工圆角：a=(1,0)，ctrl=(0,0)（角点），b=(0,1) → y(t)=t²，x(t)=(1−t)²
+  // y=0.25 → t=0.5 → x=0.25
+  const F = { a: [1, 0], ctrl: [0, 0], b: [0, 1] }
+
+  it('端点命中：y = a_y 返回 a_x，y = b_y 返回 b_x', () => {
+    expect(filletXAtY(F, 0)).toBeCloseTo(1, 12)
+    expect(filletXAtY(F, 1)).toBeCloseTo(0, 12)
+  })
+
+  it('中点：y=0.25 处返回贝塞尔 x=0.25（解析手工值）', () => {
+    expect(filletXAtY(F, 0.25)).toBeCloseTo(0.25, 12)
+  })
+
+  it('圆角语义：曲线位于 ctrl=角点内侧（x+ + y+ ≤ a_x），与 filletCorner 拼接一致', () => {
+    // 用真实 filletCorner 构建（车顶后缘构型：水平段→角点→下坡段）
+    const f = filletCorner(2, 1.5, 1, 1.5, 0.6, 1.2, 0.09)
+    const mid = filletXAtY(f, (f.a[1] + f.b[1]) / 2)
+    // 同高度直线弦（切点连线）的 x：曲线在弦的车尾侧（更小 x = 轮廓内侧收）
+    const chordX = f.a[0] + (f.b[0] - f.a[0]) * 0.5
+    expect(mid).toBeLessThan(chordX)
+  })
+
+  it('y 超出 [b_y, a_y] 范围返回 null（无 [0,1] 内的根）', () => {
+    expect(filletXAtY(F, -0.5)).toBeNull()
+    expect(filletXAtY(F, 1.5)).toBeNull()
+  })
+
+  it('常值退化（全水平圆角）：y 命中曲线高度返回起点 x，未命中返回 null', () => {
+    const flat = { a: [1, 0.5], ctrl: [0.5, 0.5], b: [0, 0.5] }
+    expect(filletXAtY(flat, 0.5)).toBeCloseTo(1, 12)   // 整条曲线 y=0.5，取 t=0 → x=a_x
+    expect(filletXAtY(flat, 0.4)).toBeNull()
+    // 半线性：a_y=c_y=1.5，b_y=1.446（车顶后缘圆角实况，y(t) = a_y − (a_y−b_y)t²）
+    // t=0.5 时 y = a_y + (b_y−a_y)×0.25，x = a_x·0.25 + c_x·0.5 + b_x·0.25
+    const f = filletCorner(2, 1.5, 1, 1.5, 0.6, 1.2, 0.09)
+    const x = filletXAtY(f, f.a[1] + (f.b[1] - f.a[1]) * 0.25)
+    expect(x).toBeCloseTo(f.a[0] * 0.25 + f.ctrl[0] * 0.5 + f.b[0] * 0.25, 12)
+  })
+})
+
+describe('bandGlassEndpoints bottomInset 底缘下退（COWL 角避让）', () => {
+  it('bottomInset 使底缘沿斜线向顶缘方向退缩，顶缘不动', () => {
+    const { a, b } = bandGlassEndpoints(0, 0, 0, 2, 0, 0, 0.5)
+    expect(a).toEqual([0, 0.5])
+    expect(b).toEqual([0, 2])
+  })
+
+  it('bottomInset 超过段长 90% 时钳位（与 topInset 同规则）', () => {
+    const { a } = bandGlassEndpoints(0, 0, 0, 2, 0, 0, 10)
+    expect(a[1]).toBeCloseTo(1.8, 10)
+  })
+
+  it('topInset 与 bottomInset 同时生效（两端各退，中段保留）', () => {
+    const { a, b } = bandGlassEndpoints(0, 0, 0, 2, 0.5, 0, 0.5)
+    expect(a).toEqual([0, 0.5])
+    expect(b).toEqual([0, 1.5])
+  })
+
+  it('offset 与 bottomInset 叠加：先沿带退再沿法线抬', () => {
+    const { a, normal } = bandGlassEndpoints(0, 0, 0, 2, 0, 0.031, 0.5)
+    expect(normal[0]).toBeCloseTo(1, 12)
+    expect(normal[1]).toBeCloseTo(0, 12)
+    expect(a[0]).toBeCloseTo(0.031, 12)
+    expect(a[1]).toBeCloseTo(0.5, 12)
+  })
+})
+
+describe('六车型玻璃拓扑守卫（复刻 bodyShape 轮廓内点判定，与数值审计同判据）', () => {
+  // 二次贝塞尔采样（filletCorner 的 ctrl = 角点，轮廓圆角实为二次贝塞尔）
+  const quadTo = (pts, cx, cy, x, y, n = 12) => {
+    const [x0, y0] = pts[pts.length - 1]
+    for (let i = 1; i <= n; i++) {
+      const t = i / n
+      const omt = 1 - t
+      pts.push([
+        omt * omt * x0 + 2 * t * omt * cx + t * t * x,
+        omt * omt * y0 + 2 * t * omt * cy + t * t * y
+      ])
+    }
+  }
+
+  // 复刻 Car3D.vue bodyShape 轮廓（与非 pickup / pickup 两分支逐行同参）
+  const buildBodyOutline = (P) => {
+    const {
+      frontX, bodyBottomY, hoodLineY, cowlStartX, hoodEndX, beltLineY,
+      windshieldTopX, roofTopY, rearWindowTopX, rearWindowBottomX,
+      rearX, trunkLineY, pickup
+    } = P
+    const tailCtrlX = rearX + 0.02
+    const tailCtrlY = trunkLineY - 0.016
+    const tailEndY = trunkLineY - 0.056
+    const pts = [[frontX, bodyBottomY]]
+    if (pickup) {
+      const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, ROOF_FILLETS.aPillarTop)
+      const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, pickup.cabWindowBottomX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
+      const f3 = filletCorner(pickup.cabRearX, roofTopY, pickup.cabWindowBottomX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, ROOF_FILLETS.pickupCabBottom)
+      quadTo(pts, frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
+      pts.push([cowlStartX, hoodLineY], [hoodEndX, beltLineY])
+      for (const f of [f1, f2, f3]) {
+        pts.push([f.a[0], f.a[1]])
+        quadTo(pts, f.ctrl[0], f.ctrl[1], f.b[0], f.b[1])
+      }
+      pts.push([rearX - 0.024, pickup.bedWallY])
+      quadTo(pts, rearX, pickup.bedWallY - 0.008, rearX, pickup.bedWallY - 0.048)
+      pts.push([rearX, bodyBottomY + 0.026])
+      quadTo(pts, rearX, bodyBottomY, rearX - 0.036, bodyBottomY)
+    } else {
+      const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, ROOF_FILLETS.aPillarTop)
+      const f2 = filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, ROOF_FILLETS.roofRear)
+      const f3 = filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, ROOF_FILLETS.cPillarBottom)
+      quadTo(pts, frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
+      pts.push([cowlStartX, hoodLineY], [hoodEndX, beltLineY])
+      for (const f of [f1, f2, f3]) {
+        pts.push([f.a[0], f.a[1]])
+        quadTo(pts, f.ctrl[0], f.ctrl[1], f.b[0], f.b[1])
+      }
+      quadTo(pts, tailCtrlX, tailCtrlY, rearX, tailEndY)
+      pts.push([rearX, bodyBottomY + 0.026])
+      quadTo(pts, rearX, bodyBottomY, rearX - 0.036, bodyBottomY)
+    }
+    pts.push(pts[0])   // 闭合
+    return pts
+  }
+
+  const pointInPoly = (x, y, poly) => {
+    let inside = false
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i]
+      const [xj, yj] = poly[j]
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+    }
+    return inside
+  }
+
+  const distToPolyEdge = (x, y, poly) => {
+    let best = Infinity
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xj, yj] = poly[j]
+      const dx = poly[i][0] - xj
+      const dy = poly[i][1] - yj
+      const L2 = dx * dx + dy * dy || 1e-12
+      const t = Math.max(0, Math.min(1, ((x - xj) * dx + (y - yj) * dy) / L2))
+      best = Math.min(best, Math.hypot(x - (xj + t * dx), y - (yj + t * dy)))
+    }
+    return best
+  }
+
+  // 内点判据：严格内点，或距边界 ≤ 2mm（贴边浮点容差）
+  const insideOrOnEdge = (x, y, poly) => pointInPoly(x, y, poly) || distToPolyEdge(x, y, poly) <= 0.002
+
+  it.each(ALL_TYPES)('%s：DLO 四角与四边采样点均落于车身轮廓内', (type) => {
+    const P = deriveCarProfile(carTypeParams[type], type)
+    const g = deriveCabinGlass(P, { carType: type })
+    const poly = buildBodyOutline(P)
+    const [p0, p1, p2, p3] = g.dlo
+    const corners = [[p0, '底前'], [p1, '顶前'], [p2, '顶后'], [p3, '底后']]
+    for (const [pt, name] of corners) {
+      expect(insideOrOnEdge(pt[0], pt[1], poly), `${type} DLO ${name}角 (${pt}) 越出轮廓`).toBe(true)
+    }
+    // 四边中点采样（t=0.15/0.5/0.85，覆盖审计曾抓到的边缘 POKE 区）
+    const edges = [[p0, p1], [p1, p2], [p2, p3], [p3, p0]]
+    for (const [pa, pb] of edges) {
+      for (const t of [0.15, 0.5, 0.85]) {
+        const x = pa[0] + (pb[0] - pa[0]) * t
+        const y = pa[1] + (pb[1] - pa[1]) * t
+        expect(insideOrOnEdge(x, y, poly), `${type} DLO 边 t=${t} 点 (${x.toFixed(3)},${y.toFixed(3)}) 越出轮廓`).toBe(true)
+      }
+    }
+  })
+
+  it.each(ALL_TYPES)('%s：风挡带两端点贴壁（距轮廓 = bevel 外扩量 +1.5mm 容差，不戳出不内陷）', (type) => {
+    const P = deriveCarProfile(carTypeParams[type], type)
+    const g = deriveCabinGlass(P, { carType: type })
+    const poly = buildBodyOutline(P)
+    const ws = g.windshield
+    const { a, b } = bandGlassEndpoints(ws.x1, ws.y1, ws.x2, ws.y2, ws.topInset, 0.031, ws.bottomInset)
+    for (const [pt, name] of [[a, '底端'], [b, '顶端']]) {
+      const d = distToPolyEdge(pt[0], pt[1], poly)
+      expect(d, `${type} 风挡${name}距轮廓 ${d.toFixed(4)}m 超出贴壁带`).toBeLessThanOrEqual(0.0315)
+      expect(d, `${type} 风挡${name}陷入车身内部 ${d.toFixed(4)}m`).toBeGreaterThanOrEqual(0.025)
+    }
+    // 非皮卡后窗带同样贴壁
+    if (g.rearWindow) {
+      const rw = g.rearWindow
+      const rb = bandGlassEndpoints(rw.x1, rw.y1, rw.x2, rw.y2, rw.topInset, 0.031)
+      for (const [pt, name] of [[rb.a, '底端'], [rb.b, '顶端']]) {
+        const d = distToPolyEdge(pt[0], pt[1], poly)
+        expect(d, `${type} 后窗${name}距轮廓 ${d.toFixed(4)}m 超出贴壁带`).toBeLessThanOrEqual(0.0315)
+      }
+    }
+  })
+
+  it.each(ALL_TYPES)('%s：B 柱顶端搭接 DLO 顶边、底端高于 DLO 底边（无悬浮无越界）', (type) => {
+    const P = deriveCarProfile(carTypeParams[type], type)
+    const g = deriveCabinGlass(P, { carType: type })
+    expect(g.pillar.topY).toBeGreaterThanOrEqual(g.dlo[1][1])   // 顶端越过顶边 2mm 搭接
+    expect(g.pillar.topY).toBeLessThan(P.roofTopY)              // 不越过车顶线
+    expect(g.pillar.botY).toBeGreaterThan(g.dlo[0][1])          // 底端在 DLO 底边之上
+    expect(g.pillar.x).toBeLessThan(P.windshieldTopX)           // 55% 分段在 DLO 跨度内
+    expect(g.pillar.x).toBeGreaterThan(g.dloTopRear)
   })
 })

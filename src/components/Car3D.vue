@@ -95,7 +95,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, ROOF_FILLETS } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
 
@@ -392,10 +392,10 @@ const createCar = () => {
   if (pickup) {
     // 皮卡拓扑：车顶止于驾驶室后壁 → 后壁斜落至货箱栏板 → 栏板贯通至尾门
     const cabBotX = pickup.cabWindowBottomX
-    // A 柱顶 + 驾驶室后壁顶 + 后壁底三处 G1 圆角
-    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, 0.09)
-    const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, 0.05)
-    const f3 = filletCorner(pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, 0.03)
+    // A 柱顶 + 驾驶室后壁顶 + 后壁底三处 G1 圆角（半径真源 = ROOF_FILLETS，与玻璃修裁同源）
+    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, ROOF_FILLETS.aPillarTop)
+    const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
+    const f3 = filletCorner(pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, ROOF_FILLETS.pickupCabBottom)
     bodyShape.moveTo(frontX, bodyBottomY)
     bodyShape.quadraticCurveTo(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
     bodyShape.lineTo(cowlStartX, hoodLineY)
@@ -412,9 +412,10 @@ const createCar = () => {
     bodyShape.quadraticCurveTo(rearX, bodyBottomY, rearX - 0.036, bodyBottomY)
   } else {
     // 三厢/两厢拓扑：车顶 → C 柱 → 尾部曲线（2D 同源：无平甲板硬折点）
-    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, 0.09)
-    const f2 = filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, 0.09)
-    const f3 = filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, 0.06)
+    // 三处 G1 圆角半径真源 = ROOF_FILLETS（与 deriveCabinGlass 玻璃修裁同参同源）
+    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, ROOF_FILLETS.aPillarTop)
+    const f2 = filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, ROOF_FILLETS.roofRear)
+    const f3 = filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, ROOF_FILLETS.cPillarBottom)
     bodyShape.moveTo(frontX, bodyBottomY)
     bodyShape.quadraticCurveTo(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
     bodyShape.lineTo(cowlStartX, hoodLineY)
@@ -520,8 +521,8 @@ const createCar = () => {
 
   // 斜面玻璃带：端点/法线/顶缘下退的计算在 utils/carGlass.js 纯函数中（可单测）；
   // Z 向随高度按 taperK 收窄（与车身 greenhouse 同公式），顶缘不越过收窄后的车身
-  const addBandGlass = (x1, y1, x2, y2, width, topInset = 0) => {
-    const { a, b } = bandGlassEndpoints(x1, y1, x2, y2, topInset, bodyThickness + 0.001)
+  const addBandGlass = (x1, y1, x2, y2, width, topInset = 0, bottomInset = 0) => {
+    const { a, b } = bandGlassEndpoints(x1, y1, x2, y2, topInset, bodyThickness + 0.001, bottomInset || 0)
     const hw = width / 2
     const raw = [
       a[0], a[1], -hw, a[0], a[1], hw, b[0], b[1], -hw,
@@ -539,9 +540,9 @@ const createCar = () => {
     group.add(m)
   }
 
-  // 前风挡：底缘 = COWL，顶缘 = 车顶前缘（与 2D A 柱线同源）
+  // 前风挡：底缘 = COWL（bottomInset 下退避开 bevel 外扩角），顶缘 = 车顶前缘（与 2D A 柱线同源）
   const ws = cabin.windshield
-  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width, ws.topInset)
+  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width, ws.topInset, ws.bottomInset)
   // 后风挡：顶缘 = 车顶后缘，底缘 = 行李箱前缘（皮卡驾驶室后壁为车身，无后风挡）
   if (cabin.rearWindow) {
     const rw = cabin.rearWindow
