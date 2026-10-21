@@ -94,7 +94,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile, deriveWheelFitment, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, filletCorner } from '../utils/carProfile.js'
 import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, ROOF_FILLETS } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
@@ -616,26 +616,33 @@ const createCar = () => {
   group.add(createWheel(rearWheelX, wheelZ))
   group.add(createWheel(rearWheelX, -wheelZ))
 
-  // ---- 轮腔内衬：全宽暗色拱筒（真实轮 house），杜绝望穿车身见亮色 bevel 面 ----
-  // 单筒横跨整车宽：近侧拱洞望入只见暗筒内壁与轮胎，不再露出对侧孔缘/底缘亮斑；
-  // 筒半径 = max(rx,ry)+0.015 ≥ 拱口包络（侧缘埋入实体、顶部隐于车壳），覆盖上 200°
+  // ---- 轮腔内衬：与拱口同形的内嵌椭圆拱壳（半椭圆上缘 + 竖直唇落至底板）----
+  // 圆形筒对椭圆拱口必然四周互穿（前后壁/顶部戳出 = 拓扑破面），改用 archLinerProfile
+  // 纯函数生成的拱形开壳，整体内缩 12mm 严格位于空腔内，横跨全宽挡住对侧亮色 bevel
   const linerMat = new THREE.MeshStandardMaterial({
     color: 0x101014, metalness: 0.2, roughness: 0.95, side: THREE.DoubleSide,
     wireframe: wireframeMode.value
   })
-  const addArchLiner = (ax, a) => {
-    const r = Math.max(a.rx, a.ry) + 0.015
-    const liner = new THREE.Mesh(
-      new THREE.CylinderGeometry(r, r, bodyExtentZ * 2, 32, 1, true,
-        Math.PI / 2 - 0.18, Math.PI + 0.36),
-      linerMat)
-    liner.rotateX(Math.PI / 2)   // 筒轴 → 车宽 Z；上 200° 罩住轮拱
-    liner.position.set(ax, archY, 0)
+  const addArchLiner = (side) => {
+    const prof = archLinerProfile(P, side, 0.012)
+    const L = bodyExtentZ
+    const positions = []
+    for (const [x, y] of prof) positions.push(x, y, -L, x, y, L)
+    const indices = []
+    for (let i = 0; i < prof.length - 1; i++) {
+      const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1
+      indices.push(a, b, c, b, d, c)
+    }
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
+    g.setIndex(indices)
+    g.computeVertexNormals()
+    const liner = new THREE.Mesh(g, linerMat)
     liner.receiveShadow = true
     group.add(liner)
   }
-  addArchLiner(frontWheelX, wheelArch.front)
-  addArchLiner(rearWheelX, wheelArch.rear)
+  addArchLiner('front')
+  addArchLiner('rear')
 
   const steeringWheelGroup = new THREE.Group()
   const swRadius = 0.15

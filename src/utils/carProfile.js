@@ -231,7 +231,28 @@ export function deriveWheelFitment(P, bodyThickness = 0.03, margin = 0.02) {
   const wall = (P.W + bodyThickness * 2) / 2          // 车身侧壁外表面（含 bevel 外扩）
   const tireW = P.tireWidth
   const wheelZ = wall - tireW / 2 - margin            // 轮心 Z：胎外侧面藏于侧壁内 margin
-  return { wall, tireW, wheelZ, tireOuter: wheelZ + tireW / 2, linerR: Math.max(P.wheelArch.front.rx, P.wheelArch.front.ry) + 0.015 }
+  return { wall, tireW, wheelZ, tireOuter: wheelZ + tireW / 2 }
+}
+
+/**
+ * 轮腔内衬轮廓（绝对坐标 [x,y] 折线，2D/3D 同源）：与 archHole 拱口同形——
+ * 半椭圆上缘（拱心 archY，半轴 rx/ry）+ 两侧竖直唇落至车身底板 bodyBottomY。
+ * 整体按 inset 内缩，保证内衬严格位于拱口空腔之内，杜绝圆形筒对椭圆拱口的
+ * 前后壁/顶部互穿（拓扑破面）。返回首尾均为底板端点，供拉伸成开壳。
+ */
+export function archLinerProfile(P, side = 'front', inset = 0.012, N = 16) {
+  const a = P.wheelArch[side]
+  const ax = side === 'front' ? P.frontWheelX : P.rearWheelX
+  const rx = a.rx - inset
+  const ry = a.ry - inset
+  const yBot = P.bodyBottomY - P.archY   // 竖直唇底（相对拱心 archY，负值）
+  const pts = [[-rx, yBot], [-rx, 0]]
+  for (let i = 1; i < N; i++) {
+    const t = Math.PI - (Math.PI * i) / N
+    pts.push([rx * Math.cos(t), ry * Math.sin(t)])
+  }
+  pts.push([rx, 0], [rx, yBot])
+  return pts.map(([x, y]) => [ax + x, P.archY + y])
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, deriveWheelFitment, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -95,15 +95,41 @@ describe('deriveWheelFitment 车轮装配配合（胎藏于侧壁、内衬包住
     }
   })
 
-  it.each(ALL_TYPES)('%s 胎外侧面收进车身侧壁内（0~50mm 浅藏），内衬半径 ≥ 拱口包络', (type) => {
+  it.each(ALL_TYPES)('%s 胎外侧面收进车身侧壁内（0~50mm 浅藏）', (type) => {
     const p = deriveCarProfile(carTypeParams[type], type)
     const f = deriveWheelFitment(p)
     expect(f.tireOuter).toBeLessThan(f.wall)
     expect(f.tireOuter).toBeGreaterThan(f.wall - 0.05)
-    expect(f.linerR).toBeGreaterThanOrEqual(p.wheelArch.front.rx)
-    expect(f.linerR).toBeGreaterThanOrEqual(p.wheelArch.front.ry)
     // 轮心 Z 对称布置：两侧胎外侧面不交叉（2·wheelZ > tireW）
     expect(f.wheelZ * 2).toBeGreaterThan(f.tireW)
+  })
+})
+
+describe('archLinerProfile 轮腔内衬轮廓（与拱口同形、内缩不互穿）', () => {
+  it.each(ALL_TYPES)('%s 内衬每一点严格位于拱口空腔内（前后壁/顶部/底部均不戳出）', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    for (const side of ['front', 'rear']) {
+      const a = p.wheelArch[side]
+      const ax = side === 'front' ? p.frontWheelX : p.rearWheelX
+      const inset = 0.012
+      const prof = archLinerProfile(p, side, inset)
+      expect(prof.length).toBeGreaterThan(8)
+      for (const [x, y] of prof) {
+        // X 不越出拱口半宽（内缩后）
+        expect(Math.abs(x - ax)).toBeLessThanOrEqual(a.rx - inset + 1e-9)
+        // 顶部不越出拱口顶（archY+ry），底部不越出车身底板
+        expect(y).toBeLessThanOrEqual(p.archY + a.ry - inset + 1e-9)
+        expect(y).toBeGreaterThanOrEqual(p.bodyBottomY - 1e-9)
+      }
+    }
+  })
+
+  it('inset 越大内衬越窄（顶/宽同比收缩），杜绝零内缩量贴壁', () => {
+    const p = deriveCarProfile(carTypeParams.sport, 'sport')
+    const wide = archLinerProfile(p, 'front', 0.002)
+    const narrow = archLinerProfile(p, 'front', 0.04)
+    const halfW = (prof) => Math.max(...prof.map(([x]) => x)) - Math.min(...prof.map(([x]) => x))
+    expect(halfW(narrow)).toBeLessThan(halfW(wide))
   })
 })
 
