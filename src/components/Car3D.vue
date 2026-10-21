@@ -349,7 +349,7 @@ const createCar = () => {
     bodyBottomY, roofTopY, beltLineY, hoodLineY, trunkLineY,
     hoodEndX, cowlStartX, trunkStartX,
     windshieldTopX, rearWindowTopX, rearWindowBottomX,
-    wheelArchRadius, archY, wheelArch, approachAngleDeg, departureAngleDeg,
+    wheelArchRadius, archY, wheelArch,
     pickup, rails: railSpec, wing: wingSpec
   } = P
 
@@ -674,20 +674,20 @@ const createCar = () => {
   rearBumper.position.set(rearX - 0.005, bodyBottomY + 0.075, 0)
   group.add(rearBumper)
 
-  // ---- 接近角/离去角导流唇：沿「接地点→立面底角」坡度线的暗色平板，
-  // 3D 实体化布置设计基准（与 2D 构造线、carProfile 角度值同源同角）----
-  const aprRad = (approachAngleDeg * Math.PI) / 180
-  const depRad = (departureAngleDeg * Math.PI) / 180
-  const aprLen = Math.hypot(P.FO, gc) * 0.6
-  const depLen = Math.hypot(P.RO, gc) * 0.6
-  const aprLip = new THREE.Mesh(new THREE.BoxGeometry(aprLen, 0.015, W - 0.24), linerMat)
-  aprLip.position.set(frontX - P.FO * 0.3, gc * 0.7, 0)
-  aprLip.rotation.z = aprRad
-  group.add(aprLip)
-  const depLip = new THREE.Mesh(new THREE.BoxGeometry(depLen, 0.015, W - 0.24), linerMat)
-  depLip.position.set(rearX + P.RO * 0.3, gc * 0.7, 0)
-  depLip.rotation.z = -depRad
-  group.add(depLip)
+  // ---- 接近角/离去角构造线：接地点→车身立面底角的琥珀色布置线（与 2D 图纸同源同角）。
+  // 刻意用细线而非实体板：实体板会悬出车身底面（最低 0.4·gc），误读为离地间隙不足 ----
+  const angleLineMat = new THREE.LineBasicMaterial({ color: 0xfbbf24 })
+  for (const zSide of [1, -1]) {
+    const zz = zSide * (fit.wall + 0.006)
+    group.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(frontWheelX, 0, zz), new THREE.Vector3(frontX, gc, zz)]),
+      angleLineMat))
+    group.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(rearWheelX, 0, zz), new THREE.Vector3(rearX, gc, zz)]),
+      angleLineMat))
+  }
 
   // ---- 前大灯：嵌于前立面（旧值 z=halfTrack-0.15 深埋车体内部，不可见）----
   const headlightMat = new THREE.MeshStandardMaterial({
