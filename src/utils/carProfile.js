@@ -191,6 +191,13 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
   // 轮拱包络椭圆（依赖 beltLineY，返回值前派生）
   const wheelArch = deriveWheelArch(wheelR, gc, beltLineY, carType)
 
+  // ---------- 11. 接近角 / 离去角（布置设计基准，2D/3D 同源） ----------
+  // 定义：前（后）轮接地点与车身前（后）立面底角连线的最大坡度角。
+  // 本模型前立面底角 = (frontX, gc)、后立面底角 = (rearX, gc)，
+  // 接地点与立面底角水平距离恰为前悬 FO / 后悬 RO → tan = gc / FO、gc / RO。
+  const approachAngleDeg = (Math.atan2(gc, FO) * 180) / Math.PI
+  const departureAngleDeg = (Math.atan2(gc, RO) * 180) / Math.PI
+
   return {
     // 尺寸（m）
     W, H, WB, track, gc, hoodLen, wheelDia, wheelR, halfTrack, FO, RO,
@@ -207,9 +214,24 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     wheelArch,
     wheelArchRadius: wheelArch.front.rx, // 前拱开口半宽（兼容旧消费方）
     archY: wheelR,         // 兼容字段 = 轮心高度（历史值 gc+wheelR 为错位拱心，已修正）
+    // 轮胎名义断面宽（与包络椭圆 c_steer 同源：0.36 × 轮径）
+    tireWidth: wheelR * 2 * 0.36,
+    // 接近角 / 离去角（deg，布置设计基准）
+    approachAngleDeg, departureAngleDeg,
     // 车型专属
     pickup, rails, wing
   }
+}
+
+/**
+ * 车轮装配配合（2D/3D 同源判据）：轮胎外侧面必须收进车身侧壁之内，
+ * 杜绝侧视「轮胎压过拱唇/裙边」的干涉观感。bodyThickness 与 Car3D 拉伸 bevel 一致。
+ */
+export function deriveWheelFitment(P, bodyThickness = 0.03, margin = 0.02) {
+  const wall = (P.W + bodyThickness * 2) / 2          // 车身侧壁外表面（含 bevel 外扩）
+  const tireW = P.tireWidth
+  const wheelZ = wall - tireW / 2 - margin            // 轮心 Z：胎外侧面藏于侧壁内 margin
+  return { wall, tireW, wheelZ, tireOuter: wheelZ + tireW / 2, linerR: Math.max(P.wheelArch.front.rx, P.wheelArch.front.ry) + 0.015 }
 }
 
 /**

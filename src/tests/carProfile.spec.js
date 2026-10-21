@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -61,6 +61,49 @@ describe('轮拱开口 = 转向+跳动包络椭圆（真实轮拱几何）', () 
     const topGap = (p) => p.wheelArch.cy + p.wheelArch.front.ry - p.wheelR * 2
     expect(topGap(suv)).toBeGreaterThan(topGap(sedan))
     expect(topGap(pickup)).toBeGreaterThan(topGap(suv))
+  })
+})
+
+describe('接近角 / 离去角布置设计基准（2D/3D 同源）', () => {
+  it.each(ALL_TYPES)('%s 角度 = atan(离地间隙 / 对应悬长)，落在真车合理区间', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    expect(p.approachAngleDeg).toBeCloseTo((Math.atan2(p.gc, p.FO) * 180) / Math.PI, 9)
+    expect(p.departureAngleDeg).toBeCloseTo((Math.atan2(p.gc, p.RO) * 180) / Math.PI, 9)
+    expect(p.approachAngleDeg).toBeGreaterThan(3)
+    expect(p.approachAngleDeg).toBeLessThan(30)
+    expect(p.departureAngleDeg).toBeGreaterThan(3)
+    expect(p.departureAngleDeg).toBeLessThan(30)
+  })
+
+  it('越野取向（suv/pickup）角度大于低趴取向（sport/coupe）', () => {
+    const suv = deriveCarProfile(carTypeParams.suv, 'suv')
+    const pickup = deriveCarProfile(carTypeParams.pickup, 'pickup')
+    const sport = deriveCarProfile(carTypeParams.sport, 'sport')
+    const coupe = deriveCarProfile(carTypeParams.coupe, 'coupe')
+    expect(suv.approachAngleDeg).toBeGreaterThan(sport.approachAngleDeg)
+    expect(pickup.approachAngleDeg).toBeGreaterThan(coupe.approachAngleDeg)
+    expect(suv.departureAngleDeg).toBeGreaterThan(sport.departureAngleDeg)
+    expect(pickup.departureAngleDeg).toBeGreaterThan(coupe.departureAngleDeg)
+  })
+})
+
+describe('deriveWheelFitment 车轮装配配合（胎藏于侧壁、内衬包住拱口）', () => {
+  it('轮胎名义断面宽与包络椭圆 c_steer 同源（0.36 × 轮径）', () => {
+    for (const type of ALL_TYPES) {
+      const p = deriveCarProfile(carTypeParams[type], type)
+      expect(p.tireWidth).toBeCloseTo(p.wheelR * 2 * 0.36, 9)
+    }
+  })
+
+  it.each(ALL_TYPES)('%s 胎外侧面收进车身侧壁内（0~50mm 浅藏），内衬半径 ≥ 拱口包络', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const f = deriveWheelFitment(p)
+    expect(f.tireOuter).toBeLessThan(f.wall)
+    expect(f.tireOuter).toBeGreaterThan(f.wall - 0.05)
+    expect(f.linerR).toBeGreaterThanOrEqual(p.wheelArch.front.rx)
+    expect(f.linerR).toBeGreaterThanOrEqual(p.wheelArch.front.ry)
+    // 轮心 Z 对称布置：两侧胎外侧面不交叉（2·wheelZ > tireW）
+    expect(f.wheelZ * 2).toBeGreaterThan(f.tireW)
   })
 })
 

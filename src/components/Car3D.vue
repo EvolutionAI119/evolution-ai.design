@@ -94,7 +94,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, filletCorner } from '../utils/carProfile.js'
 import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, ROOF_FILLETS } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
@@ -349,7 +349,8 @@ const createCar = () => {
     bodyBottomY, roofTopY, beltLineY, hoodLineY, trunkLineY,
     hoodEndX, cowlStartX, trunkStartX,
     windshieldTopX, rearWindowTopX, rearWindowBottomX,
-    wheelArchRadius, archY, wheelArch, pickup, rails: railSpec, wing: wingSpec
+    wheelArchRadius, archY, wheelArch, approachAngleDeg, departureAngleDeg,
+    pickup, rails: railSpec, wing: wingSpec
   } = P
 
   const bodyColor = new THREE.Color(props.carColor)
@@ -449,6 +450,8 @@ const createCar = () => {
   const bodyDepth = W
   const bodyThickness = 0.03
   const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
+  // 车轮装配配合（纯函数同源判据）：胎外侧面收进侧壁内，杜绝轮-身干涉观感
+  const fit = deriveWheelFitment(P, bodyThickness)
 
   const extrudeSettings = {
     depth: bodyDepth,
@@ -579,7 +582,7 @@ const createCar = () => {
   const createWheel = (x, z) => {
     const wheelGroup = new THREE.Group()
     
-    const tireWidth = 0.28
+    const tireWidth = fit.tireW
     const tireGeom = new THREE.CylinderGeometry(wheelR, wheelR, tireWidth, 24)
     tireGeom.rotateX(Math.PI / 2)
     const tire = new THREE.Mesh(tireGeom, wheelMat)
@@ -606,32 +609,30 @@ const createCar = () => {
     return wheelGroup
   }
 
-  const wheelZ = bodyExtentZ - 0.12
+  const wheelZ = fit.wheelZ
 
   group.add(createWheel(frontWheelX, wheelZ))
   group.add(createWheel(frontWheelX, -wheelZ))
   group.add(createWheel(rearWheelX, wheelZ))
   group.add(createWheel(rearWheelX, -wheelZ))
 
-  // ---- 轮腔内衬：拱洞内暗色半圆筒（真实轮 house，杜绝望穿车身）----
-  // 上半开筒贴拱包络（半径 = ry·0.99），贴轮内侧布置，与后端 arch_liner 同视觉语义
-  // 内衬筒宽与 createWheel 轮胎同宽（0.28），贴轮内侧留 0.05 余隙
-  const tireW = 0.28
+  // ---- 轮腔内衬：全宽暗色拱筒（真实轮 house），杜绝望穿车身见亮色 bevel 面 ----
+  // 单筒横跨整车宽：近侧拱洞望入只见暗筒内壁与轮胎，不再露出对侧孔缘/底缘亮斑；
+  // 筒半径 = max(rx,ry)+0.015 ≥ 拱口包络（侧缘埋入实体、顶部隐于车壳），覆盖上 200°
   const linerMat = new THREE.MeshStandardMaterial({
     color: 0x101014, metalness: 0.2, roughness: 0.95, side: THREE.DoubleSide,
     wireframe: wireframeMode.value
   })
   const addArchLiner = (ax, a) => {
-    for (const sgn of [1, -1]) {
-      const liner = new THREE.Mesh(
-        new THREE.CylinderGeometry(a.ry * 0.99, a.ry * 0.99, tireW + 0.10, 28, 1, true,
-          Math.PI / 2, Math.PI),
-        linerMat)
-      liner.rotateX(Math.PI / 2)   // 筒轴 → 车宽 Z；上半圆罩住轮拱
-      liner.position.set(ax, archY, sgn * (wheelZ - tireW / 2 - 0.05))
-      liner.receiveShadow = true
-      group.add(liner)
-    }
+    const r = Math.max(a.rx, a.ry) + 0.015
+    const liner = new THREE.Mesh(
+      new THREE.CylinderGeometry(r, r, bodyExtentZ * 2, 32, 1, true,
+        Math.PI / 2 - 0.18, Math.PI + 0.36),
+      linerMat)
+    liner.rotateX(Math.PI / 2)   // 筒轴 → 车宽 Z；上 200° 罩住轮拱
+    liner.position.set(ax, archY, 0)
+    liner.receiveShadow = true
+    group.add(liner)
   }
   addArchLiner(frontWheelX, wheelArch.front)
   addArchLiner(rearWheelX, wheelArch.rear)
@@ -663,42 +664,78 @@ const createCar = () => {
   steeringWheelGroup.position.set(steeringWheelX, steeringWheelY, steeringWheelZ)
   group.add(steeringWheelGroup)
 
-  const bumperGeom = new THREE.BoxGeometry(0.06, 0.12, W - 0.15)
-  const frontBumper = new THREE.Mesh(bumperGeom, chromeMat)
-  frontBumper.position.set(frontX - 0.03, gc + 0.08, 0)
+  // ---- 保险杠：贴前/后立面外表面（旧值埋在车身实体内不可见，已修正）----
+  const bumperGeom = new THREE.BoxGeometry(0.05, 0.15, W - 0.10)
+  const frontBumper = new THREE.Mesh(bumperGeom, bodyMat)
+  frontBumper.position.set(frontX + 0.005, bodyBottomY + 0.075, 0)
   group.add(frontBumper)
 
-  const rearBumper = new THREE.Mesh(bumperGeom, chromeMat)
-  rearBumper.position.set(rearX + 0.03, gc + 0.08, 0)
+  const rearBumper = new THREE.Mesh(bumperGeom, bodyMat)
+  rearBumper.position.set(rearX - 0.005, bodyBottomY + 0.075, 0)
   group.add(rearBumper)
 
+  // ---- 接近角/离去角导流唇：沿「接地点→立面底角」坡度线的暗色平板，
+  // 3D 实体化布置设计基准（与 2D 构造线、carProfile 角度值同源同角）----
+  const aprRad = (approachAngleDeg * Math.PI) / 180
+  const depRad = (departureAngleDeg * Math.PI) / 180
+  const aprLen = Math.hypot(P.FO, gc) * 0.6
+  const depLen = Math.hypot(P.RO, gc) * 0.6
+  const aprLip = new THREE.Mesh(new THREE.BoxGeometry(aprLen, 0.015, W - 0.24), linerMat)
+  aprLip.position.set(frontX - P.FO * 0.3, gc * 0.7, 0)
+  aprLip.rotation.z = aprRad
+  group.add(aprLip)
+  const depLip = new THREE.Mesh(new THREE.BoxGeometry(depLen, 0.015, W - 0.24), linerMat)
+  depLip.position.set(rearX + P.RO * 0.3, gc * 0.7, 0)
+  depLip.rotation.z = -depRad
+  group.add(depLip)
+
+  // ---- 前大灯：嵌于前立面（旧值 z=halfTrack-0.15 深埋车体内部，不可见）----
   const headlightMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: 0xffffcc,
     emissiveIntensity: 0.5,
     wireframe: wireframeMode.value
   })
-  const headlightGeom = new THREE.BoxGeometry(0.15, 0.08, 0.06)
+  const headlightGeom = new THREE.BoxGeometry(0.05, 0.10, 0.22)
+  const hlY = Math.max(hoodLineY - 0.16, bodyBottomY + 0.16)
+  const hlZ = fit.wall - 0.18
   const hl1 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl1.position.set(frontX - 0.02, gc + H * 0.35, halfTrack - 0.15)
+  hl1.position.set(frontX, hlY, hlZ)
   group.add(hl1)
   const hl2 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl2.position.set(frontX - 0.02, gc + H * 0.35, -halfTrack + 0.15)
+  hl2.position.set(frontX, hlY, -hlZ)
   group.add(hl2)
 
+  // ---- 尾灯：嵌于后立面（与大灯同口径修正）----
   const taillightMat = new THREE.MeshStandardMaterial({
     color: 0xff0000,
     emissive: 0xff0000,
     emissiveIntensity: 0.4,
     wireframe: wireframeMode.value
   })
-  const taillightGeom = new THREE.BoxGeometry(0.12, 0.1, 0.05)
+  const taillightGeom = new THREE.BoxGeometry(0.04, 0.10, 0.20)
+  const tlY = Math.max(trunkLineY - 0.18, bodyBottomY + 0.16)
   const tl1 = new THREE.Mesh(taillightGeom, taillightMat)
-  tl1.position.set(rearX + 0.02, gc + H * 0.4, halfTrack - 0.15)
+  tl1.position.set(rearX, tlY, hlZ)
   group.add(tl1)
   const tl2 = new THREE.Mesh(taillightGeom, taillightMat)
-  tl2.position.set(rearX + 0.02, gc + H * 0.4, -halfTrack + 0.15)
+  tl2.position.set(rearX, tlY, -hlZ)
   group.add(tl2)
+
+  // ---- 门把手：侧壁外表面浅凹横杆（前门必配；后门仅有多门车型）----
+  const handleGeom = new THREE.BoxGeometry(0.14, 0.022, 0.02)
+  const handleY = beltLineY - 0.10
+  const handleZ = fit.wall + 0.004
+  const frontHandleX = pp.x + (windshieldTopX - pp.x) * 0.5
+  const addHandle = (x) => {
+    for (const zSide of [1, -1]) {
+      const h = new THREE.Mesh(handleGeom, chromeMat)
+      h.position.set(x, handleY, zSide * handleZ)
+      group.add(h)
+    }
+  }
+  addHandle(frontHandleX)
+  if (!pickup) addHandle(pp.x - (pp.x - rearWindowTopX) * 0.45)
 
   const createMirror = (zSide) => {
     const mirrorGroup = new THREE.Group()

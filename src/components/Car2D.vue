@@ -29,6 +29,18 @@
           <circle :cx="w.cx" :cy="w.cy" :r="w.r * 0.12" fill="rgba(255,255,255,0.5)" />
         </g>
 
+        <!-- 灯具与门把手侧视标记（与 3D 新增零件同源布置） -->
+        <rect :x="0" :y="hoodLineY + s(60)" :width="s(55)" :height="s(90)" fill="rgba(255,240,170,0.5)" stroke="#fbbf24" stroke-width="1" vector-effect="non-scaling-stroke" />
+        <rect :x="rearX - s(50)" :y="trunkLineY + s(60)" :width="s(50)" :height="s(90)" fill="rgba(255,90,90,0.4)" stroke="#ff6b6b" stroke-width="1" vector-effect="non-scaling-stroke" />
+        <line :x1="frontHandleX2d - s(70)" :y1="beltLineY + s(100)" :x2="frontHandleX2d + s(70)" :y2="beltLineY + s(100)" stroke="rgba(255,255,255,0.65)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
+        <line v-if="!isPickup" :x1="rearHandleX2d - s(70)" :y1="beltLineY + s(100)" :x2="rearHandleX2d + s(70)" :y2="beltLineY + s(100)" stroke="rgba(255,255,255,0.65)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
+
+        <!-- 接近角/离去角构造线：接地点 → 车身立面底角（与 carProfile 角度值、3D 导流唇同源） -->
+        <line :x1="frontWheelCX" :y1="groundY" :x2="0" :y2="underbodyY" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,4" vector-effect="non-scaling-stroke" />
+        <text :x="frontWheelCX * 0.42" :y="groundY - s(groundClearanceMm * 0.45) - 8" text-anchor="middle" fill="#fbbf24" font-family="Inter, sans-serif" font-size="11" font-weight="600">α {{ approachLabel }}</text>
+        <line :x1="rearWheelCX" :y1="groundY" :x2="rearX" :y2="underbodyY" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,4" vector-effect="non-scaling-stroke" />
+        <text :x="(rearWheelCX + rearX) / 2" :y="groundY - s(groundClearanceMm * 0.45) - 8" text-anchor="middle" fill="#fbbf24" font-family="Inter, sans-serif" font-size="11" font-weight="600">β {{ departureLabel }}</text>
+
         <!-- 地面线 -->
         <line :x1="groundX1" :y1="groundY" :x2="groundX2" :y2="groundY" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke" />
 
@@ -153,6 +165,14 @@ const cabRearX2d = computed(() => (profile.value.pickup ? toX(profile.value.pick
 const cabWindowBottomX2d = computed(() => (profile.value.pickup ? toX(profile.value.pickup.cabWindowBottomX) : 0))
 
 const pillarX = computed(() => windshieldTopX.value + (rearWindowTopX.value - windshieldTopX.value) * 0.55)
+
+// 门把手 2D 标记位置（与 3D 同公式：前门 = B柱→风挡顶 50%，后门 = B柱→车顶后缘 45%）
+const frontHandleX2d = computed(() => pillarX.value + (windshieldTopX.value - pillarX.value) * 0.5)
+const rearHandleX2d = computed(() => pillarX.value + (rearWindowTopX.value - pillarX.value) * 0.45)
+
+// 接近角/离去角标注（carProfile 同源角度）
+const approachLabel = computed(() => `${profile.value.approachAngleDeg.toFixed(1)}°`)
+const departureLabel = computed(() => `${profile.value.departureAngleDeg.toFixed(1)}°`)
 
 // ============ 轮拱：包络椭圆（拱心=轮心，2D/3D 共享 deriveWheelArch 唯一来源）============
 // 竖直拱唇自侧裙下缘升至轮心高度，椭圆上弧过顶（含转向/跳动包络间隙）
