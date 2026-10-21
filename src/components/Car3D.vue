@@ -349,7 +349,7 @@ const createCar = () => {
     bodyBottomY, roofTopY, beltLineY, hoodLineY, trunkLineY,
     hoodEndX, cowlStartX, trunkStartX,
     windshieldTopX, rearWindowTopX, rearWindowBottomX,
-    wheelArchRadius, archY, pickup, rails: railSpec, wing: wingSpec
+    wheelArchRadius, archY, wheelArch, pickup, rails: railSpec, wing: wingSpec
   } = P
 
   const bodyColor = new THREE.Color(props.carColor)
@@ -431,19 +431,19 @@ const createCar = () => {
   }
   bodyShape.closePath()
 
-  const frontArch = new THREE.Path()
-  frontArch.moveTo(frontWheelX - wheelArchRadius, archY)
-  frontArch.absarc(frontWheelX, archY, wheelArchRadius, Math.PI, 0)
-  frontArch.lineTo(frontWheelX + wheelArchRadius, archY)
-  frontArch.closePath()
-  bodyShape.holes.push(frontArch)
-
-  const rearArch = new THREE.Path()
-  rearArch.moveTo(rearWheelX - wheelArchRadius, archY)
-  rearArch.absarc(rearWheelX, archY, wheelArchRadius, Math.PI, 0)
-  rearArch.lineTo(rearWheelX + wheelArchRadius, archY)
-  rearArch.closePath()
-  bodyShape.holes.push(rearArch)
+  // ---- 轮拱开口：包络椭圆 + 竖直拱唇（真实翼子板拱形，处处避开转向/跳动包络）----
+  // 拱心 = 静置接地轮心 (wheelX, wheelR)；唇缘自轮心高度竖落裙边，上弧过顶含跳动+顶隙
+  const archHole = (ax, a) => {
+    const hole = new THREE.Path()
+    hole.moveTo(ax - a.rx, bodyBottomY)
+    hole.lineTo(ax - a.rx, archY)
+    hole.absellipse(ax, archY, a.rx, a.ry, Math.PI, 0, true)
+    hole.lineTo(ax + a.rx, bodyBottomY)
+    hole.closePath()
+    return hole
+  }
+  bodyShape.holes.push(archHole(frontWheelX, wheelArch.front))
+  bodyShape.holes.push(archHole(rearWheelX, wheelArch.rear))
 
   const bodyDepth = W
   const bodyThickness = 0.03
@@ -611,6 +611,29 @@ const createCar = () => {
   group.add(createWheel(frontWheelX, -wheelZ))
   group.add(createWheel(rearWheelX, wheelZ))
   group.add(createWheel(rearWheelX, -wheelZ))
+
+  // ---- 轮腔内衬：拱洞内暗色半圆筒（真实轮 house，杜绝望穿车身）----
+  // 上半开筒贴拱包络（半径 = ry·0.99），贴轮内侧布置，与后端 arch_liner 同视觉语义
+  // 内衬筒宽与 createWheel 轮胎同宽（0.28），贴轮内侧留 0.05 余隙
+  const tireW = 0.28
+  const linerMat = new THREE.MeshStandardMaterial({
+    color: 0x101014, metalness: 0.2, roughness: 0.95, side: THREE.DoubleSide,
+    wireframe: wireframeMode.value
+  })
+  const addArchLiner = (ax, a) => {
+    for (const sgn of [1, -1]) {
+      const liner = new THREE.Mesh(
+        new THREE.CylinderGeometry(a.ry * 0.99, a.ry * 0.99, tireW + 0.10, 28, 1, true,
+          Math.PI / 2, Math.PI),
+        linerMat)
+      liner.rotateX(Math.PI / 2)   // 筒轴 → 车宽 Z；上半圆罩住轮拱
+      liner.position.set(ax, archY, sgn * (wheelZ - tireW / 2 - 0.05))
+      liner.receiveShadow = true
+      group.add(liner)
+    }
+  }
+  addArchLiner(frontWheelX, wheelArch.front)
+  addArchLiner(rearWheelX, wheelArch.rear)
 
   const steeringWheelGroup = new THREE.Group()
   const swRadius = 0.15

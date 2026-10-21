@@ -20,6 +20,12 @@ const flightParams = (type) => ({
   lift_fan_count: FLIGHT_PRESETS[type].liftFans
 })
 
+// 轮拱扁平度（UI 可调，直通后端 车身部件.wheel_arch_flatten）：
+// 0=圆拱（轿车/轿跑/跑车），>0 横轴放大成扁拱/方拱（SUV/皮卡越野风格）
+const archFlatten = (type) => ({
+  wheel_arch_flatten: { sedan: 0, suv: 0.25, coupe: 0, sport: 0, mpv: 0.05, pickup: 0.35 }[type] ?? 0.1
+})
+
 export const carTypes = [
   { key: 'sedan', name: 'carSedan', desc: 'Classic sedan' },
   { key: 'suv', name: 'carSuv', desc: 'Sport utility' },
@@ -39,6 +45,7 @@ export const defaultCarParams = {
   hood_length: 1200,
   roof_height: 1000,
   wheel_diameter: 750,
+  ...archFlatten('sedan'),
   windshield_angle: 30,
   rear_window_angle: 25,
   rear_slant_angle: 15,
@@ -56,6 +63,7 @@ export const carTypeParams = {
     windshield_angle: 35, rear_window_angle: 28, rear_slant_angle: 18,
     ...glassParams('sedan'),
     ...flightParams('sedan'),
+    ...archFlatten('sedan'),
     front_overhang: 950, rear_overhang: 1110
   },
   suv: {
@@ -65,6 +73,7 @@ export const carTypeParams = {
     windshield_angle: 28, rear_window_angle: 22, rear_slant_angle: 12,
     ...glassParams('suv'),
     ...flightParams('suv'),
+    ...archFlatten('suv'),
     front_overhang: 980, rear_overhang: 1120
   },
   coupe: {
@@ -74,6 +83,7 @@ export const carTypeParams = {
     windshield_angle: 40, rear_window_angle: 35, rear_slant_angle: 40,
     ...glassParams('coupe'),
     ...flightParams('coupe'),
+    ...archFlatten('coupe'),
     front_overhang: 1020, rear_overhang: 1000
   },
   sport: {
@@ -83,6 +93,7 @@ export const carTypeParams = {
     windshield_angle: 45, rear_window_angle: 42, rear_slant_angle: 50,
     ...glassParams('sport'),
     ...flightParams('sport'),
+    ...archFlatten('sport'),
     front_overhang: 950, rear_overhang: 950
   },
   mpv: {
@@ -92,6 +103,7 @@ export const carTypeParams = {
     windshield_angle: 25, rear_window_angle: 15, rear_slant_angle: 8,
     ...glassParams('mpv'),
     ...flightParams('mpv'),
+    ...archFlatten('mpv'),
     front_overhang: 880, rear_overhang: 1220
   },
   pickup: {
@@ -101,6 +113,7 @@ export const carTypeParams = {
     windshield_angle: 28, rear_window_angle: 20, rear_slant_angle: 15,
     ...glassParams('pickup'),
     ...flightParams('pickup'),
+    ...archFlatten('pickup'),
     front_overhang: 1050, rear_overhang: 1100
   }
 }

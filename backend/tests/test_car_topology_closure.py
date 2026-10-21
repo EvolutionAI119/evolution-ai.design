@@ -242,3 +242,24 @@ def test_surface_and_component_census(car):
                  ("fender", 4), ("door", 4), ("side_glass", 4)):
         got = sum(1 for c in car["components"] if c.get("type") == t)
         assert got == n, f"type={t} 期望 {n} 实际 {got}"
+
+
+def test_arch_opening_clears_wheel_envelope(gen, car):
+    """轮拱开口处处避开「满舵转向 + 悬架跳动」轮胎包络（真实轮拱几何把关）。
+
+    包络：轮胎圆柱（r, 胎宽/2·sin δmax 侧向外扩）绕跳动后轮心 (r+jounce)；
+    侧视 X 向包络顶 = (r+jounce) + √(r² - max(|dx|-c_steer, 0)²)。
+    开口缘（GC + _arch_lift）须处处高出包络顶 ≥12mm。
+    """
+    r = gen._wheel_r
+    jounce, gap_top, gap_side, steer = 50.0, 35.0, 25.0, np.radians(32.0)
+    c_s = (gen._p('车身部件', 'wheel_width') / 2.0) * np.sin(steer)
+    for ax, rx, c_axle in ((gen._ax_f, gen._arch_R_f, c_s),
+                           (gen._ax_r, gen._arch_R_r, 0.0)):   # 后轴无转向
+        span = min(rx, r + c_axle) - 1.0
+        for dx in np.linspace(0.0, max(span, 1.0), 60):
+            env_top = (r + jounce) + np.sqrt(
+                max(r * r - max(dx - c_axle, 0.0) ** 2, 0.0))
+            edge = gen.GC + gen._arch_lift(ax + dx)
+            assert edge >= env_top + 12.0, \
+                f"dx={dx:.0f}mm: 拱缘 {edge:.0f} < 包络顶 {env_top:.0f} + 12"

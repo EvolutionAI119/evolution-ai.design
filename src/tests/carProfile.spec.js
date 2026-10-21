@@ -26,6 +26,44 @@ const assertUniversalConstraints = (p, type) => {
   expect(p.wheelArchRadius).toBeGreaterThan(p.wheelR)
 }
 
+describe('轮拱开口 = 转向+跳动包络椭圆（真实轮拱几何）', () => {
+  it.each(ALL_TYPES)('%s 拱心=静置接地轮心，拱顶让开跳动+顶隙，前拱含满舵扫掠', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const a = p.wheelArch
+    // 拱心 = 轮心（接地：胎底触地，轮心绝对高度 = 轮半径）
+    expect(a.cy).toBeCloseTo(p.wheelR, 5)
+    // 拱顶 ≥ 轮顶 + 跳动 + 顶隙（WHEEL_ENVELOPE 最小配置：jounce 30 + gapTop 25）
+    expect(a.cy + a.front.ry).toBeGreaterThanOrEqual(p.wheelR * 2 + 0.054)
+    // 前拱宽于后拱（满舵扫掠外扩），且两者均包住轮胎
+    expect(a.front.rx).toBeGreaterThan(a.rear.rx)
+    expect(a.front.rx).toBeGreaterThan(p.wheelR)
+    expect(a.rear.rx).toBeGreaterThan(p.wheelR)
+    // 兼容字段同源
+    expect(p.wheelArchRadius).toBeCloseTo(a.front.rx, 5)
+    expect(p.archY).toBeCloseTo(p.wheelR, 5)
+  })
+
+  it('开口随车轮增大而增大（同车型换大轮）', () => {
+    const base = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const big = deriveCarProfile({ ...carTypeParams.sedan, wheel_diameter: 780 }, 'sedan')
+    expect(big.wheelArch.front.rx).toBeGreaterThan(base.wheelArch.front.rx)
+    expect(big.wheelArch.front.ry).toBeGreaterThan(base.wheelArch.front.ry)
+  })
+
+  it('车型风格差异：suv/pickup 扁拱（flatten）且越野间隙大于轿车', () => {
+    const sedan = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const suv = deriveCarProfile(carTypeParams.suv, 'suv')
+    const pickup = deriveCarProfile(carTypeParams.pickup, 'pickup')
+    expect(suv.wheelArch.style).toBe('square')
+    expect(pickup.wheelArch.style).toBe('square')
+    expect(sedan.wheelArch.style).toBe('round')
+    // 越野车型的跳动包络更大 → 拱顶相对轮顶的间隙更大
+    const topGap = (p) => p.wheelArch.cy + p.wheelArch.front.ry - p.wheelR * 2
+    expect(topGap(suv)).toBeGreaterThan(topGap(sedan))
+    expect(topGap(pickup)).toBeGreaterThan(topGap(suv))
+  })
+})
+
 describe('deriveCarProfile 全车型物理约束', () => {
   it('默认参数（无车型分支）也能合法推导', () => {
     const p = deriveCarProfile(defaultCarParams, 'sedan')

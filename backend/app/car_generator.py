@@ -174,14 +174,34 @@ class NURBSCarBodyGenerator:
             (x_cab_end, z_roof_r), (x_rwbot, waist),
             (L, z_trunk_r)
         ])
-        # 车轴 X（author）与轮拱参数
+        # 车轴 X（author）与轮拱包络参数
         self._ax_f = self.FO
         self._ax_r = L - self.RO
-        self._arch_R = self._p('车身部件', 'wheel_arch_radius')
-        # 轮拱开口抛物线峰高：拱心边缘 570 略低于轮顶 600，
-        # 既露出胎冠又处处让开门外的轮胎圆周（余量经逐点核算）。
-        wheel_r = self._p('车身部件', 'wheel_diameter') / 2.0
-        self._arch_H = wheel_r * 2.0 - 30.0
+        # ---- 轮拱开口：转向+悬架跳动包络椭圆（与前端 carProfile.js WHEEL_ENVELOPE 同公式）----
+        # 轮胎接地：轮心绝对高度 = 轮胎半径（胎底触地 y=0，author 地面基准）；
+        # 开口 = 以静置轮心 (ax, r) 为心的椭圆：
+        #   ry = r + jounce + gap_top                 （拱顶 = 轮顶 + 跳动 + 顶隙）
+        #   rx = (r + c_steer + gap_side)/√(1-(jounce/ry)²)·(1+0.5·flatten)
+        #   c_steer = (胎宽/2)·sin δ_max               （满舵侧视扫掠外扩）
+        #   √ 项 = 跳动膨胀补偿（跳动轮心高度处拱口须保持全宽——该处包络最宽）
+        # flatten（wheel_arch_flatten 参数）：横轴放大 → SUV/皮卡扁拱风格
+        # wheel_arch_radius（用户风格参数）：只允许放大包络值（物理下限=包络），上限 +80mm
+        wheel_d = self._p('车身部件', 'wheel_diameter')
+        wheel_w = self._p('车身部件', 'wheel_width')
+        self._wheel_r = wheel_d / 2.0
+        jounce, gap_top, gap_side = 50.0, 35.0, 25.0
+        c_steer = (wheel_w / 2.0) * float(np.sin(np.radians(32.0)))
+        flatten = float(np.clip(self._p('车身部件', 'wheel_arch_flatten'), 0.0, 0.5))
+        self._arch_ry = self._wheel_r + jounce + gap_top
+        denom = float(np.sqrt(max(1.0 - (jounce / self._arch_ry) ** 2, 0.25)))
+        grow = 1.0 + 0.5 * flatten
+        rx_f = (self._wheel_r + c_steer + gap_side) / denom * grow
+        user_r = self._p('车身部件', 'wheel_arch_radius')
+        self._arch_R_f = max(rx_f, min(user_r, rx_f + 80.0))
+        self._arch_R_r = (self._wheel_r + gap_side) / denom * grow
+        self._arch_R = self._arch_R_f        # 兼容：前拱开口半宽（Rhino 插件等外部语义）
+        # 拱顶相对 GC 的抬升峰值（= 轮心高 + ry - GC），内衬/翼子板/蒙皮底缘共用
+        self._arch_H = (self._wheel_r + self._arch_ry) - self.GC
         # ---- 侧玻璃 tumblehome + 桶面（前端三滑块直通，字段名与
         #      carPresets.js 完全一致，经 resolve_overrides 扁平索引命中）----
         # 防御性钳位（与前端 UI 范围/deriveCabinGlass 校验一致）
@@ -224,18 +244,18 @@ class NURBSCarBodyGenerator:
         return self._chain_lookup(x, self._top_chain[5:])  # 行李箱侧缘
 
     def _arch_lift(self, x):
-        """轮拱开口下缘相对 GC 的抬升量（抛物线，开口处连续归 0）。
+        """轮拱开口下缘相对 GC 的抬升（包络椭圆上弧，|dx|=rx 处拱唇竖落 GC）。
 
-        采用 H·(1-(dx/R)²) 而非圆：在 dx=R 处抬升恰为 0，与裙边平滑相接；
-        峰高 _arch_H 经核算处处高于轮胎圆周（含余量），杜绝穿模。
-        前后拱取较大者。
+        开口 = 以静置轮心 (ax, r) 为心的椭圆上弧：拱顶 = 轮顶 + 跳动 + 顶隙，
+        侧向含满舵扫掠与跳动膨胀补偿，处处避开「满舵 + 上跳」轮胎包络（有单测采样把关）。
+        前后拱各自独立半径（前拱含转向外扩，后拱收紧）。
         """
-        H, R = self._arch_H, self._arch_R
         lift = 0.0
-        for ax in (self._ax_f, self._ax_r):
+        for ax, rx in ((self._ax_f, self._arch_R_f), (self._ax_r, self._arch_R_r)):
             dx = abs(x - ax)
-            if dx < R:
-                lift = max(lift, H * (1.0 - (dx / R) ** 2))
+            if dx < rx:
+                lift = max(lift, self._wheel_r + self._arch_ry *
+                           float(np.sqrt(1.0 - (dx / rx) ** 2)) - self.GC)
         return float(lift)
 
     def _plan_taper(self, x):
@@ -858,7 +878,7 @@ class NURBSCarBodyGenerator:
         """轮拱内衬：拱洞内侧暗色壁，杜绝由拱口望穿车身"""
         sgn = 1.0 if side == 'left' else -1.0
         ax = self._ax_f if position == 'front' else self._ax_r
-        R = self._arch_R * 0.96
+        R = (self._arch_R_f if position == 'front' else self._arch_R_r) * 0.97
         cps = []
         for i in range(7):
             x = ax - R + i * (2 * R) / 6.0
@@ -991,7 +1011,8 @@ class NURBSCarBodyGenerator:
         z_pos = self.fwz if side == 'left' else -self.fwz
         return {'name': f'{side}{position}轮', 'type': 'wheel', 'radius': diameter / 2, 'width': width,
                 'color': '#26262b', 'rim_color': '#9aa0a8',
-                'position': {'x': x_pos - self.L / 2, 'y': self.GC + diameter / 2, 'z': z_pos}}
+                # 轮心 = 轮胎半径（胎底触地 y=0）：真实接地姿态，拱包络以静置轮心为心
+                'position': {'x': x_pos - self.L / 2, 'y': diameter / 2, 'z': z_pos}}
 
     def generate_mirror(self, side='left'):
         """后视镜（位置/尺寸元数据，不生成独立面片）"""
@@ -1007,21 +1028,24 @@ class NURBSCarBodyGenerator:
     def generate_fender(self, position='front', side='left'):
         """翼子板：轮拱外覆圈，比外蒙皮外凸 15mm。
 
-        内缘随拱抛物线但封顶 z=540（契约上限 556 内）；
-        前翼子板后缘与前门切齐，避免与车门双板重叠。
+        内缘随拱包络椭圆但封顶（拱顶下 60mm 收平，蒙皮接住拱唇竖缘）；
+        z_top 随拱顶联动（大轮径拱顶上移，仍封在腰线下 30mm）；
+        覆盖跨度 ≥ rx+40（罩住拱唇）；前翼子板后缘与前门切齐的契约不变。
         """
         ax = self._ax_f if position == 'front' else self._ax_r
-        span_x = self.L * 0.09 - 8
+        rx = self._arch_R_f if position == 'front' else self._arch_R_r
+        span_x = max(self.L * 0.09 - 8, rx + 40.0)
         if position == 'front':
             x0, x1 = ax - span_x, self.FO + 40      # 后缘=前门起点
         else:
             x0, x1 = ax - span_x, ax + span_x
-        z_top = 545
+        z_top = min(max(545.0, self.GC + self._arch_H + 15.0), self.waist - 30.0)
+        z_bot_cap = z_top - 60.0 - self.GC * 0.6
         cps = []
         for i in range(13):
             u = i / 12.0
             x = x0 + u * (x1 - x0)
-            z_bot = self.GC * 0.6 + min(self._arch_lift(x), 450)
+            z_bot = self.GC * 0.6 + min(self._arch_lift(x), z_bot_cap)
             sgn_lat = 1.0 if side == 'left' else -1.0
             # 轮眉外鼓沿纵向两端渐隐为零，与外蒙皮/车门平滑相接（消除硬台阶）
             flare = 15.0 * (1.0 - (2.0 * u - 1.0) ** 2)

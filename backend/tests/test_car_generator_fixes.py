@@ -375,7 +375,11 @@ def test_upper_body_chain_shares_edges(car):
 
 
 def test_wheels_on_axles_and_ground(gen, car):
-    """四轮必须位于前后车轴、正确车宽，轮胎贴地（位置已归一为规范坐标）"""
+    """四轮必须位于前后车轴、正确车宽，轮胎贴地（位置已归一为规范坐标）。
+
+    贴地约定（包络轮拱几何的前提）：author 地面 y=0，轮心 = 轮胎半径 r，
+    胎底触地 —— 与前端回退路径（y=r）及 2D 视图（cy=groundY-r）一致。
+    """
     L, r = gen.L, gen._p("车身部件", "wheel_diameter") / 2
     expect_x = {"front": -L / 2 + gen._ax_f, "rear": -L / 2 + gen._ax_r}
     wheels = [c for c in car["components"] if c.get("type") == "wheel"]
@@ -386,7 +390,7 @@ def test_wheels_on_axles_and_ground(gen, car):
         side_lat = gen.TW / 2 * (1 if "left" in w["name"] else -1)
         assert abs(pos["x"] - expect_x[kind]) <= 5, f"{w['name']} 不在车轴上"
         assert abs(pos["z"] - side_lat) <= 5, f"{w['name']} 车宽位置错误"
-        assert abs(pos["y"] - (gen.GC + r)) <= 5, f"{w['name']} 未贴地"
+        assert abs(pos["y"] - r) <= 5, f"{w['name']} 未贴地（轮心应为轮胎半径）"
         assert w["radius"] == r
 
 

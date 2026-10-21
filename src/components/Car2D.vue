@@ -154,12 +154,15 @@ const cabWindowBottomX2d = computed(() => (profile.value.pickup ? toX(profile.va
 
 const pillarX = computed(() => windshieldTopX.value + (rearWindowTopX.value - windshieldTopX.value) * 0.55)
 
-// ============ 轮拱：圆心 = 轮心，开口于侧裙下缘 ============
-const archRadius = computed(() => wheelRadius.value * 1.16)
-const archHalfChord = computed(() => {
-  const dy = Math.max(underbodyY.value - wheelCY.value, 0)
-  const inner = archRadius.value * archRadius.value - dy * dy
-  return Math.sqrt(Math.max(inner, (wheelRadius.value * 0.35) ** 2))
+// ============ 轮拱：包络椭圆（拱心=轮心，2D/3D 共享 deriveWheelArch 唯一来源）============
+// 竖直拱唇自侧裙下缘升至轮心高度，椭圆上弧过顶（含转向/跳动包络间隙）
+const arch2d = computed(() => {
+  const a = profile.value.wheelArch
+  return {
+    cy: wheelCY.value,
+    front: { rx: s(a.front.rx * 1000), ry: s(a.front.ry * 1000) },
+    rear: { rx: s(a.rear.rx * 1000), ry: s(a.rear.ry * 1000) }
+  }
 })
 
 // ============ 闭合车身轮廓：前脸 → 引擎盖 → A 柱 → 车顶 → C 柱 → 尾门 → 底边（双侧轮拱） ============
@@ -170,16 +173,23 @@ const silhouettePath = computed(() => {
   const hy = hoodLineY.value
   const ty = trunkLineY.value
   const noseR = Math.min(s(90), s(FO.value) * 0.5)
-  const fArchL = Math.max(frontWheelCX.value - archHalfChord.value, s(30))
-  const fArchR = Math.min(frontWheelCX.value + archHalfChord.value, rearWheelCX.value - archHalfChord.value - s(20))
-  const rArchL = rearWheelCX.value - archHalfChord.value
-  const rArchR = Math.min(rearWheelCX.value + archHalfChord.value, rx - s(20))
-  const ar = archRadius.value
+  // 轮拱锚点：竖唇位于 ax ± rx（椭圆最宽处=轮心高度），唇顶接椭圆弧
+  const fa = arch2d.value.front
+  const ra = arch2d.value.rear
+  const cy2d = arch2d.value.cy
+  const fArchL = Math.max(frontWheelCX.value - fa.rx, s(30))
+  const fArchR = Math.min(frontWheelCX.value + fa.rx, rearWheelCX.value - ra.rx - s(20))
+  const rArchL = rearWheelCX.value - ra.rx
+  const rArchR = Math.min(rearWheelCX.value + ra.rx, rx - s(20))
   const arches = [
     `L${rArchR},${uy}`,
-    `A${ar},${ar} 0 1 0 ${rArchL},${uy}`,
+    `L${rArchR},${cy2d}`,
+    `A${ra.rx},${ra.ry} 0 1 0 ${rArchL},${cy2d}`,
+    `L${rArchL},${uy}`,
     `L${fArchR},${uy}`,
-    `A${ar},${ar} 0 1 0 ${fArchL},${uy}`,
+    `L${fArchR},${cy2d}`,
+    `A${fa.rx},${fa.ry} 0 1 0 ${fArchL},${cy2d}`,
+    `L${fArchL},${uy}`,
     `L${fx},${uy}`,
     'Z'
   ]

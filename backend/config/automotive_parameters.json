@@ -33,6 +33,7 @@
       "grille_width": {"name": "进气格栅宽度", "value": 1000, "unit": "mm", "type": "width", "min_value": 800, "max_value": 1200, "category": "exterior"},
       "grille_height": {"name": "进气格栅高度", "value": 350, "unit": "mm", "type": "height", "min_value": 250, "max_value": 500, "category": "exterior"},
       "wheel_arch_radius": {"name": "轮拱半径", "value": 350, "unit": "mm", "type": "radius", "min_value": 280, "max_value": 420, "category": "exterior"},
+      "wheel_arch_flatten": {"name": "轮拱扁平度", "value": 0.1, "unit": "", "type": "ratio", "min_value": 0, "max_value": 0.5, "category": "exterior"},
       "wheel_diameter": {"name": "轮毂直径", "value": 450, "unit": "mm", "type": "diameter", "min_value": 350, "max_value": 600, "category": "chassis"},
       "wheel_width": {"name": "轮毂宽度", "value": 225, "unit": "mm", "type": "width", "min_value": 185, "max_value": 355, "category": "chassis"},
       "glass_barrel_radius": {"name": "玻璃桶面半径", "value": 1200, "unit": "mm", "type": "radius", "min_value": 400, "max_value": 5000, "category": "exterior"},

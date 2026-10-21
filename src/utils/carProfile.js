@@ -21,6 +21,54 @@ export const LINE_RATIOS = {
   mpv:    { hood: 0.56, belt: 0.66, trunk: 0.62 },
   pickup: { hood: 0.62, belt: 0.66, bed: 0.58 }
 }
+
+// 轮拱开口包络车型表（校准基准与 LINE_RATIOS 同源，2D/3D 唯一来源）：
+//   jounce   悬架上跳行程 mm（拱顶必须让开跳动后的轮胎顶）
+//   gapTop   拱顶设计间隙 mm（sport 紧致 ≈488 / suv·pickup 越野余量 ≈Cayenne·F-150）
+//   gapSide  拱侧设计间隙 mm（后轴 ×0.8 收紧——无转向扫掠）
+//   steerDeg 前轮最大转向角（满舵侧视扫掠外扩 c_steer = 胎宽/2 · sin δ）
+//   flatten  扁拱系数（横轴放大 1+0.5·flatten：0=圆拱，suv/pickup 方拱风格）
+export const WHEEL_ENVELOPE = {
+  sedan:  { jounce: 45, gapTop: 35, gapSide: 25, steerDeg: 33, flatten: 0.00 },
+  suv:    { jounce: 80, gapTop: 60, gapSide: 40, steerDeg: 34, flatten: 0.25 },
+  coupe:  { jounce: 35, gapTop: 30, gapSide: 22, steerDeg: 32, flatten: 0.00 },
+  sport:  { jounce: 30, gapTop: 25, gapSide: 18, steerDeg: 30, flatten: 0.00 },
+  mpv:    { jounce: 45, gapTop: 35, gapSide: 25, steerDeg: 32, flatten: 0.05 },
+  pickup: { jounce: 90, gapTop: 75, gapSide: 50, steerDeg: 34, flatten: 0.35 }
+}
+
+/**
+ * 轮拱开口包络椭圆（真实轮拱几何：开口处处避开「满舵转向 + 悬架跳动」轮胎包络）。
+ *
+ * 轮胎模型：半径 r、胎宽 ≈0.36·轮径 的圆柱；绕轮心竖轴转 δ 后侧视 X 向外扩
+ *   c_steer = (胎宽/2)·sin(δ)；悬架压缩 Δj → 轮心上跳 Δj。
+ * 开口 = 以静置轮心 (ax, r) 为心的椭圆（接地轮心，绝对高度 r）：
+ *   ry = r + Δj + gapTop                     （拱顶 = 轮顶 + 跳动 + 顶隙）
+ *   rx = (r + c_steer + gapSide) / √(1-(Δj/ry)²) · (1+0.5·flatten)
+ *   √ 项 = 跳动膨胀补偿：跳动轮心高度处拱口仍须保持全宽（该处包络最宽）
+ * 后轴无转向：rx_r 以 0.8·gapSide 收紧。开口两端以竖直拱唇落入裙边（真实翼子板拱唇）。
+ * 钳位：拱顶不得越过腰带线下 40mm。
+ */
+function deriveWheelArch(wheelR, gc, beltLineY, carType) {
+  const env = WHEEL_ENVELOPE[carType] || WHEEL_ENVELOPE.sedan
+  const tireW = wheelR * 2 * 0.36
+  const cSteer = (tireW / 2) * Math.sin((env.steerDeg * Math.PI) / 180)
+  const j = env.jounce / 1000, gt = env.gapTop / 1000, gs = env.gapSide / 1000
+  const cy = wheelR
+  let ry = wheelR + j + gt
+  // 拱顶钳位：≤ 腰带线 - 40mm（保护门/玻璃锚点与特征线契约）
+  ry = Math.min(ry, Math.max(beltLineY - 0.04 - cy, wheelR * 0.04))
+  const denom = Math.sqrt(Math.max(1 - (j / ry) ** 2, 0.25))
+  const grow = 1 + 0.5 * env.flatten
+  const rxOf = (side) => ((wheelR + cSteer * side + gs * side) / denom) * grow
+  const chordOf = (rx) => rx * Math.sqrt(Math.max(1 - ((cy - gc) / ry) ** 2, 0))
+  return {
+    cy, ry, flatten: env.flatten,
+    style: env.flatten >= 0.15 ? 'square' : 'round',
+    front: { rx: rxOf(1), ry, chord: chordOf(rxOf(1)) },
+    rear:  { rx: rxOf(0.8), ry, chord: chordOf(rxOf(0.8)) }
+  }
+}
 export function deriveCarProfile(rawParams, carType = 'sedan') {
   const p = rawParams || {}
   const num = (v, d) => (Number.isFinite(+v) ? +v : d)
@@ -140,6 +188,9 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     wing.supportH = wing.y - wing.deckY
   }
 
+  // 轮拱包络椭圆（依赖 beltLineY，返回值前派生）
+  const wheelArch = deriveWheelArch(wheelR, gc, beltLineY, carType)
+
   return {
     // 尺寸（m）
     W, H, WB, track, gc, hoodLen, wheelDia, wheelR, halfTrack, FO, RO,
@@ -152,9 +203,10 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     windshieldHeight, windshieldTopX,
     slantFactor, roofLen,
     rearWindowTopX, rearWindowHeight, rearWindowBottomX,
-    // 轮拱
-    wheelArchRadius: wheelR + 0.05,
-    archY: gc + wheelR,
+    // 轮拱：转向+跳动包络椭圆（拱心=静置接地轮心；竖唇落裙边；见 deriveWheelArch）
+    wheelArch,
+    wheelArchRadius: wheelArch.front.rx, // 前拱开口半宽（兼容旧消费方）
+    archY: wheelR,         // 兼容字段 = 轮心高度（历史值 gc+wheelR 为错位拱心，已修正）
     // 车型专属
     pickup, rails, wing
   }
