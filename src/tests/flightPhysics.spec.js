@@ -27,7 +27,7 @@ describe('FLIGHT_PRESETS 六车型飞行预设', () => {
       expect(p.exoticRatio, type).toBeLessThanOrEqual(0.3)
       expect(p.darkMatterRatio, type).toBeGreaterThanOrEqual(0)
       expect(p.darkMatterRatio, type).toBeLessThanOrEqual(0.3)
-      expect([4, 6], `${type} 风扇数`).toContain(p.liftFans)
+      expect([6, 8], `${type} 风扇数`).toContain(p.liftFans)
       // 0.2% × 最短车长 4600mm = 9.2mm 感知阈
       expect(p.hoverBobAmp, type).toBeLessThanOrEqual(9.2)
       expect(p.hoverBobFreq, type).toBeLessThan(0.2)

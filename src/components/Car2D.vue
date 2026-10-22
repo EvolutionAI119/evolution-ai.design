@@ -15,9 +15,19 @@
         <!-- 闭合车身轮廓（含前后保险杠立面与轮拱开口） -->
         <path :d="silhouettePath" fill="rgba(74,222,128,0.06)" stroke="#4ade80" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
 
-        <!-- 侧窗 DLO + B 柱 -->
+        <!-- 侧窗 DLO（四角锚点与 3D 玻璃同源 deriveCabinGlass）+ B 柱 -->
         <path :d="windowPath" fill="rgba(59,130,246,0.12)" stroke="#3b82f6" stroke-width="1.1" vector-effect="non-scaling-stroke" />
-        <line :x1="pillarX" :y1="roofTopY + s(60)" :x2="pillarX" :y2="beltLineY - s(40)" stroke="rgba(59,130,246,0.55)" stroke-width="1" vector-effect="non-scaling-stroke" />
+        <!-- 玻璃门缝：分缝线延伸进侧窗（与 3D 侧窗切片同坐标，开门时该片随门外摆） -->
+        <line
+          v-for="g in glassSeams2d"
+          :key="'gs' + g.x"
+          :x1="g.x" :y1="g.y1" :x2="g.x" :y2="g.y2"
+          stroke="rgba(59,130,246,0.5)" stroke-width="1" stroke-dasharray="2,3"
+          vector-effect="non-scaling-stroke"
+        />
+        <!-- B 柱：车身色实体，宽度 = b_pillar_width_ratio 联动（与 3D 立柱同宽同高）+ 中心线标注 -->
+        <rect :x="bPillarX2d" :y="bPillarTopY2d" :width="bPillarW2d" :height="bPillarH2d" fill="rgba(10,12,18,0.85)" stroke="rgba(59,130,246,0.6)" stroke-width="1" vector-effect="non-scaling-stroke" />
+        <line :x1="pillarCenterX2d" :y1="bPillarTopY2d" :x2="pillarCenterX2d" :y2="bPillarTopY2d + bPillarH2d" stroke="rgba(59,130,246,0.85)" stroke-width="1" />
 
         <!-- 腰带线 -->
         <path :d="beltLinePath" fill="none" stroke="rgba(74,222,128,0.55)" stroke-width="1" stroke-dasharray="4,3" vector-effect="non-scaling-stroke" />
@@ -33,10 +43,10 @@
         <rect :x="0" :y="hoodLineY + s(60)" :width="s(55)" :height="s(90)" fill="rgba(255,240,170,0.5)" stroke="#fbbf24" stroke-width="1" vector-effect="non-scaling-stroke" />
         <rect :x="rearX - s(50)" :y="trunkLineY + s(60)" :width="s(50)" :height="s(90)" fill="rgba(255,90,90,0.4)" stroke="#ff6b6b" stroke-width="1" vector-effect="non-scaling-stroke" />
 
-        <!-- 车门分缝线（侧裙→腰带线竖向）+ 门把手（与 3D 同源 deriveDoorLayout） -->
-        <line :x1="frontSeamX2d" :y1="underbodyY" :x2="frontSeamX2d" :y2="beltLineY" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
-        <line :x1="midSeamX2d" :y1="underbodyY" :x2="midSeamX2d" :y2="beltLineY" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
-        <line v-if="rearSeamX2d !== null" :x1="rearSeamX2d" :y1="underbodyY" :x2="rearSeamX2d" :y2="beltLineY" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
+        <!-- 车门分缝线（与 3D 门板同上下界）+ 门把手（与 3D 同源 deriveDoorLayout） -->
+        <line :x1="frontSeamX2d" :y1="doorSeamBotY2d" :x2="frontSeamX2d" :y2="doorSeamTopY2d" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
+        <line :x1="midSeamX2d" :y1="doorSeamBotY2d" :x2="midSeamX2d" :y2="doorSeamTopY2d" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
+        <line v-if="rearSeamX2d !== null" :x1="rearSeamX2d" :y1="doorSeamBotY2d" :x2="rearSeamX2d" :y2="doorSeamTopY2d" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
         <line :x1="frontHandleX2d - s(70)" :y1="handleY2d" :x2="frontHandleX2d + s(70)" :y2="handleY2d" stroke="rgba(255,255,255,0.7)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
         <line v-if="rearHandleX2d !== null" :x1="rearHandleX2d - s(70)" :y1="handleY2d" :x2="rearHandleX2d + s(70)" :y2="handleY2d" stroke="rgba(255,255,255,0.7)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
 
@@ -86,8 +96,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import { deriveCarProfile, deriveDoorLayout } from '../utils/carProfile.js'
-import { deriveCabinGlass } from '../utils/carGlass.js'
+import { deriveCarProfile, deriveDoorLayout, bodySideOutline } from '../utils/carProfile.js'
+import { deriveCabinGlass, ROOF_FILLETS } from '../utils/carGlass.js'
 
 const props = defineProps({
   carParams: {
@@ -146,9 +156,6 @@ const wheelGroups = computed(() => [
   { cx: rearWheelCX.value, cy: wheelCY.value, r: wheelRadius.value }
 ])
 
-// 车身底边（侧裙下缘 = 离地间隙；SISA ground_alignment：z 原点 = 地面）
-const underbodyY = computed(() => groundY - s(groundClearanceMm.value))
-
 // ============ 轮廓锚点：全部由 deriveCarProfile 推导（2D/3D 唯一来源，镜像换算） ============
 // 3D 坐标 X+ 朝车头 → 2D x = 距前保险杠距离；高度线 = 离地高度（与 3D 完全同值）
 const profile = computed(() => deriveCarProfile(props.carParams, props.carType))
@@ -163,24 +170,59 @@ const trunkLineY = computed(() => groundY - s(profile.value.trunkLineY * 1000))
 const hoodEndX = computed(() => toX(profile.value.hoodEndX))
 // Cowl 斜坡锚点（共享）：机盖面在风挡底之前上升至腰带线
 const cowlStartX = computed(() => toX(profile.value.cowlStartX))
-const windshieldTopX = computed(() => toX(profile.value.windshieldTopX))
 const rearWindowTopX = computed(() => toX(profile.value.rearWindowTopX))
 const rearWindowBottomX = computed(() => toX(profile.value.rearWindowBottomX))
-// 皮卡：驾驶室后壁 / 后窗下沿（与 3D pickup 结构同源）
+// 皮卡：驾驶室后壁（与 3D pickup 结构同源）
 const cabRearX2d = computed(() => (profile.value.pickup ? toX(profile.value.pickup.cabRearX) : 0))
-const cabWindowBottomX2d = computed(() => (profile.value.pickup ? toX(profile.value.pickup.cabWindowBottomX) : 0))
 
-const pillarX = computed(() => windshieldTopX.value + (rearWindowTopX.value - windshieldTopX.value) * 0.55)
+// ============ 侧窗 / B 柱 / 车门：与 3D 完全同源（deriveCabinGlass + deriveDoorLayout） ============
+// 2D 不再保留任何独立启发式（原 pillarX = 0.55 分段、手写 DLO 梯形、手写轮廓均已删除）
+const cabin2d = computed(() => deriveCabinGlass(profile.value, {
+  carType: props.carType,
+  sideGlassAngle: props.carParams.side_glass_angle,
+  glassBarrelAngle: props.carParams.glass_barrel_angle,
+  glassBarrelRadius: props.carParams.glass_barrel_radius
+}))
+const dl2d = computed(() => deriveDoorLayout(profile.value, cabin2d.value, {
+  bPillarWidthRatio: props.carParams.b_pillar_width_ratio,
+  handleDropRatio: props.carParams.handle_drop_ratio,
+  handleXRatio: props.carParams.handle_x_ratio
+}))
 
-// 车门分缝线 / 门把手 2D 布置（与 3D 同源 deriveDoorLayout）
-const cabin2d = computed(() => deriveCabinGlass(profile.value))
-const dl2d = computed(() => deriveDoorLayout(profile.value, cabin2d.value))
+// B 柱：与 3D 立柱同宽同高同 X（宽度 = b_pillar_width_ratio × 座舱高；X = 门模块分缝）
+const pillarCenterX2d = computed(() => toX(dl2d.value.midSeamX))
+const bPillarW2d = computed(() => dl2d.value.bWidth * 1000 * scale.value)
+const bPillarX2d = computed(() => toX(dl2d.value.midSeamX + dl2d.value.bWidth / 2))
+const bPillarTopY2d = computed(() => groundY - cabin2d.value.pillar.topY * 1000 * scale.value)
+const bPillarH2d = computed(() => (cabin2d.value.pillar.topY - cabin2d.value.pillar.botY) * 1000 * scale.value)
+
 const frontSeamX2d = computed(() => toX(dl2d.value.frontSeamX))
 const midSeamX2d = computed(() => toX(dl2d.value.midSeamX))
 const rearSeamX2d = computed(() => (dl2d.value.rearSeamX === null ? null : toX(dl2d.value.rearSeamX)))
 const frontHandleX2d = computed(() => toX(dl2d.value.frontHandleX))
 const rearHandleX2d = computed(() => (dl2d.value.rearHandleX === null ? null : toX(dl2d.value.rearHandleX)))
 const handleY2d = computed(() => groundY - s(dl2d.value.handleY * 1000))
+// 门缝上下界 = 3D 门板上下界（doorBottom = 底板 + 0.02，doorTop = 腰带线 - 0.004）
+const doorSeamBotY2d = computed(() => groundY - s((profile.value.bodyBottomY + 0.02) * 1000))
+const doorSeamTopY2d = computed(() => groundY - s((profile.value.beltLineY - 0.004) * 1000))
+
+// 玻璃门缝：分缝线在 DLO 内继续向上（与 3D 侧窗按门缝切片同坐标）
+// DLO 顶缘 = 车顶水平线；分缝在车顶 X 范围之外时取 A/C 柱斜边交点
+const dloTopY2d = (x3d) => {
+  const d = cabin2d.value.dlo          // [底前, 顶前, 顶后, 底后]
+  const fxB = d[0][0], yb = d[0][1]
+  const fxT = d[1][0], yt = d[1][1]
+  const rtx = d[2][0], rxB = d[3][0]
+  let t = 1
+  if (x3d > fxT) t = Math.min(Math.max((fxB - x3d) / (fxB - fxT), 0), 1)
+  else if (x3d < rtx) t = Math.min(Math.max((rxB - x3d) / (rxB - rtx), 0), 1)
+  return outY(yb + t * (yt - yb))
+}
+const glassSeams2d = computed(() => {
+  const xs = [dl2d.value.frontSeamX, dl2d.value.midSeamX]
+  if (dl2d.value.rearSeamX !== null) xs.push(dl2d.value.rearSeamX)
+  return xs.map((x3d) => ({ x: toX(x3d), y1: doorSeamTopY2d.value, y2: dloTopY2d(x3d) }))
+})
 
 // 接近角/离去角标注 + 坡面底角 Y（carProfile 同源角度，ramps 驱动立面底角高度）
 const approachLabel = computed(() => `${profile.value.approachAngleDeg.toFixed(1)}°`)
@@ -188,76 +230,31 @@ const departureLabel = computed(() => `${profile.value.departureAngleDeg.toFixed
 const frontCornerY2d = computed(() => groundY - s(profile.value.ramps.front.cornerY * 1000))
 const rearCornerY2d = computed(() => groundY - s(profile.value.ramps.rear.cornerY * 1000))
 
-// ============ 轮拱：包络椭圆（拱心=轮心，2D/3D 共享 deriveWheelArch 唯一来源）============
-// 竖直拱唇自侧裙下缘升至轮心高度，椭圆上弧过顶（含转向/跳动包络间隙）
-const arch2d = computed(() => {
-  const a = profile.value.wheelArch
-  return {
-    cy: wheelCY.value,
-    front: { rx: s(a.front.rx * 1000), ry: s(a.front.ry * 1000) },
-    rear: { rx: s(a.rear.rx * 1000), ry: s(a.rear.ry * 1000) }
-  }
-})
-
-// ============ 闭合车身轮廓：前脸 → 引擎盖 → A 柱 → 车顶 → C 柱 → 尾门 → 底边（双侧轮拱） ============
+// ============ 闭合车身轮廓：bodySideOutline 单一真源 → SVG（X 镜像 + Y 翻转） ============
+// 与 Car3D bodyShape 逐指令同源：顶边 G1 圆角、底边轮拱 notch（真正挖通）、接近/离去角切角、
+// 皮卡驾驶室+货箱专属拓扑，全部无 2D 侧重复推导
+const pxPerM = computed(() => scale.value * 1000)
+const outX = (x) => (profile.value.frontX - x) * pxPerM.value
+const outY = (y) => groundY - y * pxPerM.value
 const silhouettePath = computed(() => {
-  const fx = 0
-  const rx = rearX.value
-  const uy = underbodyY.value
-  const hy = hoodLineY.value
-  const ty = trunkLineY.value
-  const noseR = Math.min(s(90), s(FO.value) * 0.5)
-  // 轮拱锚点：竖唇位于 ax ± rx（椭圆最宽处=轮心高度），唇顶接椭圆弧
-  const fa = arch2d.value.front
-  const ra = arch2d.value.rear
-  const cy2d = arch2d.value.cy
-  const fArchL = Math.max(frontWheelCX.value - fa.rx, s(30))
-  const fArchR = Math.min(frontWheelCX.value + fa.rx, rearWheelCX.value - ra.rx - s(20))
-  const rArchL = rearWheelCX.value - ra.rx
-  const rArchR = Math.min(rearWheelCX.value + ra.rx, rx - s(20))
-  const arches = [
-    `L${rArchR},${uy}`,
-    `L${rArchR},${cy2d}`,
-    `A${ra.rx},${ra.ry} 0 1 0 ${rArchL},${cy2d}`,
-    `L${rArchL},${uy}`,
-    `L${fArchR},${uy}`,
-    `L${fArchR},${cy2d}`,
-    `A${fa.rx},${fa.ry} 0 1 0 ${fArchL},${cy2d}`,
-    `L${fArchL},${uy}`,
-    `L${fx},${uy}`,
-    'Z'
-  ]
-  if (isPickup.value) {
-    // 皮卡拓扑：车顶止于驾驶室后壁 → 后壁下落至货箱栏板 → 栏板顶贯通至尾门（与 3D carProfile.js 同源）
-    const bedY = ty                       // 货箱栏板顶 = H × bed 比例
-    return [
-      `M${fx},${uy}`,
-      `L${fx},${hy + s(55)}`,
-      `Q${fx + noseR},${hy} ${cowlStartX.value},${hy}`,
-      `L${hoodEndX.value},${beltLineY.value}`,
-      `L${windshieldTopX.value},${roofTopY.value}`,
-      `L${cabRearX2d.value},${roofTopY.value}`,
-      `L${cabWindowBottomX2d.value},${bedY}`,
-      `L${rx - s(24)},${bedY}`,
-      `Q${rx},${bedY + s(8)} ${rx},${bedY + s(48)}`,
-      `L${rx},${uy + s(26)}`,
-      `Q${rx},${uy} ${rx - s(36)},${uy}`,
-      ...arches
-    ].join(' ')
+  const parts = []
+  for (const c of bodySideOutline(profile.value, props.carType, ROOF_FILLETS, profile.value.ramps)) {
+    if (c.k === 'M') parts.push(`M${outX(c.x)},${outY(c.y)}`)
+    else if (c.k === 'L') parts.push(`L${outX(c.x)},${outY(c.y)}`)
+    else if (c.k === 'Q') parts.push(`Q${outX(c.cx)},${outY(c.cy)} ${outX(c.x)},${outY(c.y)}`)
+    else if (c.k === 'A') {
+      // 3D 椭圆弧（角度制、y 向上）→ SVG 端点弧；上半弧在屏幕上向上鼓 = sweep 0
+      const p0x = c.cx + c.rx * Math.cos(c.a0)
+      const p0y = c.cy + c.ry * Math.sin(c.a0)
+      const p1x = c.cx + c.rx * Math.cos(c.a1)
+      const p1y = c.cy + c.ry * Math.sin(c.a1)
+      const midY = c.cy + c.ry * Math.sin((c.a0 + c.a1) / 2)
+      const sweep = midY > Math.max(p0y, p1y) ? 0 : 1
+      parts.push(`A${c.rx * pxPerM.value},${c.ry * pxPerM.value} 0 0 ${sweep} ${outX(p1x)},${outY(p1y)}`)
+    }
   }
-  return [
-    `M${fx},${uy}`,
-    `L${fx},${hy + s(55)}`,
-    `Q${fx + noseR},${hy} ${cowlStartX.value},${hy}`,
-    `L${hoodEndX.value},${beltLineY.value}`,
-    `L${windshieldTopX.value},${roofTopY.value}`,
-    `L${rearWindowTopX.value},${roofTopY.value}`,
-    `L${rearWindowBottomX.value},${beltLineY.value}`,
-    `Q${rx - s(20)},${ty + s(16)} ${rx},${ty + s(56)}`,
-    `L${rx},${uy + s(26)}`,
-    `Q${rx},${uy} ${rx - s(36)},${uy}`,
-    ...arches
-  ].join(' ')
+  parts.push('Z')
+  return parts.join(' ')
 })
 
 // 腰带线：皮卡仅覆盖驾驶室段（货箱栏板顶线由轮廓表达），其余车型贯通至 C 柱底
@@ -266,24 +263,11 @@ const beltLinePath = computed(() => {
   return `M${hoodEndX.value},${beltLineY.value} L${endX},${beltLineY.value}`
 })
 
+// 侧窗 DLO：四角 = 3D 玻璃面板四角（含 A/C 柱圆角修裁量），侧视投影逐点一致
 const windowPath = computed(() => {
-  if (isPickup.value) {
-    // 玻璃仅覆盖驾驶室：风挡 → 车顶 → 驾驶室后窗（近直立、下沿微向前收）
-    return [
-      `M${hoodEndX.value},${beltLineY.value}`,
-      `L${windshieldTopX.value},${roofTopY.value}`,
-      `L${cabRearX2d.value},${roofTopY.value}`,
-      `L${cabWindowBottomX2d.value},${beltLineY.value}`,
-      'Z'
-    ].join(' ')
-  }
-  return [
-    `M${hoodEndX.value},${beltLineY.value}`,
-    `L${windshieldTopX.value},${roofTopY.value}`,
-    `L${rearWindowTopX.value},${roofTopY.value}`,
-    `L${rearWindowBottomX.value},${beltLineY.value}`,
-    'Z'
-  ].join(' ')
+  return cabin2d.value.dlo
+    .map((p, i) => `${i === 0 ? 'M' : 'L'}${outX(p[0])},${outY(p[1])}`)
+    .join(' ') + ' Z'
 })
 
 // 阴影：覆盖轴距 + 轮径范围

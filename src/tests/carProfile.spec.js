@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
 import { deriveCabinGlass } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
@@ -209,11 +209,44 @@ describe('deriveDoorLayout 门缝/B柱/把手布置（2D/3D 同源）', () => {
     // 门板不得覆盖轮拱：前门前边界在拱后唇之后、后门后边界在拱前唇之前
     expect(dl.frontSeamX).toBeLessThan(p.frontWheelX - p.wheelArch.front.rx)
     if (dl.rearSeamX !== null) expect(dl.rearSeamX).toBeGreaterThan(p.rearWheelX + p.wheelArch.rear.rx)
-    // B柱宽随 ratio 单调
-    const wide = deriveDoorLayout(p, cabin, { bPillarWidthRatio: 0.1 })
+    // B柱宽随 ratio 单调（实车区间 0.08~0.30）
+    const wide = deriveDoorLayout(p, cabin, { bPillarWidthRatio: 0.26 })
     expect(wide.bWidth).toBeGreaterThan(dl.bWidth)
   })
 })
+
+describe('deriveLiftDevices 底盘上升装置布置（6~8 台，避开轮腔开口）', () => {
+  it.each(ALL_TYPES)('%s 装置数 6/7/8 均落底盘封闭段、双列对称、不侵入轮腔', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const rearLip = p.rearWheelX + p.wheelArch.rear.rx    // 后拱前唇
+    const frontLip = p.frontWheelX - p.wheelArch.front.rx  // 前拱后唇
+    for (const n of [6, 7, 8]) {
+      const lift = deriveLiftDevices(p, n)
+      expect(lift.count).toBe(n)
+      expect(lift.devices.length).toBe(n)
+      for (const d of lift.devices) {
+        // 装置外缘必须完全落在封闭段内（不落进轮腔切口）
+        expect(d.x - d.r).toBeGreaterThan(rearLip)
+        expect(d.x + d.r).toBeLessThan(frontLip)
+        // 外缘不越出车身半宽
+        expect(Math.abs(d.z) + d.r).toBeLessThanOrEqual(p.W / 2)
+      }
+      // 偶数台双列对称；奇数台含 1 台中线
+      const left = lift.devices.filter((d) => d.side === 'left').length
+      const right = lift.devices.filter((d) => d.side === 'right').length
+      expect(left).toBe(right)
+      if (n % 2 === 1) expect(lift.devices.filter((d) => d.side === 'center').length).toBe(1)
+    }
+  })
+
+  it('数量钳制在 6~8（越界自动回退到边界值）', () => {
+    const p = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    expect(deriveLiftDevices(p, 2).count).toBe(6)
+    expect(deriveLiftDevices(p, 99).count).toBe(8)
+    expect(deriveLiftDevices(p, undefined).count).toBe(6)
+  })
+})
+
 
 describe('deriveCarProfile 全车型物理约束', () => {
   it('默认参数（无车型分支）也能合法推导', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, buildDloStripRange, greenhouseInsetAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -463,6 +463,65 @@ describe('buildDloFrame / buildDloStrip DLO 条带网格（Car3D 消费端纯函
       expect(right[i]).toBeCloseTo(left[i], 12)
       expect(right[i + 1]).toBeCloseTo(left[i + 1], 12)
       expect(right[i + 2]).toBeCloseTo(-left[i + 2], 12)
+    }
+  })
+
+  it('buildDloStripRange：边界为 null 时与 buildDloStrip 逐顶点一致（零回归）', () => {
+    const f = buildDloFrame(cabin, 1.05)
+    const full = buildDloStrip(cabin.dlo, f, 8, 1)
+    const range = buildDloStripRange(cabin.dlo, f, 8, 1, null, null)
+    expect(range.length).toBe(full.length)
+    for (let i = 0; i < full.length; i++) expect(range[i]).toBeCloseTo(full[i], 12)
+  })
+
+  it('buildDloStripRange：门缝分片边界为竖直线（每行前/后顶点 X 恒等于给定值）', () => {
+    const f = buildDloFrame(cabin, 1.05)
+    // 取车顶 X 跨度内部的两条竖缝：任何高度都不会被 A/C 柱斜边夹到
+    const xFront = cabin.dlo[1][0] - 0.05
+    const xRear = cabin.dlo[2][0] + 0.05
+    const pos = buildDloStripRange(cabin.dlo, f, 8, 1, xFront, xRear)
+    expect(pos.length).toBe(8 * 18)
+    for (let r = 0; r < 8; r++) {
+      const b = r * 18
+      const ys = [pos[b + 1], pos[b + 4], pos[b + 7], pos[b + 10], pos[b + 13], pos[b + 16]]
+      for (const y of ys) {
+        const top = f.dloYBot + f.dloYSpan
+        expect(y).toBeGreaterThanOrEqual(f.dloYBot - 1e-9)
+        expect(y).toBeLessThanOrEqual(top + 1e-9)
+      }
+      // 前缘顶点（第 1/3/6 个）X = xFront；后缘顶点（第 2/4/5 个）X = xRear
+      expect(pos[b]).toBeCloseTo(xFront, 12)
+      expect(pos[b + 3]).toBeCloseTo(xRear, 12)
+      expect(pos[b + 6]).toBeCloseTo(xFront, 12)
+      expect(pos[b + 15]).toBeCloseTo(xFront, 12)
+    }
+  })
+
+  it('buildDloStripRange：边界越出车顶跨度时贴合 A 柱斜边（X 单调收拢，不越出 DLO）', () => {
+    const f = buildDloFrame(cabin, 1.05)
+    const xSeam = cabin.dlo[0][0] + 0.05          // 比 DLO 底前角更靠车头 → 必然被夹
+    const pos = buildDloStripRange(cabin.dlo, f, 8, 1, xSeam, null)
+    let prevX = Infinity
+    for (let r = 0; r < 8; r++) {
+      const x = pos[r * 18]
+      const t = (r + 0.0) / 8
+      const edge = cabin.dlo[0][0] + (cabin.dlo[1][0] - cabin.dlo[0][0]) * t
+      expect(x).toBeCloseTo(edge, 12)              // 逐行贴合 A 柱斜边
+      expect(x).toBeLessThanOrEqual(prevX + 1e-12) // 沿高度单调后移
+      prevX = x
+    }
+  })
+
+  it('buildDloStripRange：左右门片共用同一缝坐标（前片后界 = 后片前界，不重叠不脱开）', () => {
+    const f = buildDloFrame(cabin, 1.05)
+    const seam = -0.1
+    const gap = 0.004
+    const frontPane = buildDloStripRange(cabin.dlo, f, 4, 1, 0.4, seam + gap)
+    const rearPane = buildDloStripRange(cabin.dlo, f, 4, 1, seam - gap, -0.7)
+    for (let r = 0; r < 4; r++) {
+      expect(frontPane[r * 18 + 3]).toBeCloseTo(seam + gap, 12)   // 前片后缘
+      expect(rearPane[r * 18]).toBeCloseTo(seam - gap, 12)        // 后片前缘
+      expect(frontPane[r * 18 + 3] - rearPane[r * 18]).toBeCloseTo(2 * gap, 12)
     }
   })
 

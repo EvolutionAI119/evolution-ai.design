@@ -375,6 +375,50 @@ export function buildDloStrip(dlo, frame, rows, zSide) {
 }
 
 /**
+ * DLO 条带网格「按门缝纵向切片」版本（侧窗分片供车门联动）。
+ * 与 buildDloStrip 同一套行插值/Z 公式，仅把每行的水平跨度裁到 [xFront, xRear]：
+ *   xFront/xRear 为世界 X（米，X+ 朝车头）；null 表示取该行的 DLO 前/后缘（A/C 柱边界）。
+ * 裁切界为「竖直线」——给定 X 逐行夹到该行跨度内，越出时贴合 A/C 柱斜边，
+ * 因此门缝在玻璃上是竖直的，两端随 A/C 柱收口。
+ * @param {number[][]} dlo 四角坐标 [底前, 顶前, 顶后, 底后]
+ * @param {object} frame buildDloFrame 返回值
+ * @param {number} rows 细分行数（≥1）
+ * @param {1|-1} zSide 侧别
+ * @param {number|null} xFront 前边界世界 X（null = DLO 前缘）
+ * @param {number|null} xRear 后边界世界 X（null = DLO 后缘）
+ * @returns {number[]} 长度 = rows × 18 的顶点序列（x,y,z 交错）
+ */
+export function buildDloStripRange(dlo, frame, rows, zSide, xFront = null, xRear = null) {
+  const bfx = dlo[0][0]
+  const tfx = dlo[1][0]
+  const brxB = dlo[3][0]
+  const trx = dlo[2][0]
+  const clampX = (x, fx, rx) => Math.min(Math.max(x, rx), fx)   // 前缘 X 更大
+  const positions = []
+  for (let r = 0; r < rows; r++) {
+    const t0 = r / rows
+    const t1 = (r + 1) / rows
+    const y0 = frame.dloYBot + t0 * frame.dloYSpan
+    const y1 = frame.dloYBot + t1 * frame.dloYSpan
+    const z0 = dloZAt(y0, frame, zSide)
+    const z1 = dloZAt(y1, frame, zSide)
+    const fx0 = bfx + (tfx - bfx) * t0
+    const rx0 = brxB + (trx - brxB) * t0
+    const fx1 = bfx + (tfx - bfx) * t1
+    const rx1 = brxB + (trx - brxB) * t1
+    const ax0 = xFront == null ? fx0 : clampX(xFront, fx0, rx0)
+    const ax1 = xFront == null ? fx1 : clampX(xFront, fx1, rx1)
+    const bx0 = xRear == null ? rx0 : clampX(xRear, fx0, rx0)
+    const bx1 = xRear == null ? rx1 : clampX(xRear, fx1, rx1)
+    positions.push(
+      ax0, y0, z0, bx0, y0, z0, ax1, y1, z1,
+      bx0, y0, z0, bx1, y1, z1, ax1, y1, z1
+    )
+  }
+  return positions
+}
+
+/**
  * 车身 greenhouse 在高度 y 处的侧壁内收量（米）。
  * 与 DLO 玻璃面同公式（倾角线性 + 桶面圆弧，t 按 [dloYBot, dloYBot+dloYSpan] 钳位），
  * 供车身挤出体/玻璃带做 Z 向收窄变形——车身侧壁、车顶、柱剪影随玻璃角度联动，

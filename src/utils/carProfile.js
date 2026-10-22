@@ -323,24 +323,67 @@ export function bodySideOutline(P, carType, fillets, ramps = null) {
 
 /**
  * 车门分缝线 / B柱宽度 / 门把手布置（2D/3D 同源，米制）。
- * 缝位由 A柱(windshieldTopX)、B柱(cabin.pillar.x)、C柱底(rearWindowBottomX) 推导，
- * 并避开轮拱唇；把手高度按腰带线→底板的落差比例、X 按门区间内缩比例自适应。
- * 默认比例使 B柱宽≈22mm、把手落在原硬编码位置附近（零视觉回归）。
+ * 缝位按实车包络规则推导：前门前沿贴前轮拱后唇、后门后沿贴后轮拱前唇，
+ * B 柱按前门占门模块的比例（0.52）定位；把手高度按腰带线→底板的落差比例、
+ * X 取门尾段（紧邻分缝）。默认值对应 B柱≈75mm、把手距腰带线≈50mm（实车区间内）。
  */
 export function deriveDoorLayout(P, cabin, opts = {}) {
-  const { bPillarWidthRatio = 0.047, handleDropRatio = 0.12, handleXRatio = 0.45 } = opts
-  const midSeamX = cabin.pillar.x
-  // 门区必须落在两轮拱之间：前门前边界 = 前拱后唇之后，后门后边界 = 后拱前唇之前
-  // （否则车身色门板会盖住轮拱开口，重现"拱底残留薄片"）
-  const frontBound = P.frontWheelX - P.wheelArch.front.rx - 0.04   // 前门可及的最前 X
-  const rearBound = P.rearWheelX + P.wheelArch.rear.rx + 0.04      // 后门可及的最尾 X
-  const frontSeamX = midSeamX + (frontBound - midSeamX) * 0.6      // 前门缝：B柱→前拱后唇 60% 处
-  const rearSeamX = P.pickup ? null : midSeamX + (rearBound - midSeamX) * 0.6
+  const {
+    bPillarWidthRatio = 0.16,   // × 座舱高：轿车 ≈75mm、SUV ≈91mm（实车 60~120mm）
+    handleDropRatio = 0.10,     // 把手中线距腰带线：≈50mm（实车 30~70mm）
+    handleXRatio = 0.15,        // 把手距门后沿占比（实车把手靠门尾、紧邻分缝）
+    frontDoorShare = 0.52       // 前门占「门模块」长度比（实车 0.5~0.55，B 柱略偏后）
+  } = opts
+  // 门模块 = 前拱后唇 → 后拱前唇（两侧留 40mm 安全间隙，门板绝不覆盖轮腔开口）
+  const frontBound = P.frontWheelX - P.wheelArch.front.rx - 0.04
+  const rearBound = P.rearWheelX + P.wheelArch.rear.rx + 0.04
+  // 真车分缝规则：前门前沿贴前轮拱后唇；后门后沿贴后轮拱前唇
+  const frontSeamX = frontBound
+  const midSeamX = P.pickup
+    ? rearBound                                              // 单排皮卡：门尾 = 驾驶室后壁
+    : frontSeamX - frontDoorShare * (frontSeamX - rearBound)  // B 柱：前门占门模块 52%
+  const rearSeamX = P.pickup ? null : rearBound
   const bWidth = bPillarWidthRatio * (P.roofTopY - P.beltLineY)
-  const handleY = P.beltLineY - handleDropRatio * (P.beltLineY - P.bodyBottomY)
-  const frontHandleX = frontSeamX + handleXRatio * (midSeamX - frontSeamX)
-  const rearHandleX = rearSeamX === null ? null : midSeamX + handleXRatio * (rearSeamX - midSeamX)
+  const handleY = P.beltLineY - handleDropRatio * (P.roofTopY - P.beltLineY)  // 距腰带线，按座舱高比例
+  // 把手布置：位于各门尾段（前后门分别紧邻 B 柱 / C 柱侧分缝）
+  const frontHandleX = midSeamX + handleXRatio * (frontSeamX - midSeamX)
+  const rearHandleX = rearSeamX === null ? null : rearSeamX + handleXRatio * (midSeamX - rearSeamX)
   return { frontSeamX, midSeamX, rearSeamX, frontBound, rearBound, bWidth, handleY, frontHandleX, rearHandleX }
+}
+
+/**
+ * 底盘上升装置布置（2D/3D 同源，6~8 个）。
+ * 布置约束（真车工程口径）：
+ *   1. 只能落在「底盘封闭段」——前后轮腔开口之间的实体地板区间，
+ *      即 x ∈ [后拱前唇 + margin, 前拱后唇 - margin]，杜绝装置被轮腔切口打断；
+ *   2. 双列纵向布置（左右各一列），奇数个时在中线补一台；
+ *   3. 装置外缘与地板边缘留 edgeInset，避免悬空在侧裙外侧。
+ * 返回米制坐标；y 为装置安装面（略低于车身底面，形成下沉式风道口）。
+ */
+export function deriveLiftDevices(P, count = 6) {
+  const n = Math.min(Math.max(Math.round(Number(count) || 6), 6), 8)
+  const margin = 0.10
+  const xMin = P.rearWheelX + P.wheelArch.rear.rx + margin     // 封闭段尾端（后拱前唇之后）
+  const xMax = P.frontWheelX - P.wheelArch.front.rx - margin    // 封闭段首端（前拱后唇之前）
+  const span = Math.max(xMax - xMin, 0.30)
+  const r = Math.min(0.22, span * 0.14)
+  const rows = Math.floor(n / 2)
+  const zOuter = Math.max(P.W / 2 - r - 0.10, r + 0.02)
+  const devices = []
+  for (let i = 0; i < rows; i++) {
+    const x = xMin + span * ((i + 1) / (rows + 1))
+    devices.push({ x, z: zOuter, r, side: 'left' })
+    devices.push({ x, z: -zOuter, r, side: 'right' })
+  }
+  if (n % 2 === 1) devices.push({ x: (xMin + xMax) / 2, z: 0, r, side: 'center' })
+  return {
+    count: n,
+    devices,
+    r,
+    xMin,
+    xMax,
+    y: P.bodyBottomY - 0.012   // 风道口略低于底面（下沉式，不形成额外最低点）
+  }
 }
 
 /**

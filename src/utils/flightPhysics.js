@@ -13,12 +13,12 @@
 // exoticRatio 暗能量驱动占比；darkMatterRatio 暗物质惯性配比；
 // liftFans 升力风扇数；hoverBobAmp 悬浮呼吸振幅 mm；hoverBobFreq 呼吸频率 Hz）
 export const FLIGHT_PRESETS = {
-  sedan:  { hoverAltitude: 1600, liftDuration: 3.2, exoticRatio: 0.15, darkMatterRatio: 0.20, liftFans: 4, hoverBobAmp: 6, hoverBobFreq: 0.14 },
+  sedan:  { hoverAltitude: 1600, liftDuration: 3.2, exoticRatio: 0.15, darkMatterRatio: 0.20, liftFans: 6, hoverBobAmp: 6, hoverBobFreq: 0.14 },
   suv:    { hoverAltitude: 1900, liftDuration: 3.6, exoticRatio: 0.18, darkMatterRatio: 0.24, liftFans: 6, hoverBobAmp: 7, hoverBobFreq: 0.12 },
-  coupe:  { hoverAltitude: 1700, liftDuration: 3.0, exoticRatio: 0.16, darkMatterRatio: 0.20, liftFans: 4, hoverBobAmp: 6, hoverBobFreq: 0.15 },
-  sport:  { hoverAltitude: 1650, liftDuration: 2.8, exoticRatio: 0.14, darkMatterRatio: 0.18, liftFans: 4, hoverBobAmp: 5, hoverBobFreq: 0.16 },
-  mpv:    { hoverAltitude: 2000, liftDuration: 3.8, exoticRatio: 0.20, darkMatterRatio: 0.28, liftFans: 6, hoverBobAmp: 8, hoverBobFreq: 0.11 },
-  pickup: { hoverAltitude: 1800, liftDuration: 3.4, exoticRatio: 0.22, darkMatterRatio: 0.26, liftFans: 6, hoverBobAmp: 8, hoverBobFreq: 0.12 }
+  coupe:  { hoverAltitude: 1700, liftDuration: 3.0, exoticRatio: 0.16, darkMatterRatio: 0.20, liftFans: 6, hoverBobAmp: 6, hoverBobFreq: 0.15 },
+  sport:  { hoverAltitude: 1650, liftDuration: 2.8, exoticRatio: 0.14, darkMatterRatio: 0.18, liftFans: 6, hoverBobAmp: 5, hoverBobFreq: 0.16 },
+  mpv:    { hoverAltitude: 2000, liftDuration: 3.8, exoticRatio: 0.20, darkMatterRatio: 0.28, liftFans: 8, hoverBobAmp: 8, hoverBobFreq: 0.11 },
+  pickup: { hoverAltitude: 1800, liftDuration: 3.4, exoticRatio: 0.22, darkMatterRatio: 0.26, liftFans: 8, hoverBobAmp: 8, hoverBobFreq: 0.12 }
 }
 
 const SEDAN = FLIGHT_PRESETS.sedan

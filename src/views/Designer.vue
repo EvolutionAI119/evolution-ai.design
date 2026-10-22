@@ -500,7 +500,7 @@
                   <span class="param-name">{{ t('designer.bPillarWidthRatio') }}</span>
                   <span class="param-value">{{ (carParams.b_pillar_width_ratio * 100).toFixed(1) }}%</span>
                 </div>
-                <input type="range" v-model.number="carParams.b_pillar_width_ratio" min="0.02" max="0.12" step="0.005" class="param-slider" />
+                <input type="range" v-model.number="carParams.b_pillar_width_ratio" min="0.08" max="0.30" step="0.01" class="param-slider" />
               </div>
               <div class="param-item">
                 <div class="param-label-row">
@@ -528,7 +528,7 @@
                   <span class="param-name">{{ t('designer.handleXRatio') }}</span>
                   <span class="param-value">{{ (carParams.handle_x_ratio * 100).toFixed(0) }}%</span>
                 </div>
-                <input type="range" v-model.number="carParams.handle_x_ratio" min="0.1" max="0.9" step="0.05" class="param-slider" />
+                <input type="range" v-model.number="carParams.handle_x_ratio" min="0.05" max="0.35" step="0.01" class="param-slider" />
               </div>
               <div class="param-item">
                 <div class="param-label-row">
@@ -590,9 +590,9 @@
                   <input
                     type="range"
                     v-model.number="carParams.lift_fan_count"
-                    min="2"
+                    min="6"
                     max="8"
-                    step="2"
+                    step="1"
                     class="param-slider"
                   />
                 </div>

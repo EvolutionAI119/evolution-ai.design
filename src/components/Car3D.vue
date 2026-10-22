@@ -107,8 +107,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, ROOF_FILLETS } from '../utils/carGlass.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner } from '../utils/carProfile.js'
+import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, greenhouseInsetAt, ROOF_FILLETS } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
 
@@ -443,6 +443,13 @@ const createCar = () => {
   })
   const dloFrame = buildDloFrame(cabin, bodyExtentZ + 0.002)
 
+  // 车门分缝线 / B柱宽度 / 门把手布置（2D/3D 同源，参数可调）；侧窗分片与门板共用同一条分缝
+  const dl = deriveDoorLayout(P, cabin, {
+    bPillarWidthRatio: props.carParams?.b_pillar_width_ratio,
+    handleDropRatio: props.carParams?.handle_drop_ratio,
+    handleXRatio: props.carParams?.handle_x_ratio
+  })
+
   // 车身 greenhouse 收窄：DLO 底边（腰带线）以上的侧壁/车顶按与 DLO 玻璃面同公式
   // 内收——A/B/C 柱剪影与车顶随玻璃角度/桶面联动，玻璃面始终位于车身外侧同间隙
   // （greenhouseInsetAt 纯函数，可单测；k 为按高度的比例因子，避免内部顶点越过中线）
@@ -520,30 +527,43 @@ const createCar = () => {
     addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width, rw.topInset)
   }
 
-  // 侧窗 DLO（左右两片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
+  // 侧窗 DLO（左右各分片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
   // Z 轮廓 = tumblehome 线性内收 + barrel 桶面圆弧鼓肚（dloZAt 纯函数，可单测）。
   // 面片沿高度细分成条带网格——四角面片无法表达桶面曲率
-  // （框架构建/条带顶点生成在 utils/carGlass.js buildDloFrame / buildDloStrip 纯函数中，可单测）
+  // 侧窗按车门分缝切成 4 片/侧：A 柱前固定片 + 前门片 + 后门片 + C 柱后固定片。
+  // 门片挂到对应车门铰链 Group（与门板同轴同角度），开门时玻璃随门一同外摆；
+  // 分缝两侧各留半个缝宽间隙 → 玻璃上同样能看到门缝（与 2D 分缝线同坐标）。
   const DLO_ROWS = 16
-  for (const zSide of [1, -1]) {
-    const positions = buildDloStrip(cabin.dlo, dloFrame, DLO_ROWS, zSide)
-    const dloGeom = new THREE.BufferGeometry()
-    dloGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
-    dloGeom.computeVertexNormals()
-    const panel = new THREE.Mesh(dloGeom, glassMat)
+  const dloSeamGap = Math.min(Math.max(props.carParams?.door_seam_width ?? 8, 2), 20) / 2000
+  const doorGlass = []
+  const addDloPane = (xFront, xRear, zSide, hingeKey) => {
+    const positions = buildDloStripRange(cabin.dlo, dloFrame, DLO_ROWS, zSide, xFront, xRear)
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
+    g.computeVertexNormals()
+    const panel = new THREE.Mesh(g, glassMat)
     panel.userData.noCastShadow = true
-    group.add(panel)
+    if (hingeKey) doorGlass.push({ key: hingeKey, zSide, mesh: panel })
+    else group.add(panel)
+  }
+  for (const zSide of [1, -1]) {
+    // A 柱前固定片（前门分缝之前）
+    addDloPane(null, dl.frontSeamX + dloSeamGap, zSide, null)
+    // 前门片：前门分缝 → B 柱
+    addDloPane(dl.frontSeamX - dloSeamGap, dl.midSeamX + dloSeamGap, zSide, 'front')
+    // 后门片：B 柱 → 后门分缝（皮卡无后门，跳过）
+    if (dl.rearSeamX !== null) {
+      addDloPane(dl.midSeamX - dloSeamGap, dl.rearSeamX + dloSeamGap, zSide, 'rear')
+    }
+    // C 柱后固定片（非皮卡为后门分缝之后；皮卡为 B 柱之后的驾驶室后侧窗）
+    addDloPane(dl.rearSeamX === null ? dl.midSeamX - dloSeamGap : dl.rearSeamX - dloSeamGap, null, zSide, null)
   }
 
   // B 柱：分缝线 B柱位置车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）；
-  // 宽度按 b_pillar_width_ratio 参数化（默认≈22mm），与侧窗共面同倾角（pillarPlacement 纯函数）
-  const pp = pillarPlacement(cabin, dloFrame.dloYBot, dloFrame.dloYSpan, dloFrame.dloZBase)
-  // 车门分缝线 / B柱宽度 / 门把手布置（2D/3D 同源，参数可调）
-  const dl = deriveDoorLayout(P, cabin, {
-    bPillarWidthRatio: props.carParams?.b_pillar_width_ratio,
-    handleDropRatio: props.carParams?.handle_drop_ratio,
-    handleXRatio: props.carParams?.handle_x_ratio
-  })
+  // 宽度按 b_pillar_width_ratio 参数化（默认≈75mm，实车 60~120mm），与侧窗共面同倾角（pillarPlacement 纯函数）
+  // B 柱 X 由门模块分缝唯一决定（与 2D 蓝线同坐标），不再用座舱 55% 启发式
+  const pillarCabin = { ...cabin, pillar: { ...cabin.pillar, x: dl.midSeamX } }
+  const pp = pillarPlacement(pillarCabin, dloFrame.dloYBot, dloFrame.dloYSpan, dloFrame.dloZBase)
   const pillarGeom = new THREE.BoxGeometry(dl.bWidth, pp.height, 0.008)
   pillarGeom.translate(0, pp.height / 2, 0)   // 底部置于原点，便于绕底倾斜
   for (const zSide of [1, -1]) {
@@ -551,6 +571,27 @@ const createCar = () => {
     pillar.position.set(pp.x, pp.botY, zSide * pp.baseZ)
     pillar.rotation.x = -zSide * pp.tiltRad
     group.add(pillar)
+  }
+
+  // ---- 底盘上升装置（6~8 台，deriveLiftDevices 同源）----
+  // 只落前后轮腔之间的封闭地板区间，绝不侵入轮腔切口；风道口下沉 12mm（不构成额外最低点）
+  const liftLayout = deriveLiftDevices(P, resolveFlightParams(props.carType, props.carParams).liftFans)
+  const ductMat = new THREE.MeshStandardMaterial({
+    color: 0x14161c, metalness: 0.6, roughness: 0.4, wireframe: wireframeMode.value
+  })
+  const lipMat = new THREE.MeshStandardMaterial({
+    color: 0xb8bcc4, metalness: 1.0, roughness: 0.15, wireframe: wireframeMode.value
+  })
+  for (const d of liftLayout.devices) {
+    const duct = new THREE.Mesh(new THREE.CylinderGeometry(d.r, d.r * 1.04, 0.02, 28), ductMat)
+    duct.position.set(d.x, liftLayout.y, d.z)
+    duct.userData.noCastShadow = true
+    group.add(duct)
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(d.r * 0.99, 0.009, 8, 28), lipMat)
+    lip.rotation.x = Math.PI / 2
+    lip.position.set(d.x, liftLayout.y - 0.01, d.z)
+    lip.userData.noCastShadow = true
+    group.add(lip)
   }
 
   const createWheel = (x, z) => {
@@ -723,7 +764,7 @@ const createCar = () => {
   addSeam(dl.frontSeamX); addSeam(dl.midSeamX)
   if (dl.rearSeamX !== null) addSeam(dl.rearSeamX)
   // 门板 + 铰链（常规前铰：前门铰链在前缝、后门铰链在 B柱缝，均向后开）
-  const mkDoor = (hingeX, leadX, trailX, handleX, zSide) => {
+  const mkDoor = (key, hingeX, leadX, trailX, handleX, zSide) => {
     const hinge = new THREE.Group()
     hinge.position.set(hingeX, 0, zSide * fit.wall)
     const w = Math.max(Math.abs(trailX - leadX) - seamW, 0.05)   // X+ 朝车头：leading 边 X 更大，取绝对宽
@@ -735,11 +776,19 @@ const createCar = () => {
     h.position.set(handleX - hingeX, dl.handleY, zSide * 0.016)
     hinge.add(h)
     group.add(hinge)
-    doorHinges.push({ hinge, sign: zSide })
+    doorHinges.push({ hinge, sign: zSide, key })
   }
   for (const zSide of [1, -1]) {
-    mkDoor(dl.frontSeamX, dl.frontSeamX, dl.midSeamX, dl.frontHandleX, zSide)
-    if (dl.rearSeamX !== null) mkDoor(dl.midSeamX, dl.midSeamX, dl.rearSeamX, dl.rearHandleX, zSide)
+    mkDoor('front', dl.frontSeamX, dl.frontSeamX, dl.midSeamX, dl.frontHandleX, zSide)
+    if (dl.rearSeamX !== null) mkDoor('rear', dl.midSeamX, dl.midSeamX, dl.rearSeamX, dl.rearHandleX, zSide)
+  }
+  // 侧窗门片挂到对应车门铰链：几何按铰链轴平移（几何原为世界坐标），
+  // 之后与门板同轴同角度旋转 → 玻璃随门一同打开、与门板上下沿严格对齐
+  for (const dg of doorGlass) {
+    const target = doorHinges.find((d) => d.key === dg.key && d.sign === dg.zSide)
+    if (!target) continue
+    dg.mesh.geometry.translate(-target.hinge.position.x, 0, -target.hinge.position.z)
+    target.hinge.add(dg.mesh)
   }
 
   const createMirror = (zSide) => {
@@ -974,23 +1023,16 @@ const ensureFlightFx = () => {
     color: 0x38bdf8, transparent: true, opacity: 0,
     blending: THREE.AdditiveBlending, depthWrite: false
   })
-  const ringGeo = new THREE.TorusGeometry(0.26, 0.022, 10, 40)
-  // 风扇环布局：四角（6 风扇车型在中门位补 2 环），贴于车身底面之下
-  const xs = fp.liftFans === 6
-    ? [P.frontWheelX, 0, P.rearWheelX]
-    : [P.frontWheelX, P.rearWheelX]
-  const zs = P.halfTrack * 0.92
-  const yLow = P.bodyBottomY - 0.06
-  for (const x of xs) {
-    for (const sgn of [1, -1]) {
-      const ring = new THREE.Mesh(ringGeo, ringMat())
-      ring.rotation.x = Math.PI / 2
-      ring.position.set(x, yLow, sgn * zs)
-      ring.userData.noCastShadow = true
-      ring.visible = false
-      carGroup.add(ring)
-      flightRings.push(ring)
-    }
+  // 升力环与底盘上升装置同坐标（装置本体在 createCar 中常显，环仅飞行时可见）
+  const lift = deriveLiftDevices(P, fp.liftFans)
+  for (const d of lift.devices) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(d.r * 0.86, 0.016, 10, 40), ringMat())
+    ring.rotation.x = Math.PI / 2
+    ring.position.set(d.x, lift.y - 0.03, d.z)
+    ring.userData.noCastShadow = true
+    ring.visible = false
+    carGroup.add(ring)
+    flightRings.push(ring)
   }
   // 地面能量场：半径随车长缩放，绿色翡翠（品牌主色），悬浮越高越弱
   const glowR = Math.max(2.0, (props.carParams.overall_length || 4800) / 1000 * 0.42)

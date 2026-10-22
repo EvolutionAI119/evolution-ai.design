@@ -26,13 +26,15 @@ const archFlatten = (type) => ({
   wheel_arch_flatten: { sedan: 0, suv: 0.25, coupe: 0, sport: 0, mpv: 0.05, pickup: 0.35 }[type] ?? 0.1
 })
 
-// 车门/B柱/把手布置（UI 可调，前后端同步）：默认值使 B柱宽≈22mm、把手落原硬编码位附近（零视觉回归）
+// 车门/B柱/把手布置（UI 可调，前后端同步）：默认值取实车常用区间
+// B柱宽 = 0.16 × 座舱高（轿车 ≈75mm，实车 60~120mm）；把手距腰带线 ≈50mm；
+// 把手 X 位于门尾段 15% 处（紧邻分缝，符合真车把手位置）
 const doorParams = () => ({
-  b_pillar_width_ratio: 0.047,
+  b_pillar_width_ratio: 0.16,
   door_open_angle: 70,
   door_seam_width: 8,
-  handle_drop_ratio: 0.12,
-  handle_x_ratio: 0.45
+  handle_drop_ratio: 0.10,
+  handle_x_ratio: 0.15
 })
 
 export const carTypes = [

@@ -63,7 +63,7 @@
       "hover_altitude": {"name": "悬浮高度", "value": 1600, "unit": "mm", "type": "distance", "min_value": 400, "max_value": 3000, "category": "exterior"},
       "exotic_drive_ratio": {"name": "暗能量驱动占比", "value": 0.15, "unit": "", "type": "ratio", "min_value": 0.0, "max_value": 0.3, "category": "exterior"},
       "dark_matter_ratio": {"name": "暗物质惯性配比", "value": 0.2, "unit": "", "type": "ratio", "min_value": 0.0, "max_value": 0.3, "category": "exterior"},
-      "lift_fan_count": {"name": "升力风扇数量", "value": 4, "unit": "", "type": "count", "min_value": 2, "max_value": 8, "category": "exterior"}
+      "lift_fan_count": {"name": "升力风扇数量", "value": 6, "unit": "", "type": "count", "min_value": 6, "max_value": 8, "category": "exterior"}
     },
     "A级曲面参数": {
       "curvature_tolerance": {"name": "曲率公差", "value": 0.01, "unit": "1/mm", "type": "tolerance", "category": "quality"},
