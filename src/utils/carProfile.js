@@ -354,10 +354,11 @@ export function deriveDoorLayout(P, cabin, opts = {}) {
 /**
  * 底盘上升装置布置（2D/3D 同源，6~8 个）。
  * 布置约束（真车工程口径）：
- *   1. 只能落在「底盘封闭段」——前后轮腔开口之间的实体地板区间，
- *      即 x ∈ [后拱前唇 + margin, 前拱后唇 - margin]，杜绝装置被轮腔切口打断；
- *   2. 双列纵向布置（左右各一列），奇数个时在中线补一台；
- *   3. 装置外缘与地板边缘留 edgeInset，避免悬空在侧裙外侧。
+ *   1. 只能落在「底盘封闭段」——前后轮腔开口之间的实体地板区间；
+ *   2. 分布以轴距中心为对称轴等距铺开（左右两列严格镜像，列间距一致），
+ *      不再随前后悬差偏心——保证视觉与受力的均匀分布；
+ *   3. 奇数个时在中线补一台；
+ *   4. 装置外缘与地板边缘留 edgeInset，避免悬空在侧裙外侧。
  * 返回米制坐标；y 为装置安装面（略低于车身底面，形成下沉式风道口）。
  */
 export function deriveLiftDevices(P, count = 6) {
@@ -367,15 +368,20 @@ export function deriveLiftDevices(P, count = 6) {
   const xMax = P.frontWheelX - P.wheelArch.front.rx - margin    // 封闭段首端（前拱后唇之前）
   const span = Math.max(xMax - xMin, 0.30)
   const r = Math.min(0.22, span * 0.14)
-  const rows = Math.floor(n / 2)
   const zOuter = Math.max(P.W / 2 - r - 0.10, r + 0.02)
+  // 以封闭段中心为对称轴的均匀网格：列位置 = xMid ± (i+0.5)·step，
+  // 左右两列严格镜像 z=±zOuter，列间距恒等 → 视觉与受力均匀分布。
+  const xMid = (xMin + xMax) / 2
+  const nPairs = Math.max(1, Math.floor(n / 2))   // 纵向列数（每列左右两台）
+  const step = span / nPairs
   const devices = []
-  for (let i = 0; i < rows; i++) {
-    const x = xMin + span * ((i + 1) / (rows + 1))
+  for (let i = 0; i < nPairs; i++) {
+    const off = (i + 0.5) * step - span / 2       // 中心对称：±step/2, ±3step/2 …
+    const x = xMid + off
     devices.push({ x, z: zOuter, r, side: 'left' })
     devices.push({ x, z: -zOuter, r, side: 'right' })
   }
-  if (n % 2 === 1) devices.push({ x: (xMin + xMax) / 2, z: 0, r, side: 'center' })
+  if (n % 2 === 1) devices.push({ x: xMid, z: 0, r, side: 'center' })
   return {
     count: n,
     devices,

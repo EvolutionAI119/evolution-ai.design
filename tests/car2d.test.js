@@ -359,9 +359,9 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       expect(prof).toContain('cowlStartX')
       expect(prof).toContain('hoodEndX, beltLineY')
       expect(prof).toContain('archNotch')
-      // Car3D 不再内联构建轮廓，改为消费 bodySideOutline（2D/3D 同源）
+      // Car3D 不再内联构建轮廓，改为消费 bodySideOutline（2D/3D 同源）；
+      // 开门状态允许通过 holes 在门区开真实门洞（门板成为唯一覆盖几何）
       expect(car3d).toContain('bodySideOutline(')
-      expect(car3d).not.toContain('bodyShape.holes.push')
     })
 
     it('Car2D.vue 源码含皮卡专属拓扑分支（isPickup / cabRearX2d）', () => {

@@ -135,6 +135,13 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  // 车门是否处于打开位（外部可绑开门按钮状态）：
+  // true = 车身按 deriveDoorLayout 挖门洞，门板成为唯一覆盖几何（无重复侧壁）；
+  // false = 车身完整，门板贴合侧壁（关闭态无需挖洞）。
+  doorOpened: {
+    type: Boolean,
+    default: false
+  },
   // 后端真实 NURBS 采样网格（Designer 生成后传入）：
   // { parts: [{name,type,points:[[[x,y,z]]](canonical,mm),color,opacity}],
   //   wheels: [{radius,width,position:{x,y,z}(author,mm)}] }
@@ -187,6 +194,11 @@ const doorOpen = ref(false)
 let doorHinges = []
 let doorProgress = 0
 const toggleDoor = () => { doorOpen.value = !doorOpen.value }
+
+// 开门状态下：车身按 deriveDoorLayout 挖门洞（门板成为覆盖洞口的唯一几何，
+// 不再与实体侧壁重复）；关门状态：车身完整，门板贴于侧壁外（常规关闭门缝观感）。
+// 挖洞/恢复在 updateCar 重建车身时生效，动画本身仍由 doorProgress 平滑驱动。
+watch(doorOpen, () => updateCar())
 
 // ---- 反重力飞控：360° 原地转向 + 姿态微摆 ----
 // 偏航为累计角（无 wrap）：连续指令多圈累加，全自由度无限制；
@@ -405,15 +417,50 @@ const createCar = () => {
 
   const bodyShape = new THREE.Shape()
 
+  // 座舱玻璃划分（与 2D Car2D windowPath 同源锚点）；倾角/桶面参数先于车身变形计算，
+  // 供车身 greenhouse 收窄与玻璃面板共用同一轮廓公式
+  const cabin = deriveCabinGlass(P, {
+    carType: props.carType,
+    sideGlassAngle: props.carParams?.side_glass_angle,
+    glassBarrelAngle: props.carParams?.glass_barrel_angle,
+    glassBarrelRadius: props.carParams?.glass_barrel_radius
+  })
+
+  // 车门分缝线 / B柱宽度 / 门把手布置（2D/3D 同源，参数可调）；侧窗分片与门板共用同一条分缝
+  const dl = deriveDoorLayout(P, cabin, {
+    bPillarWidthRatio: props.carParams?.b_pillar_width_ratio,
+    handleDropRatio: props.carParams?.handle_drop_ratio,
+    handleXRatio: props.carParams?.handle_x_ratio
+  })
+
   // ---- 侧围外轮廓（2D/3D 唯一真源 bodySideOutline：顶边 G1 圆角 + 底边轮拱 notch + 接近/离去角切角）----
   // 轮拱做进外轮廓（非 holes 共线孔）→ bevel 沿轮廓走，拱底无残留车身色薄片，真正挖通
-  for (const c of bodySideOutline(P, props.carType, ROOF_FILLETS, P.ramps)) {
+  let outlineCmds = bodySideOutline(P, props.carType, ROOF_FILLETS, P.ramps)
+  for (const c of outlineCmds) {
     if (c.k === 'M') bodyShape.moveTo(c.x, c.y)
     else if (c.k === 'L') bodyShape.lineTo(c.x, c.y)
     else if (c.k === 'Q') bodyShape.quadraticCurveTo(c.cx, c.cy, c.x, c.y)
     else if (c.k === 'A') bodyShape.absellipse(c.cx, c.cy, c.rx, c.ry, c.a0, c.a1, c.cw)
   }
   bodyShape.closePath()
+
+  // 开门状态：在门区内开真实矩形洞（holes），门板成为覆盖洞口的唯一几何——
+  // 开门时侧壁不再与门板重复，物理空间唯一、无 z-fighting。
+  // 关闭状态不挖洞：门板薄板贴于完整侧壁外，即常规车关闭门缝的视觉。
+  // 注意：用 holes 而非压平轮廓，避免挤出 bevel 在压平区产生折叠/顶点爆炸。
+  if (props.doorOpened || doorOpen.value) {
+    const doorRearEdge = (dl.rearSeamX === null ? dl.midSeamX : dl.rearSeamX) - 0.004
+    const doorFrontEdge = dl.frontSeamX + 0.004
+    const doorHoleBottom = bodyBottomY + 0.028
+    const doorHoleTop = beltLineY - 0.004
+    const hole = new THREE.Path()
+    hole.moveTo(doorRearEdge, doorHoleBottom)
+    hole.lineTo(doorFrontEdge, doorHoleBottom)
+    hole.lineTo(doorFrontEdge, doorHoleTop)
+    hole.lineTo(doorRearEdge, doorHoleTop)
+    hole.closePath()
+    bodyShape.holes.push(hole)
+  }
 
   const bodyDepth = W
   const bodyThickness = 0.03
@@ -433,22 +480,7 @@ const createCar = () => {
   const bodyGeom = new THREE.ExtrudeGeometry(bodyShape, extrudeSettings)
   bodyGeom.translate(0, 0, -bodyDepth / 2)
 
-  // 座舱玻璃划分（与 2D Car2D windowPath 同源锚点）；倾角/桶面参数先于车身变形计算，
-  // 供车身 greenhouse 收窄与玻璃面板共用同一轮廓公式
-  const cabin = deriveCabinGlass(P, {
-    carType: props.carType,
-    sideGlassAngle: props.carParams?.side_glass_angle,
-    glassBarrelAngle: props.carParams?.glass_barrel_angle,
-    glassBarrelRadius: props.carParams?.glass_barrel_radius
-  })
   const dloFrame = buildDloFrame(cabin, bodyExtentZ + 0.002)
-
-  // 车门分缝线 / B柱宽度 / 门把手布置（2D/3D 同源，参数可调）；侧窗分片与门板共用同一条分缝
-  const dl = deriveDoorLayout(P, cabin, {
-    bPillarWidthRatio: props.carParams?.b_pillar_width_ratio,
-    handleDropRatio: props.carParams?.handle_drop_ratio,
-    handleXRatio: props.carParams?.handle_x_ratio
-  })
 
   // 车身 greenhouse 收窄：DLO 底边（腰带线）以上的侧壁/车顶按与 DLO 玻璃面同公式
   // 内收——A/B/C 柱剪影与车顶随玻璃角度/桶面联动，玻璃面始终位于车身外侧同间隙
@@ -870,6 +902,16 @@ const initScene = () => {
 
   scene = new THREE.Scene()
   scene.background = new THREE.Color(0x0a0a0f)
+  // 调试/验收钩子：暴露场景供浏览器端几何校验（只读引用，不影响渲染）。
+  // Designer 同页挂载多个 Car3D 实例（基础模型/实时预览），单一 __THREE_SCENE__
+  // 会被后挂载实例覆盖导致采错场景；__CAR3D_SCENES__ 数组注册全部存活实例，
+  // userData 标记视口特征（wireframe/nurbs）供采样端定位正确实例。
+  scene.userData.__car3d__ = { wireframe: wireframeMode.value, nurbs: !!props.nurbsMesh }
+  if (typeof window !== 'undefined') {
+    const reg = (window.__CAR3D_SCENES__ = window.__CAR3D_SCENES__ || [])
+    reg.push(scene)
+    window.__THREE_SCENE__ = scene
+  }
 
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100)
   camera.position.set(6, 3, 6)
@@ -1280,6 +1322,10 @@ onUnmounted(() => {
     window.removeEventListener('resize', onWindowResize)
   }
   disposeObject(carGroup)
+  if (typeof window !== 'undefined' && Array.isArray(window.__CAR3D_SCENES__)) {
+    const idx = window.__CAR3D_SCENES__.indexOf(scene)
+    if (idx >= 0) window.__CAR3D_SCENES__.splice(idx, 1)
+  }
   if (renderer) {
     renderer.dispose()
     const gl = renderer.getContext()
