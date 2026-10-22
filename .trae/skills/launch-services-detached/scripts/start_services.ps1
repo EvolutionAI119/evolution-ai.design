@@ -88,6 +88,8 @@ function Install-CpolarExe {
 # ── 域名提取 / .env 同步（无 BOM UTF-8） ──
 # cpolar 免费域名：兼容各区域后缀（r31.cpolar.top / r7.cpolar.cn 等）
 $DomainPattern = '[a-z0-9]+\.r\d+\.cpolar\.(?:top|cn|com)'
+# 任意域名（cloudflared 固定域名 / cpolar 随机域名通用）
+$AnyHostPattern = '[A-Za-z0-9][A-Za-z0-9.-]*\.[A-Za-z]{2,}'
 
 function Get-CpolarDomain {
     for ($i = 0; $i -lt 10; $i++) {
@@ -103,7 +105,7 @@ function Get-CpolarDomain {
 
 function Get-EnvDomain {
     $text = [System.IO.File]::ReadAllText($envFile)
-    $m = [regex]::Match($text, "(?m)^MP_REDIRECT_URI=https://($DomainPattern)")
+    $m = [regex]::Match($text, "(?m)^MP_REDIRECT_URI=https://($AnyHostPattern)")
     if ($m.Success) { return $m.Groups[1].Value }
     return $null
 }
@@ -121,34 +123,90 @@ function Set-EnvDomain {
     [System.IO.File]::WriteAllText($envFile, $text, (New-Object System.Text.UTF8Encoding($false)))
 }
 
+# ── cloudflared 命名隧道（固定域名，永久解决微信扫码域名漂移） ──
+# 约定：%USERPROFILE%\.cloudflared\config.yml 存在即启用 cloudflared，
+# 其 ingress 第一个 hostname 作为固定回调域名；cpolar 自动退居备用。
+$CloudflaredDir = Join-Path $env:USERPROFILE '.cloudflared'
+$CloudflaredConfig = Join-Path $CloudflaredDir 'config.yml'
+
+function Find-CloudflaredExe {
+    $cmd = Get-Command cloudflared.exe -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    $p = Join-Path $env:LOCALAPPDATA 'cloudflared\cloudflared.exe'
+    if (Test-Path $p) { return (Resolve-Path $p).Path }
+    return $null
+}
+
+function Get-CloudflaredHostname {
+    if (-not (Test-Path $CloudflaredConfig)) { return $null }
+    $text = [System.IO.File]::ReadAllText($CloudflaredConfig)
+    # ingress 段第一个 "hostname: xxx"（- hostname: 形式）
+    $m = [regex]::Match($text, '(?m)^\s*-?\s*hostname:\s*([A-Za-z0-9.-]+)\s*$')
+    if ($m.Success) { return $m.Groups[1].Value }
+    return $null
+}
+
 # ── 1. 可选：先停后端+前端（保持隧道） ──
 if ($Restart) {
     & (Join-Path $PSScriptRoot 'stop_services.ps1')
 }
 
-# ── 2. cpolar 隧道（4040 已在监听则复用） ──
+# ── 2. 隧道：cloudflared（固定域名）优先，cpolar（随机域名）备用 ──
 $domain = $null
 if (-not $NoTunnel) {
-    if (-not (Get-PortPid -Port 4040)) {
-        $cpolarExe = Find-CpolarExe
-        if (-not $cpolarExe) { $cpolarExe = Install-CpolarExe }
-        Write-Host '[cpolar] 启动隧道 http 8000 ...'
-        Start-Process -FilePath $cpolarExe -ArgumentList 'http', '8000' -WindowStyle Hidden
-        if (-not (Wait-Port -Port 4040 -TimeoutSec 40)) {
-            throw 'cpolar 启动超时（4040 未监听）'
+    $cfHostname = Get-CloudflaredHostname
+    if ($cfHostname) {
+        $cfExe = Find-CloudflaredExe
+        if (-not $cfExe) { throw '找到 cloudflared 配置但缺少 cloudflared.exe（%LOCALAPPDATA%\cloudflared）' }
+        $cfRunning = @(Find-ServiceProc -Pattern 'cloudflared.*tunnel\s+run').Count -gt 0
+        if ($cfRunning) {
+            Write-Host "[cloudflared] 命名隧道已在运行，复用"
+        }
+        else {
+            Write-Host "[cloudflared] 启动命名隧道 -> $cfHostname ..."
+            Start-Process -FilePath $cfExe -ArgumentList 'tunnel', 'run' -WindowStyle Hidden
+        }
+        $domain = $cfHostname
+        # 等待公网可达（cloudflared 建立边缘连接需数秒）
+        $ok = $false
+        for ($i = 0; $i -lt 20; $i++) {
+            $code = & curl.exe -s -o NUL -w '%{http_code}' --max-time 8 `
+                "https://$domain/api/v1/auth/methods"
+            if ($code -eq '200' -or $code -eq '502' -or $code -eq '503') { $ok = $true; break }
+            Start-Sleep -Seconds 1
+        }
+        if (-not $ok) { Write-Warning "cloudflared 公网未就绪（https://$domain 暂不可达），隧道可能仍在握手" }
+        if ((Get-EnvDomain) -ne $domain) {
+            Write-Host "[cloudflared] 已同步 .env -> $domain（固定域名，此后不再变化）"
+            Set-EnvDomain -Domain $domain
+        }
+        else {
+            Write-Host "[cloudflared] 域名未变：$domain"
         }
     }
     else {
-        Write-Host '[cpolar] 隧道已在运行，复用'
-    }
-    $domain = Get-CpolarDomain
-    if (-not $domain) { throw '无法从 4040 页面提取公网域名' }
-    if ((Get-EnvDomain) -ne $domain) {
-        Write-Host "[cpolar] 域名变化，已同步 .env -> $domain"
-        Set-EnvDomain -Domain $domain
-    }
-    else {
-        Write-Host "[cpolar] 域名未变：$domain"
+        if (-not (Get-PortPid -Port 4040)) {
+            $cpolarExe = Find-CpolarExe
+            if (-not $cpolarExe) { $cpolarExe = Install-CpolarExe }
+            Write-Host '[cpolar] 启动隧道 http 8000 ...'
+            Start-Process -FilePath $cpolarExe -ArgumentList 'http', '8000' -WindowStyle Hidden
+            if (-not (Wait-Port -Port 4040 -TimeoutSec 40)) {
+                throw 'cpolar 启动超时（4040 未监听）'
+            }
+        }
+        else {
+            Write-Host '[cpolar] 隧道已在运行，复用'
+        }
+        $domain = Get-CpolarDomain
+        if (-not $domain) { throw '无法从 4040 页面提取公网域名' }
+        if ((Get-EnvDomain) -ne $domain) {
+            Write-Host "[cpolar] 域名变化，已同步 .env -> $domain"
+            Write-Host '[cpolar] 提醒：微信测试号后台「网页授权域名」需同步更新，否则扫码 10003'
+            Set-EnvDomain -Domain $domain
+        }
+        else {
+            Write-Host "[cpolar] 域名未变：$domain"
+        }
     }
 }
 

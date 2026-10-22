@@ -82,6 +82,19 @@ else {
     Write-Host "全部已停止$suffix"
 }
 
+# -Tunnel：cloudflared 命名隧道无本地端口，按命令行匹配停止
+if ($Tunnel) {
+    $cfProcs = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -and $_.CommandLine -match 'cloudflared.*tunnel\s+run' })
+    foreach ($p in $cfProcs) {
+        try {
+            Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop
+            Write-Host "cloudflared: killed PID $($p.ProcessId)"
+        }
+        catch {}
+    }
+}
+
 # 清理运行时标记（防止其他工具读到过期的 owner 信息）
 $runtimeMarker = Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path '.devservices\runtime.json'
 if (Test-Path $runtimeMarker) { Remove-Item $runtimeMarker -Force }
