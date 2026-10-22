@@ -26,6 +26,10 @@
       "door_rear_length": {"name": "后门长度", "value": 1100, "unit": "mm", "type": "length", "min_value": 900, "max_value": 1300, "category": "exterior"},
       "door_rear_height": {"name": "后门高度", "value": 850, "unit": "mm", "type": "height", "min_value": 650, "max_value": 1000, "category": "exterior"},
       "door_seam_width": {"name": "车门分缝宽度", "value": 8, "unit": "mm", "type": "width", "min_value": 5, "max_value": 15, "category": "exterior"},
+      "b_pillar_width_ratio": {"name": "B柱宽度比例", "value": 0.047, "unit": "", "type": "ratio", "min_value": 0.02, "max_value": 0.12, "category": "exterior"},
+      "door_open_angle": {"name": "车门开度", "value": 70, "unit": "deg", "type": "angle", "min_value": 0, "max_value": 80, "category": "exterior"},
+      "handle_drop_ratio": {"name": "门把手落差比例", "value": 0.12, "unit": "", "type": "ratio", "min_value": 0.02, "max_value": 0.3, "category": "exterior"},
+      "handle_x_ratio": {"name": "门把手X位置比例", "value": 0.45, "unit": "", "type": "ratio", "min_value": 0.1, "max_value": 0.9, "category": "exterior"},
       "headlight_width": {"name": "前大灯宽度", "value": 400, "unit": "mm", "type": "width", "min_value": 300, "max_value": 550, "category": "exterior"},
       "headlight_height": {"name": "前大灯高度", "value": 120, "unit": "mm", "type": "height", "min_value": 80, "max_value": 180, "category": "exterior"},
       "taillight_width": {"name": "后尾灯宽度", "value": 350, "unit": "mm", "type": "width", "min_value": 250, "max_value": 500, "category": "exterior"},
@@ -50,7 +54,9 @@
       "a_pillar_angle": {"name": "A柱角度", "value": 10, "unit": "deg", "type": "angle", "min_value": 5, "max_value": 20, "category": "exterior"},
       "c_pillar_angle": {"name": "C柱角度", "value": 30, "unit": "deg", "type": "angle", "min_value": 20, "max_value": 45, "category": "exterior"},
       "side_glass_angle": {"name": "侧玻璃倾角Tumblehome", "value": 18, "unit": "deg", "type": "angle", "min_value": 1, "max_value": 40, "category": "exterior"},
-      "glass_barrel_angle": {"name": "玻璃桶面角", "value": 8, "unit": "deg", "type": "angle", "min_value": 0, "max_value": 20, "category": "exterior"}
+      "glass_barrel_angle": {"name": "玻璃桶面角", "value": 8, "unit": "deg", "type": "angle", "min_value": 0, "max_value": 20, "category": "exterior"},
+      "approach_angle": {"name": "接近角", "value": 18, "unit": "deg", "type": "angle", "min_value": 3, "max_value": 45, "category": "exterior"},
+      "departure_angle": {"name": "离去角", "value": 20, "unit": "deg", "type": "angle", "min_value": 3, "max_value": 45, "category": "exterior"}
     },
     "飞行参数": {
       "enable_vtol": {"name": "启用垂直起降", "value": false, "unit": "", "type": "switch", "min_value": 0, "max_value": 1, "category": "exterior"},

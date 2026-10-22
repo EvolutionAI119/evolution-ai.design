@@ -83,6 +83,27 @@ class BackendErrorsOut(BaseModel):
     truncated: bool
 
 
+class SecurityEventOut(BaseModel):
+    """单条安全审计事件（JSONL 行解析后的对象；解析失败时 raw 原样返回）。"""
+    ts: Optional[str] = None
+    event: Optional[str] = None
+    level: Optional[str] = None
+    request_id: Optional[str] = None
+    ip: Optional[str] = None
+    path: Optional[str] = None
+    method: Optional[str] = None
+    user_id: Optional[int] = None
+    detail: Optional[dict] = None
+    raw: Optional[str] = None
+
+
+class SecurityEventsOut(BaseModel):
+    events: List[SecurityEventOut]
+    count: int
+    truncated: bool
+    file_path: str
+
+
 # ── 工具函数 ─────────────────────────────────
 
 def _client_ip(request: Request) -> str:
@@ -269,3 +290,37 @@ def read_backend_errors(lines: int = Query(200, ge=1, le=1000),
     return BackendErrorsOut(content=content,
                             file_path=str(ERROR_LOG_PATH),
                             truncated=truncated)
+
+
+@router.get("/security-events", response_model=SecurityEventsOut)
+def read_security_events(lines: int = Query(200, ge=1, le=1000),
+                         current: User = Depends(require_superadmin)):
+    """安全围栏 · 风险预警观测面：读取安全审计事件流尾部。
+
+    事件类型见 app/fence/audit.py 模块文档（登录失败 / 越权 / 限流命中 /
+    LLM 守卫 / 上传拦截等）。仅读取固定 JSONL 文件尾部，不暴露任意文件
+    读写能力；事件内容本身不含提示词正文与用户敏感数据。
+    """
+    from ..fence.audit import read_tail
+    from ..fence.audit import _default_audit_path
+
+    raw_lines, truncated = read_tail(_default_audit_path(), lines=lines)
+    events: List[SecurityEventOut] = []
+    for line in raw_lines:
+        try:
+            data = json.loads(line)
+            if isinstance(data, dict):
+                events.append(SecurityEventOut(
+                    ts=data.get("ts"), event=data.get("event"),
+                    level=data.get("level"), request_id=data.get("request_id"),
+                    ip=data.get("ip"), path=data.get("path"),
+                    method=data.get("method"), user_id=data.get("user_id"),
+                    detail=data.get("detail") if isinstance(data.get("detail"), dict) else None,
+                ))
+                continue
+        except (json.JSONDecodeError, ValueError):
+            pass
+        events.append(SecurityEventOut(raw=line[:512]))
+    return SecurityEventsOut(events=events, count=len(events),
+                             truncated=truncated,
+                             file_path=str(_default_audit_path()))

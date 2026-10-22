@@ -132,6 +132,32 @@ class Settings(BaseSettings):
     # LLM 代理转发（chat/embeddings/images）：防滥用刷量
     RATE_LIMIT_AI: str = "10/minute"
 
+    # ============ 安全围栏（Security Fence） ============
+    # 指导思想：安全是发展的前提；确保 AI 始终处于人类控制之下；
+    # 防「恶用/滥用/失控」，技术监测、风险预警、应急响应四层并举。
+    # 总开关：false 时中间件与输入守卫全部旁路（应急降级通道）；
+    # 审计流由 FENCE_AUDIT_ENABLED 独立控制（保留取证能力）。
+    FENCE_ENABLED: bool = True
+    # ── 应急响应 ──
+    # 维护模式：一键停摆全部 API（仅保留 /api/v1/health 健康探针），503 + Retry-After
+    FENCE_MAINTENANCE_MODE: bool = False
+    # 能力级应急开关：true = 立即停用该能力（503，改 .env 后重启生效）
+    FENCE_DISABLE_LLM_PROXY: bool = False
+    FENCE_DISABLE_FILE_IMPORT: bool = False
+    # ── 技术监测：安全审计事件流（JSONL，backend/logs/security-audit.jsonl，滚动） ──
+    FENCE_AUDIT_ENABLED: bool = True
+    FENCE_AUDIT_MAX_BYTES: int = 20971520       # 单文件 20MB
+    FENCE_AUDIT_BACKUP_COUNT: int = 5           # 保留 5 个滚动副本
+    # ── 防滥用阈值（防恶用/失控的第一道门） ──
+    FENCE_MAX_BODY_BYTES: int = 52428800        # 全局请求体上限（与 MAX_FILE_SIZE 对齐）
+    FENCE_LLM_MAX_BODY_BYTES: int = 262144      # LLM 代理单请求体上限（256KB）
+    FENCE_LLM_MAX_MESSAGES: int = 64            # chat messages 条数上限
+    FENCE_LLM_MAX_TOTAL_CHARS: int = 60000      # chat 输入总字符上限（约 3~4 万 token）
+    FENCE_UPLOAD_MAX_BYTES: int = 52428800      # 上传文件实际字节上限
+    # 提示注入特征扫描：默认仅记录预警（循序渐进），确认误伤率后可开阻断
+    FENCE_INJECTION_SCAN_ENABLED: bool = True
+    FENCE_BLOCK_INJECTION: bool = False
+
     @property
     def allowed_extensions_list(self):
         return [e.strip() for e in self.ALLOWED_EXTENSIONS.split(",")]

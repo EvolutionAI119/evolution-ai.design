@@ -35,6 +35,10 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import settings
 from .database import init_db
+from .fence.audit import configure_audit, emit
+from .fence.middleware import (BodySizeLimitMiddleware,
+                               MaintenanceModeMiddleware,
+                               RequestContextMiddleware)
 from .rate_limit import limiter
 from .routes import (
     admin, ai, analytics, auth, bayes, build, car, design_intent, export,
@@ -339,9 +343,25 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
-    # -- API 限流（slowapi）：登录/注册防爆破、LLM 代理防刷量（按客户端 IP） --
+    # -- API 限流（slowapi）：登录/注册防爆破、LLM 代理防刷量（按客户端 IP）；
+    #    429 触发即「滥用/风险预警」信号，先写安全审计再走默认 429 响应 --
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+    async def _audited_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+        emit("ratelimit.hit", level="warning",
+             path=request.url.path, method=request.method,
+             ip=(request.client.host if request.client else ""),
+             limit=str(getattr(exc, "detail", "") or "")[:128])
+        return await _rate_limit_exceeded_handler(request, exc)
+
+    app.add_exception_handler(RateLimitExceeded, _audited_rate_limit_handler)
+
+    # -- 安全围栏中间件（Starlette 倒序包裹：先注册=内层。
+    #    自内向外 Maintenance → BodySize → RequestContext，
+    #    保证 413/503 短路响应也携带 X-Request-Id + 安全响应头 + CORS 头） --
+    app.add_middleware(MaintenanceModeMiddleware)
+    app.add_middleware(BodySizeLimitMiddleware)
+    app.add_middleware(RequestContextMiddleware)
 
     # -- 安全响应头中间件（先注册 = 放在 ASGI 栈更里层；Starlette middleware 是倒序包裹） --
     app.add_middleware(SecurityHeadersMiddleware, s=settings)
@@ -411,6 +431,14 @@ def create_app() -> FastAPI:
             logging.getLogger("evolution").error(
                 "HTTP 500 on %s %s: %s", request.method,
                 request.url.path, exc.detail)
+        # 越权访问尝试（401/403）→ 安全审计事件（风险预警信号，供研判高频来源）
+        if exc.status_code in (401, 403):
+            emit("authz.denied",
+                 level="info" if exc.status_code == 401 else "warning",
+                 path=request.url.path, method=request.method,
+                 ip=(request.client.host if request.client else ""),
+                 status_code=exc.status_code,
+                 reason=str(exc.detail)[:128])
         body = {"detail": exc.detail}
         hdrs = dict(exc.headers or {})
         # 405 规范要求携带 Allow 头
@@ -452,6 +480,8 @@ def create_app() -> FastAPI:
         settings.models_path.mkdir(parents=True, exist_ok=True)
         settings.reports_path.mkdir(parents=True, exist_ok=True)
         settings.exports_path.mkdir(parents=True, exist_ok=True)
+        # 安全围栏 · 技术监测：显式初始化审计事件流（幂等；懒加载兜底见 emit）
+        configure_audit()
 
     @app.get("/api/v1/health")
     def health_check():

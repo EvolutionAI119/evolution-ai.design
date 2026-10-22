@@ -14,6 +14,8 @@ from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
+from ..config import settings
+from ..fence.guards import read_upload_limited
 from ..texture_analyzer import analyze_texture, list_target_regions
 from ..clip_semantics import (
     analyze_with_semantics,
@@ -76,8 +78,8 @@ async def analyze_texture_image(
     if not 0.0 <= semantic_weight <= 1.0:
         raise HTTPException(status_code=400, detail="semantic_weight 必须在 0~1 之间")
 
-    # 读取图片
-    img_bytes = await image.read()
+    # 读取图片（安全围栏 · 防失控：分块限读，防超大文件耗尽内存）
+    img_bytes = await read_upload_limited(image, settings.FENCE_UPLOAD_MAX_BYTES)
     if not img_bytes:
         raise HTTPException(status_code=400, detail="图片为空")
 
@@ -123,7 +125,8 @@ async def apply_texture_to_session(
     if target_region not in list_target_regions():
         raise HTTPException(status_code=400, detail=f"未知目标部位: {target_region}")
 
-    img_bytes = await image.read()
+    # 读取图片（安全围栏 · 防失控：分块限读，防超大文件耗尽内存）
+    img_bytes = await read_upload_limited(image, settings.FENCE_UPLOAD_MAX_BYTES)
     if not img_bytes:
         raise HTTPException(status_code=400, detail="图片为空")
 

@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "_CONFIDENTIAL": {
+    "level": "public",
+    "policy": "可公开，用于演示品牌 DNA 模块功能",
+    "storage": "backend/app/brand_dna/dnas/"
+  },
+  "brand": {
+    "key": "demo_public",
+    "name": "Demo Public",
+    "zh_name": "演示公开品牌",
+    "status": "public",
+    "positioning": "演示品牌，用于验证品牌 DNA 模块功能",
+    "one_line": "演示品牌：展示品牌 DNA 模块的结构化能力。"
+  },
+  "philosophy": {
+    "framework": "极简现代主义",
+    "principles": [
+      {
+        "key": "simplicity",
+        "zh": "极简",
+        "meaning": "去除一切多余装饰",
+        "imagery": "一块纯净的几何形体"
+      }
+    ]
+  },
+  "forbidden": [
+    "过度装饰",
+    "复杂线条"
+  ],
+  "allowed": [
+    "纯净曲面",
+    "简洁灯带"
+  ],
+  "on_brand_constraints": {
+    "character_line_depth": {
+      "value": 0.0,
+      "unit": "mm",
+      "rule": "=0.0",
+      "trait": "纯净",
+      "principle": "极简"
+    },
+    "grille_openness": {
+      "value": 0.0,
+      "unit": "-",
+      "rule": "=0.0",
+      "trait": "纯净",
+      "principle": "极简"
+    },
+    "light_blend": {
+      "rule": "≥0.85",
+      "trait": "纯净",
+      "principle": "极简"
+    },
+    "body_tumblehome": {
+      "rule": "≤0.03",
+      "trait": "纯净",
+      "principle": "极简"
+    },
+    "seam_gap": {
+      "rule": "≤0.3mm",
+      "trait": "纯净",
+      "principle": "极简"
+    }
+  },
+  "cmf": {
+    "palette": [
+      {
+        "name": "演示白",
+        "code": "DEMO-WH-001",
+        "hex": "#FFFFFF",
+        "gloss": "90GU"
+      }
+    ],
+    "interior": {
+      "materials": ["真皮", "金属"],
+      "ambient_light_color": "暖白"
+    }
+  },
+  "models": [
+    {
+      "key": "demo-s",
+      "name": "Demo S",
+      "zh_name": "演示 S",
+      "series": "S",
+      "positioning": "演示轿车",
+      "params": {
+        "overall_length": 5000,
+        "overall_width": 1900,
+        "overall_height": 1500,
+        "wheel_base": 3000
+      },
+      "surface": {
+        "character_line_depth": 0.0,
+        "light_blend": 0.9,
+        "body_tumblehome": 0.02
+      },
+      "detail": {
+        "grille_openness": 0.0,
+        "seam_gap": 0.2
+      }
+    }
+  ],
+  "engine_spec": {
+    "zero_rules": [
+      ["DR-01", "character_line_depth", "零特征线", "特征线深度必须为 0"]
+    ],
+    "range_rules": [
+      ["DR-02", "light_blend", 0.85, null, "光顺融合下限"]
+    ],
+    "series_spec": {
+      "S": {
+        "overall_length": 5000,
+        "light_blend": 0.9
+      }
+    }
+  }
+}

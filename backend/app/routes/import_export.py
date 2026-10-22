@@ -15,11 +15,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 
 from ..car_generator import NURBSCarBodyGenerator
 from ..config import settings
+from ..fence.guards import read_upload_limited
+from ..fence.killswitch import killswitch_dependency
 from ..schemas import (
     ImportModelRequest, ParamModifyRequest, ExportFromSessionRequest,
     SessionResponse, ParamInfoResponse,
@@ -244,7 +246,9 @@ async def import_model(data: ImportModelRequest):
     return _create_session(config, applied, name=data.name, extra_meta=meta)
 
 
-@router.post("/import/file", response_model=SessionResponse)
+@router.post("/import/file", response_model=SessionResponse,
+             dependencies=[Depends(killswitch_dependency(
+                 "文件导入", "FENCE_DISABLE_FILE_IMPORT"))])
 async def import_model_file(file: UploadFile = File(...)):
     """通过上传文件导入参数化模型。支持多种格式：
 
@@ -262,7 +266,8 @@ async def import_model_file(file: UploadFile = File(...)):
     """
     filename = (file.filename or "model").strip()
     ext = Path(filename).suffix.lower()
-    raw = await file.read()
+    # 安全围栏 · 防失控：分块限读（按实际字节拦截，防超大文件耗尽内存）
+    raw = await read_upload_limited(file, settings.FENCE_UPLOAD_MAX_BYTES)
 
     # =============== JSON 参数文件 ===============
     if ext == ".json":

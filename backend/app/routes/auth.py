@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import ApiKey, LoginRecord, User, get_db
+from ..fence.audit import emit
 from ..rate_limit import limit
 from ..security import (ROLE_USER, create_access_token, decrypt_api_key,
                         encrypt_api_key, get_current_user, hash_password,
@@ -134,6 +135,9 @@ def register(req: RegisterRequest, request: Request, db: Session = Depends(get_d
 
     record_login(db, email=email, user=user, success=True,
                  reason="register", method="password", request=request)
+    # 安全围栏 · 技术监测：新账户注册事件
+    emit("auth.register", ip=_client_ip(request), path=request.url.path,
+         method=request.method, user_id=user.id)
 
     token = create_access_token({"sub": str(user.id), "email": user.email,
                                  "role": user.role})
@@ -151,10 +155,17 @@ def login(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
         record_login(db, email=email, user=user, success=False,
                      reason="bad_credentials", method="password",
                      request=request)
+        # 安全围栏 · 风险预警：登录失败（爆破尝试的高频信号）
+        emit("auth.login.failure", level="warning",
+             ip=_client_ip(request), path=request.url.path,
+             method=request.method, reason="bad_credentials")
         raise HTTPException(status_code=401, detail="邮箱或密码错误")
     if not user.is_active:
         record_login(db, email=email, user=user, success=False,
                      reason="disabled", method="password", request=request)
+        emit("auth.login.failure", level="warning",
+             ip=_client_ip(request), path=request.url.path,
+             method=request.method, reason="disabled", user_id=user.id)
         raise HTTPException(status_code=403, detail="账户已被停用")
 
     record_login(db, email=email, user=user, success=True, reason=None,

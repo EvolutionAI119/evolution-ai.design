@@ -27,6 +27,9 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
+from ..fence import audit
+from ..fence.guards import guard_llm_payload
+from ..fence.killswitch import killswitch_dependency
 from ..rate_limit import limit
 from ..security import get_optional_user, get_user_api_key
 
@@ -133,7 +136,7 @@ async def _read_json_body(request: Request) -> Dict[str, Any]:
 async def _proxy_upstream(
     provider: str, capability: str, request: Request, db: Session, user
 ) -> Response:
-    """核心透传逻辑：取 Key → 补默认模型 → 转发 → 原样返回上游响应"""
+    """核心透传逻辑：取 Key → 补默认模型 → 安全守卫 → 转发 → 原样返回上游响应"""
     spec = _get_provider(provider)
 
     if capability not in spec.capabilities:
@@ -152,6 +155,19 @@ async def _proxy_upstream(
         )
 
     payload = await _read_json_body(request)
+    # 安全围栏 · 防恶用/滥用：请求体字节 / messages 条数 / 总字符三重上限
+    # + 提示注入特征扫描（默认记录预警），全部通过后才透传上游
+    guard_llm_payload(
+        payload, provider=provider, capability=capability,
+        ip=(request.client.host if request.client else ""),
+        path=request.url.path)
+    # 安全围栏 · 技术监测：LLM 调用元数据（不含提示词内容，防刷量研判）
+    audit.emit("llm.request", ip=(request.client.host if request.client else ""),
+               path=request.url.path, method=request.method,
+               user_id=(user.id if user is not None else None),
+               provider=provider, capability=capability,
+               model=str(payload.get("model", ""))[:128])
+
     # 未显式指定 model 时注入该提供商的默认模型
     if not payload.get("model"):
         payload["model"] = spec.default_model
@@ -215,7 +231,9 @@ def list_providers(
 
 # ── 对话补全 ──────────────────────────────────────────
 
-@router.post("/{provider}/chat/completions")
+@router.post("/{provider}/chat/completions",
+             dependencies=[Depends(killswitch_dependency(
+                 "LLM 代理", "FENCE_DISABLE_LLM_PROXY"))])
 @limit(settings.RATE_LIMIT_AI)
 async def chat_completions(
     provider: str, request: Request,
@@ -227,7 +245,9 @@ async def chat_completions(
 
 # ── 向量嵌入 ──────────────────────────────────────────
 
-@router.post("/{provider}/embeddings")
+@router.post("/{provider}/embeddings",
+             dependencies=[Depends(killswitch_dependency(
+                 "LLM 代理", "FENCE_DISABLE_LLM_PROXY"))])
 @limit(settings.RATE_LIMIT_AI)
 async def embeddings(
     provider: str, request: Request,
@@ -239,7 +259,9 @@ async def embeddings(
 
 # ── 文生图 ────────────────────────────────────────────
 
-@router.post("/{provider}/images/generations")
+@router.post("/{provider}/images/generations",
+             dependencies=[Depends(killswitch_dependency(
+                 "LLM 代理", "FENCE_DISABLE_LLM_PROXY"))])
 @limit(settings.RATE_LIMIT_AI)
 async def images_generations(
     provider: str, request: Request,
