@@ -29,16 +29,21 @@
           <circle :cx="w.cx" :cy="w.cy" :r="w.r * 0.12" fill="rgba(255,255,255,0.5)" />
         </g>
 
-        <!-- 灯具与门把手侧视标记（与 3D 新增零件同源布置） -->
+        <!-- 灯具侧视标记（与 3D 新增零件同源布置） -->
         <rect :x="0" :y="hoodLineY + s(60)" :width="s(55)" :height="s(90)" fill="rgba(255,240,170,0.5)" stroke="#fbbf24" stroke-width="1" vector-effect="non-scaling-stroke" />
         <rect :x="rearX - s(50)" :y="trunkLineY + s(60)" :width="s(50)" :height="s(90)" fill="rgba(255,90,90,0.4)" stroke="#ff6b6b" stroke-width="1" vector-effect="non-scaling-stroke" />
-        <line :x1="frontHandleX2d - s(70)" :y1="beltLineY + s(100)" :x2="frontHandleX2d + s(70)" :y2="beltLineY + s(100)" stroke="rgba(255,255,255,0.65)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
-        <line v-if="!isPickup" :x1="rearHandleX2d - s(70)" :y1="beltLineY + s(100)" :x2="rearHandleX2d + s(70)" :y2="beltLineY + s(100)" stroke="rgba(255,255,255,0.65)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
 
-        <!-- 接近角/离去角构造线：接地点 → 车身立面底角（与 carProfile 角度值、3D 导流唇同源） -->
-        <line :x1="frontWheelCX" :y1="groundY" :x2="0" :y2="underbodyY" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,4" vector-effect="non-scaling-stroke" />
+        <!-- 车门分缝线（侧裙→腰带线竖向）+ 门把手（与 3D 同源 deriveDoorLayout） -->
+        <line :x1="frontSeamX2d" :y1="underbodyY" :x2="frontSeamX2d" :y2="beltLineY" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
+        <line :x1="midSeamX2d" :y1="underbodyY" :x2="midSeamX2d" :y2="beltLineY" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
+        <line v-if="rearSeamX2d !== null" :x1="rearSeamX2d" :y1="underbodyY" :x2="rearSeamX2d" :y2="beltLineY" stroke="rgba(59,130,246,0.6)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke" />
+        <line :x1="frontHandleX2d - s(70)" :y1="handleY2d" :x2="frontHandleX2d + s(70)" :y2="handleY2d" stroke="rgba(255,255,255,0.7)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
+        <line v-if="rearHandleX2d !== null" :x1="rearHandleX2d - s(70)" :y1="handleY2d" :x2="rearHandleX2d + s(70)" :y2="handleY2d" stroke="rgba(255,255,255,0.7)" stroke-width="2.4" vector-effect="non-scaling-stroke" />
+
+        <!-- 接近角/离去角构造线：接地点 → 车身立面底角（坡面 cornerY 由可调角度驱动，与 3D 同源） -->
+        <line :x1="frontWheelCX" :y1="groundY" :x2="0" :y2="frontCornerY2d" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,4" vector-effect="non-scaling-stroke" />
         <text :x="frontWheelCX * 0.42" :y="groundY - s(groundClearanceMm * 0.45) - 8" text-anchor="middle" fill="#fbbf24" font-family="Inter, sans-serif" font-size="11" font-weight="600">α {{ approachLabel }}</text>
-        <line :x1="rearWheelCX" :y1="groundY" :x2="rearX" :y2="underbodyY" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,4" vector-effect="non-scaling-stroke" />
+        <line :x1="rearWheelCX" :y1="groundY" :x2="rearX" :y2="rearCornerY2d" stroke="#fbbf24" stroke-width="1" stroke-dasharray="5,4" vector-effect="non-scaling-stroke" />
         <text :x="(rearWheelCX + rearX) / 2" :y="groundY - s(groundClearanceMm * 0.45) - 8" text-anchor="middle" fill="#fbbf24" font-family="Inter, sans-serif" font-size="11" font-weight="600">β {{ departureLabel }}</text>
 
         <!-- 地面线 -->
@@ -81,7 +86,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import { deriveCarProfile } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveDoorLayout } from '../utils/carProfile.js'
+import { deriveCabinGlass } from '../utils/carGlass.js'
 
 const props = defineProps({
   carParams: {
@@ -166,13 +172,21 @@ const cabWindowBottomX2d = computed(() => (profile.value.pickup ? toX(profile.va
 
 const pillarX = computed(() => windshieldTopX.value + (rearWindowTopX.value - windshieldTopX.value) * 0.55)
 
-// 门把手 2D 标记位置（与 3D 同公式：前门 = B柱→风挡顶 50%，后门 = B柱→车顶后缘 45%）
-const frontHandleX2d = computed(() => pillarX.value + (windshieldTopX.value - pillarX.value) * 0.5)
-const rearHandleX2d = computed(() => pillarX.value + (rearWindowTopX.value - pillarX.value) * 0.45)
+// 车门分缝线 / 门把手 2D 布置（与 3D 同源 deriveDoorLayout）
+const cabin2d = computed(() => deriveCabinGlass(profile.value))
+const dl2d = computed(() => deriveDoorLayout(profile.value, cabin2d.value))
+const frontSeamX2d = computed(() => toX(dl2d.value.frontSeamX))
+const midSeamX2d = computed(() => toX(dl2d.value.midSeamX))
+const rearSeamX2d = computed(() => (dl2d.value.rearSeamX === null ? null : toX(dl2d.value.rearSeamX)))
+const frontHandleX2d = computed(() => toX(dl2d.value.frontHandleX))
+const rearHandleX2d = computed(() => (dl2d.value.rearHandleX === null ? null : toX(dl2d.value.rearHandleX)))
+const handleY2d = computed(() => groundY - s(dl2d.value.handleY * 1000))
 
-// 接近角/离去角标注（carProfile 同源角度）
+// 接近角/离去角标注 + 坡面底角 Y（carProfile 同源角度，ramps 驱动立面底角高度）
 const approachLabel = computed(() => `${profile.value.approachAngleDeg.toFixed(1)}°`)
 const departureLabel = computed(() => `${profile.value.departureAngleDeg.toFixed(1)}°`)
+const frontCornerY2d = computed(() => groundY - s(profile.value.ramps.front.cornerY * 1000))
+const rearCornerY2d = computed(() => groundY - s(profile.value.ramps.rear.cornerY * 1000))
 
 // ============ 轮拱：包络椭圆（拱心=轮心，2D/3D 共享 deriveWheelArch 唯一来源）============
 // 竖直拱唇自侧裙下缘升至轮心高度，椭圆上弧过顶（含转向/跳动包络间隙）

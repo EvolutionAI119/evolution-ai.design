@@ -33,9 +33,22 @@
           <path d="M21 3v5h-5"/>
         </svg>
       </div>
-      <div class="ctrl-btn" @click="toggleFullscreen" :title="t('designer.viewerFullscreen')" :aria-label="t('designer.viewerFullscreen')">
+      <div class="ctrl-btn" @click="toggleFullscreen" :class="{ active: isFullscreen }" :title="t('designer.viewerFullscreen')" :aria-label="t('designer.viewerFullscreen')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </div>
+      <div
+        class="ctrl-btn door-btn"
+        :class="{ active: doorOpen }"
+        :title="t('designer.doorToggle')"
+        :aria-label="t('designer.doorToggle')"
+        @click="toggleDoor"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="13" height="16" rx="1"/>
+          <path d="M16 8l4-2v12l-4-2"/>
+          <circle cx="13" cy="12" r="0.8" fill="currentColor"/>
         </svg>
       </div>
       <div
@@ -94,7 +107,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, filletCorner } from '../utils/carProfile.js'
 import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, greenhouseInsetAt, ROOF_FILLETS } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
@@ -167,6 +180,13 @@ let flightProgress = 0
 let flightLastMs = 0
 let flightRings = []          // 升力风扇环（carGroup 子对象，随车升降）
 let flightGroundGlow = null   // 地面能量场（scene 子对象，随高度衰减）
+
+// ---- 车门打开动画状态 ----
+// doorOpen 开关；doorProgress ∈ [0,1] 缓动趋近目标；doorHinges 由 createCar 重建
+const doorOpen = ref(false)
+let doorHinges = []
+let doorProgress = 0
+const toggleDoor = () => { doorOpen.value = !doorOpen.value }
 
 // ---- 反重力飞控：360° 原地转向 + 姿态微摆 ----
 // 偏航为累计角（无 wrap）：连续指令多圈累加，全自由度无限制；
@@ -385,67 +405,15 @@ const createCar = () => {
 
   const bodyShape = new THREE.Shape()
 
-  // ---- 侧围轮廓（与 2D Car2D.vue 同源锚点 + G1 圆角，杜绝折痕/曲率突变） ----
-  // 尾部 / 底部过渡控制点与 2D 轮廓逐点镜像（20/16/56/26/36mm）
-  const tailCtrlX = rearX + 0.02
-  const tailCtrlY = trunkLineY - 0.016
-  const tailEndY = trunkLineY - 0.056
-  if (pickup) {
-    // 皮卡拓扑：车顶止于驾驶室后壁 → 后壁斜落至货箱栏板 → 栏板贯通至尾门
-    const cabBotX = pickup.cabWindowBottomX
-    // A 柱顶 + 驾驶室后壁顶 + 后壁底三处 G1 圆角（半径真源 = ROOF_FILLETS，与玻璃修裁同源）
-    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, ROOF_FILLETS.aPillarTop)
-    const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
-    const f3 = filletCorner(pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, ROOF_FILLETS.pickupCabBottom)
-    bodyShape.moveTo(frontX, bodyBottomY)
-    bodyShape.quadraticCurveTo(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
-    bodyShape.lineTo(cowlStartX, hoodLineY)
-    bodyShape.lineTo(hoodEndX, beltLineY)
-    bodyShape.lineTo(f1.a[0], f1.a[1])
-    bodyShape.quadraticCurveTo(f1.ctrl[0], f1.ctrl[1], f1.b[0], f1.b[1])
-    bodyShape.lineTo(f2.a[0], f2.a[1])
-    bodyShape.quadraticCurveTo(f2.ctrl[0], f2.ctrl[1], f2.b[0], f2.b[1])
-    bodyShape.lineTo(f3.a[0], f3.a[1])
-    bodyShape.quadraticCurveTo(f3.ctrl[0], f3.ctrl[1], f3.b[0], f3.b[1])
-    bodyShape.lineTo(rearX - 0.024, pickup.bedWallY)
-    bodyShape.quadraticCurveTo(rearX, pickup.bedWallY - 0.008, rearX, pickup.bedWallY - 0.048)
-    bodyShape.lineTo(rearX, bodyBottomY + 0.026)
-    bodyShape.quadraticCurveTo(rearX, bodyBottomY, rearX - 0.036, bodyBottomY)
-  } else {
-    // 三厢/两厢拓扑：车顶 → C 柱 → 尾部曲线（2D 同源：无平甲板硬折点）
-    // 三处 G1 圆角半径真源 = ROOF_FILLETS（与 deriveCabinGlass 玻璃修裁同参同源）
-    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, ROOF_FILLETS.aPillarTop)
-    const f2 = filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, ROOF_FILLETS.roofRear)
-    const f3 = filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, ROOF_FILLETS.cPillarBottom)
-    bodyShape.moveTo(frontX, bodyBottomY)
-    bodyShape.quadraticCurveTo(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
-    bodyShape.lineTo(cowlStartX, hoodLineY)
-    bodyShape.lineTo(hoodEndX, beltLineY)
-    bodyShape.lineTo(f1.a[0], f1.a[1])
-    bodyShape.quadraticCurveTo(f1.ctrl[0], f1.ctrl[1], f1.b[0], f1.b[1])
-    bodyShape.lineTo(f2.a[0], f2.a[1])
-    bodyShape.quadraticCurveTo(f2.ctrl[0], f2.ctrl[1], f2.b[0], f2.b[1])
-    bodyShape.lineTo(f3.a[0], f3.a[1])
-    bodyShape.quadraticCurveTo(f3.ctrl[0], f3.ctrl[1], f3.b[0], f3.b[1])
-    bodyShape.quadraticCurveTo(tailCtrlX, tailCtrlY, rearX, tailEndY)
-    bodyShape.lineTo(rearX, bodyBottomY + 0.026)
-    bodyShape.quadraticCurveTo(rearX, bodyBottomY, rearX - 0.036, bodyBottomY)
+  // ---- 侧围外轮廓（2D/3D 唯一真源 bodySideOutline：顶边 G1 圆角 + 底边轮拱 notch + 接近/离去角切角）----
+  // 轮拱做进外轮廓（非 holes 共线孔）→ bevel 沿轮廓走，拱底无残留车身色薄片，真正挖通
+  for (const c of bodySideOutline(P, props.carType, ROOF_FILLETS, P.ramps)) {
+    if (c.k === 'M') bodyShape.moveTo(c.x, c.y)
+    else if (c.k === 'L') bodyShape.lineTo(c.x, c.y)
+    else if (c.k === 'Q') bodyShape.quadraticCurveTo(c.cx, c.cy, c.x, c.y)
+    else if (c.k === 'A') bodyShape.absellipse(c.cx, c.cy, c.rx, c.ry, c.a0, c.a1, c.cw)
   }
   bodyShape.closePath()
-
-  // ---- 轮拱开口：包络椭圆 + 竖直拱唇（真实翼子板拱形，处处避开转向/跳动包络）----
-  // 拱心 = 静置接地轮心 (wheelX, wheelR)；唇缘自轮心高度竖落裙边，上弧过顶含跳动+顶隙
-  const archHole = (ax, a) => {
-    const hole = new THREE.Path()
-    hole.moveTo(ax - a.rx, bodyBottomY)
-    hole.lineTo(ax - a.rx, archY)
-    hole.absellipse(ax, archY, a.rx, a.ry, Math.PI, 0, true)
-    hole.lineTo(ax + a.rx, bodyBottomY)
-    hole.closePath()
-    return hole
-  }
-  bodyShape.holes.push(archHole(frontWheelX, wheelArch.front))
-  bodyShape.holes.push(archHole(rearWheelX, wheelArch.rear))
 
   const bodyDepth = W
   const bodyThickness = 0.03
@@ -567,10 +535,16 @@ const createCar = () => {
     group.add(panel)
   }
 
-  // B 柱：55% 分段处车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）；
-  // 与侧窗共面同倾角：底部锚定该高度处的玻璃面，绕底旋转 tiltDeg（pillarPlacement 纯函数）
+  // B 柱：分缝线 B柱位置车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）；
+  // 宽度按 b_pillar_width_ratio 参数化（默认≈22mm），与侧窗共面同倾角（pillarPlacement 纯函数）
   const pp = pillarPlacement(cabin, dloFrame.dloYBot, dloFrame.dloYSpan, dloFrame.dloZBase)
-  const pillarGeom = new THREE.BoxGeometry(0.022, pp.height, 0.008)
+  // 车门分缝线 / B柱宽度 / 门把手布置（2D/3D 同源，参数可调）
+  const dl = deriveDoorLayout(P, cabin, {
+    bPillarWidthRatio: props.carParams?.b_pillar_width_ratio,
+    handleDropRatio: props.carParams?.handle_drop_ratio,
+    handleXRatio: props.carParams?.handle_x_ratio
+  })
+  const pillarGeom = new THREE.BoxGeometry(dl.bWidth, pp.height, 0.008)
   pillarGeom.translate(0, pp.height / 2, 0)   // 底部置于原点，便于绕底倾斜
   for (const zSide of [1, -1]) {
     const pillar = new THREE.Mesh(pillarGeom, bodyMat)
@@ -681,18 +655,17 @@ const createCar = () => {
   rearBumper.position.set(rearX - 0.005, bodyBottomY + 0.075, 0)
   group.add(rearBumper)
 
-  // ---- 接近角/离去角构造线：接地点→车身立面底角的琥珀色布置线（与 2D 图纸同源同角）。
-  // 刻意用细线而非实体板：实体板会悬出车身底面（最低 0.4·gc），误读为离地间隙不足 ----
+  // ---- 接近角/离去角构造线：接地点→车身立面底角（坡面 cornerY 由可调角度驱动）的琥珀色布置线 ----
   const angleLineMat = new THREE.LineBasicMaterial({ color: 0xfbbf24 })
   for (const zSide of [1, -1]) {
     const zz = zSide * (fit.wall + 0.006)
     group.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(frontWheelX, 0, zz), new THREE.Vector3(frontX, gc, zz)]),
+        new THREE.Vector3(frontWheelX, 0, zz), new THREE.Vector3(frontX, P.ramps.front.cornerY, zz)]),
       angleLineMat))
     group.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(rearWheelX, 0, zz), new THREE.Vector3(rearX, gc, zz)]),
+        new THREE.Vector3(rearWheelX, 0, zz), new THREE.Vector3(rearX, P.ramps.rear.cornerY, zz)]),
       angleLineMat))
   }
 
@@ -729,20 +702,45 @@ const createCar = () => {
   tl2.position.set(rearX, tlY, -hlZ)
   group.add(tl2)
 
-  // ---- 门把手：侧壁外表面浅凹横杆（前门必配；后门仅有多门车型）----
+  // ---- 车门分缝线 + 门板（可绕前铰链打开）+ 门把手（随门板运动）----
+  // 分缝线：前缝/B柱缝/后缝 竖向暗色薄槽（sill→腰带线）；门板：贴侧壁的薄面板挂到铰链 Group，
+  // animate() 按 door_open_angle 缓动 rotation.y 开合，把手 parent 到对应门板随动。
+  const seamMat = new THREE.MeshStandardMaterial({ color: 0x08080c, metalness: 0.3, roughness: 0.8, wireframe: wireframeMode.value })
+  const doorMat = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0.6, roughness: 0.28, wireframe: wireframeMode.value })
   const handleGeom = new THREE.BoxGeometry(0.14, 0.022, 0.02)
-  const handleY = beltLineY - 0.10
-  const handleZ = fit.wall + 0.004
-  const frontHandleX = pp.x + (windshieldTopX - pp.x) * 0.5
-  const addHandle = (x) => {
+  const doorBottom = bodyBottomY + 0.02
+  const doorTop = beltLineY - 0.004
+  const doorH = doorTop - doorBottom
+  const seamW = (props.carParams?.door_seam_width ?? 8) / 1000
+  doorHinges = []
+  const addSeam = (x) => {
     for (const zSide of [1, -1]) {
-      const h = new THREE.Mesh(handleGeom, chromeMat)
-      h.position.set(x, handleY, zSide * handleZ)
-      group.add(h)
+      const s = new THREE.Mesh(new THREE.BoxGeometry(seamW, doorH, 0.004), seamMat)
+      s.position.set(x, doorBottom + doorH / 2, zSide * (fit.wall + 0.002))
+      group.add(s)
     }
   }
-  addHandle(frontHandleX)
-  if (!pickup) addHandle(pp.x - (pp.x - rearWindowTopX) * 0.45)
+  addSeam(dl.frontSeamX); addSeam(dl.midSeamX)
+  if (dl.rearSeamX !== null) addSeam(dl.rearSeamX)
+  // 门板 + 铰链（常规前铰：前门铰链在前缝、后门铰链在 B柱缝，均向后开）
+  const mkDoor = (hingeX, leadX, trailX, handleX, zSide) => {
+    const hinge = new THREE.Group()
+    hinge.position.set(hingeX, 0, zSide * fit.wall)
+    const w = Math.max(Math.abs(trailX - leadX) - seamW, 0.05)   // X+ 朝车头：leading 边 X 更大，取绝对宽
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(w, doorH, 0.012), doorMat)
+    panel.position.set((leadX + trailX) / 2 - hingeX, doorBottom + doorH / 2, zSide * 0.006)
+    panel.castShadow = true
+    hinge.add(panel)
+    const h = new THREE.Mesh(handleGeom, chromeMat)
+    h.position.set(handleX - hingeX, dl.handleY, zSide * 0.016)
+    hinge.add(h)
+    group.add(hinge)
+    doorHinges.push({ hinge, sign: zSide })
+  }
+  for (const zSide of [1, -1]) {
+    mkDoor(dl.frontSeamX, dl.frontSeamX, dl.midSeamX, dl.frontHandleX, zSide)
+    if (dl.rearSeamX !== null) mkDoor(dl.midSeamX, dl.midSeamX, dl.rearSeamX, dl.rearHandleX, zSide)
+  }
 
   const createMirror = (zSide) => {
     const mirrorGroup = new THREE.Group()
@@ -1066,6 +1064,18 @@ const animate = () => {
       const gs = 1 + 0.35 * (1 - lift)
       flightGroundGlow.scale.set(gs, gs, 1)
     }
+  }
+
+  // ---- 车门开合动画：doorProgress 缓动趋近目标，铰链绕竖直轴 rotation.y 开合（把手随门板）----
+  if (doorHinges.length) {
+    const dTarget = doorOpen.value ? 1 : 0
+    if (doorProgress !== dTarget) {
+      const step = vdt / 0.8
+      doorProgress = dTarget > doorProgress ? Math.min(doorProgress + step, 1) : Math.max(doorProgress - step, 0)
+    }
+    const openRad = ((props.carParams?.door_open_angle ?? 70) * Math.PI) / 180
+    const e = quinticSmoothstep(doorProgress) * openRad
+    for (const d of doorHinges) d.hinge.rotation.y = d.sign * e   // 正负号使门板向外摆（+Z 侧向 +Z、−Z 侧向 −Z）
   }
 
   if (autoRotate.value && !isDragging && currentView.value === 'perspective') {

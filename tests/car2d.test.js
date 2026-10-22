@@ -350,11 +350,18 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       }
     })
 
-    it('Car3D.vue 源码含 G1 圆角与 cowl 斜坡（过渡平滑 + 轮廓同源）', () => {
-      const src = readFileSync(resolve(process.cwd(), 'src/components/Car3D.vue'), 'utf8')
-      expect(src).toContain('filletCorner')
-      expect(src).toContain('cowlStartX')
-      expect(src).toContain('lineTo(hoodEndX, beltLineY)')
+    it('侧围轮廓 G1 圆角/cowl/轮拱 notch 收敛到 carProfile.bodySideOutline 单一真源，Car3D 消费之', () => {
+      const prof = readFileSync(resolve(process.cwd(), 'src/utils/carProfile.js'), 'utf8')
+      const car3d = readFileSync(resolve(process.cwd(), 'src/components/Car3D.vue'), 'utf8')
+      // 轮廓真源在 carProfile.js：三处 G1 圆角 + cowl 斜坡 + 底边轮拱 notch
+      expect(prof).toContain('export function bodySideOutline')
+      expect(prof).toContain('filletCorner')
+      expect(prof).toContain('cowlStartX')
+      expect(prof).toContain('hoodEndX, beltLineY')
+      expect(prof).toContain('archNotch')
+      // Car3D 不再内联构建轮廓，改为消费 bodySideOutline（2D/3D 同源）
+      expect(car3d).toContain('bodySideOutline(')
+      expect(car3d).not.toContain('bodyShape.holes.push')
     })
 
     it('Car2D.vue 源码含皮卡专属拓扑分支（isPickup / cabRearX2d）', () => {

@@ -260,3 +260,9 @@ backend/tools/iges_*
 backend/tools/extract_dna_*
 backend/tools/calibrate_curvature_*
 backend/tools/analyze_a_surface_*
+
+# 品牌 DNA 机密数据保护
+# 仅保留示例 DNA 与 README，机密品牌 DNA（如墨玉）不得入库
+backend/app/brand_dna/dnas/*
+!backend/app/brand_dna/dnas/README.md
+!backend/app/brand_dna/dnas/demo_public.json

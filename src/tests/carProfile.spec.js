@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
+import { deriveCabinGlass } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -130,6 +131,87 @@ describe('archLinerProfile 轮腔内衬轮廓（与拱口同形、内缩不互�
     const narrow = archLinerProfile(p, 'front', 0.04)
     const halfW = (prof) => Math.max(...prof.map(([x]) => x)) - Math.min(...prof.map(([x]) => x))
     expect(halfW(narrow)).toBeLessThan(halfW(wide))
+  })
+})
+
+describe('bodySideOutline 侧围外轮廓（轮拱 notch 挖通 + 接近/离去角切角）', () => {
+  const F = { aPillarTop: 0.09, roofRear: 0.09, cPillarBottom: 0.06, pickupCabTop: 0.05, pickupCabBottom: 0.03 }
+  it.each(ALL_TYPES)('%s 轮廓含两处轮拱 notch 弧、点全落合法区、默认角起点退化到 (frontX,gc)', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const cmd = bodySideOutline(p, type, F, p.ramps)
+    expect(cmd[0].k).toBe('M')
+    // 两条拱弧（前后各一）：A 命令且 rx>0
+    const arcs = cmd.filter((c) => c.k === 'A' && c.rx > 0)
+    expect(arcs.length).toBeGreaterThanOrEqual(2)
+    // 默认角 → 起点 = (frontX, bodyBottomY)（零回归）
+    expect(cmd[0].x).toBeCloseTo(p.frontX, 9)
+    expect(cmd[0].y).toBeCloseTo(p.bodyBottomY, 9)
+    // 所有落点（M/L/Q 终点 + A 弧心±半轴）落在合法包围盒（含拱唇/尾底少量余量）
+    for (const c of cmd) {
+      if (c.k === 'A') {
+        expect(c.cx + c.rx).toBeLessThanOrEqual(p.frontX + 0.12)
+        expect(c.cx - c.rx).toBeGreaterThanOrEqual(p.rearX - 0.06)
+        expect(c.cy + c.ry).toBeLessThanOrEqual(p.roofTopY + 0.001)
+        continue
+      }
+      expect(c.x).toBeGreaterThanOrEqual(p.rearX - 0.06)
+      expect(c.x).toBeLessThanOrEqual(p.frontX + 0.12)
+      expect(c.y).toBeGreaterThanOrEqual(-0.001)
+      expect(c.y).toBeLessThanOrEqual(p.roofTopY + 0.001)
+    }
+  })
+
+  it('轮廓为单一闭合环（无 holes 子路径）', () => {
+    const p = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const cmd = bodySideOutline(p, 'sedan', F, p.ramps)
+    expect(cmd.filter((c) => c.k === 'M').length).toBe(1)
+  })
+})
+
+describe('deriveEndRamps 接近/离去角驱动前后下部坡面', () => {
+  it.each(ALL_TYPES)('%s 默认角 → 切角退化为原始直角（零回归）', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    expect(p.ramps.front.cornerY).toBeCloseTo(p.gc, 6)
+    expect(p.ramps.front.rampX).toBeCloseTo(p.frontX, 6)
+    expect(p.ramps.rear.cornerY).toBeCloseTo(p.gc, 6)
+    expect(p.ramps.rear.rampX).toBeCloseTo(p.rearX, 6)
+  })
+
+  it('接近角增大 → 前下角抬高(cornerY↑)、坡脚后退(rampX↓)，且不越机盖线', () => {
+    const base = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const steep = deriveCarProfile({ ...carTypeParams.sedan, approach_angle: 30 }, 'sedan')
+    expect(steep.ramps.front.cornerY).toBeGreaterThan(base.ramps.front.cornerY)
+    expect(steep.ramps.front.rampX).toBeLessThan(base.ramps.front.rampX)
+    expect(steep.ramps.front.cornerY).toBeLessThan(steep.hoodLineY)
+  })
+
+  it('离去角增大 → 后下角抬高、坡脚前收，且不越甲板线', () => {
+    const base = deriveCarProfile(carTypeParams.suv, 'suv')
+    const steep = deriveCarProfile({ ...carTypeParams.suv, departure_angle: 35 }, 'suv')
+    expect(steep.ramps.rear.cornerY).toBeGreaterThan(base.ramps.rear.cornerY)
+    expect(steep.ramps.rear.rampX).toBeGreaterThan(base.ramps.rear.rampX)
+    expect(steep.ramps.rear.cornerY).toBeLessThan(steep.trunkLineY)
+  })
+})
+
+describe('deriveDoorLayout 门缝/B柱/把手布置（2D/3D 同源）', () => {
+  it.each(ALL_TYPES)('%s 缝序 frontSeam>midSeam>rearSeam(X+车头)、把手落门区间、B柱宽随比例单调', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const cabin = deriveCabinGlass(p, { carType: type })
+    const dl = deriveDoorLayout(p, cabin)
+    expect(dl.frontSeamX).toBeGreaterThan(dl.midSeamX)
+    if (dl.rearSeamX !== null) expect(dl.midSeamX).toBeGreaterThan(dl.rearSeamX)
+    else expect(p.pickup).not.toBeNull()
+    expect(dl.handleY).toBeGreaterThan(p.bodyBottomY)
+    expect(dl.handleY).toBeLessThan(p.beltLineY)
+    expect(dl.frontHandleX).toBeLessThanOrEqual(dl.frontSeamX + 1e-9)
+    expect(dl.frontHandleX).toBeGreaterThanOrEqual(dl.midSeamX - 1e-9)
+    // 门板不得覆盖轮拱：前门前边界在拱后唇之后、后门后边界在拱前唇之前
+    expect(dl.frontSeamX).toBeLessThan(p.frontWheelX - p.wheelArch.front.rx)
+    if (dl.rearSeamX !== null) expect(dl.rearSeamX).toBeGreaterThan(p.rearWheelX + p.wheelArch.rear.rx)
+    // B柱宽随 ratio 单调
+    const wide = deriveDoorLayout(p, cabin, { bPillarWidthRatio: 0.1 })
+    expect(wide.bWidth).toBeGreaterThan(dl.bWidth)
   })
 })
 

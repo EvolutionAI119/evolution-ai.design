@@ -26,6 +26,15 @@ const archFlatten = (type) => ({
   wheel_arch_flatten: { sedan: 0, suv: 0.25, coupe: 0, sport: 0, mpv: 0.05, pickup: 0.35 }[type] ?? 0.1
 })
 
+// 车门/B柱/把手布置（UI 可调，前后端同步）：默认值使 B柱宽≈22mm、把手落原硬编码位附近（零视觉回归）
+const doorParams = () => ({
+  b_pillar_width_ratio: 0.047,
+  door_open_angle: 70,
+  door_seam_width: 8,
+  handle_drop_ratio: 0.12,
+  handle_x_ratio: 0.45
+})
+
 export const carTypes = [
   { key: 'sedan', name: 'carSedan', desc: 'Classic sedan' },
   { key: 'suv', name: 'carSuv', desc: 'Sport utility' },
@@ -51,6 +60,7 @@ export const defaultCarParams = {
   rear_slant_angle: 15,
   ...glassParams('sedan'),
   ...flightParams('sedan'),
+  ...doorParams(),
   front_overhang: 1100,
   rear_overhang: 1118
 }
@@ -117,6 +127,18 @@ export const carTypeParams = {
     front_overhang: 1050, rear_overhang: 1100
   }
 }
+
+// 按车型注入可调参数默认值：接近/离去角 = atan(离地间隙/对应悬长)（与 deriveCarProfile 缺省逐位一致，零回归）
+// + 车门/B柱/把手布置默认（doorParams）。defaultCarParams 亦补角度，保证滑块有初值。
+for (const t of Object.keys(carTypeParams)) {
+  const c = carTypeParams[t]
+  const deg = (a, b) => (Math.atan2(a / 1000, b / 1000) * 180) / Math.PI
+  c.approach_angle = deg(c.ground_clearance, c.front_overhang)
+  c.departure_angle = deg(c.ground_clearance, c.rear_overhang)
+  Object.assign(c, doorParams())
+}
+defaultCarParams.approach_angle = (Math.atan2(defaultCarParams.ground_clearance / 1000, defaultCarParams.front_overhang / 1000) * 180) / Math.PI
+defaultCarParams.departure_angle = (Math.atan2(defaultCarParams.ground_clearance / 1000, defaultCarParams.rear_overhang / 1000) * 180) / Math.PI
 
 // name 字段为 i18n 键（designer 域），渲染时通过 t('designer.' + name) 翻译
 export const bodyColors = [

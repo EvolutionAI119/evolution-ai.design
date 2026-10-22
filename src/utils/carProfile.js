@@ -191,14 +191,15 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
   // 轮拱包络椭圆（依赖 beltLineY，返回值前派生）
   const wheelArch = deriveWheelArch(wheelR, gc, beltLineY, carType)
 
-  // ---------- 11. 接近角 / 离去角（布置设计基准，2D/3D 同源） ----------
-  // 定义：前（后）轮接地点与车身前（后）立面底角连线的最大坡度角。
-  // 本模型前立面底角 = (frontX, gc)、后立面底角 = (rearX, gc)，
-  // 接地点与立面底角水平距离恰为前悬 FO / 后悬 RO → tan = gc / FO、gc / RO。
-  const approachAngleDeg = (Math.atan2(gc, FO) * 180) / Math.PI
-  const departureAngleDeg = (Math.atan2(gc, RO) * 180) / Math.PI
+  // ---------- 11. 接近角 / 离去角（布置设计基准，2D/3D 同源，可按车型调节） ----------
+  // 缺省 = 前（后）轮接地点与车身前（后）立面底角连线的最大坡度角 atan(gc/FO)、atan(gc/RO)；
+  // 传入 approach_angle / departure_angle 则覆盖，驱动前后下部车身坡面几何（见 deriveEndRamps）。
+  const defApproach = (Math.atan2(gc, FO) * 180) / Math.PI
+  const defDeparture = (Math.atan2(gc, RO) * 180) / Math.PI
+  const approachAngleDeg = num(p.approach_angle, defApproach)
+  const departureAngleDeg = num(p.departure_angle, defDeparture)
 
-  return {
+  const P0 = {
     // 尺寸（m）
     W, H, WB, track, gc, hoodLen, wheelDia, wheelR, halfTrack, FO, RO,
     // 锚点 X
@@ -216,11 +217,130 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     archY: wheelR,         // 兼容字段 = 轮心高度（历史值 gc+wheelR 为错位拱心，已修正）
     // 轮胎名义断面宽（与包络椭圆 c_steer 同源：0.36 × 轮径）
     tireWidth: wheelR * 2 * 0.36,
-    // 接近角 / 离去角（deg，布置设计基准）
+    // 接近角 / 离去角（deg，布置设计基准，可被参数覆盖）
     approachAngleDeg, departureAngleDeg,
+    defApproach, defDeparture,
     // 车型专属
     pickup, rails, wing
   }
+  // 前后下部坡面（接近/离去角驱动的几何切角，默认角时退化为原始直角，零视觉变化）
+  P0.ramps = deriveEndRamps(P0, approachAngleDeg, departureAngleDeg)
+  return P0
+}
+
+/**
+ * 接近角 / 离去角 → 前/后下部车身坡面切角（2D/3D 同源几何驱动）。
+ * 坡面为「轮胎接地点 → 车身立面底角」的斜面：给定角度 θ，前（后）立面底角抬高到
+ * cornerY = max(gc, FO·tanθ)，坡脚落在底线上 rampX = 立面 ∓ (cornerY-gc)/tanθ。
+ * 默认 θ=atan(gc/FO) 时 cornerY=gc、rampX=立面 → 切角退化为原始直角（零回归）。
+ * 钳位：cornerY 不超过机盖/甲板线，rampX 不侵入轮拱唇（保证轮廓不自交）。
+ */
+export function deriveEndRamps(P, approachDeg, departureDeg) {
+  const RAD = Math.PI / 180
+  const tA = Math.max(Math.tan(approachDeg * RAD), 1e-6)
+  const tD = Math.max(Math.tan(departureDeg * RAD), 1e-6)
+  // 前（X+ 车头）
+  let cornerYf = Math.min(Math.max(P.bodyBottomY, tA * P.FO), P.hoodLineY - 0.02)
+  let rampXf = P.frontX - (cornerYf - P.bodyBottomY) / tA
+  rampXf = Math.min(Math.max(rampXf, P.frontWheelX + P.wheelArch.front.rx + 0.02), P.frontX)
+  // 后（X- 车尾）
+  let cornerYr = Math.min(Math.max(P.bodyBottomY, tD * P.RO), P.trunkLineY - 0.02)
+  let rampXr = P.rearX + (cornerYr - P.bodyBottomY) / tD
+  rampXr = Math.max(Math.min(rampXr, P.rearWheelX - P.wheelArch.rear.rx - 0.02), P.rearX)
+  return { front: { cornerY: cornerYf, rampX: rampXf }, rear: { cornerY: cornerYr, rampX: rampXr } }
+}
+
+/**
+ * 侧围外轮廓命令序列（2D/3D 唯一真源，返回米制指令数组）。
+ * 顶边：前脸→机盖→A柱顶/车顶后缘/C柱底三处 G1 圆角→尾部（沿用现锚点与 ROOF_FILLETS）。
+ * 底边：自车尾向车头行进，绕前后轮拱各升起一个 notch（竖唇 + 半椭圆上缘 + 竖唇），
+ *   使轮拱成为外轮廓真实边界（bevel 沿轮廓走，杜绝共线孔边的拱底残留薄片）；
+ *   前后下角按 ramps（接近/离去角）切角，默认直角。
+ * 指令类型：{k:'M'|'L',x,y}、{k:'Q',cx,cy,x,y}、{k:'A',cx,cy,rx,ry,a0,a1,cw}。
+ * 消费方：Car3D 逐指令 moveTo/lineTo/quadraticCurveTo/absellipse 构建 Shape；
+ *   Car2D 映射到 SVG（X 镜像换算）。carGlass 的 ROOF_FILLETS 由 fillets 参数注入避免循环依赖。
+ */
+export function bodySideOutline(P, carType, fillets, ramps = null) {
+  const F = fillets || { aPillarTop: 0.09, roofRear: 0.09, cPillarBottom: 0.06, pickupCabTop: 0.05, pickupCabBottom: 0.03 }
+  const {
+    bodyBottomY, roofTopY, beltLineY, hoodLineY, trunkLineY,
+    hoodEndX, cowlStartX, trunkStartX, windshieldTopX, rearWindowTopX, rearWindowBottomX,
+    frontX, rearX, frontWheelX, rearWheelX, wheelArch, archY, pickup
+  } = P
+  const R = ramps || { front: { cornerY: bodyBottomY, rampX: frontX }, rear: { cornerY: bodyBottomY, rampX: rearX - 0.036 } }
+  const tailCtrlX = rearX + 0.02, tailCtrlY = trunkLineY - 0.016, tailEndY = trunkLineY - 0.056
+  const cmd = []
+  const M = (x, y) => cmd.push({ k: 'M', x, y })
+  const L = (x, y) => cmd.push({ k: 'L', x, y })
+  const Q = (cx, cy, x, y) => cmd.push({ k: 'Q', cx, cy, x, y })
+  const A = (cx, cy, rx, ry, a0, a1, cw) => cmd.push({ k: 'A', cx, cy, rx, ry, a0, a1, cw })
+  // 轮拱 notch（沿底边 +X 行进：后唇→上缘→前唇）
+  const archNotch = (ax, a) => {
+    L(ax - a.rx, bodyBottomY); L(ax - a.rx, archY)
+    A(ax, archY, a.rx, a.ry, Math.PI, 0, true)
+    L(ax + a.rx, bodyBottomY)
+  }
+
+  if (pickup) {
+    const cabBotX = pickup.cabWindowBottomX
+    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, F.aPillarTop)
+    const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, F.pickupCabTop)
+    const f3 = filletCorner(pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, F.pickupCabBottom)
+    M(R.front.rampX, bodyBottomY); L(frontX, R.front.cornerY)
+    Q(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
+    L(cowlStartX, hoodLineY); L(hoodEndX, beltLineY)
+    L(f1.a[0], f1.a[1]); Q(f1.ctrl[0], f1.ctrl[1], f1.b[0], f1.b[1])
+    L(f2.a[0], f2.a[1]); Q(f2.ctrl[0], f2.ctrl[1], f2.b[0], f2.b[1])
+    L(f3.a[0], f3.a[1]); Q(f3.ctrl[0], f3.ctrl[1], f3.b[0], f3.b[1])
+    L(rearX - 0.024, pickup.bedWallY)
+    Q(rearX, pickup.bedWallY - 0.008, rearX, pickup.bedWallY - 0.048)
+    L(rearX, bodyBottomY + 0.026)
+    Q(rearX, bodyBottomY, R.rear.rampX, R.rear.cornerY)
+    L(R.rear.rampX, bodyBottomY)
+    archNotch(rearWheelX, wheelArch.rear)
+    archNotch(frontWheelX, wheelArch.front)
+    L(R.front.rampX, bodyBottomY)
+  } else {
+    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, F.aPillarTop)
+    const f2 = filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, F.roofRear)
+    const f3 = filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, F.cPillarBottom)
+    M(R.front.rampX, bodyBottomY); L(frontX, R.front.cornerY)
+    Q(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
+    L(cowlStartX, hoodLineY); L(hoodEndX, beltLineY)
+    L(f1.a[0], f1.a[1]); Q(f1.ctrl[0], f1.ctrl[1], f1.b[0], f1.b[1])
+    L(f2.a[0], f2.a[1]); Q(f2.ctrl[0], f2.ctrl[1], f2.b[0], f2.b[1])
+    L(f3.a[0], f3.a[1]); Q(f3.ctrl[0], f3.ctrl[1], f3.b[0], f3.b[1])
+    Q(tailCtrlX, tailCtrlY, rearX, tailEndY)
+    L(rearX, bodyBottomY + 0.026)
+    Q(rearX, bodyBottomY, R.rear.rampX, R.rear.cornerY)
+    L(R.rear.rampX, bodyBottomY)
+    archNotch(rearWheelX, wheelArch.rear)
+    archNotch(frontWheelX, wheelArch.front)
+    L(R.front.rampX, bodyBottomY)
+  }
+  return cmd
+}
+
+/**
+ * 车门分缝线 / B柱宽度 / 门把手布置（2D/3D 同源，米制）。
+ * 缝位由 A柱(windshieldTopX)、B柱(cabin.pillar.x)、C柱底(rearWindowBottomX) 推导，
+ * 并避开轮拱唇；把手高度按腰带线→底板的落差比例、X 按门区间内缩比例自适应。
+ * 默认比例使 B柱宽≈22mm、把手落在原硬编码位置附近（零视觉回归）。
+ */
+export function deriveDoorLayout(P, cabin, opts = {}) {
+  const { bPillarWidthRatio = 0.047, handleDropRatio = 0.12, handleXRatio = 0.45 } = opts
+  const midSeamX = cabin.pillar.x
+  // 门区必须落在两轮拱之间：前门前边界 = 前拱后唇之后，后门后边界 = 后拱前唇之前
+  // （否则车身色门板会盖住轮拱开口，重现"拱底残留薄片"）
+  const frontBound = P.frontWheelX - P.wheelArch.front.rx - 0.04   // 前门可及的最前 X
+  const rearBound = P.rearWheelX + P.wheelArch.rear.rx + 0.04      // 后门可及的最尾 X
+  const frontSeamX = midSeamX + (frontBound - midSeamX) * 0.6      // 前门缝：B柱→前拱后唇 60% 处
+  const rearSeamX = P.pickup ? null : midSeamX + (rearBound - midSeamX) * 0.6
+  const bWidth = bPillarWidthRatio * (P.roofTopY - P.beltLineY)
+  const handleY = P.beltLineY - handleDropRatio * (P.beltLineY - P.bodyBottomY)
+  const frontHandleX = frontSeamX + handleXRatio * (midSeamX - frontSeamX)
+  const rearHandleX = rearSeamX === null ? null : midSeamX + handleXRatio * (rearSeamX - midSeamX)
+  return { frontSeamX, midSeamX, rearSeamX, frontBound, rearBound, bWidth, handleY, frontHandleX, rearHandleX }
 }
 
 /**

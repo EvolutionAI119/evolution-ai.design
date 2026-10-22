@@ -86,22 +86,34 @@ export default defineConfig({
     assetsDir: 'assets',
     outDir: 'dist',
     sourcemap: false,
+    // 大库（Element Plus / Three.js）刻意整体缓存而非无限细拆：
+    // 拆分过细会成倍增加请求数且破坏库级缓存收益。
+    // three 已拆 core/addons 两块，均 <500kB；element-plus 本体约 750kB，
+    // 阈值放宽到 1000kB 以消除无意义的体积告警。
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('three')) {
-            return 'three'
+          // 归一化分隔符：Windows 下 rollup id 可能含反斜杠
+          const p = id.replace(/\\/g, '/')
+          // 顺序重要：先判 icons 再判 element-plus（其 id 同样含 "element-plus"）
+          if (p.includes('@element-plus/icons-vue')) {
+            return 'element-icons'
           }
-          if (id.includes('element-plus')) {
+          if (p.includes('element-plus')) {
             return 'element-plus'
           }
-          if (id.includes('vue') && !id.includes('/src/')) {
+          if (p.includes('/three/')) {
+            // three 主包（build/、src/）与 examples 附加件分开缓存
+            return p.includes('/three/examples/') ? 'three-examples' : 'three'
+          }
+          if (p.includes('vue') && !p.includes('/src/')) {
             return 'vue'
           }
-          if (id.includes('markdown-it')) {
+          if (p.includes('markdown-it')) {
             return 'markdown-it'
           }
-          if (id.includes('axios')) {
+          if (p.includes('axios')) {
             return 'axios'
           }
         }

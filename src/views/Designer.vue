@@ -483,6 +483,55 @@
               </div>
               <div class="param-item">
                 <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.approachAngle') }}</span>
+                  <span class="param-value">{{ carParams.approach_angle.toFixed(1) }}°</span>
+                </div>
+                <input type="range" v-model.number="carParams.approach_angle" min="3" max="45" step="0.5" class="param-slider" />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.departureAngle') }}</span>
+                  <span class="param-value">{{ carParams.departure_angle.toFixed(1) }}°</span>
+                </div>
+                <input type="range" v-model.number="carParams.departure_angle" min="3" max="45" step="0.5" class="param-slider" />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.bPillarWidthRatio') }}</span>
+                  <span class="param-value">{{ (carParams.b_pillar_width_ratio * 100).toFixed(1) }}%</span>
+                </div>
+                <input type="range" v-model.number="carParams.b_pillar_width_ratio" min="0.02" max="0.12" step="0.005" class="param-slider" />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.doorOpenAngle') }}</span>
+                  <span class="param-value">{{ carParams.door_open_angle }}°</span>
+                </div>
+                <input type="range" v-model.number="carParams.door_open_angle" min="0" max="80" step="1" class="param-slider" />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.doorSeamWidth') }}</span>
+                  <span class="param-value">{{ carParams.door_seam_width }} mm</span>
+                </div>
+                <input type="range" v-model.number="carParams.door_seam_width" min="5" max="15" step="1" class="param-slider" />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.handleDropRatio') }}</span>
+                  <span class="param-value">{{ (carParams.handle_drop_ratio * 100).toFixed(0) }}%</span>
+                </div>
+                <input type="range" v-model.number="carParams.handle_drop_ratio" min="0.02" max="0.3" step="0.01" class="param-slider" />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
+                  <span class="param-name">{{ t('designer.handleXRatio') }}</span>
+                  <span class="param-value">{{ (carParams.handle_x_ratio * 100).toFixed(0) }}%</span>
+                </div>
+                <input type="range" v-model.number="carParams.handle_x_ratio" min="0.1" max="0.9" step="0.05" class="param-slider" />
+              </div>
+              <div class="param-item">
+                <div class="param-label-row">
                   <span class="param-name">{{ t('designer.vtolBranch') }}</span>
                   <label class="param-toggle">
                     <input type="checkbox" v-model="carParams.enable_vtol" />
