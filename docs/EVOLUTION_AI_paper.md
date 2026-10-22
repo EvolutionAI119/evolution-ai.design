@@ -3,10 +3,10 @@
 **Technical paper — platform version 1.2 (September 2026)**
 
 *All system claims in this paper are anchored to the shipped source tree:
-16 backend route modules with 118 HTTP endpoints (116 router endpoints plus
-2 system endpoints), 11 ORM tables, 11 frontend
-pages, and a 489-case automated test baseline (200 algorithm-layer,
-178 backend, 111 frontend).*
+19 backend route modules with 153 HTTP endpoints (151 router endpoints plus
+2 system endpoints), 17 ORM tables, 12 frontend
+pages, and a 955-case automated test baseline (205 algorithm-layer,
+388 backend, 362 frontend).*
 
 ---
 
@@ -103,7 +103,7 @@ EVOLUTION AI was built under four principles:
   controlled synthetic-but-deterministic dataset, CLIP six-axis semantic
   scoring for texture-driven design, a seven-provider LLM proxy with
   encrypted key storage, and an on-premises NURBS expert chat.
-- An end-to-end system evaluation on 489 automated tests, convergence
+- An end-to-end system evaluation on 955 automated tests, convergence
   experiments, and continuity/quality measurements.
 
 ### 1.4 Reproducibility Statement
@@ -546,14 +546,14 @@ backend itself is down.
 
 ### 8.1 Test Baseline
 
-The platform carries **489 automated test cases**, executed independently
+The platform carries **955 automated test cases**, executed independently
 at each layer:
 
 | Layer | Framework | Cases | Scope |
 |---|---|---:|---|
-| algorithm_model | pytest | 200 | NURBS math, swept/fillet, builders, quality, SOP |
-| backend | pytest | 178 | routes, schemas, optimizer service, security, persistence |
-| frontend | vitest | 111 | stores, components, API modules, guards |
+| algorithm_model | pytest | 205 | NURBS math, swept/fillet, builders, quality, SOP |
+| backend | pytest | 388 | routes, schemas, optimizer service, security, persistence, admin/analytics |
+| frontend | vitest | 362 | stores, components, API modules, guards |
 | algorithm self-check | `test_all.py` | 5 modules | one-command end-to-end sanity gate |
 
 The self-check builds a parameterized body without mesh post-processing
@@ -675,7 +675,7 @@ tools. The combination of a parameter-driven dual geometry pipeline, a
 transparent GP+EI/UCB optimizer with a training-data bridge, and a
 heterogeneous AI fusion layer with truthful degradation shortens the
 loop from concept proportion to engineering STEP output while keeping
-every result editable and auditable. The 489-case test baseline,
+every result editable and auditable. The 955-case test baseline,
 convergence experiments, and continuity measurements provide evidence
 that the integrated system behaves as specified. Future work will add
 parameter-efficient expert fine-tuning, richer objectives and

@@ -13,16 +13,16 @@
 
 ---
 
-## 📦 当前状态 (v1.2, 2026-09-27 全面复盘)
+## 📦 当前状态 (v1.2.x, 2026-10-22 全面审计更新)
 
-经全面复盘对齐现状，三层测试全绿。
+经全面审计对齐现状，三层测试全绿。
 
 | 模块 | 状态 | 技术栈 | 规模（实测） |
 |------|------|--------|------|
-| **前端** | ✅ 可运行 | Vue 3 + Vite 5 + Three.js + Element Plus + Pinia | **10 个路由页面**，3D 实时渲染，i18n 双语 |
-| **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 | **16 个路由模块 / 118 个端点 / 11 张 ORM 表** |
-| **算法层** | ✅ 可运行 | Python 3.11+ / NumPy / SciPy / Trimesh | NURBS 整车 + freeform + surface_quality + storyboard；**200 pytest + 自检 5 模块全过** |
-| **测试基线** | ✅ 489+ 全绿 | algorithm_model 200 / backend 178 / frontend 111 | 详见 [架构文档](docs/ARCHITECTURE_DESIGN.md) |
+| **前端** | ✅ 可运行 | Vue 3 + Vite 5 + Three.js + Element Plus + Pinia | **12 个路由页面**（含 Copilot/社区/联系），3D 实时渲染，i18n 双语，游客免登录 |
+| **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 | **19 个路由模块 / 153 个端点（151+2 系统）/ 17 张 ORM 表**；游客模式 GUEST_MODE；管理后台 `/admin` |
+| **算法层** | ✅ 可运行 | Python 3.11+ / NumPy / SciPy / Trimesh | NURBS 整车 + freeform + surface_quality + storyboard；**205 pytest + 自检 5 模块全过** |
+| **测试基线** | ✅ 955 全绿 | algorithm_model 205 / backend 388 / frontend 362 | 详见 [架构文档](docs/ARCHITECTURE_DESIGN.md) |
 | **Mock Fallback** | ✅ 已集成 | - | backend 不可用时显示 mock 项目，页面不黑屏 |
 | **可选能力** | ✅ 真实降级 | PyTorch / Ollama / Redis / CLIP | 缺失时 503 或自动降级，绝不伪装成功 |
 | **部署** | ✅ Docker | Compose + Nginx + cpolar 隧道 | 见 [deploy/](deploy/) |
@@ -224,8 +224,12 @@ _writer            已验证           body_ends(G1)       SOP 报告 / FreeCAD 
 
 - [架构设计文档](docs/ARCHITECTURE_DESIGN.md) — 五层分层、模块清单、数据流、部署（必读）
 - [技术白皮书](docs/whitepaper.md) — 平台定位、核心能力、架构部署、可信基线与演进
-- [产品功能定义](docs/PRODUCT_SPEC.md) — 用户角色、11 页面功能、能力矩阵
-- [API 参考总览](docs/api_reference.md) — 16 模块 118 端点明细与认证标记
+- [产品功能定义](docs/PRODUCT_SPEC.md) — 用户角色、页面功能、能力矩阵
+- [API 参考总览](docs/api_reference.md) — 路由模块端点明细与认证标记
+- [深度演化的系统思想](docs/evolution_systems_thinking.md) — 钱学森系统科学方法论（复杂巨系统/综合集成/总体设计部）与平台深度演化纲领
+- [模块集成数据流](docs/MODULE_INTEGRATION_FLOW.md) — 模块间集成与数据流转
+- [SISA 2D 渲染集成](docs/SISA_2D_RENDER_INTEGRATION.md) — SISA 2D 渲染管线集成说明
+- [飞行性能报告](docs/flight_performance_report.md) — VTOL + 反重力飞控全栈性能核验（附 [HTML 完整版](docs/flight_performance_analysis.html)）
 - [英文学术论文](docs/EVOLUTION_AI_paper.md) — 贝叶斯优化 + NURBS A 级曲面 + DL/LLM 融合 + 端到端集成
 - [造型开发方法论](docs/methodology.md) — 五维度方法论、SOP、成熟度自检
 - [汽车造型设计哲学](docs/design_philosophy.md) — 形·理·数，观察·约束·生成·演化，跨文明哲学根基

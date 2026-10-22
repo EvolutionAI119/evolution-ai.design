@@ -130,6 +130,6 @@ Regression baseline: vitest 111 tests green, `vite build` passing. Temporary use
 ## 8. Related Documents
 
 - [Architecture Design](ARCHITECTURE_DESIGN.md): five-layer architecture, route modules, ORM tables
-- [API Reference](api_reference.md): all 118 endpoints in detail
+- [API Reference](api_reference.md): all 153 endpoints in detail
 - [Development Methodology](methodology.md): five-dimension methodology and SOPs
 - [Validation Report](VALIDATION_REPORT_20260927.md): latest platform quality evidence baseline

@@ -19,11 +19,11 @@ Current platform scale (v1.2; all figures anchored to source code):
 
 | Dimension | Scale |
 |---|---|
-| Frontend | Vue 3 + Vite + Three.js; 11 pages, hash routing + global login guard |
-| Backend | FastAPI + Pydantic v2 + SQLAlchemy 2.0; 16 route modules / 118 HTTP endpoints |
-| Data | SQLite; 11 ORM tables (including Fernet-encrypted API-key storage) |
+| Frontend | Vue 3 + Vite + Three.js; 12 pages, hash routing, guest access without login |
+| Backend | FastAPI + Pydantic v2 + SQLAlchemy 2.0; 19 route modules / 153 HTTP endpoints |
+| Data | SQLite; 17 ORM tables (including Fernet-encrypted API-key storage) |
 | Algorithm | 5 algorithm packages: parameterized full vehicle, NURBS free-form kernel, surface-quality evaluation, storyboard generation & presentation |
-| Test baseline | 489+ automated cases (200 algorithm / 178 backend / 111 frontend) plus the one-stop five-module self-check |
+| Test baseline | 955+ automated cases (205 algorithm / 388 backend / 362 frontend) plus the one-stop five-module self-check |
 
 Three engineering positions:
 
@@ -155,20 +155,20 @@ Unify design intent and engineering hard points through a **parameter space**; a
 
 | Layer | Content |
 |---|---|
-| L1 Frontend | Vue 3 + Vite + Three.js + Element Plus + Pinia; 11 pages, bilingual i18n, global guard |
+| L1 Frontend | Vue 3 + Vite + Three.js + Element Plus + Pinia; 12 pages, bilingual i18n, guest access |
 | L2 Gateway | Vite dev proxy / Nginx; `/api/v1` → FastAPI:8000; public access via cpolar HTTPS tunnel |
-| L3 Backend | FastAPI 0.104 + Pydantic v2; 16 thin-shell route modules / 118 endpoints |
+| L3 Backend | FastAPI 0.104 + Pydantic v2; 19 thin-shell route modules / 153 endpoints |
 | L4 Algorithm | Independently installable algorithm_model package: car_modeling / freeform / surface_quality / storyboard |
 | L5 Infrastructure | SQLite + file storage; optional Redis (degrades to in-process sessions); background training threads |
 
-### 5.2 Data Model (11 ORM Tables)
+### 5.2 Data Model (17 ORM Tables)
 
-`projects`, `model_files`, `workflows`, `workflow_steps`, `quality_reports`, `parameter_sets`, `model_variants`, `users`, `api_keys` (Fernet-encrypted), `parameter_records`, `training_tasks`.
+`projects`, `model_files`, `workflows`, `workflow_steps`, `quality_reports`, `parameter_sets`, `model_variants`, `users`, `login_records`, `admin_audit_logs`, `api_keys` (Fernet-encrypted), `parameter_records`, `training_tasks`, `page_views`, `messages`, `external_references`, `notifications`.
 
 ### 5.3 Authentication and Security
 
-- JWT (login/WeChat) with a global route guard;
-- Training and API-key endpoints enforce authentication; the LLM proxy optionally does;
+- Guest mode: full-site browsing without login; under `GUEST_MODE`, unauthenticated requests pass as guest;
+- Admin endpoints enforce admin-level dependencies (require_admin / require_superadmin); training and API-key management enforce authentication; the LLM proxy is optional-auth;
 - API keys are stored with Fernet symmetric encryption; fail-fast if `SECRET_KEY` is missing in production.
 
 See [ARCHITECTURE_DESIGN.md](ARCHITECTURE_DESIGN.md) and [api_reference.md](api_reference.md) for details.

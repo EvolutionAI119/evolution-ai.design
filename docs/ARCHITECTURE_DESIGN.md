@@ -23,13 +23,13 @@
 │            /api/v1 → FastAPI(8000)；公网经 cpolar HTTPS 隧道  │
 ├──────────────────────────────────────────────────────────────┤
 │ L3 后端服务层  FastAPI 0.104 + Pydantic v2                    │
-│            16 个路由模块 / 118 个端点（含 2 个系统端点）；薄壳编排  │
+│            19 个路由模块 / 153 个端点（含 2 个系统端点）；薄壳编排  │
 ├──────────────────────────────────────────────────────────────┤
 │ L4 算法层  algorithm_model（独立可安装包）                     │
 │            NURBS 整车建模 / freeform 自由曲面 /               │
 │            surface_quality 质量评估与优化 / storyboard 分镜    │
 ├──────────────────────────────────────────────────────────────┤
-│ L5 基础设施层  SQLite（开发）+ SQLAlchemy 2.0（11 张 ORM 表） │
+│ L5 基础设施层  SQLite（开发）+ SQLAlchemy 2.0（17 张 ORM 表） │
 │            文件存储；可选 Redis；Docker Compose 部署          │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -47,20 +47,22 @@
 
 ## 2. 前端结构
 
-源码根：`src/`。10 个路由页面（Hash 模式）：
+源码根：`src/`。12 个路由页面（Hash 模式；游客免登录，登录/账户页源码封存于 `src/views/Login.vue`、`src/views/Account.vue`）：
 
 | 路由 | 页面 | 核心职责 |
 |---|---|---|
 | `/` | Dashboard | 平台总览与功能入口 |
 | `/designer` | Designer | AI 参数化设计器：参数面板 + 3D 实时渲染 |
+| `/copilot` | DesignCopilot | 设计副驾：意图解析 + 参数变体（design_intent 端点） |
 | `/projects` | Projects | 项目列表 |
 | `/projects/:id` | ProjectDetail | 项目详情与模型管理 |
 | `/deep-learning` | DeepLearning | 深度学习设计器：训练批次、风格/生成式设计 |
 | `/quality` | Quality | 质量检查与报告列表 |
 | `/deliver` | Deliver | 工程交付与数据交接 |
-| `/demo` | Demo | 功能演示 |
-| `/login` | Login | 登录（密码 + 微信扫码/公众号授权），公开页 |
-| `/account` | Account | 账户与 API Key 管理 |
+| `/demo` | Demo | 功能演示（含 VTOL 飞行物理） |
+| `/help` | Help | 帮助中心：3D 知识图谱、模块手册、文档体系 |
+| `/community` | Community | 社区互动（留言、引用线索，analytics 端点） |
+| `/contact` | Contact | 联系与反馈 |
 
 核心目录：
 
@@ -71,7 +73,7 @@
 - `utils/`：carImageManager、imageGenerator、llm、useCarSessionImage
 - `i18n.js`：中英双语
 
-路由全局守卫：无 token 访问受保护页面 → 跳 `/login` 并携带回跳地址。
+访问控制：游客模式全站放行（前端守卫为空实现）；后端 `GUEST_MODE` 下未登录请求统一以游客身份放行，管理端点仍需管理员级依赖；`api.js` 保留 401 → 登录引导事件（`evoai:auth-required`）供受保护场景使用。
 
 ---
 
@@ -79,7 +81,7 @@
 
 后端根：`backend/`，应用入口 `app/main.py`（`create_app()` 装配），启动脚本 `start.py`。
 
-### 3.1 路由模块（16 个模块共 116 个端点：113 个 `@router` + `keys_router` 3 个；`main.py` 另有 2 个系统端点，合计 **118 个 HTTP 端点**）
+### 3.1 路由模块（19 个模块共 151 个端点：148 个 `@router` + `keys_router` 3 个；`main.py` 另有 2 个系统端点，合计 **153 个 HTTP 端点**）
 
 | 模块文件 | 最终路径前缀 | 端点数 | 职责 |
 |---|---|---:|---|
@@ -90,14 +92,17 @@
 | modify.py | `/api/v1/modify` | 15 | NURBS 曲面、参数、测量、历史 |
 | export.py | `/api/v1/export` | 4 | 模型导出与下载 |
 | variant.py | `/api/v1/variants` | 7 | 变体/版本/对比/回滚 |
-| workflow.py | `/api/v1/workflows` | 7 | 工作流与步骤、执行 |
-| quality.py | `/api/v1`（quality/topology/data 等） | 8 | 质量检查、拓扑优化、数据交接、文件下载 |
-| training.py | `/api/v1/ai` | 14 | PyTorch 训练任务、样本批次、分析端点 |
+| workflow.py | `/api/v1/workflows` | 9 | 工作流与步骤、执行、训练评审 |
+| quality.py | `/api/v1`（quality/topology/data 等） | 9 | 质量检查、G2 检查、拓扑优化、数据交接、文件下载 |
+| training.py | `/api/v1/ai` | 15 | PyTorch 训练任务、样本批次、已训练模型、分析端点 |
 | ai.py | `/api/v1/ai` | 3 | NURBS 专家对话、Ollama 模型/健康 |
 | bayes.py | `/api/v1/bayes` | 7 | 贝叶斯优化会话全生命周期 |
 | texture.py | `/api/v1/texture` | 3 | 参数化纹理分析与应用 |
 | import_export.py | `/api/v1/import-export` | 11 | 导入→改参→导出全链路会话 |
 | llm_proxy.py | `/api/v1/llm` | 4 | 多 LLM 提供商统一代理 |
+| design_intent.py | `/api/v1/design-intent` | 3 | 自然语言设计意图解析与变体 |
+| analytics.py | `/api/v1/analytics` | 21 | 埋点统计、社区留言/引用线索、通知中心、数据导出 |
+| admin.py | `/api/v1/admin` | 7 | 管理后台：用户/登录记录/审计/错误日志 |
 | auth.py | `/api/v1/auth`、`/api/v1/api-keys` | 12 | 注册/登录/微信授权（9）、API Key 管理（3） |
 
 逐端点明细见 [api_reference.md](api_reference.md)。
@@ -107,6 +112,7 @@
 | 模块 | 职责 |
 |---|---|
 | `bayes_optimizer.py` | 高斯过程（RBF）+ EI/UCB 贝叶斯引擎（纯 numpy/scipy） |
+| `brand_dna/` | 品牌 DNA 装载（loader/dnas）、On-Brand 判定（on_brand）、2D 特征（features_2d）、schema；契约文档见 `brand_dna/contracts/` |
 | `brand_knowledge.py` | 品牌/车型知识库查询、语义匹配、相似检索 |
 | `cad_importer.py` | CAD 文件（STL/STEP 等）导入与点云分析、降级兜底 |
 | `car_generator.py` | 基于参数配置的 NURBS 车身生成 |
@@ -116,7 +122,7 @@
 | `session_store.py` | 通用会话存储 |
 | `security.py` | JWT 签发/校验、依赖注入（get_current_user / get_optional_user） |
 | `config.py` | pydantic-settings 配置；生产 SECRET_KEY fail-fast |
-| `database.py` | 引擎、SessionLocal、11 张 ORM 表 |
+| `database.py` | 引擎、SessionLocal、17 张 ORM 表 |
 | `schemas.py` | Pydantic 请求/响应模型 |
 
 ### 3.3 配置与插件
@@ -142,7 +148,7 @@
 
 ---
 
-## 5. 数据模型（11 张 ORM 表）
+## 5. 数据模型（17 张 ORM 表）
 
 | 表 | 模型类 | 关键字段 |
 |---|---|---|
@@ -154,12 +160,18 @@
 | parameter_sets | ParameterSet | project_id, name, params |
 | model_variants | ModelVariant | model_id, name, parent_variant_id, params_json, car_data_json |
 | users | User | email(唯一), username, password_hash, wechat_unionid/openid, is_active/is_admin |
+| login_records | LoginRecord | 用户登录流水（时间、方式、IP 等） |
+| admin_audit_logs | AdminAuditLog | 管理操作审计（操作者、动作、对象） |
 | api_keys | ApiKey | user_id, provider, key_encrypted；(user_id, provider) 唯一 |
 | parameter_records | ParameterRecord | name(唯一), value |
 | training_tasks | TrainingTask | user_id, name, dataset, config_json, status, progress, metrics_json, logs |
+| page_views | PageView | 页面访问埋点（路径、时长、访客） |
+| messages | Message | 社区留言与回复（内容、点赞、隐藏） |
+| external_references | ExternalReference | 外部引用线索（来源、核实状态） |
+| notifications | Notification | 站内通知（用户、已读状态） |
 
 关系链：Project 1—N ModelFile / Workflow / QualityReport；Workflow 1—N WorkflowStep；
-ModelFile 1—N ModelVariant（含自引用 parent）；User 1—N ApiKey。
+ModelFile 1—N ModelVariant（含自引用 parent）；User 1—N ApiKey / LoginRecord / Notification。
 
 ---
 
@@ -231,10 +243,10 @@ Login → /auth/methods 探测能力
 
 | 测试套件 | 用例数 | 结果 |
 |---|---:|---|
-| algorithm_model pytest（tests/） | 200 | 全过 |
+| algorithm_model pytest（tests/） | 205 | 全过 |
 | algorithm_model 一站式自检（test_all.py） | 5 大模块 | 全过 |
-| backend pytest（tests/） | 178 | 全过 |
-| frontend vitest | 111 | 全过 |
-| **合计** | **489+** | **全绿** |
+| backend pytest（tests/） | 388（1 跳过、2 xfailed） | 全过 |
+| frontend vitest | 362 | 全过 |
+| **合计** | **955+** | **全绿** |
 
 运行方式见根 README「测试」一节。

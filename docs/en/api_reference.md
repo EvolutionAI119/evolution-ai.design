@@ -1,11 +1,12 @@
 # API Reference Overview
 
-> Version: platform v1.2 (generated from source on 2026-09-27)
-> **118 HTTP endpoints** in total: 116 across 16 route modules (113 `@router` plus 3 API-key endpoints on `keys_router`), and 2 system endpoints in `main.py`; unified prefix `/api/v1`.
+> Version: platform v1.2.x (regenerated from source on 2026-10-22)
+> **153 HTTP endpoints** in total: 151 across 19 route modules, and 2 system endpoints in `main.py`; unified prefix `/api/v1`.
 > Requests/responses are JSON (except export/download endpoints).
 >
 > Auth markers:
 > - 🔐 Authentication required: `Authorization: Bearer <JWT>` (`get_current_user`)
+> - 👑 Admin required: admin-level dependency (`require_admin` / `require_superadmin`)
 > - 🔹 Optional auth: associates the user when a JWT is present (`get_optional_user`)
 > - Unmarked: public
 >
@@ -100,24 +101,27 @@
 | POST | `/variants/compare` | Compare variants | |
 | POST | `/variants/{model_id}/{variant_id}/rollback` | Roll back to a variant | |
 
-## 8. Workflows — workflow.py (7)
+## 8. Workflows — workflow.py (9)
 
 | Method | Path | Function | Auth |
 |---|---|---|---|
 | POST | `/workflows/` | Create workflow | |
 | GET | `/workflows/` | List workflows (project_id / status filters) | |
+| POST | `/workflows/training-review` | Create a training-review workflow | |
+| POST | `/workflows/{workflow_id}/steps/{step_id}/review` | Submit a workflow-step review | |
 | GET | `/workflows/{workflow_id}` | Workflow detail | |
 | POST | `/workflows/{workflow_id}/execute` | Execute workflow | |
 | GET | `/workflows/{workflow_id}/steps` | List workflow steps | |
 | PUT | `/workflows/{workflow_id}` | Update workflow | |
 | DELETE | `/workflows/{workflow_id}` | Delete workflow | |
 
-## 9. Quality and Topology — quality.py (8)
+## 9. Quality and Topology — quality.py (9)
 
 | Method | Path | Function | Auth |
 |---|---|---|---|
 | POST | `/topology/optimize/` | Topology optimization | |
 | POST | `/quality/check/` | Create quality-check report | |
+| POST | `/quality/g2-check/` | Dedicated G2-continuity check | |
 | GET | `/quality/reports/` | List quality reports (project_id / model_id filters) | |
 | GET | `/quality/reports/{report_id}` | Quality-report detail | |
 | POST | `/data/handover/` | Data-handover preparation | |
@@ -125,7 +129,7 @@
 | GET | `/reports/{report_path}` | Download report file (path-style) | |
 | GET | `/exports/{export_path}` | Download export file (path-style) | |
 
-## 10. AI Training — training.py (14)
+## 10. AI Training — training.py (15)
 
 | Method | Path | Function | Auth |
 |---|---|---|---|
@@ -140,6 +144,7 @@
 | GET | `/ai/styles` | Style metadata | |
 | GET | `/ai/brands` | Brand metadata | |
 | GET | `/ai/model-weights` | Produced model checkpoints | |
+| GET | `/ai/trained-models` | List trained models | |
 | POST | `/ai/evaluate-quality` | Styling-parameter quality evaluation | |
 | POST | `/ai/generate-design` | Generative design | |
 | POST | `/ai/optimize` | Parameter optimization | |
@@ -199,7 +204,59 @@ For details see [bayes_optimization.md](bayes_optimization.md).
 | POST | `/llm/{provider}/embeddings` | Embeddings | 🔹 |
 | POST | `/llm/{provider}/images/generations` | Text-to-image | 🔹 |
 
-## 16. Auth and API Keys — auth.py (9)
+## 16. Admin Console — admin.py (7)
+
+The standalone admin UI is served by the backend at `/admin`; these are its supporting endpoints.
+
+| Method | Path | Function | Auth |
+|---|---|---|---|
+| GET | `/admin/users` | List users | 👑 |
+| GET | `/admin/login-records` | Query login records | 👑 |
+| POST | `/admin/users/{user_id}/active` | Enable/disable a user | 👑 |
+| POST | `/admin/users/{user_id}/reset-password` | Reset a user's password | 👑 |
+| POST | `/admin/users/{user_id}/role` | Change a user's role | 👑 |
+| GET | `/admin/audit-logs` | Admin audit log | 👑 |
+| GET | `/admin/backend-errors` | Backend error log query | 👑 |
+
+## 17. Analytics & Community — analytics.py (21)
+
+Tracking statistics, community messages/reference leads, notification center, and data export.
+
+| Method | Path | Function | Auth |
+|---|---|---|---|
+| POST | `/analytics/track` | Page-view tracking | 🔹 |
+| POST | `/analytics/track/duration` | Dwell-time tracking | |
+| GET | `/analytics/public-summary` | Public statistics summary | 👑 |
+| GET | `/analytics/messages` | List community messages | |
+| POST | `/analytics/messages` | Post a message | 🔹 |
+| POST | `/analytics/messages/{message_id}/reply` | Reply to a message | 🔹 |
+| POST | `/analytics/messages/{message_id}/like` | Like a message | |
+| POST | `/analytics/messages/{message_id}/hide` | Hide a message | 👑 |
+| GET | `/analytics/references` | List reference leads | |
+| POST | `/analytics/references` | Submit a reference lead | 🔹 |
+| GET | `/analytics/references/all` | All reference leads (admin) | 👑 |
+| POST | `/analytics/references/{reference_id}/verify` | Verify a reference lead | 👑 |
+| GET | `/analytics/overview` | Operations overview | 👑 |
+| GET | `/analytics/visits` | Visit statistics | 👑 |
+| GET | `/analytics/registrations` | Registration statistics | 👑 |
+| GET | `/analytics/interactions` | Interaction statistics | 👑 |
+| GET | `/analytics/notifications` | List notifications (own) | 🔐 |
+| GET | `/analytics/notifications/unread-count` | Unread notification count | 🔐 |
+| POST | `/analytics/notifications/{notification_id}/read` | Mark a notification read | 🔐 |
+| POST | `/analytics/notifications/read-all` | Mark all read | 🔐 |
+| GET | `/analytics/export` | Export statistics (CSV/JSON) | 👑 |
+
+## 18. Design Intent Parsing — design_intent.py (3)
+
+Structured parsing of natural-language design intents (public endpoints available to guests).
+
+| Method | Path | Function | Auth |
+|---|---|---|---|
+| GET | `/design-intent/examples` | List intent examples | |
+| POST | `/design-intent/parse` | Parse a natural-language design intent | |
+| POST | `/design-intent/parse-variants` | Parse and generate parameter variants | |
+
+## 19. Auth and API Keys — auth.py (9)
 
 | Method | Path | Function | Auth |
 |---|---|---|---|
@@ -221,7 +278,7 @@ For details see [bayes_optimization.md](bayes_optimization.md).
 
 ---
 
-## 17. System Endpoints (defined directly in main.py)
+## 20. System Endpoints (defined directly in main.py)
 
 | Method | Path | Function |
 |---|---|---|
@@ -230,7 +287,7 @@ For details see [bayes_optimization.md](bayes_optimization.md).
 
 ---
 
-## 18. Standard Error Responses
+## 21. Standard Error Responses
 
 | Status | Meaning |
 |---|---|

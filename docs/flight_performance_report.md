@@ -4,7 +4,7 @@
 > 报告日期：2026-10-21 · 数据平台版本：VTOL + 反重力飞控全栈（main 974bad89）
 > v2 全文化：与 HTML 完整版同源（10 章全文 + 10 幅图表 + 数据与版本溯源）
 
-[完整版（含交互图表）](/docs/flight_performance_analysis.html)
+[完整版（含交互图表）](flight_performance_analysis.html)
 
 **核心指标速览**（对应 HTML 报告头部指标卡）：
 
