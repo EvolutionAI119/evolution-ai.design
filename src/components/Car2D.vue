@@ -25,6 +25,24 @@
           stroke="rgba(59,130,246,0.5)" stroke-width="1" stroke-dasharray="2,3"
           vector-effect="non-scaling-stroke"
         />
+        <!-- 玻璃分缝工程标注：G1/G2/G3 = 门缝坐标向上延伸进 DLO，δ = 门缝宽（玻璃片各退 δ/2） -->
+        <g font-family="Inter, sans-serif">
+          <text :x="8" :y="seamNoteY" fill="rgba(147,197,253,0.78)" font-size="9.5">
+            {{ seamNoteText }}
+          </text>
+          <g v-for="g in glassSeams2d" :key="'ga' + g.id">
+            <circle :cx="g.x" :cy="g.y2" r="2" fill="#93c5fd" />
+            <line
+              :x1="g.x" :y1="g.y2 - 2" :x2="g.x" :y2="seamTickY"
+              stroke="rgba(147,197,253,0.5)" stroke-width="1"
+              vector-effect="non-scaling-stroke"
+            />
+            <text :x="g.x + 6" :y="seamLabelY" fill="#93c5fd" font-size="10">
+              <tspan font-weight="700">{{ g.id }}</tspan>
+              <tspan dx="4">{{ g.label }}</tspan>
+            </text>
+          </g>
+        </g>
         <!-- B 柱：车身色实体，宽度 = b_pillar_width_ratio 联动（与 3D 立柱同宽同高）+ 中心线标注 -->
         <rect :x="bPillarX2d" :y="bPillarTopY2d" :width="bPillarW2d" :height="bPillarH2d" fill="rgba(10,12,18,0.85)" stroke="rgba(59,130,246,0.6)" stroke-width="1" vector-effect="non-scaling-stroke" />
         <line :x1="pillarCenterX2d" :y1="bPillarTopY2d" :x2="pillarCenterX2d" :y2="bPillarTopY2d + bPillarH2d" stroke="rgba(59,130,246,0.85)" stroke-width="1" />
@@ -112,10 +130,15 @@ const props = defineProps({
 
 // ============ 画布布局：高度方向与宽度方向共同约束缩放，杜绝车顶越界裁切 ============
 const svgWidth = 800
-const svgHeight = 420
-const padTop = 30          // 车顶上方留白
+const svgHeight = 450
+const padTop = 66          // 车顶上方标注带（玻璃分缝引出线 + 标签）
 const dimAreaH = 84        // 地面线下方标注区（FO/RO · WB · L 三行尺寸）
 const groundY = svgHeight - dimAreaH
+
+// 玻璃分缝标注行（车顶上方，自下而上：引出线顶端 → 缝标签 → 说明文字）
+const seamTickY = 36       // 引出线顶端
+const seamLabelY = 30      // G1/G2/G3 标签基线
+const seamNoteY = 12       // 分缝逻辑说明基线
 
 // 尺寸标注行（地面线下方）
 const dimY1 = groundY + 20 // 前悬 FO / 后悬 RO
@@ -219,9 +242,29 @@ const dloTopY2d = (x3d) => {
   return outY(yb + t * (yt - yb))
 }
 const glassSeams2d = computed(() => {
-  const xs = [dl2d.value.frontSeamX, dl2d.value.midSeamX]
-  if (dl2d.value.rearSeamX !== null) xs.push(dl2d.value.rearSeamX)
-  return xs.map((x3d) => ({ x: toX(x3d), y1: doorSeamTopY2d.value, y2: dloTopY2d(x3d) }))
+  const seams = [
+    { id: 'G1', x3d: dl2d.value.frontSeamX, label: '前门缝' },
+    { id: 'G2', x3d: dl2d.value.midSeamX, label: isPickup.value ? '驾驶室后缝' : 'B柱缝' }
+  ]
+  if (dl2d.value.rearSeamX !== null) {
+    seams.push({ id: 'G3', x3d: dl2d.value.rearSeamX, label: '后门缝' })
+  }
+  return seams.map((g) => ({
+    ...g,
+    x: toX(g.x3d),
+    y1: doorSeamTopY2d.value,
+    y2: dloTopY2d(g.x3d)
+  }))
+})
+
+// 玻璃分缝说明：缝坐标与门缝同源，缝宽取 door_seam_width，玻璃片两侧各退半个缝宽
+const seamWidthMm = computed(() => {
+  const w = Number(props.carParams.door_seam_width ?? 8)
+  return Math.min(Math.max(Number.isFinite(w) ? w : 8, 2), 20)
+})
+const seamNoteText = computed(() => {
+  const motion = isPickup.value ? '门片随门外摆，A柱前片与后侧窗固定' : '前/后门片随门外摆，A/C柱片固定'
+  return `侧窗玻璃分缝 = 门缝坐标延伸 · δ ${seamWidthMm.value}mm（各退半缝）· ${motion}`
 })
 
 // 接近角/离去角标注 + 坡面底角 Y（carProfile 同源角度，ramps 驱动立面底角高度）
