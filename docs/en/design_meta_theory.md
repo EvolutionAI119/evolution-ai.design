@@ -27,6 +27,11 @@ Based on Pan Lusheng's research on the meta-theory of traditional Chinese artisa
 | **Methodology** | How is practice conducted? | Transforming nature, instrumental reason, maximizing efficiency | Following the Way of heaven, modeling on heaven and timing, the vessel carrying the Way, skillfully following creation, technique advancing into the Way |
 | **Axiology** | What ultimate value is pursued? | Absolute truth, other-worldly salvation | The everyday as the Way; individual life merging into the eternal creative flow of the universe |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/meta2-image.svg" alt="Four philosophical roots growing into a knowledge system" loading="lazy">
+  <figcaption><strong>Fig. 1-1 ｜ Tree of roots: four philosophical roots growing a knowledge system</strong> How to read: read bottom-up — the four roots (ontology, epistemology, methodology, axiology) answer "why design this way", the trunk carries the creation tradition of the <em>Kaogongji</em>, <em>Tiangong Kaiwu</em> and Xie He's Six Principles, and the canopy bears the ten dimensions, nine principles and Chinese styling language. Deeper roots make a steadier canopy.</figcaption>
+</figure>
+
 ### 1.3 The Nine Abstraction Levels of Meta-Theory (Extended Love Framework)
 
 Terence Love's meta-theoretical hierarchy of design theory provides an academic framework for layering the automotive-styling knowledge system:
@@ -115,6 +120,11 @@ Centered on "the meta-theory of the automotive styling development methodology,"
 | **Styling theme** | Narrative expression of design intent; Treatment → indexical semantics; Graphic → iconic semantics |
 | **Three-layer styling cognition** | Volume layer (overall aesthetic cognition) → form layer (styling language and technique) → graphic layer (visual-identification advantage) |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/meta2-graphic.svg" alt="Volume, treatment and graphic layers overlaid" loading="lazy">
+  <figcaption><strong>Fig. 2-2 ｜ Volume → treatment → graphic: three semantic layers over one geometry</strong> How to read: the left drawing overlays three representations of one side profile — the translucent envelope is volume, the blue curve and comb are treatment, the green details are graphic; the right stack turns them into a semantic ladder. The reading order matches the modelling order: volume envelope → surface treatment → graphic elements. Reverse it and the style drifts.</figcaption>
+</figure>
+
 #### ⑨ Design Principles and Value Propositions (New)
 
 **Expanding Geely's nine principles into an industry-level system of Chinese automotive design principles.**
@@ -194,6 +204,11 @@ Centered on "the meta-theory of the automotive styling development methodology,"
 | ⑨ | Design principles and values | Geely's nine principles; Chen Zheng's three questions | Nine principles, aesthetic consensus, warm order |
 | ⑩ | Chinese styling language and paradigms | R-corner research; form semantics; brand-gene map | R-corner regulation, color system, pattern system, proportion paradigm |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/meta2-chart.svg" alt="Bar chart of counted structural units" loading="lazy">
+  <figcaption><strong>Fig. 3-2 ｜ Counted structural units of the knowledge system</strong> How to read: bar length is the item count of each unit (grid every 3 items): 4 philosophical roots, 9 abstraction levels, 10 knowledge dimensions, 9 principles, 6 painting laws, 5 aesthetic regions, 6 pattern themes — 53 units in total. The contrast shows the weight sits in levels and dimensions rather than scattered items, the structural signature of a meta-theory.</figcaption>
+</figure>
+
 ---
 
 ## IV. Index of Core Academic Resources
@@ -205,6 +220,11 @@ Centered on "the meta-theory of the automotive styling development methodology,"
 | Terence Love, *A Meta-Theoretical Basis for Design Theory* | The nine-level abstraction hierarchy | Layering logic for the knowledge system |
 | Zhang Zongdeng, *Design History, Design Criticism, Design Practice* | The triadic structure of design studies | Framework for the disciplinary system |
 | Pan Lusheng & Yin Bo, re-examination of traditional Chinese creation-art systems | Four dimensions of Chinese creation meta-theory | Philosophical roots of the Chinese paradigm |
+
+<figure class="doc-figure">
+  <img src="docs/images/en/meta2-legend.svg" alt="Legend for the academic source map" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ Source-map legend: type, evidence strength, level</strong> How to read: for every index row follow three steps — source colour, evidence marker, level. Purple = meta-theory, blue = styling theory, green = practice and principles, amber = traditional aesthetics; a solid dot is a primary source, a half disc a secondary citation, a hollow circle something still to be evidenced. Judge credibility first, then which layer the source serves.</figcaption>
+</figure>
 
 ### 4.2 Automotive Styling Design Theory
 

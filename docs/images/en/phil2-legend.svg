@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Legend: Colour, Line Style, Markers, Thresholds</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Visual Encoding</text>
+
+  <rect x="40" y="58" width="286" height="318" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="56" y="82" fill="#E2E8F0" font-size="12.5" font-weight="700">Colour = semantic layer</text>
+  <g font-size="10.5">
+    <rect x="58" y="98" width="16" height="16" rx="4" fill="#A78BFA"/><text x="84" y="110" fill="#CBD5E1">Form · aesthetics</text><text x="84" y="124" fill="#64748B" font-size="9">feature lines / posture / brand gene</text>
+    <rect x="58" y="140" width="16" height="16" rx="4" fill="#38BDF8"/><text x="84" y="152" fill="#CBD5E1">Logic · engineering</text><text x="84" y="166" fill="#64748B" font-size="9">hard points / regulation / packaging</text>
+    <rect x="58" y="182" width="16" height="16" rx="4" fill="#34D399"/><text x="84" y="194" fill="#CBD5E1">Mathematics · surfaces</text><text x="84" y="208" fill="#64748B" font-size="9">NURBS / geometry / Bayes</text>
+    <rect x="58" y="224" width="16" height="16" rx="4" fill="#FBBF24"/><text x="84" y="236" fill="#CBD5E1">Gate · threshold</text><text x="84" y="250" fill="#64748B" font-size="9">G1–G4 reviews / parameter bounds</text>
+    <rect x="58" y="266" width="16" height="16" rx="4" fill="#F472B6"/><text x="84" y="278" fill="#CBD5E1">Humanity · emotion</text><text x="84" y="292" fill="#64748B" font-size="9">warmth / identity / belonging</text>
+    <rect x="58" y="308" width="16" height="16" rx="4" fill="#F87171"/><text x="84" y="320" fill="#CBD5E1">Failure · fallback</text><text x="84" y="334" fill="#64748B" font-size="9">failed gate / explicit degradation</text>
+  </g>
+  <text x="56" y="360" fill="#475569" font-size="9.5">One colour keeps one meaning in every figure</text>
+
+  <rect x="342" y="58" width="286" height="318" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="358" y="82" fill="#E2E8F0" font-size="12.5" font-weight="700">Line style = relation</text>
+  <g font-size="10.5">
+    <line x1="360" y1="108" x2="410" y2="108" stroke="#34D399" stroke-width="2.6"/><text x="422" y="112" fill="#CBD5E1">Main chain</text><text x="422" y="126" fill="#64748B" font-size="9">generation and hand-over</text>
+    <line x1="360" y1="150" x2="410" y2="150" stroke="#94A3B8" stroke-width="1.2"/><text x="422" y="154" fill="#CBD5E1">Data / dependency</text><text x="422" y="168" fill="#64748B" font-size="9">module calls and inputs</text>
+    <line x1="360" y1="192" x2="410" y2="192" stroke="#F472B6" stroke-width="1.8" stroke-dasharray="6 5"/><text x="422" y="196" fill="#CBD5E1">Feedback / fallback</text><text x="422" y="210" fill="#64748B" font-size="9">score write-back, gate return</text>
+    <line x1="360" y1="234" x2="410" y2="234" stroke="#64748B" stroke-width="1.4" stroke-dasharray="2 5"/><text x="422" y="238" fill="#CBD5E1">Reference / bound</text><text x="422" y="252" fill="#64748B" font-size="9">target value, centre line</text>
+    <line x1="360" y1="276" x2="404" y2="276" stroke="#A78BFA" stroke-width="1.6" marker-end="url(#phil2l-arrow-en)" marker-start="url(#phil2l-arrow-en)"/><text x="422" y="280" fill="#CBD5E1">Two-way feed</text><text x="422" y="294" fill="#64748B" font-size="9">translation between layers</text>
+  </g>
+  <text x="358" y="330" fill="#475569" font-size="9.5">Stroke width (1.2 / 1.8 / 2.6) encodes hierarchy,</text>
+  <text x="358" y="344" fill="#475569" font-size="9.5">not quantity.</text>
+
+  <rect x="644" y="58" width="276" height="318" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="660" y="82" fill="#E2E8F0" font-size="12.5" font-weight="700">Marker = role</text>
+  <g font-size="10.5">
+    <path d="M672 108 L682 116 L672 124 L662 116 Z" fill="#FBBF24" opacity=".85"/><text x="694" y="120" fill="#CBD5E1">Stage gate</text>
+    <circle cx="672" cy="152" r="6.5" fill="#0F1622" stroke="#38BDF8" stroke-width="2"/><text x="694" y="156" fill="#CBD5E1">Observation</text>
+    <path d="M672 184 L680 196 L664 196 Z" fill="#34D399"/><text x="694" y="194" fill="#CBD5E1">Decision</text>
+    <rect x="664" y="212" width="16" height="14" rx="3" fill="none" stroke="#94A3B8" stroke-width="1.4"/><text x="694" y="224" fill="#CBD5E1">Parameter bound</text>
+    <text x="662" y="262" fill="#CBD5E1" font-size="10.5">Units</text>
+    <text x="662" y="280" fill="#64748B" font-size="9.5">mm — surface position deviation</text>
+    <text x="662" y="296" fill="#64748B" font-size="9.5">deg — tangent / normal angle</text>
+    <text x="662" y="312" fill="#64748B" font-size="9.5">s — one closed-loop cycle</text>
+    <text x="662" y="328" fill="#64748B" font-size="9.5">round — Bayesian observations</text>
+  </g>
+  <text x="660" y="352" fill="#475569" font-size="9.5">G0 / G1 / G2 are continuity orders, not grades</text>
+
+  <g>
+    <rect x="40" y="390" width="360" height="46" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="56" y="410" fill="#94A3B8" font-size="10">Continuity: G0 position → G1 tangent → G2 curvature</text>
+    <text x="56" y="426" fill="#64748B" font-size="9.5">Deviation report at 0.1 mm / 1.0 deg; grades A–D</text>
+    <rect x="418" y="390" width="240" height="46" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="434" y="410" fill="#94A3B8" font-size="10">Four knowledge layers: aesthetics → feature</text>
+    <text x="434" y="426" fill="#64748B" font-size="9.5">→ surface → optimization (cf. §1.3)</text>
+    <rect x="676" y="390" width="244" height="46" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="692" y="410" fill="#94A3B8" font-size="10">Numbers without units are relative</text>
+    <text x="692" y="426" fill="#64748B" font-size="9.5">0–1 range, 1 = best</text>
+  </g>
+  <defs>
+    <marker id="phil2l-arrow-en" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#A78BFA"/>
+    </marker>
+  </defs>
+</svg>

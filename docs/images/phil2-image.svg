@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#A78BFA"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">三视图与特征线：造型意图的具象落点</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Three-View Feature-Line Study</text>
+
+  <!-- 前视面板 -->
+  <rect x="40" y="60" width="230" height="304" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="56" y="82" fill="#94A3B8" font-size="11" font-weight="600">前视 · Front</text>
+  <g stroke="#A78BFA" stroke-width="1.6" fill="none" stroke-linejoin="round">
+    <path d="M86 332 L86 268 Q88 246 108 240 L120 196 Q126 182 155 182 Q184 182 190 196 L202 240 Q222 246 224 268 L224 332 Z"/>
+    <path d="M130 198 Q155 190 180 198 L186 232 L124 232 Z" stroke="#38BDF8" stroke-width="1.1"/>
+    <line x1="155" y1="182" x2="155" y2="332" stroke="#1E2A3A" stroke-width="1" stroke-dasharray="3 4"/>
+  </g>
+  <rect x="96" y="282" width="28" height="12" rx="4" fill="#FBBF24" opacity=".8"/>
+  <rect x="186" y="282" width="28" height="12" rx="4" fill="#FBBF24" opacity=".8"/>
+  <rect x="118" y="306" width="74" height="16" rx="3" fill="#0B101A" stroke="#F472B6" stroke-width="1"/>
+  <text x="155" y="300" fill="#64748B" font-size="9" text-anchor="middle">格栅 / 灯具</text>
+
+  <!-- 侧视面板 -->
+  <rect x="286" y="60" width="380" height="304" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="302" y="82" fill="#94A3B8" font-size="11" font-weight="600">侧视 · Side</text>
+  <g fill="none" stroke-linejoin="round">
+    <path d="M306 336 L306 300 Q308 276 336 268 L374 260 Q410 226 462 220 L540 220 Q588 222 614 250 L638 266 Q652 274 652 292 L652 336 Z" stroke="#A78BFA" stroke-width="1.8"/>
+    <path d="M330 292 Q450 272 622 288" stroke="#F472B6" stroke-width="1.7"/>
+    <path d="M392 254 Q500 240 606 256" stroke="#FBBF24" stroke-width="1.7"/>
+    <path d="M430 226 Q500 214 558 222" stroke="#38BDF8" stroke-width="1.5"/>
+    <path d="M340 336 A30 30 0 0 1 400 336" stroke="#34D399" stroke-width="1.5"/>
+    <path d="M568 336 A30 30 0 0 1 628 336" stroke="#34D399" stroke-width="1.5"/>
+    <path d="M330 318 L620 320" stroke="#64748B" stroke-width="1.2" stroke-dasharray="4 4"/>
+    <circle cx="372" cy="330" r="28" fill="#0F1622" stroke="#334155" stroke-width="1.4"/>
+    <circle cx="372" cy="330" r="12" fill="#131C2A" stroke="#475569"/>
+    <circle cx="596" cy="330" r="28" fill="#0F1622" stroke="#334155" stroke-width="1.4"/>
+    <circle cx="596" cy="330" r="12" fill="#131C2A" stroke="#475569"/>
+  </g>
+  <!-- 特征线编号 -->
+  <g font-size="9.5" font-weight="700" text-anchor="middle">
+    <circle cx="490" cy="220" r="8" fill="#0F1622" stroke="#38BDF8" stroke-width="1.4"/><text x="490" y="223" fill="#7DD3FC">①</text>
+    <circle cx="520" cy="244" r="8" fill="#0F1622" stroke="#FBBF24" stroke-width="1.4"/><text x="520" y="247" fill="#FCD34D">②</text>
+    <circle cx="470" cy="278" r="8" fill="#0F1622" stroke="#F472B6" stroke-width="1.4"/><text x="470" y="281" fill="#F9A8D4">③</text>
+    <circle cx="372" cy="305" r="8" fill="#0F1622" stroke="#34D399" stroke-width="1.4"/><text x="372" y="308" fill="#6EE7B7">④</text>
+    <circle cx="470" cy="319" r="8" fill="#0F1622" stroke="#94A3B8" stroke-width="1.4"/><text x="470" y="322" fill="#CBD5E1">⑤</text>
+  </g>
+  <!-- 俯视面板 -->
+  <rect x="682" y="60" width="238" height="304" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="698" y="82" fill="#94A3B8" font-size="11" font-weight="600">俯视 · Top</text>
+  <g fill="none">
+    <path d="M700 336 L706 236 Q710 222 730 218 L744 202 Q760 194 801 194 Q842 194 858 202 L872 218 Q892 222 896 236 L902 336 Q902 346 892 346 L710 346 Q700 346 700 336 Z" stroke="#A78BFA" stroke-width="1.8"/>
+    <path d="M742 208 Q801 198 860 208 L866 268 Q801 276 736 268 Z" stroke="#38BDF8" stroke-width="1.2"/>
+    <line x1="801" y1="194" x2="801" y2="346" stroke="#1E2A3A" stroke-width="1" stroke-dasharray="3 4"/>
+    <line x1="712" y1="286" x2="890" y2="286" stroke="#FBBF24" stroke-width="1.2" stroke-dasharray="5 4"/>
+    <line x1="712" y1="316" x2="890" y2="316" stroke="#F472B6" stroke-width="1.2" stroke-dasharray="5 4"/>
+  </g>
+  <text x="890" y="282" fill="#FCD34D" font-size="9" text-anchor="end">肩线</text>
+  <text x="890" y="312" fill="#F9A8D4" font-size="9" text-anchor="end">轮拱外沿</text>
+
+  <!-- 图例行 -->
+  <g font-size="10">
+    <rect x="40" y="376" width="10" height="10" rx="2" fill="#38BDF8"/><text x="56" y="385" fill="#94A3B8">① 温室线 Greenhouse</text>
+    <rect x="196" y="376" width="10" height="10" rx="2" fill="#FBBF24"/><text x="212" y="385" fill="#94A3B8">② 肩线 Shoulder</text>
+    <rect x="330" y="376" width="10" height="10" rx="2" fill="#F472B6"/><text x="346" y="385" fill="#94A3B8">③ 腰线 Beltline</text>
+    <rect x="460" y="376" width="10" height="10" rx="2" fill="#34D399"/><text x="476" y="385" fill="#94A3B8">④ 轮拱 Wheel arch</text>
+    <rect x="620" y="376" width="10" height="10" rx="2" fill="#94A3B8"/><text x="636" y="385" fill="#94A3B8">⑤ 门槛 Rocker</text>
+    <rect x="760" y="376" width="10" height="10" rx="2" fill="#A78BFA"/><text x="776" y="385" fill="#94A3B8">外轮廓</text>
+  </g>
+  <text x="40" y="432" fill="#64748B" font-size="11.5">读法：三视图是同一 22 维参数向量的三个正交投影；编号特征线在侧视中定义骨架，在前/俯视中校验对称与比例，越靠上的线越决定「像不像一台车」。</text>
+</svg>

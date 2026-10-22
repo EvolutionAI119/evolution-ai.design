@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">本文视觉编码图例：颜色 · 线型 · 标记 · 阈值</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Legend: Visual Encoding</text>
+
+  <!-- A 颜色 -->
+  <rect x="40" y="58" width="286" height="318" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="56" y="82" fill="#E2E8F0" font-size="12.5" font-weight="700">颜色 = 语义层</text>
+  <g font-size="10.5">
+    <rect x="58" y="98" width="16" height="16" rx="4" fill="#A78BFA"/><text x="84" y="110" fill="#CBD5E1">形 · 美学表达</text><text x="84" y="124" fill="#64748B" font-size="9">特征线 / 姿态 / 品牌基因</text>
+    <rect x="58" y="140" width="16" height="16" rx="4" fill="#38BDF8"/><text x="84" y="152" fill="#CBD5E1">理 · 工程约束</text><text x="84" y="166" fill="#64748B" font-size="9">硬点 / 法规 / 人机 / 制造</text>
+    <rect x="58" y="182" width="16" height="16" rx="4" fill="#34D399"/><text x="84" y="194" fill="#CBD5E1">数 · 算法与曲面</text><text x="84" y="208" fill="#64748B" font-size="9">NURBS / 微分几何 / 贝叶斯</text>
+    <rect x="58" y="224" width="16" height="16" rx="4" fill="#FBBF24"/><text x="84" y="236" fill="#CBD5E1">门禁 · 阈值</text><text x="84" y="250" fill="#64748B" font-size="9">G1–G4 评审 / 参数边界</text>
+    <rect x="58" y="266" width="16" height="16" rx="4" fill="#F472B6"/><text x="84" y="278" fill="#CBD5E1">人文 · 情感</text><text x="84" y="292" fill="#64748B" font-size="9">温度 / 身份 / 文化归属</text>
+    <rect x="58" y="308" width="16" height="16" rx="4" fill="#F87171"/><text x="84" y="320" fill="#CBD5E1">失败 · 回退</text><text x="84" y="334" fill="#64748B" font-size="9">门禁未过 / 显式降级</text>
+  </g>
+  <text x="56" y="360" fill="#475569" font-size="9.5">同一颜色在全部图中含义一致</text>
+
+  <!-- B 线型 -->
+  <rect x="342" y="58" width="286" height="318" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="358" y="82" fill="#E2E8F0" font-size="12.5" font-weight="700">线型 = 关系</text>
+  <g font-size="10.5">
+    <line x1="360" y1="108" x2="410" y2="108" stroke="#34D399" stroke-width="2.6"/><text x="422" y="112" fill="#CBD5E1">主链路</text><text x="422" y="126" fill="#64748B" font-size="9">生成与传递方向</text>
+    <line x1="360" y1="150" x2="410" y2="150" stroke="#94A3B8" stroke-width="1.2"/><text x="422" y="154" fill="#CBD5E1">数据 / 依赖</text><text x="422" y="168" fill="#64748B" font-size="9">模块间的调用与供数</text>
+    <line x1="360" y1="192" x2="410" y2="192" stroke="#F472B6" stroke-width="1.8" stroke-dasharray="6 5"/><text x="422" y="196" fill="#CBD5E1">反馈 / 回退</text><text x="422" y="210" fill="#64748B" font-size="9">评分回填、门禁退回</text>
+    <line x1="360" y1="234" x2="410" y2="234" stroke="#64748B" stroke-width="1.4" stroke-dasharray="2 5"/><text x="422" y="238" fill="#CBD5E1">参考 / 边界</text><text x="422" y="252" fill="#64748B" font-size="9">理想值、中心线、阈值面</text>
+    <line x1="360" y1="276" x2="404" y2="276" stroke="#A78BFA" stroke-width="1.6" marker-end="url(#phil2l-arrow)" marker-start="url(#phil2l-arrow)"/><text x="422" y="280" fill="#CBD5E1">双向反哺</text><text x="422" y="294" fill="#64748B" font-size="9">层间翻译而非单向</text>
+  </g>
+  <text x="358" y="330" fill="#475569" font-size="9.5">线宽（1.2 / 1.8 / 2.6）不表示数量，</text>
+  <text x="358" y="344" fill="#475569" font-size="9.5">仅用于区分主次关系。</text>
+
+  <!-- C 标记与阈值 -->
+  <rect x="644" y="58" width="276" height="318" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="660" y="82" fill="#E2E8F0" font-size="12.5" font-weight="700">标记 = 角色</text>
+  <g font-size="10.5">
+    <path d="M672 108 L682 116 L672 124 L662 116 Z" fill="#FBBF24" opacity=".85"/><text x="694" y="120" fill="#CBD5E1">门禁 / 评审点</text>
+    <circle cx="672" cy="152" r="6.5" fill="#0F1622" stroke="#38BDF8" stroke-width="2"/><text x="694" y="156" fill="#CBD5E1">观测样本</text>
+    <path d="M672 184 L680 196 L664 196 Z" fill="#34D399"/><text x="694" y="194" fill="#CBD5E1">决策 / 裁决</text>
+    <rect x="664" y="212" width="16" height="14" rx="3" fill="none" stroke="#94A3B8" stroke-width="1.4"/><text x="694" y="224" fill="#CBD5E1">参数边界</text>
+    <text x="662" y="262" fill="#CBD5E1" font-size="10.5">单位语义</text>
+    <text x="662" y="280" fill="#64748B" font-size="9.5">mm — 曲面位置偏差</text>
+    <text x="662" y="296" fill="#64748B" font-size="9.5">° — 切向 / 法向夹角</text>
+    <text x="662" y="312" fill="#64748B" font-size="9.5">s — 单轮闭环耗时</text>
+    <text x="662" y="328" fill="#64748B" font-size="9.5">轮 — 贝叶斯观测次数</text>
+  </g>
+  <text x="660" y="352" fill="#475569" font-size="9.5">G0 / G1 / G2 为连续性阶数，非等级</text>
+
+  <!-- 底部：连续性徽章 -->
+  <g>
+    <rect x="40" y="390" width="360" height="46" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="56" y="410" fill="#94A3B8" font-size="10">连续性：G0 位置 → G1 切线 → G2 曲率</text>
+    <text x="56" y="426" fill="#64748B" font-size="9.5">偏差报告口径 0.1 mm / 1.0°；综合等级 A–D</text>
+    <rect x="418" y="390" width="240" height="46" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="434" y="410" fill="#94A3B8" font-size="10">四层知识：美学 → 特征 → 曲面 → 优化</text>
+    <text x="434" y="426" fill="#64748B" font-size="9.5">与正文 1.3 的五层架构呼应</text>
+    <rect x="676" y="390" width="244" height="46" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="692" y="410" fill="#94A3B8" font-size="10">数字不带单位时，默认为相对值</text>
+    <text x="692" y="426" fill="#64748B" font-size="9.5">0–1 区间，1 = 最优</text>
+  </g>
+  <defs>
+    <marker id="phil2l-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#A78BFA"/>
+    </marker>
+  </defs>
+</svg>

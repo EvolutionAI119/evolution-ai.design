@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="428" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#A78BFA"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">参数空间的分层：22 维中 14 维进入搜索</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Parameter-Space Partition</text>
+
+  <!-- 网格 -->
+  <g stroke="#1E2A3A" stroke-width="1">
+    <line x1="245" y1="96" x2="245" y2="300"/>
+    <line x1="370" y1="96" x2="370" y2="300"/>
+    <line x1="495" y1="96" x2="495" y2="300"/>
+    <line x1="620" y1="96" x2="620" y2="300"/>
+  </g>
+  <line x1="120" y1="300" x2="670" y2="300" stroke="#334155" stroke-width="1.2"/>
+  <g fill="#475569" font-size="10" text-anchor="middle">
+    <text x="120" y="318">0</text><text x="245" y="318">5</text><text x="370" y="318">10</text><text x="495" y="318">15</text><text x="620" y="318">20</text><text x="670" y="318">22</text>
+  </g>
+  <text x="395" y="334" fill="#64748B" font-size="10" text-anchor="middle">参数维数（维）</text>
+
+  <!-- 条 -->
+  <g>
+    <text x="112" y="158" fill="#CBD5E1" font-size="10" text-anchor="end">整车参数空间</text>
+    <rect x="120" y="140" width="550" height="34" rx="5" fill="#A78BFA" opacity=".28"/>
+    <rect x="120" y="140" width="550" height="34" rx="5" fill="none" stroke="#A78BFA"/>
+    <text x="680" y="162" fill="#C4B5FD" font-size="12" font-weight="700">22</text>
+
+    <text x="112" y="214" fill="#CBD5E1" font-size="10" text-anchor="end">贝叶斯可搜索</text>
+    <rect x="120" y="196" width="350" height="34" rx="5" fill="#34D399" opacity=".3"/>
+    <rect x="120" y="196" width="350" height="34" rx="5" fill="none" stroke="#34D399"/>
+    <text x="480" y="218" fill="#6EE7B7" font-size="12" font-weight="700">14</text>
+    <text x="496" y="218" fill="#64748B" font-size="9.5">= 64%，采集函数在此寻优</text>
+
+    <text x="112" y="270" fill="#CBD5E1" font-size="10" text-anchor="end">冻结硬点</text>
+    <rect x="120" y="252" width="200" height="34" rx="5" fill="#FBBF24" opacity=".28"/>
+    <rect x="120" y="252" width="200" height="34" rx="5" fill="none" stroke="#FBBF24"/>
+    <text x="330" y="274" fill="#FCD34D" font-size="12" font-weight="700">8</text>
+    <text x="346" y="274" fill="#64748B" font-size="9.5">= 36%，尺寸/法规/结构先冻结</text>
+  </g>
+
+  <!-- 右卡 -->
+  <g>
+    <rect x="702" y="90" width="228" height="218" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <circle cx="816" cy="150" r="42" fill="none" stroke="#FBBF24" stroke-width="14" opacity=".55"/>
+    <circle cx="816" cy="150" r="42" fill="none" stroke="#34D399" stroke-width="14" stroke-dasharray="169 264" transform="rotate(-90 816 150)"/>
+    <text x="816" y="147" fill="#E2E8F0" font-size="17" font-weight="700" text-anchor="middle">64%</text>
+    <text x="816" y="164" fill="#64748B" font-size="9" text-anchor="middle">可探索</text>
+    <text x="718" y="212" fill="#94A3B8" font-size="10">· 先冻结 8 维结构，再在 14 维内寻优</text>
+    <text x="718" y="230" fill="#94A3B8" font-size="10">· 边界由参数校验器与法规给出</text>
+    <text x="718" y="248" fill="#94A3B8" font-size="10">· 变体对比只改变可搜索维</text>
+    <text x="718" y="272" fill="#64748B" font-size="9.5">硬点先行 = 给优化一个真实基准</text>
+    <text x="718" y="290" fill="#475569" font-size="9.5">否则搜索在没有地面的空间里空转</text>
+  </g>
+  <text x="40" y="382" fill="#64748B" font-size="11.5">读法：三条横条共用 0–22 的同一把尺——整车的 22 维并不是全都拿来找最优，其中 8 维是必须遵守的硬点，只在剩下的 14 维里做贝叶斯寻优。比例越清楚，越能理解「约束即自由」。</text>
+  <text x="40" y="404" fill="#475569" font-size="10">口径：22 维 CarParams 与 14 维贝叶斯默认空间，取自平台参数定义；8 维为尺寸、法规与结构类冻结维。</text>
+</svg>

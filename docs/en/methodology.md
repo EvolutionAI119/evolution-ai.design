@@ -60,6 +60,11 @@ AI is not an add-on at the end of the process; it is embedded in every stage:
 | Styling design | Generative design, cloud sample batches, Bayesian search, LLM expert dialogue |
 | Engineering development | Automated continuity checking, automated quality grading, export automation |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/method2-image.svg" alt="Human-machine workbench with sliders, 3D preview and grading" loading="lazy">
+  <figcaption><strong>Fig. 2-1 ｜ Human–machine workbench: parameters, generation and evaluation in one view</strong> How to read: the screen is the working surface of "one parameter space, two geometry paths" — a person moves sliders to state intent (1), the machine generates in real time with feature lines and a preview (2), quality grades return immediately after each generation (3), and the right-hand cards put variant comparison and Bayesian suggestions on the same desk (4). The point is that collaboration happens inside one parameter space, not as messages between two models.</figcaption>
+</figure>
+
 ### 2.3 Process Discipline
 
 - **Hard points first**: freeze size, proportion, and posture parameters before local smoothing — otherwise optimization and evaluation lose their reference;
@@ -113,9 +118,19 @@ Aesthetic imagery (subjective) → parameterized rules (computable) → NURBS su
 - **Precise path**: NURBS free-form surfaces plus STEP export, for engineering delivery.
 - Both paths share one parameter space, guaranteeing "what you see is what you deliver."
 
+<figure class="doc-figure">
+  <img src="docs/images/en/method2-graphic.svg" alt="Mesh lofting and NURBS construction from one parameter space" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ One parameter space, two geometry paths: mesh and NURBS</strong> How to read: the left panel lofts seven parameterized sections directly into a mesh that can be evaluated in seconds; the right panel builds a G2-smooth NURBS from control points, with combs showing the curvature distribution. Both consume the same 22-dimension CarParams — different paths, identical parameters: the first buys speed of seeing, the second buys deliverability. That is the geometric meaning of "what you see is what you deliver."</figcaption>
+</figure>
+
 ### 4.3 Quality Built In
 
 Quality is not a final-inspection stage but part of the construction rules: G2 smoothing is applied when the surface is generated, and quality grading is available after every generation — forming **quality-driven iteration**.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/method2-legend.svg" alt="Method legend: line styles, gate markers, thresholds" loading="lazy">
+  <figcaption><strong>Fig. 4-2 ｜ Method legend: path line styles, gate markers, threshold units</strong> How to read: first read the line style to tell whether an edge is the fast path, the precise path, an asynchronous task or a gate fallback; then read the marker to see which process object it attaches to (diamond = G1–G4 gate, dot = variant snapshot, triangle = review decision); finally use 0.1 mm / 1.0 deg and the A–D grades to judge compliance. An unrecorded decision is not a decision.</figcaption>
+</figure>
 
 ---
 
@@ -128,6 +143,11 @@ Quality is not a final-inspection stage but part of the construction rules: G2 s
 | Second-level iteration | Parameterized full-vehicle generation and evaluation complete in seconds; proposal count is no longer limited by manpower |
 | Parallel work | Modeling, training, and Bayesian sessions proceed in parallel (background threads) |
 | Asynchronous convergence | Training/optimization runs as tasks; the frontend polls status rather than blocking |
+
+<figure class="doc-figure">
+  <img src="docs/images/en/method2-chart.svg" alt="Stacked bars of 22 parameters: 14 searchable, 8 frozen" loading="lazy">
+  <figcaption><strong>Fig. 5-1 ｜ Partitioning the parameter space: 14 of 22 dimensions are searched</strong> How to read: all three bars share one 0–22 scale — the 22 vehicle parameters are not all optimized. Eight are size, regulation or structural hard points and must be frozen first; Bayesian search runs only over the remaining 14 (64%). The ring states the explore/freeze ratio at a glance: constraints are not a brake on efficiency but the reference that makes optimization meaningful.</figcaption>
+</figure>
 
 ### 5.2 Countering Process Entropy
 

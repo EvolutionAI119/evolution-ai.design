@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="bayes2en-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FBBF24"/></marker>
+    <marker id="bayes2en-ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#A78BFA"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="418" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Inside one optimization session</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Suggest · Evaluate · Observe</text>
+
+  <rect x="24" y="58" width="286" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="42" y="82" fill="#7DD3FC" font-size="12.5" font-weight="700">1 · Design workbench</text>
+  <rect x="40" y="94" width="254" height="140" rx="8" fill="#0B101A" stroke="#1E2A3A"/>
+  <path d="M56 212 L56 186 Q56 178 66 177 L112 174 L136 152 Q141 148 148 148 L204 148 Q211 148 216 154 L236 176 L268 179 Q278 181 278 190 L278 212 Z"
+        fill="#0F241C" stroke="#34D399" stroke-width="1.4" opacity=".9"/>
+  <path d="M146 158 L202 158 L222 178 L154 178 Z" fill="#0F1622" stroke="#38BDF8" stroke-opacity=".5"/>
+  <circle cx="98" cy="212" r="15" fill="#0B101A" stroke="#E2E8F0" stroke-width="1.6"/>
+  <circle cx="98" cy="212" r="7" fill="none" stroke="#94A3B8"/>
+  <circle cx="238" cy="212" r="15" fill="#0B101A" stroke="#E2E8F0" stroke-width="1.6"/>
+  <circle cx="238" cy="212" r="7" fill="none" stroke="#94A3B8"/>
+  <line x1="48" y1="212" x2="286" y2="212" stroke="#475569" stroke-width="1" stroke-dasharray="4 3"/>
+
+  <text x="42" y="256" fill="#94A3B8" font-size="9.5">GET /sessions/{id}/suggest</text>
+  <rect x="40" y="264" width="254" height="20" rx="5" fill="#0F1622" stroke="#1E2A3A"/>
+  <text x="50" y="278" fill="#CBD5E1" font-size="9.5">overall_length <tspan fill="#FCD34D" font-weight="700">4587.3</tspan> mm</text>
+  <rect x="40" y="288" width="254" height="20" rx="5" fill="#0F1622" stroke="#1E2A3A"/>
+  <text x="50" y="302" fill="#CBD5E1" font-size="9.5">overall_width <tspan fill="#FCD34D" font-weight="700">1972.8</tspan> mm</text>
+  <text x="42" y="324" fill="#64748B" font-size="9.5">the other 12 dimensions sampled within bounds</text>
+  <text x="42" y="342" fill="#475569" font-size="9">seed 42 · goal = maximize · EI</text>
+
+  <line x1="312" y1="206" x2="330" y2="206" stroke="#FBBF24" stroke-width="1.8" marker-end="url(#bayes2en-ar)"/>
+  <line x1="625" y1="206" x2="643" y2="206" stroke="#A78BFA" stroke-width="1.8" marker-end="url(#bayes2en-ar2)"/>
+
+  <rect x="337" y="58" width="286" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="355" y="82" fill="#FCD34D" font-size="12.5" font-weight="700">2 · Real evaluation</text>
+  <text x="480" y="150" fill="#FBBF24" font-size="44" font-weight="700" text-anchor="middle">88.5</text>
+  <text x="480" y="172" fill="#94A3B8" font-size="10.5" text-anchor="middle">styling quality score (example)</text>
+  <rect x="367" y="188" width="226" height="1" fill="#1E2A3A"/>
+  <g font-size="10">
+    <text x="367" y="212" fill="#CBD5E1">· POST /api/v1/ai/evaluate-quality</text>
+    <text x="367" y="232" fill="#CBD5E1">· or simulation / human rating</text>
+    <text x="367" y="252" fill="#CBD5E1">· one score ≈ one build + analysis</text>
+  </g>
+  <rect x="367" y="270" width="226" height="46" rx="6" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".35"/>
+  <text x="379" y="288" fill="#FCD34D" font-size="9.5">evaluateQuality takes body parameters,</text>
+  <text x="379" y="304" fill="#94A3B8" font-size="9">returns a 0–100 engineering proxy.</text>
+  <text x="355" y="338" fill="#64748B" font-size="9.5">Costlier objectives make the surrogate pay off.</text>
+
+  <rect x="650" y="58" width="286" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="668" y="82" fill="#6EE7B7" font-size="12.5" font-weight="700">3 · Observe → converge</text>
+  <rect x="668" y="96" width="250" height="30" rx="6" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".35"/>
+  <text x="680" y="115" fill="#7DD3FC" font-size="9.5">POST /observe: 14 params + 88.5</text>
+  <line x1="793" y1="126" x2="793" y2="144" stroke="#38BDF8" stroke-width="1.4" marker-end="url(#bayes2en-ar)"/>
+  <rect x="668" y="146" width="250" height="30" rx="6" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".35"/>
+  <text x="680" y="165" fill="#C4B5FD" font-size="9.5">GP refit: RBF, ℓ = 0.25, noise 1e-6</text>
+  <line x1="793" y1="176" x2="793" y2="194" stroke="#A78BFA" stroke-width="1.4" marker-end="url(#bayes2en-ar2)"/>
+  <rect x="668" y="196" width="250" height="44" rx="6" fill="#0F241C" stroke="#34D399" stroke-opacity=".4"/>
+  <text x="680" y="214" fill="#6EE7B7" font-size="9.5">best = 91.2 (observation #2)</text>
+  <text x="680" y="231" fill="#94A3B8" font-size="9">n_observations = 4 · +2.7 over 88.5</text>
+  <text x="668" y="264" fill="#94A3B8" font-size="9.5">EI / UCB max over a 4096-point pool →</text>
+  <text x="668" y="282" fill="#94A3B8" font-size="9.5">next suggestion; random fill below n = 2.</text>
+  <rect x="668" y="296" width="250" height="42" rx="6" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="680" y="314" fill="#CBD5E1" font-size="9.5">convergence: |regret| &lt; 0.01 in 15 rounds</text>
+  <text x="680" y="330" fill="#64748B" font-size="9">1-D objective -(x−0.7)², passed by EI and UCB</text>
+
+  <text x="24" y="382" fill="#94A3B8" font-size="10.5">How to read: one full suggest → evaluate → observe cycle — 4587.3 / 1972.8 on the left becomes a real 88.5 score, and observe lifts the incumbent best to 91.2.</text>
+  <text x="24" y="402" fill="#64748B" font-size="10">Sessions live in process memory and clear on restart; export feature-order-aligned samples via GET /samples when persistence is needed.</text>
+</svg>

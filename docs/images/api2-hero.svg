@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="api2h-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">平台 API 全景：一个前缀，十九个模块，一百五十三个端点</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">API Surface Overview</text>
+
+  <!-- Client -->
+  <rect x="40" y="80" width="200" height="230" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <rect x="56" y="96" width="168" height="100" rx="8" fill="#0B101A" stroke="#38BDF8" stroke-opacity=".5"/>
+  <g fill="#475569">
+    <circle cx="68" cy="108" r="3"/><circle cx="78" cy="108" r="3"/><circle cx="88" cy="108" r="3"/>
+  </g>
+  <g stroke="#1E2A3A" stroke-width="4" stroke-linecap="round">
+    <line x1="68" y1="128" x2="140" y2="128"/><line x1="68" y1="142" x2="190" y2="142"/>
+    <line x1="68" y1="156" x2="164" y2="156"/><line x1="68" y1="170" x2="120" y2="170"/>
+  </g>
+  <text x="56" y="226" fill="#7DD3FC" font-size="11.5" font-weight="700">浏览器 / 移动端</text>
+  <text x="56" y="248" fill="#94A3B8" font-size="10">axios · baseURL=/api/v1</text>
+  <text x="56" y="268" fill="#94A3B8" font-size="10">Bearer JWT · 60s 超时</text>
+  <text x="56" y="288" fill="#94A3B8" font-size="10">401 → evoai:auth-required</text>
+
+  <!-- Gateway -->
+  <rect x="300" y="90" width="170" height="210" rx="12" fill="#0F241C" stroke="#34D399" stroke-opacity=".55"/>
+  <text x="385" y="114" fill="#6EE7B7" font-size="12.5" font-weight="700" text-anchor="middle">API 网关</text>
+  <polygon points="385,126 408,137 403,161 385,170 367,161 362,137" fill="#12293D" stroke="#34D399"/>
+  <path d="M377 146 L383 152 L395 140" fill="none" stroke="#34D399" stroke-width="2"/>
+  <g font-size="9.5" fill="#94A3B8" text-anchor="middle">
+    <rect x="316" y="184" width="138" height="22" rx="6" fill="#12293D"/><text x="385" y="199">CORS 白名单</text>
+    <rect x="316" y="214" width="138" height="22" rx="6" fill="#12293D"/><text x="385" y="229">JWT 鉴权</text>
+    <rect x="316" y="244" width="138" height="22" rx="6" fill="#12293D"/><text x="385" y="259">Pydantic 422</text>
+  </g>
+  <text x="385" y="288" fill="#64748B" font-size="9.5" text-anchor="middle">统一前缀 /api/v1</text>
+
+  <!-- Modules -->
+  <g font-size="9" fill="#94A3B8" text-anchor="middle">
+    <rect x="500" y="90" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="538" y="115">project</text>
+    <rect x="584" y="90" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="622" y="115">model</text>
+    <rect x="668" y="90" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="706" y="115">build</text>
+    <rect x="752" y="90" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="790" y="115">car</text>
+    <rect x="836" y="90" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="874" y="115">modify</text>
+
+    <rect x="500" y="142" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="538" y="167">export</text>
+    <rect x="584" y="142" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="622" y="167">variant</text>
+    <rect x="668" y="142" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="706" y="167">workflow</text>
+    <rect x="752" y="142" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="790" y="167">quality</text>
+    <rect x="836" y="142" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="874" y="167">training</text>
+
+    <rect x="500" y="194" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="538" y="219">ai</text>
+    <rect x="584" y="194" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="622" y="219">bayes</text>
+    <rect x="668" y="194" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="706" y="219">texture</text>
+    <rect x="752" y="194" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="790" y="219">import</text>
+    <rect x="836" y="194" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="874" y="219">llm</text>
+
+    <rect x="500" y="246" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="538" y="271">intent</text>
+    <rect x="584" y="246" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="622" y="271">analytics</text>
+    <rect x="668" y="246" width="76" height="42" rx="7" fill="#12293D" stroke="#1E2A3A"/><text x="706" y="271">admin</text>
+    <rect x="752" y="246" width="76" height="42" rx="7" fill="#0F241C" stroke="#34D399"/><text x="790" y="271" fill="#6EE7B7">auth</text>
+    <rect x="836" y="246" width="76" height="42" rx="7" fill="#2A1A0E" stroke="#FBBF24"/><text x="874" y="271" fill="#FCD34D">+2 sys</text>
+  </g>
+  <text x="500" y="306" fill="#94A3B8" font-size="10">19 路由模块 · 151 端点 · main.py 另 2 个系统端点</text>
+
+  <!-- Arrows -->
+  <line x1="244" y1="195" x2="296" y2="195" stroke="#34D399" stroke-width="2" marker-end="url(#api2h-ar)"/>
+  <line x1="474" y1="195" x2="496" y2="195" stroke="#34D399" stroke-width="2" marker-end="url(#api2h-ar)"/>
+  <line x1="385" y1="300" x2="385" y2="346" stroke="#34D399" stroke-width="2" marker-end="url(#api2h-ar)"/>
+
+  <!-- Data -->
+  <rect x="40" y="350" width="880" height="52" rx="10" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".55"/>
+  <text x="56" y="372" fill="#C4B5FD" font-size="11.5" font-weight="700">数据与运行时</text>
+  <text x="56" y="390" fill="#94A3B8" font-size="10">SQLite · 17 张 ORM 表 · 文件存储 · Redis（可选）· 后台训练线程</text>
+  <text x="904" y="372" fill="#FCD34D" font-size="10.5" text-anchor="end">算法层 algorithm_model</text>
+  <text x="904" y="390" fill="#64748B" font-size="9.5" text-anchor="end">NURBS · 质量 · 贝叶斯 · 训练</text>
+
+  <text x="40" y="424" fill="#64748B" font-size="10">统一入口 /api/v1；19 个薄壳路由模块只做编排与持久化，几何与智能能力全部下沉到算法层。</text>
+</svg>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="468" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Legend: auth markers, method colors, path notation, status codes</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">API Reference Legend</text>
+
+  <rect x="40" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">A · Auth markers</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <text x="58" y="108" font-size="12">🔐</text><text x="96" y="108">Auth required: Bearer JWT (get_current_user)</text>
+    <text x="58" y="130" font-size="12">👑</text><text x="96" y="130">Admin: require_admin / require_superadmin</text>
+    <text x="58" y="152" font-size="12">🔹</text><text x="96" y="152">Optional auth: links the user when a JWT is present</text>
+    <circle cx="64" cy="168" r="5" fill="none" stroke="#64748B"/>
+    <text x="96" y="172">Unmarked: public endpoint, guest access</text>
+    <text x="58" y="204" fill="#64748B" font-size="9.5">Stats: public 114 · optional 9 · required 12 · admin 16 = 151</text>
+  </g>
+
+  <rect x="496" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">B · HTTP methods and colors</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="514" y="96" width="44" height="16" rx="3" fill="#12293D" stroke="#38BDF8"/><text x="536" y="108" fill="#7DD3FC" font-size="8.5" text-anchor="middle">GET</text><text x="570" y="108">Read: list / detail / export</text>
+    <rect x="514" y="118" width="44" height="16" rx="3" fill="#0F241C" stroke="#34D399"/><text x="536" y="130" fill="#6EE7B7" font-size="8.5" text-anchor="middle">POST</text><text x="570" y="130">Create: submit / train / export</text>
+    <rect x="514" y="140" width="44" height="16" rx="3" fill="#2A1A0E" stroke="#FBBF24"/><text x="536" y="152" fill="#FCD34D" font-size="8.5" text-anchor="middle">PUT</text><text x="570" y="152">Update: params / steps / keys</text>
+    <rect x="514" y="162" width="44" height="16" rx="3" fill="#2A1420" stroke="#F87171"/><text x="536" y="174" fill="#F87171" font-size="8.5" text-anchor="middle">DELETE</text><text x="570" y="174">Delete: resource / session / key</text>
+  </g>
+
+  <rect x="40" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">C · Path and parameter notation</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <text x="58" y="292" fill="#7DD3FC" font-size="10">/api/v1/{module}/{action}</text>
+    <text x="58" y="312">Shared prefix; {module} maps to one of 19 route files</text>
+    <text x="58" y="334" fill="#A78BFA" font-size="10">{project_id} / {session_id}</text>
+    <text x="58" y="354">Path parameters; missing resources return 404</text>
+    <text x="58" y="376" fill="#F9A8D4" font-size="10">{path} / {filename}</text>
+    <text x="58" y="396">File path parameters, validated by a server allow-list</text>
+  </g>
+
+  <rect x="496" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">D · Status codes</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="514" y="280" width="58" height="16" rx="3" fill="#2A1A0E" stroke="#FBBF24"/><text x="543" y="292" fill="#FCD34D" font-size="9" text-anchor="middle">400 / 422</text>
+    <text x="584" y="292">Business check failed / invalid schema</text>
+    <rect x="514" y="306" width="58" height="16" rx="3" fill="#2A1420" stroke="#F87171"/><text x="543" y="318" fill="#F87171" font-size="9" text-anchor="middle">401</text>
+    <text x="584" y="318">Missing, expired or invalid JWT</text>
+    <rect x="514" y="332" width="58" height="16" rx="3" fill="#1F2937" stroke="#64748B"/><text x="543" y="344" fill="#94A3B8" font-size="9" text-anchor="middle">404/405</text>
+    <text x="584" y="344">Not found / method not allowed (409 conflict)</text>
+    <rect x="514" y="358" width="58" height="16" rx="3" fill="#1A1230" stroke="#A78BFA"/><text x="543" y="370" fill="#C4B5FD" font-size="9" text-anchor="middle">503</text>
+    <text x="584" y="370">Optional capability unavailable (PyTorch / Ollama / WeChat)</text>
+  </g>
+
+  <text x="40" y="430" fill="#94A3B8" font-size="10">Prefix rule: module filename → path prefix; exceptions import_export → /import-export, llm_proxy → /llm, auth → /auth + /api-keys.</text>
+  <text x="40" y="448" fill="#64748B" font-size="10">Counting: 19 modules, 151 endpoints = 148 @router + 3 keys_router; plus 2 system endpoints in main.py → 153.</text>
+</svg>

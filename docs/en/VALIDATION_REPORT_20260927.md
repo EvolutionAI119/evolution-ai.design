@@ -21,6 +21,11 @@
 
 **Overall: all automated quality gates for platform v1.2 pass; the scale facts stated in the knowledge-base documents are consistent with the source code.**
 
+<figure class="doc-figure">
+  <img src="docs/images/en/val2-image.svg" alt="v1.2 quality gate panorama: three test layers into one self-check" loading="lazy">
+  <figcaption><strong>Fig. 1-1 ｜ v1.2 quality gate panorama (489 cases into one self-check)</strong> How to read: the three conveyors are independent algorithm / backend / frontend case streams merging into the test_all.py gate; the three badges are the release receipts, with 489 and 7.13 s both same-day values.</figcaption>
+</figure>
+
 ---
 
 ## 2. Three-Layer Automated Testing
@@ -28,6 +33,11 @@
 <figure class="doc-figure">
   <img src="docs/images/en/validation-metrics.svg" alt="Three-layer test suite scale and pass rate" loading="lazy">
   <figcaption><strong>Fig. 2-1 ｜ Three-layer test suite scale and pass rate (489 cases, all passing)</strong> How to read: Bars show per-layer scale — 200 algorithm, 178 backend, 111 frontend, 5 one-stop self-check — 489 cases all passing with zero failures and skips; right badges add the Bayes convergence check and the doc-code audit.</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/en/val2-legend.svg" alt="Legend: pass, warn and degrade semantics" loading="lazy">
+  <figcaption><strong>Fig. 2-2 ｜ Legend: pass, warn and degrade semantics</strong> How to read: read state symbols in A first, then line types in B; amber only means "needs attention" and never failure, so the 9 known warnings do not change the 489 all-green verdict.</figcaption>
 </figure>
 
 ### 2.1 Results
@@ -93,6 +103,11 @@ On the controlled 1-D objective `f(x) = −(x−0.5)²` (optimum 0 at x=0.5), 15
 
 What the evidence means: the full path of random filling → GP fitting → acquisition optimization works correctly; both acquisition functions locate the known optimum region within a small budget. This experiment validates **engine correctness**; it does not claim sample-efficiency advantages over external optimization libraries.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/val2-graphic.svg" alt="Bayesian 1-D objective convergence (EI / UCB)" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ Bayesian 1-D objective convergence (EI / UCB)</strong> How to read: the green band is the −0.01 zone; both best points (0.5000 / 0.4999) nearly coincide and sit inside it, showing the full random-fill → GP-fit → acquisition path is correct.</figcaption>
+</figure>
+
 ---
 
 ## 5. Defect Fixes and Verification in This Round
@@ -104,6 +119,11 @@ What the evidence means: the full path of random filling → GP fitting → acqu
 | build_body assembly order scrambled by automatic processing | body.py | New `process: bool = True` parameter | 200 tests pass |
 | `run_full_pipeline` reshapes a 49×25 mesh from an 8-vertex box (crashes at runtime) | api.py | Builds the single-side mesh from the parameterized body; docstrings updated | Fully runs end-to-end |
 | Inconsistent endpoint counts (113/116) | README/architecture/API/paper | Unified at **118** (116 route endpoints + 2 system endpoints) | Re-checked file by file via decorators |
+
+<figure class="doc-figure">
+  <img src="docs/images/en/val2-diagram.svg" alt="Defect-fix loop: five defects to 489 green cases" loading="lazy">
+  <figcaption><strong>Fig. 5-1 ｜ Defect-fix loop (five defects → 489 green cases)</strong> How to read: five cards merge into one fix band and leave through four evidence chains; each fix maps to a verification step, with no code-only change.</figcaption>
+</figure>
 
 ---
 

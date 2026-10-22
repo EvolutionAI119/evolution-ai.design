@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <linearGradient id="prod2-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34D399" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#38BDF8" stop-opacity=".12"/>
+    </linearGradient>
+    <marker id="prod2-dim" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FBBF24"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">参数化车身比例：一个参数向量，四种表达</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Parametric Proportions</text>
+
+  <!-- 左：侧视比例与尺寸标注 -->
+  <rect x="24" y="58" width="548" height="322" rx="12" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="298" y="82" fill="#7DD3FC" font-size="12.5" font-weight="700" text-anchor="middle">侧视线框 · 三段比例叠加</text>
+
+  <!-- 第二层轮廓（比例参考，紫） -->
+  <path d="M104 286 L104 250 Q104 238 116 236 L178 232 Q190 231 198 224 L258 186 Q266 181 276 181 L410 181 Q422 181 430 190 L484 238 Q492 244 502 244 L540 244 Q552 246 552 258 L552 286"
+        fill="none" stroke="#A78BFA" stroke-width="1.2" stroke-dasharray="5 4" opacity=".75"/>
+  <!-- 主轮廓 -->
+  <path d="M96 286 L96 254 Q96 242 108 240 L172 236 Q184 235 192 228 L254 190 Q262 185 272 185 L404 185 Q416 185 424 194 L478 242 Q486 248 496 248 L534 248 Q546 250 546 262 L546 286 Z"
+        fill="url(#prod2-body)" stroke="#34D399" stroke-width="1.8"/>
+  <!-- 侧窗 -->
+  <path d="M268 194 L392 194 L438 236 L286 236 Z" fill="#0F1622" stroke="#38BDF8" stroke-opacity=".55"/>
+  <line x1="358" y1="194" x2="362" y2="236" stroke="#38BDF8" stroke-opacity=".55"/>
+  <!-- 车轮 -->
+  <g>
+    <circle cx="176" cy="286" r="30" fill="#0B101A" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="176" cy="286" r="17" fill="none" stroke="#94A3B8" stroke-width="1.4"/>
+    <circle cx="176" cy="286" r="4" fill="#94A3B8"/>
+    <circle cx="474" cy="286" r="30" fill="#0B101A" stroke="#E2E8F0" stroke-width="2"/>
+    <circle cx="474" cy="286" r="17" fill="none" stroke="#94A3B8" stroke-width="1.4"/>
+    <circle cx="474" cy="286" r="4" fill="#94A3B8"/>
+  </g>
+  <!-- 地面线 -->
+  <line x1="56" y1="316" x2="540" y2="316" stroke="#475569" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="64" y="330" fill="#64748B" font-size="9.5">地面 z = 0</text>
+
+  <!-- 尺寸线：全长 -->
+  <line x1="96" y1="340" x2="546" y2="340" stroke="#FBBF24" stroke-width="1.2" marker-start="url(#prod2-dim)" marker-end="url(#prod2-dim)"/>
+  <text x="321" y="356" fill="#FCD34D" font-size="10" text-anchor="middle">overall_length 4000 – 6200 mm</text>
+  <!-- 尺寸线：轴距 -->
+  <line x1="176" y1="300" x2="474" y2="300" stroke="#FBBF24" stroke-width="1" marker-start="url(#prod2-dim)" marker-end="url(#prod2-dim)"/>
+  <text x="325" y="295" fill="#FCD34D" font-size="9.5" text-anchor="middle">wheel_base 2400 – 3700</text>
+  <text x="321" y="374" fill="#94A3B8" font-size="9" text-anchor="middle">front_overhang 750–1150 · rear_overhang 850–1350</text>
+  <!-- 高度 / 离地 -->
+  <line x1="96" y1="262" x2="96" y2="316" stroke="#38BDF8" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="84" y="212" fill="#7DD3FC" font-size="9" transform="rotate(-90 84 212)" text-anchor="middle">overall_height 1100–2050</text>
+  <text x="556" y="310" fill="#94A3B8" font-size="9" text-anchor="end">ground_clearance 80–280</text>
+
+  <!-- 右：一个向量 → 四种表达 -->
+  <rect x="592" y="58" width="344" height="322" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="610" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">22 维 CarParams → 四路消费</text>
+  <g font-size="10.5">
+    <rect x="610" y="100" width="308" height="40" rx="8" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".35"/>
+    <circle cx="628" cy="120" r="4" fill="#38BDF8"/>
+    <text x="642" y="117" fill="#7DD3FC" font-weight="700">实时 3D 网格预览</text>
+    <text x="642" y="132" fill="#64748B" font-size="9.5">同参生成，拖动即刷新</text>
+
+    <rect x="610" y="148" width="308" height="40" rx="8" fill="#0F241C" stroke="#34D399" stroke-opacity=".35"/>
+    <circle cx="628" cy="168" r="4" fill="#34D399"/>
+    <text x="642" y="165" fill="#6EE7B7" font-weight="700">NURBS 车身 + G1 端盖</text>
+    <text x="642" y="180" fill="#64748B" font-size="9.5">由参数直接生成，无拟合残差</text>
+
+    <rect x="610" y="196" width="308" height="40" rx="8" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".35"/>
+    <circle cx="628" cy="216" r="4" fill="#FBBF24"/>
+    <text x="642" y="213" fill="#FCD34D" font-weight="700">G0 / G1 / G2 质量评估</text>
+    <text x="642" y="228" fill="#64748B" font-size="9.5">等级 A–D 与连续性报告</text>
+
+    <rect x="610" y="244" width="308" height="40" rx="8" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".35"/>
+    <circle cx="628" cy="264" r="4" fill="#A78BFA"/>
+    <text x="642" y="261" fill="#C4B5FD" font-weight="700">STEP / IGES / STL 交付</text>
+    <text x="642" y="276" fill="#64748B" font-size="9.5">工程格式直出，进入下游 CAD</text>
+  </g>
+  <line x1="610" y1="302" x2="918" y2="302" stroke="#1E2A3A"/>
+  <text x="610" y="322" fill="#94A3B8" font-size="10">改任意一维 → 控制点重排 → 四种表达同步更新。</text>
+  <text x="610" y="340" fill="#64748B" font-size="9.5">没有「网格转 NURBS」的二次拟合环节。</text>
+  <text x="610" y="360" fill="#475569" font-size="9.5">比例参考线（紫）用于跨车型对比，不参与生成。</text>
+
+  <text x="24" y="404" fill="#94A3B8" font-size="10.5">读图：黄色尺寸线是参数空间里的硬边界，绿色为当前生成的侧廓，紫色虚线是另一比例方案的叠加——同一坐标系下比较前悬、轴距与车高。</text>
+  <text x="24" y="426" fill="#64748B" font-size="10">关键点：所有标注值都是参数下/上界，不是某一台车的实测值；车身仅为比例示意。</text>
+  <text x="24" y="446" fill="#475569" font-size="9.5">来源：PRODUCT_SPEC §4.2 Designer 参数面板；CarParams 字段与贝叶斯 14 维搜索空间同源。</text>
+</svg>

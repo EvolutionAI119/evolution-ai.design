@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="wp2g-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">双几何管线：同一参数源，两条并行交付路径</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Dual Geometry Pipeline</text>
+
+  <g font-size="11" fill="#94A3B8" text-anchor="middle">
+    <text x="215" y="92">① 参数源</text><text x="337" y="92">② 构造</text><text x="459" y="92">③ 内核</text>
+    <text x="581" y="92">④ 校验</text><text x="703" y="92">⑤ 输出</text><text x="825" y="92">⑥ 用途</text>
+  </g>
+
+  <!-- 共享参数源 -->
+  <rect x="160" y="106" width="110" height="214" rx="10" fill="#1A1230" stroke="#A78BFA"/>
+  <text x="215" y="150" fill="#C4B5FD" font-size="10.5" font-weight="700" text-anchor="middle">22 维参数</text>
+  <text x="215" y="172" fill="#E2E8F0" font-size="10" text-anchor="middle">CarParams</text>
+  <text x="215" y="192" fill="#94A3B8" font-size="9.5" text-anchor="middle">边界校验</text>
+  <text x="215" y="210" fill="#94A3B8" font-size="9.5" text-anchor="middle">L ∈ [3.5, 6.0] m</text>
+  <text x="215" y="240" fill="#64748B" font-size="9.5" text-anchor="middle">同一份输入</text>
+  <text x="215" y="258" fill="#64748B" font-size="9.5" text-anchor="middle">两侧共享</text>
+
+  <!-- mesh 行 -->
+  <text x="44" y="150" fill="#7DD3FC" font-size="12" font-weight="700">mesh 管线</text>
+  <text x="44" y="166" fill="#64748B" font-size="9.5">实时预览</text>
+  <g text-anchor="middle">
+    <rect x="282" y="106" width="110" height="98" rx="9" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".55"/>
+    <text x="337" y="138" fill="#7DD3FC" font-size="10.5" font-weight="700">48 截面环</text>
+    <text x="337" y="158" fill="#94A3B8" font-size="9.5">三区段 + 轮拱</text>
+    <text x="337" y="176" fill="#94A3B8" font-size="9.5">tumblehome</text>
+    <rect x="404" y="106" width="110" height="98" rx="9" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".55"/>
+    <text x="459" y="138" fill="#7DD3FC" font-size="10.5" font-weight="700">trimesh 网格</text>
+    <text x="459" y="158" fill="#94A3B8" font-size="9.5">10 部件装配</text>
+    <text x="459" y="176" fill="#94A3B8" font-size="9.5">glass / wheels</text>
+    <rect x="526" y="106" width="110" height="98" rx="9" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".55"/>
+    <text x="581" y="138" fill="#7DD3FC" font-size="10.5" font-weight="700">比例自检</text>
+    <text x="581" y="158" fill="#94A3B8" font-size="9.5">包围盒 / 间隙</text>
+    <text x="581" y="176" fill="#94A3B8" font-size="9.5">实时反馈</text>
+    <rect x="648" y="106" width="110" height="98" rx="9" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".55"/>
+    <text x="703" y="138" fill="#7DD3FC" font-size="10.5" font-weight="700">GLB / STL</text>
+    <text x="703" y="158" fill="#94A3B8" font-size="9.5">单件或合并</text>
+    <text x="703" y="176" fill="#94A3B8" font-size="9.5">前端直接加载</text>
+    <rect x="770" y="106" width="110" height="98" rx="9" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".55"/>
+    <text x="825" y="138" fill="#7DD3FC" font-size="10.5" font-weight="700">实时预览</text>
+    <text x="825" y="158" fill="#94A3B8" font-size="9.5">方案对比</text>
+    <text x="825" y="176" fill="#94A3B8" font-size="9.5">交互迭代</text>
+  </g>
+
+  <!-- NURBS 行 -->
+  <text x="44" y="266" fill="#FCD34D" font-size="12" font-weight="700">NURBS 管线</text>
+  <text x="44" y="282" fill="#64748B" font-size="9.5">工程交付</text>
+  <g text-anchor="middle">
+    <rect x="282" y="222" width="110" height="98" rx="9" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".55"/>
+    <text x="337" y="254" fill="#FCD34D" font-size="10.5" font-weight="700">扫掠 / 圆角</text>
+    <text x="337" y="274" fill="#94A3B8" font-size="9.5">混接曲面</text>
+    <text x="337" y="292" fill="#94A3B8" font-size="9.5">端部 4 方案</text>
+    <rect x="404" y="222" width="110" height="98" rx="9" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".55"/>
+    <text x="459" y="254" fill="#FCD34D" font-size="10.5" font-weight="700">自研 NURBS</text>
+    <text x="459" y="274" fill="#94A3B8" font-size="9.5">基函数 / 节点矢量</text>
+    <text x="459" y="292" fill="#94A3B8" font-size="9.5">Cython 加速</text>
+    <rect x="526" y="222" width="110" height="98" rx="9" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".55"/>
+    <text x="581" y="254" fill="#FCD34D" font-size="10.5" font-weight="700">G0 / G1 / G2</text>
+    <text x="581" y="274" fill="#94A3B8" font-size="9.5">0.1 mm / 1.0°</text>
+    <text x="581" y="292" fill="#94A3B8" font-size="9.5">反射线评分</text>
+    <rect x="648" y="222" width="110" height="98" rx="9" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".55"/>
+    <text x="703" y="254" fill="#FCD34D" font-size="10.5" font-weight="700">STEP</text>
+    <text x="703" y="274" fill="#94A3B8" font-size="9.5">工程级写出</text>
+    <text x="703" y="292" fill="#94A3B8" font-size="9.5">TXT / CSV 报告</text>
+    <rect x="770" y="222" width="110" height="98" rx="9" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".55"/>
+    <text x="825" y="254" fill="#FCD34D" font-size="10.5" font-weight="700">A 级曲面</text>
+    <text x="825" y="274" fill="#94A3B8" font-size="9.5">工程交付</text>
+    <text x="825" y="292" fill="#94A3B8" font-size="9.5">可编辑几何</text>
+  </g>
+
+  <!-- 连接 -->
+  <g stroke="#94A3B8" stroke-width="1.5" fill="none" marker-end="url(#wp2g-ar)">
+    <path d="M270 213 L276 213 L276 155 L282 155"/>
+    <path d="M276 213 L276 271 L282 271"/>
+    <line x1="392" y1="155" x2="402" y2="155"/><line x1="514" y1="155" x2="524" y2="155"/>
+    <line x1="636" y1="155" x2="646" y2="155"/><line x1="758" y1="155" x2="768" y2="155"/>
+    <line x1="392" y1="271" x2="402" y2="271"/><line x1="514" y1="271" x2="524" y2="271"/>
+    <line x1="636" y1="271" x2="646" y2="271"/><line x1="758" y1="271" x2="768" y2="271"/>
+  </g>
+
+  <text x="40" y="352" fill="#94A3B8" font-size="10.5">共用：同一份 22 维参数与同一套边界校验；差异：mesh 追求交互速度，NURBS 保证 G0/G1/G2 与 STEP 精度。</text>
+  <text x="40" y="374" fill="#64748B" font-size="10">两条管线并行、可互相校验；GLB/STL 与 STEP 面向不同下游（实时预览 vs 工程交付）。</text>
+  <text x="40" y="396" fill="#64748B" font-size="10">算法层零框架依赖：两条管线均可脱离 Web 平台独立运行、独立测试。</text>
+</svg>

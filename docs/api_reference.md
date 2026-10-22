@@ -1,11 +1,12 @@
 # API 参考总览
 
-> 版本：平台 v1.2（2026-09-27 基于源码生成）
-> 共 **118 个 HTTP 端点**：16 个路由模块 116 个（113 个 `@router` + `keys_router` 3 个 API Key 端点），`main.py` 另含 2 个系统端点；统一前缀 `/api/v1`。
+> 版本：平台 v1.2.x（2026-10-22 基于源码重新生成）
+> 共 **153 个 HTTP 端点**：19 个路由模块 151 个，`main.py` 另含 2 个系统端点；统一前缀 `/api/v1`。
 > 请求 / 响应均为 JSON（导出下载类端点除外）。
 >
 > 认证标记：
 > - 🔐 必须认证：`Authorization: Bearer <JWT>`（Depends get_current_user）
+> - 👑 管理员：管理员级依赖（require_admin / require_superadmin）
 > - 🔹 可选认证：携带 JWT 时关联用户（Depends get_optional_user）
 > - 无标记：公开
 >
@@ -14,6 +15,16 @@
 <figure class="doc-figure">
   <img src="docs/images/api-lifecycle.svg" alt="API 请求生命周期八步" loading="lazy">
   <figcaption><strong>图 1 ｜ API 请求生命周期八步：axios → CORS → 安全头 → 路由 → 鉴权 → 校验 → 业务 → 响应</strong>读图：上排 ①–④ 为请求进入（axios 实例→CORS 网关→安全头中间件→路由匹配），下排 ⑤–⑧ 为处理与返回（依赖注入鉴权→Pydantic 校验→业务处理→统一响应）；底部红色虚线为统一异常通道——任意一步抛错都经统一处理器返回结构化错误，500 级同时写入 backend-error.log 供超管排查。</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/api2-hero.svg" alt="平台 API 全景：客户端、网关、19 个路由模块与数据运行时" loading="lazy">
+  <figcaption><strong>图 2 ｜ 平台 API 全景：客户端 → 网关 → 19 个路由模块 → 数据与运行时</strong>读图：左侧浏览器与脚本经 HTTPS 携带 JWT 进入统一网关，中部为 19 个路由模块（auth 模块含 auth 与 api-keys 两套路由），右侧是 ORM、文件、缓存与算法层；底部标注 19 个模块、151 个路由端点加 2 个系统端点共 153 个。本图只表达调用结构，不表达流量或性能。</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/api2-chart.svg" alt="19 个路由模块端点数的降序条形图" loading="lazy">
+  <figcaption><strong>图 3 ｜ 19 个路由模块端点数的降序排列（合计 151）</strong>读图：横轴为端点数（0–20 刻度），纵轴为模块；analytics 21、modify 15、training 15、auth 12、import_export 11 为前五，合计 74 个占 49.0%，右侧 Top 5 卡逐项列出；19 条之和为 151，另有 2 个系统端点在 §20。柱长可直接横向比较各模块的接口面大小。</figcaption>
 </figure>
 
 ---
@@ -100,24 +111,27 @@
 | POST | `/variants/compare` | 变体对比 | |
 | POST | `/variants/{model_id}/{variant_id}/rollback` | 回滚到指定变体 | |
 
-## 8. 工作流 — workflow.py（7）
+## 8. 工作流 — workflow.py（9）
 
 | 方法 | 路径 | 功能 | 认证 |
 |---|---|---|---|
 | POST | `/workflows/` | 创建工作流 | |
 | GET | `/workflows/` | 工作流列表（project_id / status 过滤） | |
+| POST | `/workflows/training-review` | 创建训练评审工作流 | |
+| POST | `/workflows/{workflow_id}/steps/{step_id}/review` | 提交工作流步骤评审 | |
 | GET | `/workflows/{workflow_id}` | 工作流详情 | |
 | POST | `/workflows/{workflow_id}/execute` | 执行工作流 | |
 | GET | `/workflows/{workflow_id}/steps` | 工作流步骤列表 | |
 | PUT | `/workflows/{workflow_id}` | 更新工作流 | |
 | DELETE | `/workflows/{workflow_id}` | 删除工作流 | |
 
-## 9. 质量与拓扑 — quality.py（8）
+## 9. 质量与拓扑 — quality.py（9）
 
 | 方法 | 路径 | 功能 | 认证 |
 |---|---|---|---|
 | POST | `/topology/optimize/` | 拓扑优化 | |
 | POST | `/quality/check/` | 创建质量检查报告 | |
+| POST | `/quality/g2-check/` | G2 连续性专项检查 | |
 | GET | `/quality/reports/` | 质量报告列表（project_id / model_id 过滤） | |
 | GET | `/quality/reports/{report_id}` | 质量报告详情 | |
 | POST | `/data/handover/` | 数据交接准备 | |
@@ -125,7 +139,7 @@
 | GET | `/reports/{report_path}` | 下载报告文件（path 型路径） | |
 | GET | `/exports/{export_path}` | 下载导出文件（path 型路径） | |
 
-## 10. AI 训练 — training.py（14）
+## 10. AI 训练 — training.py（15）
 
 | 方法 | 路径 | 功能 | 认证 |
 |---|---|---|---|
@@ -140,6 +154,7 @@
 | GET | `/ai/styles` | 风格元信息 | |
 | GET | `/ai/brands` | 品牌元信息 | |
 | GET | `/ai/model-weights` | 已产出模型检查点 | |
+| GET | `/ai/trained-models` | 已训练模型列表 | |
 | POST | `/ai/evaluate-quality` | 造型参数质量评估 | |
 | POST | `/ai/generate-design` | 生成式设计 | |
 | POST | `/ai/optimize` | 参数优化 | |
@@ -199,7 +214,59 @@
 | POST | `/llm/{provider}/embeddings` | 向量嵌入 | 🔹 |
 | POST | `/llm/{provider}/images/generations` | 文生图 | 🔹 |
 
-## 16. 认证与 API Key — auth.py（9）
+## 16. 管理后台 — admin.py（7）
+
+管理后台独立页面由后端 `/admin` 提供；以下为支撑端点。
+
+| 方法 | 路径 | 功能 | 认证 |
+|---|---|---|---|
+| GET | `/admin/users` | 用户列表 | 👑 |
+| GET | `/admin/login-records` | 登录记录查询 | 👑 |
+| POST | `/admin/users/{user_id}/active` | 启用/停用用户 | 👑 |
+| POST | `/admin/users/{user_id}/reset-password` | 重置用户密码 | 👑 |
+| POST | `/admin/users/{user_id}/role` | 调整用户角色 | 👑 |
+| GET | `/admin/audit-logs` | 管理审计日志 | 👑 |
+| GET | `/admin/backend-errors` | 后端错误日志查询 | 👑 |
+
+## 17. 数据分析与社区互动 — analytics.py（21）
+
+埋点统计、社区留言/引用线索、通知中心与数据导出。
+
+| 方法 | 路径 | 功能 | 认证 |
+|---|---|---|---|
+| POST | `/analytics/track` | 页面访问埋点 | 🔹 |
+| POST | `/analytics/track/duration` | 停留时长埋点 | |
+| GET | `/analytics/public-summary` | 公开统计摘要 | 👑 |
+| GET | `/analytics/messages` | 社区留言列表 | |
+| POST | `/analytics/messages` | 发布留言 | 🔹 |
+| POST | `/analytics/messages/{message_id}/reply` | 回复留言 | � |
+| POST | `/analytics/messages/{message_id}/like` | 点赞留言 | |
+| POST | `/analytics/messages/{message_id}/hide` | 隐藏留言 | 👑 |
+| GET | `/analytics/references` | 引用线索列表 | |
+| POST | `/analytics/references` | 提交引用线索 | 🔹 |
+| GET | `/analytics/references/all` | 全部引用线索（管理） | 👑 |
+| POST | `/analytics/references/{reference_id}/verify` | 核实引用线索 | 👑 |
+| GET | `/analytics/overview` | 运营总览 | 👑 |
+| GET | `/analytics/visits` | 访问统计 | 👑 |
+| GET | `/analytics/registrations` | 注册统计 | 👑 |
+| GET | `/analytics/interactions` | 互动统计 | 👑 |
+| GET | `/analytics/notifications` | 通知列表（本人） | 🔐 |
+| GET | `/analytics/notifications/unread-count` | 未读通知数 | 🔐 |
+| POST | `/analytics/notifications/{notification_id}/read` | 标记通知已读 | 🔐 |
+| POST | `/analytics/notifications/read-all` | 全部已读 | 🔐 |
+| GET | `/analytics/export` | 统计数据导出（CSV/JSON） | 👑 |
+
+## 18. 设计意图解析 — design_intent.py（3）
+
+自然语言设计意图的结构化解析（游客可用的公开端点）。
+
+| 方法 | 路径 | 功能 | 认证 |
+|---|---|---|---|
+| GET | `/design-intent/examples` | 意图示例列表 | |
+| POST | `/design-intent/parse` | 解析自然语言设计意图 | |
+| POST | `/design-intent/parse-variants` | 解析并生成参数变体 | |
+
+## 19. 认证与 API Key — auth.py（9）
 
 | 方法 | 路径 | 功能 | 认证 |
 |---|---|---|---|
@@ -219,9 +286,14 @@
 > 注：auth.py 包含 `auth` 与 `keys_router` 两个路由，共 12 个端点；
 > 模块端点数统计（9）仅计入 `auth` 路由，3 个 api-keys 端点在此处一并列出。
 
+<figure class="doc-figure">
+  <img src="docs/images/api2-matrix.svg" alt="19 个模块与四类认证等级的矩阵" loading="lazy">
+  <figcaption><strong>图 4 ｜ 19 个模块 × 认证等级矩阵</strong>读图：四列依次为公开、🔹 可选、🔐 必须、👑 管理员，格内数字是该模块在此等级的端点数；列合计 114 / 9 / 12 / 16 = 151，公开端点占 75.5%。读法结论：读端点基本公开，写操作与管理操作收敛到必须认证或管理员；analytics 覆盖四种等级（4/4/4/9），training 覆盖公开、可选、必须三级（10/1/4），是权限分层最细的两个模块。</figcaption>
+</figure>
+
 ---
 
-## 17. 系统端点（main.py 直接定义）
+## 20. 系统端点（main.py 直接定义）
 
 | 方法 | 路径 | 功能 |
 |---|---|---|
@@ -230,7 +302,7 @@
 
 ---
 
-## 18. 标准错误响应
+## 21. 标准错误响应
 
 | 状态码 | 含义 |
 |---|---|
@@ -241,3 +313,8 @@
 | 409 | 状态冲突（如无观测查询 best） |
 | 422 | 请求体 schema 校验失败（含字段错误明细） |
 | 503 | 可选能力未就绪（PyTorch / Ollama / 微信配置缺失等） |
+
+<figure class="doc-figure">
+  <img src="docs/images/api2-legend.svg" alt="API 参考图例：认证标记、方法色、路径记号与状态码" loading="lazy">
+  <figcaption><strong>图 5 ｜ 图例：认证标记、HTTP 方法色、路径记号与状态码语义</strong>读图：A 卡是四类认证标记及其端点数（无标记 114、🔹 9、🔐 12、👑 16），B 卡是方法色（GET 蓝、POST 绿、PUT 琥珀、DELETE 红），C 卡是路径与参数记法（统一前缀 `/api/v1/{module}/{action}`、`{project_id}` 等资源参数、`{path}/{filename}` 文件路径参数），D 卡是状态码语义（400/422 校验失败、401 认证失败、404/405 资源或方法错误并含 409 状态冲突、503 能力未就绪）。读各模块表前先用本卡确认标记含义。</figcaption>
+</figure>

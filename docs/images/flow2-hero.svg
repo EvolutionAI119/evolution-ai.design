@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="flow2h-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+    <marker id="flow2h-ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#FBBF24"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#F472B6"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">三步主链：登录取证 → 凭据训练 → 成果送审</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Login → Train → Review</text>
+
+  <!-- Station 1 -->
+  <rect x="40" y="90" width="220" height="210" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <rect x="76" y="110" width="110" height="64" rx="8" fill="#12293D" stroke="#38BDF8" stroke-opacity=".6"/>
+  <circle cx="102" cy="142" r="14" fill="none" stroke="#38BDF8"/>
+  <g stroke="#38BDF8" stroke-width="2" stroke-linecap="round">
+    <line x1="124" y1="132" x2="164" y2="132"/><line x1="124" y1="142" x2="156" y2="142"/><line x1="124" y1="152" x2="168" y2="152"/>
+  </g>
+  <text x="56" y="200" fill="#7DD3FC" font-size="12" font-weight="700">① 登录认证</text>
+  <text x="56" y="222" fill="#94A3B8" font-size="10">POST /auth/login</text>
+  <text x="56" y="242" fill="#94A3B8" font-size="10">JWT 7 天 · HS256</text>
+  <text x="56" y="262" fill="#64748B" font-size="9.5">合并游客数据到账号</text>
+
+  <!-- Station 2 -->
+  <rect x="350" y="90" width="220" height="210" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <g stroke="#A78BFA" stroke-width="1.6">
+    <line x1="398" y1="130" x2="430" y2="158"/><line x1="398" y1="130" x2="430" y2="130"/>
+    <line x1="430" y1="158" x2="462" y2="130"/><line x1="430" y1="158" x2="462" y2="158"/>
+  </g>
+  <g fill="#1A1230" stroke="#A78BFA">
+    <circle cx="398" cy="130" r="10"/><circle cx="430" cy="130" r="10"/><circle cx="462" cy="130" r="10"/>
+    <circle cx="430" cy="158" r="10"/><circle cx="462" cy="158" r="10"/>
+  </g>
+  <text x="366" y="200" fill="#C4B5FD" font-size="12" font-weight="700">② 凭据训练</text>
+  <text x="366" y="222" fill="#94A3B8" font-size="10">POST /ai/train</text>
+  <text x="366" y="242" fill="#94A3B8" font-size="10">TrainingTask.user_id</text>
+  <text x="366" y="262" fill="#64748B" font-size="9.5">轮询 GET /ai/tasks/{id}</text>
+
+  <!-- Station 3 -->
+  <rect x="660" y="90" width="220" height="210" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <rect x="680" y="112" width="86" height="60" rx="6" fill="#2A1420" stroke="#F472B6" stroke-opacity=".7"/>
+  <g stroke="#F472B6" stroke-width="2" stroke-linecap="round">
+    <line x1="692" y1="126" x2="744" y2="126"/><line x1="692" y1="138" x2="734" y2="138"/><line x1="692" y1="150" x2="740" y2="150"/>
+  </g>
+  <circle cx="762" cy="166" r="16" fill="#2A1420" stroke="#F472B6" stroke-width="2"/>
+  <path d="M754 166 L760 172 L771 159" fill="none" stroke="#F472B6" stroke-width="2"/>
+  <text x="676" y="200" fill="#F9A8D4" font-size="12" font-weight="700">③ 工作流审核</text>
+  <text x="676" y="222" fill="#94A3B8" font-size="10">POST /workflows/training-review</text>
+  <text x="676" y="242" fill="#94A3B8" font-size="10">合规 → 质量（双人审）</text>
+  <text x="676" y="262" fill="#64748B" font-size="9.5">reviewer + 时间戳落库</text>
+
+  <!-- Arrows -->
+  <line x1="260" y1="180" x2="346" y2="180" stroke="#34D399" stroke-width="2" marker-end="url(#flow2h-ar)"/>
+  <text x="303" y="170" fill="#6EE7B7" font-size="9.5" text-anchor="middle">Bearer Token</text>
+  <line x1="570" y1="180" x2="656" y2="180" stroke="#34D399" stroke-width="2" marker-end="url(#flow2h-ar)"/>
+  <text x="613" y="170" fill="#6EE7B7" font-size="9.5" text-anchor="middle">成果 + 证据摘要</text>
+
+  <!-- Project -->
+  <rect x="350" y="330" width="260" height="64" rx="10" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".6"/>
+  <text x="366" y="354" fill="#C4B5FD" font-size="11.5" font-weight="700">Project · training_review</text>
+  <text x="366" y="374" fill="#94A3B8" font-size="9.5">含 2 个审核步骤（合规 / 质量）</text>
+  <path d="M770 300 L770 316 L612 316 L612 326" fill="none" stroke="#FBBF24" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#flow2h-ar2)"/>
+
+  <text x="40" y="352" fill="#F87171" font-size="11" font-weight="700">错误出口</text>
+  <text x="40" y="372" fill="#64748B" font-size="9.5">401 未认证 · 400 任务未完成</text>
+  <text x="40" y="390" fill="#64748B" font-size="9.5">404 项目 / 任务不存在</text>
+  <text x="904" y="352" fill="#94A3B8" font-size="11" font-weight="700" text-anchor="end">审核结论</text>
+  <text x="904" y="372" fill="#64748B" font-size="9.5" text-anchor="end">status + reviewer + 时间戳</text>
+  <text x="904" y="390" fill="#64748B" font-size="9.5" text-anchor="end">不可绕过、不可代审</text>
+
+  <text x="40" y="424" fill="#64748B" font-size="10">设计原则：凭据最小暴露 · 归属强校验 · 审核不可绕过；任何一步失败都保留可读 detail。</text>
+</svg>

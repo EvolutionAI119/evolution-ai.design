@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="428" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">方法论图例：路径线型 · 门禁标记 · 阈值单位</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Method Legend</text>
+
+  <!-- A 线型 -->
+  <rect x="40" y="56" width="286" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="56" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">线型 = 路径与状态</text>
+  <g font-size="10.5">
+    <line x1="58" y1="106" x2="108" y2="106" stroke="#34D399" stroke-width="2"/><text x="120" y="110" fill="#CBD5E1">快速路径</text>
+    <text x="120" y="124" fill="#64748B" font-size="9">网格秒级生成，用于探索</text>
+    <line x1="58" y1="148" x2="108" y2="148" stroke="#38BDF8" stroke-width="3.4"/><text x="120" y="152" fill="#CBD5E1">精确路径</text>
+    <text x="120" y="166" fill="#64748B" font-size="9">NURBS 光顺，用于工程交付</text>
+    <line x1="58" y1="190" x2="108" y2="190" stroke="#A78BFA" stroke-width="1.6" stroke-dasharray="6 5"/><text x="120" y="194" fill="#CBD5E1">异步任务</text>
+    <text x="120" y="208" fill="#64748B" font-size="9">训练/优化后台运行，前端轮询</text>
+    <line x1="58" y1="232" x2="108" y2="232" stroke="#64748B" stroke-width="1.4" stroke-dasharray="2 5"/><text x="120" y="236" fill="#CBD5E1">参考边界</text>
+    <text x="120" y="250" fill="#64748B" font-size="9">参数校验规则与目标值</text>
+    <line x1="58" y1="274" x2="108" y2="274" stroke="#F87171" stroke-width="1.6" stroke-dasharray="5 4"/><text x="120" y="278" fill="#CBD5E1">门禁回退</text>
+    <text x="120" y="292" fill="#64748B" font-size="9">未通过则退回上一阶段修订</text>
+  </g>
+  <text x="56" y="322" fill="#475569" font-size="9.5">线宽只区分主次，不表示数量。</text>
+
+  <!-- B 标记 -->
+  <rect x="352" y="56" width="286" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="368" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">标记 = 流程角色</text>
+  <g font-size="10.5">
+    <path d="M378 104 L388 112 L378 120 L368 112 Z" fill="#FBBF24" opacity=".9"/><text x="400" y="116" fill="#CBD5E1">G1–G4 门禁</text>
+    <circle cx="378" cy="148" r="6.5" fill="#0F1622" stroke="#A78BFA" stroke-width="2"/><text x="400" y="152" fill="#CBD5E1">变体快照</text>
+    <path d="M378 178 L386 190 L370 190 Z" fill="#34D399"/><text x="400" y="188" fill="#CBD5E1">评审决策</text>
+    <rect x="370" y="208" width="16" height="14" rx="3" fill="none" stroke="#38BDF8" stroke-width="1.5"/><text x="400" y="220" fill="#CBD5E1">后台任务</text>
+    <path d="M368 240 L384 240 L384 254 L376 248 L368 254 Z" fill="none" stroke="#94A3B8" stroke-width="1.4"/><text x="400" y="252" fill="#CBD5E1">质量报告 / 记录</text>
+  </g>
+  <line x1="368" y1="274" x2="622" y2="274" stroke="#1E2A3A"/>
+  <text x="368" y="294" fill="#94A3B8" font-size="9.5">菱形必在阶段交界处，圆点必挂在变体</text>
+  <text x="368" y="310" fill="#64748B" font-size="9.5">或会话上；标记位置即状态位置。</text>
+  <text x="368" y="330" fill="#475569" font-size="9.5">无记录的决策，不视为已决策。</text>
+
+  <!-- C 阈值 -->
+  <rect x="664" y="56" width="272" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="680" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">阈值与单位</text>
+  <g font-size="10.5">
+    <text x="680" y="106" fill="#CBD5E1">连续性检查</text>
+    <text x="680" y="124" fill="#64748B" font-size="9.5">位置偏差 0.1 mm</text>
+    <text x="680" y="140" fill="#64748B" font-size="9.5">切向 / 法向夹角 1.0°</text>
+    <text x="680" y="160" fill="#CBD5E1">阶数</text>
+    <text x="680" y="178" fill="#64748B" font-size="9.5">G0 位置 / G1 切线 / G2 曲率</text>
+    <text x="680" y="198" fill="#CBD5E1">综合等级</text>
+  </g>
+  <g font-size="10" font-weight="700">
+    <rect x="680" y="206" width="24" height="18" rx="4" fill="#0F241C" stroke="#34D399"/><text x="692" y="219" fill="#6EE7B7" text-anchor="middle">A</text>
+    <rect x="710" y="206" width="24" height="18" rx="4" fill="#0E1E2E" stroke="#38BDF8"/><text x="722" y="219" fill="#7DD3FC" text-anchor="middle">B</text>
+    <rect x="740" y="206" width="24" height="18" rx="4" fill="#2A1A0E" stroke="#FBBF24"/><text x="752" y="219" fill="#FCD34D" text-anchor="middle">C</text>
+    <rect x="770" y="206" width="24" height="18" rx="4" fill="#2A1016" stroke="#F87171"/><text x="782" y="219" fill="#FCA5A5" text-anchor="middle">D</text>
+  </g>
+  <g font-size="9.5" fill="#64748B">
+    <text x="680" y="246">A/B/C/D = 由连续性计数与反射线</text>
+    <text x="680" y="260">评分合成的综合等级，非单一指标。</text>
+    <text x="680" y="282" fill="#CBD5E1" font-size="10">时间单位</text>
+    <text x="680" y="298">秒 = 单轮生成与评估</text>
+    <text x="680" y="312">轮 = 贝叶斯观测次数（20–40 轮收敛）</text>
+    <text x="680" y="326">周 = 项目阶段节奏</text>
+  </g>
+
+  <text x="40" y="378" fill="#64748B" font-size="10.5">用法：先看线型判断这条边是「生成、异步还是回退」，再看标记判断它挂在哪个流程对象上，最后用阈值判断是否达标。</text>
+  <text x="40" y="402" fill="#475569" font-size="10">本图编码与设计哲学图 5-2 一致：绿=数/通过，蓝=理/精确，紫=参数与变体，琥珀=门禁，红=失败。</text>
+</svg>

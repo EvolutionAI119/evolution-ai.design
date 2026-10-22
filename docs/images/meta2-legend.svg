@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="428" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">学术资源图谱图例：来源类型 · 证据强度 · 层级关系</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Source Map Legend</text>
+
+  <!-- A 来源类型 -->
+  <rect x="40" y="56" width="286" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="56" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">色 = 来源类型</text>
+  <g font-size="10.5">
+    <rect x="58" y="96" width="14" height="14" rx="3" fill="#A78BFA"/><text x="82" y="107" fill="#CBD5E1">元理论 / 设计学</text>
+    <text x="82" y="121" fill="#64748B" font-size="9">Love 九层 · 张宗登三元 · 潘鲁生四维</text>
+    <rect x="58" y="136" width="14" height="14" rx="3" fill="#38BDF8"/><text x="82" y="147" fill="#CBD5E1">汽车造型理论</text>
+    <text x="82" y="161" fill="#64748B" font-size="9">赵江洪知识体系 · 造型认知三层</text>
+    <rect x="58" y="176" width="14" height="14" rx="3" fill="#34D399"/><text x="82" y="187" fill="#CBD5E1">设计实践与原则</text>
+    <text x="82" y="201" fill="#64748B" font-size="9">吉利九大原则 · R 角 · 吉利清色彩</text>
+    <rect x="58" y="216" width="14" height="14" rx="3" fill="#FBBF24"/><text x="82" y="227" fill="#CBD5E1">传统造物美学</text>
+    <text x="82" y="241" fill="#64748B" font-size="9">考工记 · 天工开物 · 谢赫六法</text>
+  </g>
+  <line x1="58" y1="262" x2="308" y2="262" stroke="#1E2A3A"/>
+  <text x="58" y="282" fill="#94A3B8" font-size="10">颜色只标来源，不标学术价值高低</text>
+  <text x="58" y="298" fill="#64748B" font-size="9.5">同一来源在正文多处引用时，颜色不变。</text>
+  <text x="58" y="318" fill="#475569" font-size="9.5">四类来源合计支撑 10 个知识维度。</text>
+
+  <!-- B 证据强度 -->
+  <rect x="352" y="56" width="286" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="368" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">标记 = 证据强度</text>
+  <g>
+    <circle cx="376" cy="102" r="7" fill="#34D399"/><text x="396" y="106" fill="#CBD5E1" font-size="10.5">一手文献 / 原著</text>
+    <text x="396" y="120" fill="#64748B" font-size="9">可直接溯源，作为定义与框架的依据</text>
+    <circle cx="376" cy="142" r="7" fill="#0F1622" stroke="#FBBF24" stroke-width="1.6"/><path d="M369 142 A7 7 0 0 1 383 142 Z" fill="#FBBF24"/><text x="396" y="146" fill="#CBD5E1" font-size="10.5">综述 / 转引</text>
+    <text x="396" y="160" fill="#64748B" font-size="9">二手整理，需回原文核对后才能定论</text>
+    <circle cx="376" cy="182" r="7" fill="none" stroke="#64748B" stroke-width="1.6"/><text x="396" y="186" fill="#CBD5E1" font-size="10.5">待补证</text>
+    <text x="396" y="200" fill="#64748B" font-size="9">仅在本文提出问题，尚无直接文献</text>
+  </g>
+  <line x1="368" y1="222" x2="622" y2="222" stroke="#1E2A3A"/>
+  <text x="368" y="242" fill="#94A3B8" font-size="10">证据等级不改变「是否入库」</text>
+  <text x="368" y="260" fill="#64748B" font-size="9.5">待补证条目仍保留，但需显式标注，</text>
+  <text x="368" y="276" fill="#64748B" font-size="9.5">避免把推测当成既有学术结论。</text>
+  <text x="368" y="300" fill="#475569" font-size="9.5">原则：有来源说来源，没有就说没有。</text>
+
+  <!-- C 层级 -->
+  <rect x="664" y="56" width="272" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="680" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">层级与关系</text>
+  <g>
+    <rect x="680" y="92" width="28" height="12" rx="2" fill="#A78BFA" opacity=".9"/>
+    <rect x="712" y="92" width="28" height="12" rx="2" fill="#A78BFA" opacity=".72"/>
+    <rect x="744" y="92" width="28" height="12" rx="2" fill="#38BDF8" opacity=".62"/>
+    <rect x="776" y="92" width="28" height="12" rx="2" fill="#38BDF8" opacity=".46"/>
+    <rect x="808" y="92" width="28" height="12" rx="2" fill="#34D399" opacity=".5"/>
+    <rect x="840" y="92" width="28" height="12" rx="2" fill="#FBBF24" opacity=".6"/>
+  </g>
+  <text x="680" y="122" fill="#64748B" font-size="9.5">L1–L9：由哲学（深）到概念形成（浅）</text>
+  <g font-size="10.5">
+    <line x1="680" y1="150" x2="740" y2="150" stroke="#94A3B8" stroke-width="2"/><text x="756" y="154" fill="#CBD5E1">继承（原维度保留）</text>
+    <line x1="680" y1="184" x2="740" y2="184" stroke="#F472B6" stroke-width="1.8" stroke-dasharray="6 5"/><text x="756" y="188" fill="#CBD5E1">扩展（新增维度）</text>
+    <line x1="680" y1="218" x2="732" y2="218" stroke="#A78BFA" stroke-width="1.6" marker-end="url(#meta2l-arw)" marker-start="url(#meta2l-arw)"/><text x="756" y="222" fill="#CBD5E1">反哺（实践 → 理论）</text>
+  </g>
+  <line x1="680" y1="244" x2="920" y2="244" stroke="#1E2A3A"/>
+  <text x="680" y="264" fill="#94A3B8" font-size="10">读层级先看「问题」而非「内容」</text>
+  <text x="680" y="280" fill="#64748B" font-size="9.5">L1 问「世界是什么」</text>
+  <text x="680" y="294" fill="#64748B" font-size="9.5">L2 问「人如何认知」</text>
+  <text x="680" y="308" fill="#64748B" font-size="9.5">L5–L7 问「过程与方法」</text>
+  <text x="680" y="326" fill="#475569" font-size="9.5">同一内容落在不同层，含义不同。</text>
+
+  <text x="40" y="378" fill="#64748B" font-size="10.5">用法：读索引表时按「来源色 → 证据标记 → 层级归属」三步走；先判断可信度，再判断它在体系中承担哪一层职责。</text>
+  <text x="40" y="402" fill="#475569" font-size="10">本文所有图共用「紫=元理论、蓝=造型理论、绿=实践原则、琥珀=传统造物」的来源配色。</text>
+  <defs>
+    <marker id="meta2l-arw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#A78BFA"/>
+    </marker>
+  </defs>
+</svg>

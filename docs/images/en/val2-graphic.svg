@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Bayesian convergence: EI and UCB both enter the −0.01 band</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Bayesian Convergence · 15 Rounds</text>
+
+  <text x="40" y="56" fill="#94A3B8" font-size="10.5">Objective f(x) = −(x−0.5)² · optimum 0 at x=0.5 · budget 15 suggest–observe rounds</text>
+  <text x="920" y="56" fill="#64748B" font-size="10.5" text-anchor="end">EI / UCB acquisitions</text>
+
+  <!-- Grid -->
+  <g stroke="#1E2A3A" stroke-width="1">
+    <line x1="100" y1="90" x2="760" y2="90"/>
+    <line x1="100" y1="138" x2="760" y2="138"/>
+    <line x1="100" y1="186" x2="760" y2="186"/>
+    <line x1="100" y1="234" x2="760" y2="234"/>
+    <line x1="100" y1="282" x2="760" y2="282"/>
+    <line x1="265" y1="80" x2="265" y2="330"/>
+    <line x1="430" y1="80" x2="430" y2="330"/>
+    <line x1="595" y1="80" x2="595" y2="330"/>
+  </g>
+
+  <!-- Axes -->
+  <line x1="100" y1="330" x2="760" y2="330" stroke="#334155" stroke-width="1.2"/>
+  <line x1="100" y1="330" x2="100" y2="80" stroke="#334155" stroke-width="1.2"/>
+
+  <g fill="#475569" font-size="10" text-anchor="end">
+    <text x="92" y="94">0</text>
+    <text x="92" y="142">−0.05</text>
+    <text x="92" y="190">−0.10</text>
+    <text x="92" y="238">−0.15</text>
+    <text x="92" y="286">−0.20</text>
+    <text x="92" y="334">−0.25</text>
+  </g>
+  <g fill="#475569" font-size="10" text-anchor="middle">
+    <text x="100" y="348">0</text>
+    <text x="265" y="348">0.25</text>
+    <text x="430" y="348">0.50</text>
+    <text x="595" y="348">0.75</text>
+    <text x="760" y="348">1.00</text>
+  </g>
+  <text x="64" y="210" fill="#64748B" font-size="10.5" transform="rotate(-90 64 210)" text-anchor="middle">f(x)</text>
+  <text x="430" y="366" fill="#64748B" font-size="10.5" text-anchor="middle">x</text>
+
+  <!-- −0.01 band -->
+  <rect x="100" y="90" width="660" height="10" fill="#34D399" opacity="0.16"/>
+  <line x1="100" y1="100" x2="760" y2="100" stroke="#34D399" stroke-width="1" stroke-dasharray="5 3"/>
+  <text x="752" y="86" fill="#6EE7B7" font-size="10" text-anchor="end">−0.01 band (entered = converged)</text>
+
+  <!-- Objective curve -->
+  <path d="M100 330 Q430 -150 760 330" fill="none" stroke="#38BDF8" stroke-width="2.2"/>
+  <text x="430" y="126" fill="#64748B" font-size="10" text-anchor="middle">optimum 0 at x = 0.5</text>
+
+  <!-- Best point -->
+  <circle cx="430" cy="90" r="10" fill="none" stroke="#FBBF24" stroke-width="1.4"/>
+  <circle cx="430" cy="90" r="4.5" fill="#34D399"/>
+
+  <!-- Readout card -->
+  <rect x="778" y="70" width="158" height="120" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="792" y="90" fill="#E2E8F0" font-size="11" font-weight="700">best point · 15 rounds</text>
+  <text x="792" y="112" fill="#6EE7B7" font-size="10">EI   x = 0.5000</text>
+  <text x="792" y="128" fill="#64748B" font-size="9.5">score −0.00000</text>
+  <text x="792" y="150" fill="#FBBF24" font-size="10">UCB  x = 0.4999</text>
+  <text x="792" y="166" fill="#64748B" font-size="9.5">score −0.00000</text>
+  <line x1="778" y1="140" x2="444" y2="94" stroke="#A78BFA" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+
+  <text x="40" y="398" fill="#94A3B8" font-size="10">How to read: the green band is the −0.01 zone; both best points (0.5000 / 0.4999) nearly coincide, proving random fill → GP fit → acquisition works.</text>
+  <text x="40" y="418" fill="#64748B" font-size="10">This experiment validates engine correctness only; it claims no sample-efficiency advantage over external tuning libraries.</text>
+</svg>

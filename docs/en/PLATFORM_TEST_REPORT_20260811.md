@@ -24,6 +24,11 @@
 | FastAPI backend | 8000 | ✅ Running | Started by `backend/start.py`; Swagger at `/docs` |
 | LLM inference (Ollama-compatible) | 11434 | ✅ Running | `scripts/llm_server.py`, with RAG retrieval |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/ptest2-image.svg" alt="Four-end integration floor: 7 frontend modules and four live ports" loading="lazy">
+  <figcaption><strong>Fig. 1-1 ｜ Four-end integration floor (7 modules × four ports)</strong> How to read: left is the real render of 7 frontend modules, right the four live ports; Vite proxies `/api/v1` to 8000, which then calls 11434.</figcaption>
+</figure>
+
 ---
 
 ## 2. End-to-End LLM Inference Tests (Q1 + Q3 + Q10)
@@ -132,12 +137,22 @@ POST /api/v1/car/generate → 200 OK
 | **P5** | 🟢 Very low | Vite port | Default 5173 occupied; Vite switched to 5174, but DEMO animation is hardcoded to 5175 | Affects only DEMO animation | Use relative paths or dynamic `import.meta.env` |
 | **P6** | 🟢 Very low | AI Designer | `/api/v1/ai/health` returns 500 → "AI stats not available" warning | Only the AI stats card hides; generation works | Add a health-check fallback in car_generator |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/ptest2-legend.svg" alt="Legend: test status, severity and blocking semantics" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ Legend: test status, severity and blocking</strong> How to read: sections A/B establish the shared "low / very low / blocking" language, then C/D give the chart conventions; amber means low severity only, never failure.</figcaption>
+</figure>
+
 ### 4.2 No-Blocker Conclusion
 
 **None of P1–P6 blocks the core platform flow**:
 - AI Designer parameterized generation connects to the backend API ✓
 - The other modules render correctly with complete entries ✓
 - End-to-end LLM tests pass 3/3 ✓
+
+<figure class="doc-figure">
+  <img src="docs/images/en/ptest2-graphic.svg" alt="Known-issue matrix P1 to P6 with severity and blocking status" loading="lazy">
+  <figcaption><strong>Fig. 4-2 ｜ Known-issue matrix (P1–P6 × severity × blocking)</strong> How to read: scan each row's Impact and the rightmost Blocking column; all six say "No", so the core demo path Designer → Quality → Deliver stays unaffected.</figcaption>
+</figure>
 
 ---
 

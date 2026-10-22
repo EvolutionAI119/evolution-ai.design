@@ -24,6 +24,11 @@
 - SOP 检查清单：13 项检查、183 条记录、67 条自动化、自动化通过率 79%
 - AI 专家问答：基于微调模型 + RAG 检索的 NURBS 知识问答服务
 
+<figure class="doc-figure">
+  <img src="docs/images/audit2-image.svg" alt="审计现场：清理、测试、微调、容器化四线并行" loading="lazy">
+  <figcaption><strong>图 1-1 ｜ 审计现场全景（清理、测试、微调、容器化四线并行）</strong>读图：左侧归档箱、中央测试终端、右上问答结果与右下容器件，对应本次四条并行工作流；201 与 70% 均为 8/9–8/10 时点值。</figcaption>
+</figure>
+
 ---
 
 ## 二、8 月 9 日审计记录
@@ -103,6 +108,11 @@
 - 概念定义错误：14%（1 题）
 - 拒答模式：14%（1 题）
 - 高风险类别（100% 失败）：continuity、nurbs_basics、parametric_design、quality_assessment
+
+<figure class="doc-figure">
+  <img src="docs/images/audit2-chart.svg" alt="LLM 基准三级跃迁与失败根因" loading="lazy">
+  <figcaption><strong>图 2-1 ｜ LLM 十题基准三级跃迁与失败根因</strong>读图：左图三次测量用的是同一套十题（1/10 → 3/10 → 7/10），右图把 30% 时点的 7 道失败归因；前两类占 72%，说明瓶颈是数据缺口而非模型容量。</figcaption>
+</figure>
 
 ---
 
@@ -197,6 +207,11 @@
 <figure class="doc-figure">
   <img src="docs/images/october-test-results.svg" alt="10 月测试规模与结果对比" loading="lazy">
   <figcaption><strong>图 4-2 ｜ 10 月测试规模与结果对比</strong>读图：柱状图为当日实跑的五层测试——后端集成 341 / 前端组件 142 / 拓扑封闭 12 / 游客模式 2 / 独立后台 3；右侧徽章给出合计 483 项零失败与后端 341 pass / 1 skip / 2 xfail 的构成说明。</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/audit2-legend.svg" alt="图例：审计状态、色块与时间口径" loading="lazy">
+  <figcaption><strong>图 4-3 ｜ 图例：审计状态、色块与时间口径</strong>读图：先看 D 段时间口径，再读 A/B 段状态与色块；201（8/9）与 483（10/11）分属不同快照，不得相互覆盖。</figcaption>
 </figure>
 
 ---

@@ -12,6 +12,11 @@
   <figcaption><strong>Fig. 1-1 ｜ Platform architecture overview: frontend / backend / algorithm / data layers plus deployment channel</strong> How to read: Read as an architecture overview — four layers annotated with inter-layer call protocols, and a deployment channel listing dev, production, tunnel and static publishing; the algorithm layer has zero framework dependencies and can run standalone.</figcaption>
 </figure>
 
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-layers.svg" alt="Oblique slices of the five-layer architecture" loading="lazy">
+  <figcaption><strong>Fig. 1-2 ｜ Oblique slices of the five-layer architecture: L1 frontend → L2 gateway → L3 backend → L4 algorithm → L5 infrastructure</strong> How to read: Top-down oblique slabs encode the dependency direction; each layer lists its key components and outbound protocol (HTTP/JSON, proxy, function call, ORM). L4 is an independently installable package with no FastAPI dependency and can be tested without L1–L3. The only layering rule: upper layers may depend on lower ones, never the reverse.</figcaption>
+</figure>
+
 The platform uses a five-layer architecture:
 
 ```
@@ -23,13 +28,13 @@ The platform uses a five-layer architecture:
 │               /api/v1 → FastAPI (8000); public via cpolar HTTPS │
 ├──────────────────────────────────────────────────────────────┤
 │ L3 Backend    FastAPI 0.104 + Pydantic v2                    │
-│               16 route modules / 118 endpoints (incl. 2 system); thin-shell orchestration │
+│               19 route modules / 153 endpoints (incl. 2 system); thin-shell orchestration │
 ├──────────────────────────────────────────────────────────────┤
 │ L4 Algorithm  algorithm_model (independently installable)    │
 │               NURBS full-vehicle / freeform free surfaces /  │
 │               surface_quality evaluation & optimization / storyboard │
 ├──────────────────────────────────────────────────────────────┤
-│ L5 Infrastructure  SQLite (development) + SQLAlchemy 2.0 (11 ORM tables) │
+│ L5 Infrastructure  SQLite (development) + SQLAlchemy 2.0 (17 ORM tables) │
 │               File storage; optional Redis; Docker Compose   │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -47,20 +52,22 @@ The platform uses a five-layer architecture:
 
 ## 2. Frontend Structure
 
-Source root: `src/`. Ten routed pages (hash mode):
+Source root: `src/`. Twelve routed pages (hash mode; guest access without login — Login/Account sources archived at `src/views/Login.vue`, `src/views/Account.vue`):
 
 | Route | Page | Core responsibility |
 |---|---|---|
 | `/` | Dashboard | Platform overview and function entries |
 | `/designer` | Designer | AI parameterized designer: parameter panel + real-time 3D rendering |
+| `/copilot` | DesignCopilot | Design copilot: intent parsing + parameter variants (design_intent endpoints) |
 | `/projects` | Projects | Project list |
 | `/projects/:id` | ProjectDetail | Project detail and model management |
 | `/deep-learning` | DeepLearning | Deep-learning designer: training batches, style/generative design |
 | `/quality` | Quality | Quality checks and report list |
 | `/deliver` | Deliver | Engineering delivery and data handover |
-| `/demo` | Demo | Function demonstration |
-| `/login` | Login | Login (password + WeChat scan/official-account authorization), public |
-| `/account` | Account | Account and API-key management |
+| `/demo` | Demo | Function demonstration (incl. VTOL flight physics) |
+| `/help` | Help | Help center: 3D knowledge graph, module manual, doc system |
+| `/community` | Community | Community interaction (posts, references — analytics endpoints) |
+| `/contact` | Contact | Contact and feedback |
 
 Key directories:
 
@@ -71,7 +78,7 @@ Key directories:
 - `utils/`: carImageManager, imageGenerator, llm, useCarSessionImage
 - `i18n.js`: Chinese–English bilingual
 
-Global route guard: accessing a protected page without a token redirects to `/login` with a return address.
+Access control: guest mode allows the whole site (the frontend guard is a no-op); with backend `GUEST_MODE`, unauthenticated requests pass as guest, while admin endpoints still require admin-level dependencies; `api.js` keeps the 401 → login-guidance event (`evoai:auth-required`) for protected scenarios.
 
 ---
 
@@ -79,7 +86,7 @@ Global route guard: accessing a protected page without a token redirects to `/lo
 
 Backend root: `backend/`; application entry `app/main.py` (assembled by `create_app()`); launch script `start.py`.
 
-### 3.1 Route Modules (16 modules, 116 endpoints: 113 `@router` + 3 on `keys_router`; `main.py` adds 2 system endpoints — **118 HTTP endpoints in total**)
+### 3.1 Route Modules (19 modules, 151 endpoints: 148 `@router` + 3 on `keys_router`; `main.py` adds 2 system endpoints — **153 HTTP endpoints in total**)
 
 | Module file | Final path prefix | Endpoints | Responsibility |
 |---|---|---:|---|
@@ -90,23 +97,32 @@ Backend root: `backend/`; application entry `app/main.py` (assembled by `create_
 | modify.py | `/api/v1/modify` | 15 | NURBS surfaces, parameters, measurement, history |
 | export.py | `/api/v1/export` | 4 | Model export and download |
 | variant.py | `/api/v1/variants` | 7 | Variants/versions/comparison/rollback |
-| workflow.py | `/api/v1/workflows` | 7 | Workflows & steps, execution |
-| quality.py | `/api/v1` (quality/topology/data etc.) | 8 | Quality checks, topology optimization, data handover, file download |
-| training.py | `/api/v1/ai` | 14 | PyTorch training tasks, sample batches, analysis |
+| workflow.py | `/api/v1/workflows` | 9 | Workflows & steps, execution, training review |
+| quality.py | `/api/v1` (quality/topology/data etc.) | 9 | Quality checks, G2 check, topology optimization, data handover, file download |
+| training.py | `/api/v1/ai` | 15 | PyTorch training tasks, sample batches, trained models, analysis |
 | ai.py | `/api/v1/ai` | 3 | NURBS expert dialogue, Ollama models/health |
 | bayes.py | `/api/v1/bayes` | 7 | Bayesian session lifecycle |
 | texture.py | `/api/v1/texture` | 3 | Parameterized texture analysis & application |
 | import_export.py | `/api/v1/import-export` | 11 | Full import → re-param → export chain |
 | llm_proxy.py | `/api/v1/llm` | 4 | Unified multi-provider LLM proxy |
+| design_intent.py | `/api/v1/design-intent` | 3 | Natural-language design-intent parsing and variants |
+| analytics.py | `/api/v1/analytics` | 21 | Tracking, community messages/references, notifications, data export |
+| admin.py | `/api/v1/admin` | 7 | Admin console: users / login records / audit / error logs |
 | auth.py | `/api/v1/auth`, `/api/v1/api-keys` | 12 | Register/login/WeChat (9), API-key management (3) |
 
 Endpoint-by-endpoint detail: see [api_reference.md](api_reference.md).
+
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-matrix.svg" alt="Heat matrix of the 19 route modules by HTTP method" loading="lazy">
+  <figcaption><strong>Fig. 3-1 ｜ Heat matrix of 19 route modules × HTTP method</strong> How to read: Rows are the 19 modules, columns are GET/POST/PUT/DELETE, and each cell holds the endpoint count with darker color for higher concentration. Column totals on the right are GET 75, POST 63, PUT 4, DELETE 9 = 151, cross-checked row by row. Takeaway: analytics and training are read-heavy (11 of 21 and 9 of 15), modify is write-heavy (8 of 15), and PUT appears only on a few state-update endpoints.</figcaption>
+</figure>
 
 ### 3.2 Domain Modules (`backend/app/`)
 
 | Module | Responsibility |
 |---|---|
 | `bayes_optimizer.py` | RBF Gaussian process + EI/UCB Bayesian engine (pure numpy/scipy) |
+| `brand_dna/` | Brand DNA loading (loader/dnas), On-Brand judgment, 2D features (features_2d), schema; contracts under `brand_dna/contracts/` |
 | `brand_knowledge.py` | Brand/model knowledge queries, semantic matching, similarity retrieval |
 | `cad_importer.py` | CAD (STL/STEP etc.) import, point-cloud analysis, fallback |
 | `car_generator.py` | NURBS body generation from parameter configurations |
@@ -116,7 +132,7 @@ Endpoint-by-endpoint detail: see [api_reference.md](api_reference.md).
 | `session_store.py` | General session storage |
 | `security.py` | JWT issue/verify, DI (`get_current_user` / `get_optional_user`) |
 | `config.py` | pydantic-settings; production SECRET_KEY fail-fast |
-| `database.py` | Engine, SessionLocal, 11 ORM tables |
+| `database.py` | Engine, SessionLocal, 17 ORM tables |
 | `schemas.py` | Pydantic request/response models |
 
 ### 3.3 Configuration and Plugins
@@ -142,7 +158,7 @@ Unified external entry: `api.py` (build_car / get_car_stats / evaluate_surface /
 
 ---
 
-## 5. Data Model (11 ORM Tables)
+## 5. Data Model (17 ORM Tables)
 
 | Table | Model class | Key fields |
 |---|---|---|
@@ -154,12 +170,23 @@ Unified external entry: `api.py` (build_car / get_car_stats / evaluate_surface /
 | parameter_sets | ParameterSet | project_id, name, params |
 | model_variants | ModelVariant | model_id, name, parent_variant_id, params_json, car_data_json |
 | users | User | email (unique), username, password_hash, wechat_unionid/openid, is_active/is_admin |
+| login_records | LoginRecord | Login history (time, method, IP, etc.) |
+| admin_audit_logs | AdminAuditLog | Admin operation audit (actor, action, target) |
 | api_keys | ApiKey | user_id, provider, key_encrypted; unique on (user_id, provider) |
 | parameter_records | ParameterRecord | name (unique), value |
 | training_tasks | TrainingTask | user_id, name, dataset, config_json, status, progress, metrics_json, logs |
+| page_views | PageView | Page-view tracking (path, duration, visitor) |
+| messages | Message | Community posts and replies (content, likes, hidden) |
+| external_references | ExternalReference | External reference leads (source, verification status) |
+| notifications | Notification | In-app notifications (user, read state) |
 
 Relationships: Project 1–N ModelFile / Workflow / QualityReport; Workflow 1–N WorkflowStep;
-ModelFile 1–N ModelVariant (with self-referencing parent); User 1–N ApiKey.
+ModelFile 1–N ModelVariant (with self-referencing parent); User 1–N ApiKey / LoginRecord / Notification.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-orm.svg" alt="Domain donut chart of the 17 ORM tables" loading="lazy">
+  <figcaption><strong>Fig. 5-1 ｜ Domain grouping of the 17 ORM tables</strong> How to read: The donut groups tables into five domains — projects/processes/models (4), quality/parameters/variants (4), users/audit/keys (4), training tasks (1), community/notifications/tracking (4) = 17. The right-hand cards list table names for direct comparison with the table above; the footer gives foreign-key directions such as Project 1–N ModelFile / Workflow / QualityReport and Workflow 1–N WorkflowStep. Grouping aids comprehension only and does not change the schema.</figcaption>
+</figure>
 
 ---
 
@@ -215,6 +242,11 @@ Login → probe /auth/methods
 - **CORS**: open in DEBUG; explicit production allow-list; the `ACAO: *` + credentials combination is forbidden (with an ASGI correction middleware).
 - **Exception handling**: StarletteHTTPException / RequestValidationError / Exception / 405 handled uniformly; error responses likewise complete CORS.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-legend.svg" alt="Architecture legend: layer colors, line types, nodes and state markers" loading="lazy">
+  <figcaption><strong>Fig. 7-1 ｜ Legend: layer colors, line types, node shapes and state markers used in this document</strong> How to read: Card A gives the five layer colors; Card B gives line types (solid = call, dashed = async/error, arrow = direction, 1–N = one-to-many); Card C gives node shapes (rounded box = module/service/layer, cylinder = data table, diamond = decision gate, parallelogram = external package, double-line box = optional capability); Card D gives state markers (✓ pass, ✕ fail, 503 capability not ready, ①② step order, 0.1 mm / 1.0° geometric tolerances). Color distinguishes layers only — read quantities from tables or cell numbers.</figcaption>
+</figure>
+
 ---
 
 ## 8. Deployment Architecture
@@ -231,10 +263,10 @@ Login → probe /auth/methods
 
 | Suite | Cases | Result |
 |---|---:|---|
-| algorithm_model pytest (tests/) | 200 | All pass |
+| algorithm_model pytest (tests/) | 205 | All pass |
 | algorithm_model one-stop self-check (test_all.py) | 5 modules | All pass |
-| backend pytest (tests/) | 178 | All pass |
-| frontend vitest | 111 | All pass |
-| **Total** | **489+** | **All green** |
+| backend pytest (tests/) | 388 (1 skip, 2 xfailed) | All pass |
+| frontend vitest | 362 | All pass |
+| **Total** | **955+** | **All green** |
 
 How to run: see the "Testing" section of the root README.

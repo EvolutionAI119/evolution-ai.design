@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="bayes2-sq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker>
+    <marker id="bayes2-sq2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#94A3B8"/></marker>
+    <marker id="bayes2-sq3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#A78BFA"/></marker>
+    <marker id="bayes2-sq4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#34D399"/></marker>
+    <marker id="bayes2-sq5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FBBF24"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="478" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">会话生命周期：一次寻优在四个组件间的调用时序</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Session Lifecycle Sequence</text>
+
+  <!-- 组件头 -->
+  <g font-size="11" font-weight="700" text-anchor="middle">
+    <rect x="42" y="64" width="176" height="34" rx="8" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".4"/>
+    <text x="130" y="86" fill="#7DD3FC">客户端 / bayesAPI</text>
+    <rect x="277" y="64" width="176" height="34" rx="8" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".4"/>
+    <text x="365" y="86" fill="#C4B5FD">routes/bayes.py</text>
+    <rect x="512" y="64" width="176" height="34" rx="8" fill="#0F241C" stroke="#34D399" stroke-opacity=".4"/>
+    <text x="600" y="86" fill="#6EE7B7">GP 优化引擎</text>
+    <rect x="747" y="64" width="176" height="34" rx="8" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".4"/>
+    <text x="835" y="86" fill="#FCD34D">会话注册表</text>
+  </g>
+  <g stroke="#1E2A3A" stroke-width="1" stroke-dasharray="4 4">
+    <line x1="130" y1="98" x2="130" y2="380"/>
+    <line x1="365" y1="98" x2="365" y2="380"/>
+    <line x1="600" y1="98" x2="600" y2="380"/>
+    <line x1="835" y1="98" x2="835" y2="380"/>
+  </g>
+
+  <!-- 消息 -->
+  <g font-size="9.5">
+    <line x1="130" y1="116" x2="360" y2="116" stroke="#38BDF8" stroke-width="1.5" marker-end="url(#bayes2-sq)"/>
+    <text x="138" y="111" fill="#CBD5E1">POST /sessions（空间 · 目标 · 采集 · 种子）</text>
+
+    <line x1="365" y1="140" x2="830" y2="140" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#bayes2-sq3)"/>
+    <text x="373" y="135" fill="#CBD5E1">新建 Session（默认 14 维空间）</text>
+
+    <line x1="365" y1="164" x2="135" y2="164" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#bayes2-sq2)"/>
+    <text x="141" y="159" fill="#94A3B8">201 {session_id, n_observations: 0}</text>
+
+    <line x1="130" y1="188" x2="360" y2="188" stroke="#38BDF8" stroke-width="1.5" marker-end="url(#bayes2-sq)"/>
+    <text x="138" y="183" fill="#CBD5E1">GET /sessions/{id}/suggest?n=1</text>
+
+    <line x1="365" y1="212" x2="595" y2="212" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#bayes2-sq3)"/>
+    <text x="373" y="207" fill="#CBD5E1">n_obs &lt; 2 → 随机填充；否则拟合 GP</text>
+
+    <line x1="600" y1="236" x2="370" y2="236" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#bayes2-sq2)"/>
+    <text x="378" y="231" fill="#94A3B8">4096 点候选池取采集函数最大 → x*</text>
+
+    <line x1="365" y1="260" x2="135" y2="260" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#bayes2-sq2)"/>
+    <text x="141" y="255" fill="#94A3B8">200 {suggestions}（按采集值排序）</text>
+
+    <line x1="130" y1="284" x2="360" y2="284" stroke="#34D399" stroke-width="1.5" marker-end="url(#bayes2-sq4)"/>
+    <text x="138" y="279" fill="#CBD5E1">POST /observe（全部 14 维 + score）</text>
+
+    <line x1="365" y1="308" x2="595" y2="308" stroke="#34D399" stroke-width="1.5" marker-end="url(#bayes2-sq4)"/>
+    <text x="373" y="303" fill="#CBD5E1">校验参数名 / 缺失 / 越界 → 追加观测并重训</text>
+
+    <line x1="130" y1="332" x2="360" y2="332" stroke="#FBBF24" stroke-width="1.5" marker-end="url(#bayes2-sq5)"/>
+    <text x="138" y="327" fill="#CBD5E1">GET /best · GET /samples</text>
+
+    <line x1="365" y1="356" x2="830" y2="356" stroke="#FBBF24" stroke-width="1.5" marker-end="url(#bayes2-sq5)"/>
+    <text x="373" y="351" fill="#CBD5E1">读取最优观测 / 按 feature_order 导出样本</text>
+  </g>
+
+  <g font-size="10" text-anchor="middle">
+    <rect x="24" y="394" width="288" height="46" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="168" y="413" fill="#94A3B8">当前端点未强制鉴权，可直接调用</text>
+    <text x="168" y="430" fill="#64748B" font-size="9">路由只做校验与编排，数学在引擎内</text>
+
+    <rect x="336" y="394" width="288" height="46" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="480" y="413" fill="#94A3B8">会话存储为进程内内存，重启清空</text>
+    <text x="480" y="430" fill="#64748B" font-size="9">留存请先 GET /samples 导出</text>
+
+    <rect x="648" y="394" width="288" height="46" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="792" y="413" fill="#94A3B8">错误码：400 参数 · 404 会话 · 409 无观测</text>
+    <text x="792" y="430" fill="#64748B" font-size="9">422 schema 不符 · 观测不足时 best 返回 409</text>
+  </g>
+  <text x="24" y="462" fill="#475569" font-size="9.5">读图：蓝色为客户端请求，紫色为路由到引擎，绿色为观测写入，琥珀为读取与导出；虚线为响应。</text>
+</svg>

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="418" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#F472B6"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">2D 渲染与 SISA 叠加图例</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Render &amp; Overlay Legend</text>
+
+  <!-- A 色块 -->
+  <rect x="24" y="56" width="290" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="42" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">色块 = 几何层</text>
+  <g font-size="10">
+    <rect x="42" y="94" width="16" height="16" rx="3" fill="#34D399" fill-opacity=".22" stroke="#34D399"/>
+    <text x="68" y="107" fill="#CBD5E1">车身：淡绿填充 + 描边</text>
+    <circle cx="50" cy="133" r="8" fill="#0B101A" stroke="#E2E8F0" stroke-width="1.6"/>
+    <text x="68" y="137" fill="#CBD5E1">轮胎：深色 + 浅描边</text>
+    <circle cx="50" cy="161" r="6" fill="none" stroke="#94A3B8" stroke-width="1.4"/>
+    <text x="68" y="165" fill="#CBD5E1">轮辋：半径 0.58r</text>
+    <circle cx="50" cy="187" r="3" fill="none" stroke="#94A3B8" stroke-width="1.4"/>
+    <text x="68" y="191" fill="#CBD5E1">轮毂：半径 0.12r</text>
+    <ellipse cx="50" cy="216" rx="14" ry="4" fill="#000" opacity=".45"/>
+    <text x="68" y="220" fill="#CBD5E1">地面阴影：椭圆，非轮廓</text>
+    <path d="M42 240 L58 240" stroke="#38BDF8" stroke-width="2"/>
+    <text x="68" y="244" fill="#CBD5E1">侧窗 DLO：深色内嵌 + B 柱</text>
+  </g>
+  <line x1="42" y1="262" x2="296" y2="262" stroke="#1E2A3A"/>
+  <text x="42" y="282" fill="#94A3B8" font-size="9.5">填充只表示「这是车身」，</text>
+  <text x="42" y="298" fill="#64748B" font-size="9">不表示质量等级；质量看 RMSE 与地标。</text>
+  <text x="42" y="320" fill="#475569" font-size="9">所有描边使用 non-scaling-stroke，</text>
+  <text x="42" y="336" fill="#475569" font-size="9">缩放时线宽不变。</text>
+
+  <!-- B 线型 -->
+  <rect x="336" y="56" width="290" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="354" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">线型 = 结构 / 参考</text>
+  <g font-size="10">
+    <line x1="356" y1="104" x2="408" y2="104" stroke="#34D399" stroke-width="2"/>
+    <text x="420" y="108" fill="#CBD5E1">车身闭合轮廓</text>
+    <text x="420" y="122" fill="#64748B" font-size="9">单条 path，首尾闭合</text>
+
+    <line x1="356" y1="146" x2="408" y2="146" stroke="#64748B" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="420" y="150" fill="#CBD5E1">腰带线</text>
+    <text x="420" y="164" fill="#64748B" font-size="9">belt 比例决定其高度</text>
+
+    <line x1="356" y1="188" x2="408" y2="188" stroke="#38BDF8" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="420" y="192" fill="#CBD5E1">轮拱开口</text>
+    <text x="420" y="206" fill="#64748B" font-size="9">以轮心为圆心，r×1.16</text>
+
+    <line x1="356" y1="230" x2="408" y2="230" stroke="#FBBF24" stroke-width="1.8" stroke-dasharray="7 4"/>
+    <text x="420" y="234" fill="#CBD5E1">SISA 参考顶廓线</text>
+    <text x="420" y="248" fill="#64748B" font-size="9">黄色虚线，拉伸到当前车长</text>
+
+    <line x1="356" y1="272" x2="408" y2="272" stroke="#475569" stroke-width="1.2"/>
+    <text x="420" y="276" fill="#CBD5E1">地面线</text>
+    <text x="420" y="290" fill="#64748B" font-size="9">z = 0；车轮最低点在此</text>
+  </g>
+  <text x="354" y="318" fill="#475569" font-size="9">参考线只做跨车比较，不参与几何生成。</text>
+  <text x="354" y="338" fill="#475569" font-size="9">开关关闭时，图例与 RMSE 一并隐藏。</text>
+
+  <!-- C 数字 -->
+  <rect x="648" y="56" width="288" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="666" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">数 = 像真度与数据规模</text>
+  <g font-size="9.5">
+    <text x="666" y="104" fill="#CBD5E1">Cayenne 顶廓 RMSE</text>
+    <text x="916" y="104" fill="#FCD34D" text-anchor="end" font-weight="700">≈ 0.217</text>
+    <text x="666" y="124" fill="#64748B" font-size="9">归一化为 z/H 后逐点求均方根误差</text>
+    <text x="666" y="146" fill="#CBD5E1">SISA 顶廓采样</text>
+    <text x="916" y="146" fill="#7DD3FC" text-anchor="end">200 点</text>
+    <text x="666" y="164" fill="#CBD5E1">SISA 地标</text>
+    <text x="916" y="164" fill="#7DD3FC" text-anchor="end">15 项</text>
+    <text x="666" y="182" fill="#CBD5E1">断面预留</text>
+    <text x="916" y="182" fill="#94A3B8" text-anchor="end">24 × 80 点</text>
+    <text x="666" y="200" fill="#CBD5E1">x 映射</text>
+    <text x="916" y="200" fill="#94A3B8" text-anchor="end">xNorm·L − L/2</text>
+  </g>
+  <line x1="666" y1="214" x2="918" y2="214" stroke="#1E2A3A"/>
+  <text x="666" y="234" fill="#94A3B8" font-size="9.5">怎么读 RMSE</text>
+  <line x1="666" y1="246" x2="666" y2="272" stroke="#34D399" stroke-width="2"/>
+  <text x="674" y="256" fill="#6EE7B7" font-size="9">0</text>
+  <text x="674" y="270" fill="#6EE7B7" font-size="9">完全重合</text>
+  <line x1="918" y1="246" x2="918" y2="272" stroke="#F87171" stroke-width="2"/>
+  <text x="910" y="256" fill="#FCA5A5" font-size="9" text-anchor="end">1</text>
+  <text x="910" y="270" fill="#FCA5A5" font-size="9" text-anchor="end">形状不符</text>
+  <rect x="666" y="288" width="252" height="8" rx="3" fill="#1E2A3A"/>
+  <rect x="666" y="288" width="55" height="8" rx="3" fill="#FBBF24"/>
+  <text x="666" y="314" fill="#64748B" font-size="9">0.217 表示两车客观形状差距，</text>
+  <text x="666" y="330" fill="#64748B" font-size="9">不是「渲染错误」，也不追求 0。</text>
+  <text x="666" y="348" fill="#475569" font-size="9">后续接 NURBS 顶廓线时，可把此值作为回归基线。</text>
+
+  <text x="24" y="382" fill="#64748B" font-size="10.5">用法：先用色块认出车身 / 轮胎 / 轮辋 / 轮毂，再用线型区分真实几何与 SISA 参考，最后看 RMSE 判断像不像——参考线不对齐是信息，不是故障。</text>
+  <text x="24" y="404" fill="#475569" font-size="10">RMSE 越大，说明当前顶廓与参考车的形状差异越大；两台不同车的正常差异不应被误判为渲染缺陷。</text>
+</svg>

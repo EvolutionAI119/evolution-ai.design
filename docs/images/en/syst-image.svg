@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="478" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#F472B6"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Open Complex Giant System: One Vehicle, Many Sources</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">OCGS Illustration</text>
+
+  <g font-size="11" font-weight="600" text-anchor="middle">
+    <circle cx="132" cy="140" r="26" fill="#131C2A" stroke="#FBBF24" stroke-width="1.6"/>
+    <path d="M120 146 L132 132 L144 146 M126 146 L132 138 L138 146" fill="none" stroke="#FBBF24" stroke-width="1.4"/>
+    <text x="132" y="188" fill="#FCD34D">Market</text>
+    <text x="132" y="202" fill="#64748B" font-size="9" font-weight="400">demand / rivals / price</text>
+
+    <circle cx="828" cy="140" r="26" fill="#131C2A" stroke="#A78BFA" stroke-width="1.6"/>
+    <path d="M816 146 L828 128 L840 146 Z" fill="none" stroke="#A78BFA" stroke-width="1.4"/>
+    <text x="828" y="188" fill="#C4B5FD">Brand</text>
+    <text x="828" y="202" fill="#64748B" font-size="9" font-weight="400">genes / generational language</text>
+
+    <circle cx="118" cy="296" r="26" fill="#131C2A" stroke="#38BDF8" stroke-width="1.6"/>
+    <path d="M108 304 L118 288 L128 304 M130 296 L130 306" fill="none" stroke="#38BDF8" stroke-width="1.4"/>
+    <text x="118" y="344" fill="#7DD3FC">Technology</text>
+    <text x="118" y="358" fill="#64748B" font-size="9" font-weight="400">EV / compute / models</text>
+
+    <circle cx="842" cy="296" r="26" fill="#131C2A" stroke="#34D399" stroke-width="1.6"/>
+    <path d="M832 304 L832 292 L850 284 L850 304 Z M838 288 L838 302" fill="none" stroke="#34D399" stroke-width="1.3"/>
+    <text x="842" y="344" fill="#6EE7B7">Manufacturing</text>
+    <text x="842" y="358" fill="#64748B" font-size="9" font-weight="400">craft / tolerance / cost</text>
+
+    <circle cx="300" cy="414" r="24" fill="#131C2A" stroke="#F472B6" stroke-width="1.6"/>
+    <path d="M289 421 Q300 405 311 421 M300 417 L300 426" fill="none" stroke="#F472B6" stroke-width="1.3"/>
+    <text x="334" y="412" fill="#F9A8D4" text-anchor="start">Culture</text>
+    <text x="334" y="426" fill="#64748B" font-size="9" font-weight="400" text-anchor="start">aesthetic norms / symbols</text>
+
+    <circle cx="660" cy="414" r="24" fill="#131C2A" stroke="#94A3B8" stroke-width="1.6"/>
+    <circle cx="660" cy="407" r="7" fill="none" stroke="#94A3B8" stroke-width="1.3"/>
+    <path d="M649 426 Q660 415 671 426" fill="none" stroke="#94A3B8" stroke-width="1.3"/>
+    <text x="694" y="412" fill="#CBD5E1" text-anchor="start">User</text>
+    <text x="694" y="426" fill="#64748B" font-size="9" font-weight="400" text-anchor="start">taste / emotion</text>
+  </g>
+
+  <rect x="236" y="118" width="488" height="262" rx="32" fill="none" stroke="#334155" stroke-width="1.4" stroke-dasharray="8 6"/>
+  <text x="480" y="142" fill="#94A3B8" font-size="10.5" text-anchor="middle">Open boundary · continuous exchange of matter, energy and information</text>
+
+  <g stroke="#475569" stroke-width="1.2" stroke-dasharray="5 4">
+    <path d="M160 156 L228 170" marker-end="url(#systi-ar-en)"/>
+    <path d="M800 156 L732 170" marker-end="url(#systi-ar-en)"/>
+    <path d="M146 296 L228 296" marker-end="url(#systi-ar-en)"/>
+    <path d="M814 296 L732 296" marker-end="url(#systi-ar-en)"/>
+    <path d="M314 392 L352 366" marker-end="url(#systi-ar-en)"/>
+    <path d="M646 392 L608 366" marker-end="url(#systi-ar-en)"/>
+  </g>
+
+  <g>
+    <path d="M352 352 L352 322 Q354 300 380 292 L406 284 Q434 250 478 246 L540 246 Q578 248 600 274 L624 288 Q638 296 638 316 L638 352 Z" fill="#0E1E2E" stroke="#38BDF8" stroke-width="1.8"/>
+    <path d="M400 286 Q480 262 586 282" fill="none" stroke="#F472B6" stroke-width="1.6"/>
+    <path d="M434 252 Q505 236 564 250" fill="none" stroke="#A78BFA" stroke-width="1.4"/>
+    <path d="M370 330 L618 332" stroke="#64748B" stroke-width="1" stroke-dasharray="4 4"/>
+    <circle cx="408" cy="352" r="24" fill="#0F1622" stroke="#475569" stroke-width="1.4"/>
+    <circle cx="408" cy="352" r="10" fill="#131C2A" stroke="#475569"/>
+    <circle cx="592" cy="352" r="24" fill="#0F1622" stroke="#475569" stroke-width="1.4"/>
+    <circle cx="592" cy="352" r="10" fill="#131C2A" stroke="#475569"/>
+  </g>
+  <text x="480" y="178" fill="#E2E8F0" font-size="12.5" font-weight="700" text-anchor="middle">Styling Development OCGS</text>
+  <text x="480" y="195" fill="#64748B" font-size="9.5" text-anchor="middle">open · giant · complex · not fully knowable</text>
+
+  <g font-size="8.5" text-anchor="middle">
+    <rect x="256" y="216" width="78" height="24" rx="6" fill="#131C2A" stroke="#1E2A3A"/><text x="295" y="232" fill="#94A3B8">Parameter space</text>
+    <rect x="256" y="252" width="78" height="24" rx="6" fill="#131C2A" stroke="#1E2A3A"/><text x="295" y="268" fill="#94A3B8">Quality gates</text>
+    <rect x="646" y="216" width="76" height="24" rx="6" fill="#131C2A" stroke="#1E2A3A"/><text x="684" y="232" fill="#94A3B8">Surface patches</text>
+    <rect x="646" y="252" width="76" height="24" rx="6" fill="#131C2A" stroke="#1E2A3A"/><text x="684" y="268" fill="#94A3B8">Data flows</text>
+  </g>
+  <g stroke="#1E2A3A" stroke-width="1">
+    <line x1="334" y1="228" x2="352" y2="268"/>
+    <line x1="334" y1="264" x2="352" y2="300"/>
+    <line x1="646" y1="228" x2="636" y2="268"/>
+    <line x1="646" y1="264" x2="636" y2="300"/>
+  </g>
+
+  <text x="40" y="442" fill="#64748B" font-size="10.5">How to read: the dashed box is the open boundary; six external sources keep crossing it with constraints and feedback,</text>
+  <text x="40" y="458" fill="#64748B" font-size="10.5">while four subsystem chips inside are the giant part. The central vehicle is the emergent result of their coupling.</text>
+  <defs>
+    <marker id="systi-ar-en" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#475569"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#A78BFA"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">体量—形面—图形：三层语义的几何叠加</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Volume → Treatment → Graphic</text>
+
+  <!-- 车身 -->
+  <g>
+    <path d="M60 340 L60 296 Q63 268 96 258 L142 248 Q184 210 246 204 L336 204 Q392 206 424 238 L452 256 Q470 266 470 288 L470 340 Z" fill="#A78BFA" opacity=".09"/>
+    <path d="M60 340 L60 296 Q63 268 96 258 L142 248 Q184 210 246 204 L336 204 Q392 206 424 238 L452 256 Q470 266 470 288 L470 340 Z" fill="none" stroke="#A78BFA" stroke-width="1.8"/>
+    <!-- 体量分割 -->
+    <line x1="60" y1="204" x2="470" y2="204" stroke="#A78BFA" stroke-width="1" stroke-dasharray="4 4" opacity=".6"/>
+    <line x1="246" y1="204" x2="246" y2="340" stroke="#A78BFA" stroke-width="1" stroke-dasharray="4 4" opacity=".45"/>
+    <!-- 形面：肩线与曲率梳 -->
+    <path d="M96 282 Q230 258 444 274" fill="none" stroke="#38BDF8" stroke-width="2.2"/>
+    <g stroke="#38BDF8" stroke-width="1" opacity=".85">
+      <line x1="160" y1="274" x2="160" y2="262"/><line x1="200" y1="270" x2="200" y2="254"/>
+      <line x1="240" y1="266" x2="240" y2="248"/><line x1="280" y1="264" x2="280" y2="246"/>
+      <line x1="320" y1="264" x2="320" y2="248"/><line x1="360" y1="266" x2="360" y2="252"/>
+      <line x1="400" y1="270" x2="400" y2="260"/>
+    </g>
+    <!-- 图形：灯具与格栅 -->
+    <rect x="424" y="286" width="34" height="12" rx="4" fill="#34D399" opacity=".85"/>
+    <rect x="418" y="304" width="42" height="14" rx="3" fill="none" stroke="#34D399" stroke-width="1.4"/>
+    <path d="M96 318 L96 330" stroke="#34D399" stroke-width="1.4"/>
+    <!-- 控制多边形 -->
+    <g stroke="#64748B" stroke-width="1" stroke-dasharray="4 4" fill="none">
+      <path d="M142 248 L246 204 L336 204 L424 238"/>
+    </g>
+    <g fill="#64748B">
+      <circle cx="142" cy="248" r="3"/><circle cx="246" cy="204" r="3"/><circle cx="336" cy="204" r="3"/><circle cx="424" cy="238" r="3"/>
+    </g>
+    <!-- 车轮 -->
+    <circle cx="132" cy="340" r="32" fill="#0F1622" stroke="#334155" stroke-width="1.5"/>
+    <circle cx="132" cy="340" r="13" fill="#131C2A" stroke="#475569"/>
+    <circle cx="400" cy="340" r="32" fill="#0F1622" stroke="#334155" stroke-width="1.5"/>
+    <circle cx="400" cy="340" r="13" fill="#131C2A" stroke="#475569"/>
+  </g>
+
+  <!-- 层标注 -->
+  <g font-size="10">
+    <rect x="70" y="96" width="10" height="10" rx="2" fill="#A78BFA"/><text x="86" y="105" fill="#CBD5E1">体量层：包络与姿态</text>
+    <rect x="212" y="96" width="10" height="10" rx="2" fill="#38BDF8"/><text x="228" y="105" fill="#CBD5E1">形面层：特征线与曲率</text>
+    <rect x="380" y="96" width="10" height="10" rx="2" fill="#34D399"/><text x="396" y="105" fill="#CBD5E1">图形层：灯具/格栅</text>
+  </g>
+  <text x="60" y="392" fill="#94A3B8" font-size="10">比例基准（示例车型）：轴距 2900 · 车高 1450 · 高/轴距 ≈ 0.50 · 前后悬比 ≈ 0.88</text>
+  <text x="60" y="410" fill="#64748B" font-size="10">提车顺序：先定体量包络 → 再铺形面特征 → 最后落图形元素，颠倒则风格必然漂移。</text>
+
+  <!-- 右侧叠层 -->
+  <g>
+    <text x="620" y="86" fill="#E2E8F0" font-size="12.5" font-weight="700">语义随层下沉</text>
+    <path d="M620 100 L730 100 L782 128 L672 128 Z" fill="#A78BFA" opacity=".16" stroke="#A78BFA"/>
+    <text x="640" y="120" fill="#C4B5FD" font-size="11" font-weight="600">体量 Volume</text>
+    <text x="792" y="118" fill="#94A3B8" font-size="10">整体比例 · 抽象语义</text>
+
+    <path d="M632 140 L742 140 L794 168 L684 168 Z" fill="#38BDF8" opacity=".14" stroke="#38BDF8"/>
+    <text x="652" y="160" fill="#7DD3FC" font-size="11" font-weight="600">形面 Treatment</text>
+    <text x="804" y="158" fill="#94A3B8" font-size="10">造型手法 · 索引语义</text>
+
+    <path d="M644 180 L754 180 L806 208 L696 208 Z" fill="#34D399" opacity=".14" stroke="#34D399"/>
+    <text x="664" y="200" fill="#6EE7B7" font-size="11" font-weight="600">图形 Graphic</text>
+    <text x="816" y="198" fill="#94A3B8" font-size="10">识别符号 · 图标语义</text>
+
+    <path d="M700 224 L700 262" stroke="#64748B" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="620" y="284" fill="#64748B" font-size="10">上层决定下层：体量错，形面再精细也救不回</text>
+    <text x="620" y="300" fill="#64748B" font-size="10">「像不像」；下层反哺上层：图形元素固化品牌记忆。</text>
+
+    <rect x="620" y="318" width="300" height="74" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="636" y="338" fill="#94A3B8" font-size="10">同一车身的三层解读</text>
+    <text x="636" y="354" fill="#64748B" font-size="9.5">外行先读体量，专家读形面，用户记住图形。</text>
+    <text x="636" y="370" fill="#64748B" font-size="9.5">三层都对，才谈得上「品牌基因的传承」。</text>
+  </g>
+  <text x="40" y="440" fill="#64748B" font-size="11.5">读法：左图是同一侧视轮廓的三种叠加表示——半透明包络是体量，蓝色曲线与梳齿是形面，绿色小件是图形；右图把三层展开为语义阶梯，读的顺序与建模的顺序一致。</text>
+</svg>

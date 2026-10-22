@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 500" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="498" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Hover panorama: field lift 75% + fan differential 25%</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Hover Panorama · Field Lift + Fan Differential</text>
+
+  <text x="40" y="56" fill="#94A3B8" font-size="10.5">sedan hover point · η_e=0.15 / η_cdm=0.20 · 4 fans · 1600 mm</text>
+  <text x="920" y="56" fill="#64748B" font-size="10.5" text-anchor="end">VTOL HOVER · s = 0.750</text>
+
+  <!-- Field-fan division card -->
+  <rect x="40" y="100" width="232" height="96" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="122" fill="#E2E8F0" font-size="12.5" font-weight="700">Division of labor (sedan)</text>
+  <text x="58" y="146" fill="#6EE7B7" font-size="10.5">Field lift 11.37 kN · share 0.750</text>
+  <text x="58" y="166" fill="#7DD3FC" font-size="10.5">Fan differential 3.79 kN · 25%</text>
+  <text x="58" y="186" fill="#94A3B8" font-size="10.5">g_eff 9.30 m/s² · T/W 1.055</text>
+
+  <!-- Ground and energy field -->
+  <line x1="60" y1="334" x2="900" y2="334" stroke="#1E2A3A" stroke-width="1.2"/>
+  <ellipse cx="480" cy="314" rx="180" ry="20" fill="none" stroke="#34D399" stroke-width="1.1" stroke-dasharray="6 4" opacity="0.65"/>
+  <ellipse cx="480" cy="314" rx="140" ry="12" fill="#34D399" opacity="0.10"/>
+
+  <!-- Vehicle -->
+  <path d="M330 252 L330 230 Q332 214 352 208 L374 202 Q402 176 440 172 L512 172 Q548 176 570 198 L586 208 Q602 216 604 232 L604 252 Z" fill="#0E1E2E" stroke="#38BDF8" stroke-width="1.8"/>
+  <path d="M376 202 Q436 180 512 184" fill="none" stroke="#A78BFA" stroke-width="1.3"/>
+  <line x1="338" y1="232" x2="596" y2="232" stroke="#334155" stroke-width="1"/>
+  <line x1="470" y1="186" x2="470" y2="250" stroke="#334155" stroke-width="1"/>
+  <text x="480" y="158" fill="#CBD5E1" font-size="11" text-anchor="middle">Hover 1600 mm · attitude ±0.76° (design envelope ±2°)</text>
+
+  <!-- Attitude envelope gauge -->
+  <line x1="642" y1="226" x2="700" y2="218" stroke="#FBBF24" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <line x1="642" y1="226" x2="700" y2="234" stroke="#FBBF24" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <text x="708" y="230" fill="#FBBF24" font-size="10">±2°</text>
+
+  <!-- Four fan rings -->
+  <g stroke="#38BDF8" stroke-width="1.3" fill="none">
+    <circle cx="384" cy="262" r="13"/><circle cx="434" cy="262" r="13"/>
+    <circle cx="536" cy="262" r="13"/><circle cx="586" cy="262" r="13"/>
+  </g>
+  <g stroke="#38BDF8" stroke-width="1" opacity="0.7">
+    <circle cx="384" cy="262" r="5"/><circle cx="434" cy="262" r="5"/>
+    <circle cx="536" cy="262" r="5"/><circle cx="586" cy="262" r="5"/>
+  </g>
+  <text x="480" y="294" fill="#7DD3FC" font-size="10.5" text-anchor="middle">4 fan rings · differential torque for in-place turning</text>
+
+  <!-- Altitude annotation -->
+  <line x1="760" y1="252" x2="760" y2="334" stroke="#64748B" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="748" y1="252" x2="772" y2="252" stroke="#64748B" stroke-width="1"/>
+  <line x1="748" y1="334" x2="772" y2="334" stroke="#64748B" stroke-width="1"/>
+  <text x="778" y="288" fill="#E2E8F0" font-size="11" font-weight="700">1600 mm</text>
+  <text x="778" y="304" fill="#64748B" font-size="10">hover altitude</text>
+
+  <!-- Metric chips -->
+  <g>
+    <rect x="40" y="352" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="54" y="370" fill="#94A3B8" font-size="10">Hover power</text>
+    <text x="54" y="389" fill="#6EE7B7" font-size="13" font-weight="700">27.03 kW</text>
+    <rect x="270" y="352" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="284" y="370" fill="#94A3B8" font-size="10">Endurance</text>
+    <text x="284" y="389" fill="#6EE7B7" font-size="13" font-weight="700">×3.66</text>
+    <rect x="500" y="352" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="514" y="370" fill="#94A3B8" font-size="10">Control latency</text>
+    <text x="514" y="389" fill="#7DD3FC" font-size="13" font-weight="700">79 ms</text>
+    <rect x="730" y="352" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="744" y="370" fill="#94A3B8" font-size="10">Peak factor</text>
+    <text x="744" y="389" fill="#FBBF24" font-size="13" font-weight="700">×1.14</text>
+  </g>
+
+  <!-- Six-type endurance strip -->
+  <text x="40" y="402" fill="#64748B" font-size="10">Endurance across six types (target ≥3×)</text>
+  <g text-anchor="middle">
+    <rect x="40" y="408" width="138" height="44" rx="8" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="109" y="425" fill="#94A3B8" font-size="10.5">sedan</text>
+    <text x="109" y="443" fill="#7DD3FC" font-size="12" font-weight="700">×3.66</text>
+    <rect x="190" y="408" width="138" height="44" rx="8" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="259" y="425" fill="#94A3B8" font-size="10.5">suv</text>
+    <text x="259" y="443" fill="#7DD3FC" font-size="12" font-weight="700">×3.77</text>
+    <rect x="340" y="408" width="138" height="44" rx="8" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="409" y="425" fill="#94A3B8" font-size="10.5">coupe</text>
+    <text x="409" y="443" fill="#7DD3FC" font-size="12" font-weight="700">×3.63</text>
+    <rect x="490" y="408" width="138" height="44" rx="8" fill="#2A1A0E" stroke="#FBBF24"/>
+    <text x="559" y="425" fill="#FBBF24" font-size="10.5">sport</text>
+    <text x="559" y="443" fill="#FBBF24" font-size="12" font-weight="700">×3.17</text>
+    <rect x="640" y="408" width="138" height="44" rx="8" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="709" y="425" fill="#94A3B8" font-size="10.5">mpv</text>
+    <text x="709" y="443" fill="#7DD3FC" font-size="12" font-weight="700">×3.78</text>
+    <rect x="790" y="408" width="138" height="44" rx="8" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="859" y="425" fill="#94A3B8" font-size="10.5">pickup</text>
+    <text x="859" y="443" fill="#6EE7B7" font-size="12" font-weight="700">×3.83</text>
+  </g>
+
+  <text x="40" y="474" fill="#64748B" font-size="10">How to read: green dashed = energy field, blue rings = four lift fans; amber sport has an uncapped field share 0.688, hence the lowest endurance.</text>
+</svg>

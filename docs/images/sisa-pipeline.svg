@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="sisa-pipe-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">2D 渲染管线：从车型参数到 800×420 的闭合 SVG</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Render Pipeline</text>
+
+  <!-- 5 段 -->
+  <g font-size="11" font-weight="700" text-anchor="middle">
+    <rect x="24" y="58" width="164" height="74" rx="9" fill="#131C2A" stroke="#38BDF8" stroke-opacity=".4"/>
+    <text x="106" y="82" fill="#7DD3FC">① 车型参数</text>
+    <text x="106" y="99" fill="#94A3B8" font-size="9" font-weight="400">L / H / gc · hood / belt / trunk</text>
+    <text x="106" y="116" fill="#64748B" font-size="9" font-weight="400">6 车型分层比例</text>
+
+    <rect x="206" y="58" width="164" height="74" rx="9" fill="#131C2A" stroke="#A78BFA" stroke-opacity=".4"/>
+    <text x="288" y="82" fill="#C4B5FD">② 双向自适应缩放</text>
+    <text x="288" y="99" fill="#94A3B8" font-size="9" font-weight="400">scale = min(宽约束, 高约束)</text>
+    <text x="288" y="116" fill="#64748B" font-size="9" font-weight="400">车顶与车底同时不越界</text>
+
+    <rect x="388" y="58" width="164" height="74" rx="9" fill="#131C2A" stroke="#34D399" stroke-opacity=".4"/>
+    <text x="470" y="82" fill="#6EE7B7">③ 单一闭合 path</text>
+    <text x="470" y="99" fill="#94A3B8" font-size="9" font-weight="400">前保 → 鼻 → 盖 → A 柱</text>
+    <text x="470" y="116" fill="#64748B" font-size="9" font-weight="400">→ 顶 → C 柱 → 尾门 → 底边</text>
+
+    <rect x="570" y="58" width="164" height="74" rx="9" fill="#131C2A" stroke="#FBBF24" stroke-opacity=".4"/>
+    <text x="652" y="82" fill="#FCD34D">④ 分层叠加</text>
+    <text x="652" y="99" fill="#94A3B8" font-size="9" font-weight="400">阴影 · 侧窗 DLO · 腰带</text>
+    <text x="652" y="116" fill="#64748B" font-size="9" font-weight="400">轮拱 · SISA 参考线</text>
+
+    <rect x="752" y="58" width="164" height="74" rx="9" fill="#131C2A" stroke="#F472B6" stroke-opacity=".4"/>
+    <text x="834" y="82" fill="#F9A8D4">⑤ 输出</text>
+    <text x="834" y="99" fill="#94A3B8" font-size="9" font-weight="400">800×420 SVG</text>
+    <text x="834" y="116" fill="#64748B" font-size="9" font-weight="400">+ 图例 RMSE 读数</text>
+  </g>
+  <g stroke="#38BDF8" stroke-width="1.5">
+    <line x1="190" y1="95" x2="200" y2="95" marker-end="url(#sisa-pipe-ar)"/>
+    <line x1="372" y1="95" x2="382" y2="95" marker-end="url(#sisa-pipe-ar)"/>
+    <line x1="554" y1="95" x2="564" y2="95" marker-end="url(#sisa-pipe-ar)"/>
+    <line x1="736" y1="95" x2="746" y2="95" marker-end="url(#sisa-pipe-ar)"/>
+  </g>
+
+  <!-- 公式带 -->
+  <rect x="24" y="148" width="892" height="94" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="42" y="170" fill="#94A3B8" font-size="10">缩放（同时约束两个方向）</text>
+  <text x="42" y="192" fill="#6EE7B7" font-size="11.5" font-weight="700">scale = min( (800 − 80) / L , (364 − 30) / (H + gc) )</text>
+  <text x="42" y="212" fill="#7DD3FC" font-size="10">contentX = (800 − L·scale) / 2　　wheelCY = 364 − r　　bodyBottom = 364 − gc</text>
+  <text x="42" y="231" fill="#64748B" font-size="9.5">画布 800×420 · groundY = 364 · padTop = 30（兼作图例区）· 底部 56 px 为 WB/L 标注区</text>
+
+  <!-- 接地放大示意 -->
+  <rect x="24" y="256" width="430" height="118" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="42" y="278" fill="#E2E8F0" font-size="11" font-weight="600">触地与轮拱：三个同心圆 + 一个开口</text>
+  <line x1="48" y1="352" x2="432" y2="352" stroke="#475569" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="426" y="366" fill="#64748B" font-size="8.5" text-anchor="end">groundY = 364</text>
+  <circle cx="160" cy="316" r="36" fill="#0B101A" stroke="#E2E8F0" stroke-width="1.8"/>
+  <circle cx="160" cy="316" r="21" fill="none" stroke="#94A3B8" stroke-width="1.2"/>
+  <circle cx="160" cy="316" r="4.5" fill="#94A3B8"/>
+  <text x="204" y="300" fill="#94A3B8" font-size="8.5">轮胎 r</text>
+  <text x="204" y="314" fill="#64748B" font-size="8.5">轮辋 0.58r · 轮毂 0.12r</text>
+  <path d="M282 352 L282 336 Q282 328 292 328 L340 328 Q350 328 350 336 L350 352" fill="none" stroke="#34D399" stroke-width="1.4"/>
+  <text x="278" y="318" fill="#6EE7B7" font-size="8.5">轮拱 r×1.16，端点按弦长钳位</text>
+  <text x="42" y="334" fill="#FCD34D" font-size="9">车轮最低点 = 地面（不是离地间隙）</text>
+
+  <rect x="470" y="256" width="446" height="118" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="488" y="278" fill="#E2E8F0" font-size="11" font-weight="600">闭合顺序与钳位</text>
+  <text x="488" y="300" fill="#94A3B8" font-size="9.5">前保立面 → 圆角鼻 → 引擎盖 → A 柱 → 车顶</text>
+  <text x="488" y="318" fill="#94A3B8" font-size="9.5">→ C 柱 → 尾门圆角 → 后保立面 → 底边（双轮拱）→ Z</text>
+  <text x="488" y="342" fill="#FCD34D" font-size="9">windshieldTopX ≤ rearX − tailReserve − 120mm</text>
+  <text x="488" y="358" fill="#FCD34D" font-size="9">rearWindowBottomX ≤ rearX − tailReserve</text>
+  <text x="488" y="372" fill="#64748B" font-size="8.5">roofLen 保底 max(400mm, maxRoof×0.25)</text>
+
+  <text x="24" y="398" fill="#94A3B8" font-size="10.5">读图：五段从左到右各管一件事——参数、缩放、闭合、分层、输出；下方公式带是缩放与触地的唯一来源。</text>
+  <text x="24" y="416" fill="#64748B" font-size="10">关键结论：宽度和高度两条约束同时生效，才保证任意车型参数下车顶不越界、车轮不悬空。</text>
+  <text x="24" y="432" fill="#475569" font-size="9">示意中的像素值对应 800×420 画布；实际几何由 computed 缓存，不逐帧重算。</text>
+</svg>

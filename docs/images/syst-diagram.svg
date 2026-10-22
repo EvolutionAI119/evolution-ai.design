@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">系统观念三原则 → 平台内化</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Three Principles Internalized</text>
+
+  <!-- 列标题 -->
+  <text x="56" y="62" fill="#64748B" font-size="10">系统科学原则</text>
+  <text x="520" y="62" fill="#64748B" font-size="10">平台设计决策</text>
+
+  <!-- 行 1 整体性 -->
+  <rect x="40" y="74" width="320" height="82" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <rect x="40" y="74" width="4" height="82" rx="2" fill="#38BDF8"/>
+  <text x="60" y="98" fill="#E2E8F0" font-size="12" font-weight="700">① 整体性优先</text>
+  <text x="60" y="118" fill="#94A3B8" font-size="10">整体大于部分之和</text>
+  <text x="60" y="136" fill="#64748B" font-size="9.5">先定整体结构，再谈单点功能</text>
+  <path d="M372 115 L500 115" stroke="#38BDF8" stroke-width="1.6" marker-end="url(#systd-ar)"/>
+  <rect x="512" y="74" width="408" height="82" rx="10" fill="#0E1E2E" stroke="#38BDF8"/>
+  <text x="532" y="98" fill="#7DD3FC" font-size="11.5" font-weight="700">五层架构先于单点功能</text>
+  <text x="532" y="118" fill="#94A3B8" font-size="10">参数空间与质量标准先行，生成与优化随后</text>
+  <g font-size="9" text-anchor="middle">
+    <rect x="532" y="128" width="64" height="18" rx="4" fill="#131C2A" stroke="#1E2A3A"/><text x="564" y="141" fill="#64748B">UI</text>
+    <rect x="604" y="128" width="64" height="18" rx="4" fill="#131C2A" stroke="#1E2A3A"/><text x="636" y="141" fill="#64748B">编排</text>
+    <rect x="676" y="128" width="64" height="18" rx="4" fill="#131C2A" stroke="#1E2A3A"/><text x="708" y="141" fill="#64748B">算法</text>
+    <rect x="748" y="128" width="64" height="18" rx="4" fill="#131C2A" stroke="#1E2A3A"/><text x="780" y="141" fill="#64748B">数据</text>
+    <rect x="820" y="128" width="64" height="18" rx="4" fill="#131C2A" stroke="#1E2A3A"/><text x="852" y="141" fill="#64748B">质量</text>
+  </g>
+
+  <!-- 行 2 层次性 -->
+  <rect x="40" y="172" width="320" height="82" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <rect x="40" y="172" width="4" height="82" rx="2" fill="#A78BFA"/>
+  <text x="60" y="196" fill="#E2E8F0" font-size="12" font-weight="700">② 层次性分明</text>
+  <text x="60" y="216" fill="#94A3B8" font-size="10">不同层次有不同规律</text>
+  <text x="60" y="234" fill="#64748B" font-size="9.5">跨层翻译，不可跨层指挥</text>
+  <path d="M372 213 L500 213" stroke="#A78BFA" stroke-width="1.6" marker-end="url(#systd-ar2)"/>
+  <rect x="512" y="172" width="408" height="82" rx="10" fill="#1A1430" stroke="#A78BFA"/>
+  <text x="532" y="196" fill="#C4B5FD" font-size="11.5" font-weight="700">四层知识金字塔 + 三层造型认知</text>
+  <g font-size="9" text-anchor="middle">
+    <rect x="532" y="208" width="88" height="18" rx="4" fill="#131C2A" stroke="#A78BFA" opacity=".8"/><text x="576" y="221" fill="#C4B5FD">philosophy</text>
+    <rect x="628" y="208" width="88" height="18" rx="4" fill="#131C2A" stroke="#A78BFA" opacity=".8"/><text x="672" y="221" fill="#C4B5FD">strategy</text>
+    <rect x="724" y="208" width="88" height="18" rx="4" fill="#131C2A" stroke="#A78BFA" opacity=".8"/><text x="768" y="221" fill="#C4B5FD">arch</text>
+    <rect x="820" y="208" width="70" height="18" rx="4" fill="#131C2A" stroke="#A78BFA" opacity=".8"/><text x="855" y="221" fill="#C4B5FD">quality</text>
+  </g>
+  <text x="532" y="244" fill="#64748B" font-size="9">体量 → 形面 → 图形：每层只回答本层的问题</text>
+
+  <!-- 行 3 动态性 -->
+  <rect x="40" y="270" width="320" height="82" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <rect x="40" y="270" width="4" height="82" rx="2" fill="#34D399"/>
+  <text x="60" y="294" fill="#E2E8F0" font-size="12" font-weight="700">③ 动态性演化</text>
+  <text x="60" y="314" fill="#94A3B8" font-size="10">系统在反馈中走向有序</text>
+  <text x="60" y="332" fill="#64748B" font-size="9.5">没有回填，就没有演化</text>
+  <path d="M372 311 L500 311" stroke="#34D399" stroke-width="1.6" marker-end="url(#systd-ar3)"/>
+  <rect x="512" y="262" width="408" height="98" rx="10" fill="#0F241C" stroke="#34D399"/>
+  <text x="532" y="284" fill="#6EE7B7" font-size="11.5" font-weight="700">深度演化闭环</text>
+  <text x="532" y="302" fill="#94A3B8" font-size="9.5">建议 → 评估 → 回填 → 收敛 → 导出 → 训练 → 理论修正</text>
+  <path d="M900 318 C900 344 860 350 812 344 C764 338 730 330 700 318" fill="none" stroke="#34D399" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#systd-ar3)"/>
+  <text x="650" y="346" fill="#64748B" font-size="9" text-anchor="middle">每轮 observe 都回到信念</text>
+
+  <text x="40" y="392" fill="#64748B" font-size="11.5">读法：左侧是三条系统科学原则，右侧是它们在平台中的具体落点；箭头不是装饰，而是「原则 → 决策」的翻译方向。三条原则分别约束结构、层次与时间，缺一条都会退化为功能堆叠。</text>
+  <text x="40" y="414" fill="#475569" font-size="10">来源：钱学森「开放的复杂巨系统及其方法论」；平台侧对应见正文第 2 节表格。</text>
+  <defs>
+    <marker id="systd-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker>
+    <marker id="systd-ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#A78BFA"/></marker>
+    <marker id="systd-ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#34D399"/></marker>
+  </defs>
+</svg>
