@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="bayes2en-sq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker>
+    <marker id="bayes2en-sq2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#94A3B8"/></marker>
+    <marker id="bayes2en-sq3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#A78BFA"/></marker>
+    <marker id="bayes2en-sq4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#34D399"/></marker>
+    <marker id="bayes2en-sq5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FBBF24"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="478" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Session lifecycle: call sequence across four components</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Session Lifecycle Sequence</text>
+
+  <g font-size="11" font-weight="700" text-anchor="middle">
+    <rect x="42" y="64" width="176" height="34" rx="8" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".4"/>
+    <text x="130" y="86" fill="#7DD3FC">Client / bayesAPI</text>
+    <rect x="277" y="64" width="176" height="34" rx="8" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".4"/>
+    <text x="365" y="86" fill="#C4B5FD">routes/bayes.py</text>
+    <rect x="512" y="64" width="176" height="34" rx="8" fill="#0F241C" stroke="#34D399" stroke-opacity=".4"/>
+    <text x="600" y="86" fill="#6EE7B7">GP engine</text>
+    <rect x="747" y="64" width="176" height="34" rx="8" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".4"/>
+    <text x="835" y="86" fill="#FCD34D">session registry</text>
+  </g>
+  <g stroke="#1E2A3A" stroke-width="1" stroke-dasharray="4 4">
+    <line x1="130" y1="98" x2="130" y2="380"/>
+    <line x1="365" y1="98" x2="365" y2="380"/>
+    <line x1="600" y1="98" x2="600" y2="380"/>
+    <line x1="835" y1="98" x2="835" y2="380"/>
+  </g>
+
+  <g font-size="9.5">
+    <line x1="130" y1="116" x2="360" y2="116" stroke="#38BDF8" stroke-width="1.5" marker-end="url(#bayes2en-sq)"/>
+    <text x="138" y="111" fill="#CBD5E1">POST /sessions (space · goal · acquisition · seed)</text>
+
+    <line x1="365" y1="140" x2="830" y2="140" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#bayes2en-sq3)"/>
+    <text x="373" y="135" fill="#CBD5E1">new Session (default 14-D space)</text>
+
+    <line x1="365" y1="164" x2="135" y2="164" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#bayes2en-sq2)"/>
+    <text x="141" y="159" fill="#94A3B8">201 {session_id, n_observations: 0}</text>
+
+    <line x1="130" y1="188" x2="360" y2="188" stroke="#38BDF8" stroke-width="1.5" marker-end="url(#bayes2en-sq)"/>
+    <text x="138" y="183" fill="#CBD5E1">GET /sessions/{id}/suggest?n=1</text>
+
+    <line x1="365" y1="212" x2="595" y2="212" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#bayes2en-sq3)"/>
+    <text x="373" y="207" fill="#CBD5E1">n_obs &lt; 2 → random fill; else fit GP</text>
+
+    <line x1="600" y1="236" x2="370" y2="236" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#bayes2en-sq2)"/>
+    <text x="378" y="231" fill="#94A3B8">top-n of a 4096-point acquisition pool → x*</text>
+
+    <line x1="365" y1="260" x2="135" y2="260" stroke="#94A3B8" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#bayes2en-sq2)"/>
+    <text x="141" y="255" fill="#94A3B8">200 {suggestions} (sorted by acquisition)</text>
+
+    <line x1="130" y1="284" x2="360" y2="284" stroke="#34D399" stroke-width="1.5" marker-end="url(#bayes2en-sq4)"/>
+    <text x="138" y="279" fill="#CBD5E1">POST /observe (all 14 dims + score)</text>
+
+    <line x1="365" y1="308" x2="595" y2="308" stroke="#34D399" stroke-width="1.5" marker-end="url(#bayes2en-sq4)"/>
+    <text x="373" y="303" fill="#CBD5E1">validate → append observation → refit</text>
+
+    <line x1="130" y1="332" x2="360" y2="332" stroke="#FBBF24" stroke-width="1.5" marker-end="url(#bayes2en-sq5)"/>
+    <text x="138" y="327" fill="#CBD5E1">GET /best · GET /samples</text>
+
+    <line x1="365" y1="356" x2="830" y2="356" stroke="#FBBF24" stroke-width="1.5" marker-end="url(#bayes2en-sq5)"/>
+    <text x="373" y="351" fill="#CBD5E1">read best observation / export samples by feature_order</text>
+  </g>
+
+  <g font-size="10" text-anchor="middle">
+    <rect x="24" y="394" width="288" height="46" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="168" y="413" fill="#94A3B8">Endpoints enforce no auth today</text>
+    <text x="168" y="430" fill="#64748B" font-size="9">routes validate and orchestrate; maths lives in the engine</text>
+
+    <rect x="336" y="394" width="288" height="46" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="480" y="413" fill="#94A3B8">Sessions are in-process memory</text>
+    <text x="480" y="430" fill="#64748B" font-size="9">cleared on restart; export via GET /samples</text>
+
+    <rect x="648" y="394" width="288" height="46" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="792" y="413" fill="#94A3B8">400 bad input · 404 session · 409 no data</text>
+    <text x="792" y="430" fill="#64748B" font-size="9">422 schema mismatch; best returns 409 before any observation</text>
+  </g>
+  <text x="24" y="462" fill="#475569" font-size="9.5">How to read: blue = client request, purple = route-to-engine, green = observation write, amber = read/export; dashed arrows are responses.</text>
+</svg>

@@ -35,6 +35,11 @@
 - 会话存储为**进程内内存**（与 training 任务管理一致的模式），后端重启后会话清空，
   请在需要留存时通过 `samples` 导出。
 
+<figure class="doc-figure">
+  <img src="docs/images/bayes2-chart.svg" alt="贝叶斯收敛量化图表：最优评分曲线与 EI 采集值衰减" loading="lazy">
+  <figcaption><strong>图 1-2 ｜ 收敛如何被量化：评分平台期与 EI 衰减的双重判据</strong> 读图指引：左图看最优评分随轮次单调不降、并在 20–40 轮进入斜率趋零的平台期；右图看 EI 采集值随轮次对数式衰减，跌破 0.01 阈值即表示再探索的期望收益可忽略。两图必须同时成立才算真正收敛——只看评分会误把「局部平台」当终点，只看 EI 会忽略评估噪声。</figcaption>
+</figure>
+
 ---
 
 ## 2. 快速上手（完整示例）
@@ -66,12 +71,22 @@ curl http://localhost:8000/api/v1/bayes/sessions/$SID/samples
 
 前端使用 `bayesAPI`（详见第 5 节）即可完成同样闭环。
 
+<figure class="doc-figure">
+  <img src="docs/images/bayes2-image.svg" alt="一次贝叶斯寻优会话的建议、评估与回填场景" loading="lazy">
+  <figcaption><strong>图 2-1 ｜ 一次寻优会话的真实操作场景：建议 4587.3 / 1972.8，评估 88.5，回填后 best 91.2</strong> 读图指引：按 ①→②→③ 顺序看，左格是 `suggest` 返回的参数卡，中格把参数变成一次昂贵评估，右格 `observe` 后 GP 重训并刷新最优；关键结论是代理模型只在「建议—评估—回填」闭环中才有价值，观测少于 2 次时仍走随机填充。</figcaption>
+</figure>
+
 ---
 
 ## 3. API 参考
 
 所有端点前缀：`/api/v1/bayes`；请求 / 响应均为 JSON。
 当前端点未强制鉴权，可直接调用。
+
+<figure class="doc-figure">
+  <img src="docs/images/bayes2-diagram.svg" alt="贝叶斯会话在客户端、路由、引擎与会话表之间的调用时序" loading="lazy">
+  <figcaption><strong>图 3-1 ｜ 会话生命周期时序：create → suggest → observe → best / samples</strong> 读图指引：沿四条竖线看请求落在哪个组件，实线是请求、虚线是响应；注意 `suggest` 在观测少于 2 次时走随机填充，`observe` 必须带齐 14 维参数，`best` 在无观测时返回 409。</figcaption>
+</figure>
 
 ### 3.1 创建会话
 
@@ -211,6 +226,11 @@ curl http://localhost:8000/api/v1/bayes/sessions/$SID/samples
 自定义空间示例：一维寻优空间 `{"space": [{"name": "x", "min": 0, "max": 1}]}`。
 所有参数均为连续值；参数名不可重复。
 
+<figure class="doc-figure">
+  <img src="docs/images/bayes2-legend.svg" alt="贝叶斯寻优的单位、边界、阶段与阈值图例" loading="lazy">
+  <figcaption><strong>图 4-1 ｜ 寻优图例：色 = 量纲，点 / 线 = 闭环阶段，数 = 超参数与判据</strong> 读图指引：蓝色 11 维是毫米、琥珀 3 维是角度；空心点代表冷启动随机填充、实心点代表已观测、绿点代表当前最优；右上阈值（ℓ=0.25、1e-6、xi=0.01、kappa=2.0、冷启动 2、候选池 4096）是核对一次实验是否真正收敛的标尺。</figcaption>
+</figure>
+
 ---
 
 ## 5. 前端 SDK（bayesAPI）
@@ -256,6 +276,11 @@ const { data: best } = await bayesAPI.best(session.session_id)
 
 - **EI**（默认）： exploitation / exploration 平衡稳健，目标函数平滑时收敛快。
 - **UCB**：通过 `kappa` 显式调节探索强度，适合多峰或想主动扩大采样覆盖面的场景。
+
+<figure class="doc-figure">
+  <img src="docs/images/bayes2-graphic.svg" alt="EI 与 UCB 采集函数曲线对比" loading="lazy">
+  <figcaption><strong>图 6-1 ｜ 采集函数曲线：EI 的概率改进 vs UCB 的置信上界</strong> 读图指引：左图看 EI 峰值落在「有改进空间且不确定」的区域，峰值横坐标就是下一个采样点；右图看 UCB 把后验均值整条抬高 κσ，κ=2.0 时更愿意去未采样区；两图都只是在 4096 点候选池上取最大，不是解析求解。</figcaption>
+</figure>
 
 ---
 

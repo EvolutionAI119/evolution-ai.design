@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">v1.2 质量门禁全景：三层测试汇入一站式自检</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Quality Gate Panorama · 489 / 489</text>
+
+  <text x="40" y="56" fill="#94A3B8" font-size="10.5">2026-09-27 · Windows + Python 3.11 · SQLite 零外部依赖</text>
+  <text x="920" y="56" fill="#64748B" font-size="10.5" text-anchor="end">489 = 200 + 178 + 111</text>
+
+  <!-- 三条测试传送带 -->
+  <g>
+    <rect x="60" y="86" width="360" height="48" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <rect x="60" y="86" width="5" height="48" rx="2" fill="#34D399"/>
+    <text x="80" y="107" fill="#E2E8F0" font-size="12" font-weight="700">算法层 · pytest</text>
+    <text x="80" y="124" fill="#64748B" font-size="10">NURBS 数学 / 扫掠圆角 / 构造器 / 质量</text>
+    <text x="400" y="115" fill="#6EE7B7" font-size="14" font-weight="700" text-anchor="end">200 例 · 3.87 s</text>
+  </g>
+  <g>
+    <rect x="60" y="146" width="360" height="48" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <rect x="60" y="146" width="5" height="48" rx="2" fill="#38BDF8"/>
+    <text x="80" y="167" fill="#E2E8F0" font-size="12" font-weight="700">后端集成 · pytest</text>
+    <text x="80" y="184" fill="#64748B" font-size="10">路由 / 模式 / 优化服务 / 安全 / 持久化</text>
+    <text x="400" y="175" fill="#7DD3FC" font-size="14" font-weight="700" text-anchor="end">178 例 · 28.30 s</text>
+  </g>
+  <g>
+    <rect x="60" y="206" width="360" height="48" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <rect x="60" y="206" width="5" height="48" rx="2" fill="#A78BFA"/>
+    <text x="80" y="227" fill="#E2E8F0" font-size="12" font-weight="700">前端组件 · vitest</text>
+    <text x="80" y="244" fill="#64748B" font-size="10">Store / 组件 / API 模块 / 路由守卫</text>
+    <text x="400" y="235" fill="#C4B5FD" font-size="14" font-weight="700" text-anchor="end">111 例 · 1.25 s</text>
+  </g>
+
+  <!-- 汇流箭头 -->
+  <g stroke="#34D399" stroke-width="1.6" fill="none">
+    <line x1="424" y1="110" x2="538" y2="110"/>
+    <line x1="424" y1="170" x2="538" y2="170"/>
+    <line x1="424" y1="230" x2="538" y2="230"/>
+  </g>
+  <g fill="#34D399">
+    <polygon points="546,110 536,106 536,114"/>
+    <polygon points="546,170 536,166 536,174"/>
+    <polygon points="546,230 536,226 536,234"/>
+  </g>
+
+  <!-- 自检闸口 -->
+  <rect x="552" y="80" width="328" height="200" rx="12" fill="#0F241C" stroke="#34D399"/>
+  <text x="572" y="106" fill="#6EE7B7" font-size="13" font-weight="700">一站式自检 · 闸口</text>
+  <text x="572" y="126" fill="#94A3B8" font-size="10.5">test_all.py · 5 个模块串行执行</text>
+  <text x="572" y="170" fill="#E2E8F0" font-size="30" font-weight="700">7.13 s</text>
+  <text x="572" y="192" fill="#94A3B8" font-size="10.5">5 / 5 模块通过 · 0 异常</text>
+  <text x="572" y="222" fill="#94A3B8" font-size="10.5">整车建模 176 顶点 / 316 面</text>
+  <text x="572" y="240" fill="#94A3B8" font-size="10.5">曲面质量 C 级 · 退火 80 步 · 分镜渲染</text>
+  <text x="572" y="258" fill="#94A3B8" font-size="10.5">贝叶斯 15 轮 · 完整流程跑通</text>
+  <circle cx="836" cy="126" r="20" fill="none" stroke="#34D399" stroke-width="2"/>
+  <path d="M826 126 L833 134 L847 118" fill="none" stroke="#34D399" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- 结论徽章 -->
+  <g>
+    <rect x="60" y="300" width="270" height="58" rx="10" fill="#0F241C" stroke="#34D399"/>
+    <text x="76" y="326" fill="#6EE7B7" font-size="17" font-weight="700">489 / 489</text>
+    <text x="76" y="346" fill="#94A3B8" font-size="10">三层合计全绿（200 + 178 + 111）</text>
+    <rect x="350" y="300" width="270" height="58" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="366" y="326" fill="#E2E8F0" font-size="17" font-weight="700">0 / 0</text>
+    <text x="366" y="346" fill="#94A3B8" font-size="10">失败 / 跳过；9 条已知非阻断警告（6+3）</text>
+    <rect x="640" y="300" width="270" height="58" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+    <text x="656" y="326" fill="#C4B5FD" font-size="17" font-weight="700">9 / 9</text>
+    <text x="656" y="346" fill="#94A3B8" font-size="10">事实基线一致；端点统一 118</text>
+  </g>
+
+  <text x="40" y="398" fill="#94A3B8" font-size="10">读法：左侧三条传送带是彼此独立的三层用例流，全部汇入中间的 test_all.py 闸口；闸口只放行全绿批次，右下三枚徽章是本次放行的凭据。</text>
+  <text x="40" y="418" fill="#64748B" font-size="10">口径说明：图中每个数字均为 2026-09-27 当日实跑快照，不混用任何后续版本的测试基线。</text>
+  <text x="40" y="438" fill="#64748B" font-size="10">注：一站式自检另含警告路径覆盖与参数越界捕获，均为已知非阻断项。</text>
+</svg>

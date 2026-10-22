@@ -64,6 +64,11 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
   <figcaption><strong>图 3-1 ｜ 端到端用户旅程：游客 → 创作者 → 交付（对应四级 RBAC）</strong>读图：三条角色泳道（游客/普通用户/管理员）与蛇形主线——游客可自由浏览体验，触发写操作时由琥珀色节点弹出登录引导；注册后依次解锁参数建模、AI 创意工具与贝叶斯寻优；绿色行是管理员承接的工作流审核与数据交付，紫色为后台运维。右侧栏列出旅程设计的六条原则。</figcaption>
 </figure>
 
+<figure class="doc-figure">
+  <img src="docs/images/wp2-hero.svg" alt="平台能力全景：从设计意图到可交付模型" loading="lazy">
+  <figcaption><strong>图 3-2 ｜ 平台能力全景：从设计意图到可交付模型</strong>读图：左侧是设计意图与 22 维参数入口，中部为参数化车身与 NURBS 曲面求值，右侧是五级流水线（意图解析→整车建模→贝叶斯/训练→G0/G1/G2 评估→STEP/GLB 交付）；底部五个数字对应 19 个路由模块、153 个端点、17 张 ORM 表、12 个前端页面与 955 项自动化测试，用来说明平台规模与链路完整性，而非性能指标。</figcaption>
+</figure>
+
 ### 3.1 五类用户与价值
 
 | 角色 | 核心诉求 | 平台价值 |
@@ -113,6 +118,11 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 - **不依赖重型 CAD 内核**即可写出工程级 STEP（`step_writer.py`），并提供 NURBS 车身 STEP 导出；
 - 连续性检查器以 0.1 mm 位置公差 / 1.0° 角度公差逐对输出偏差报告（TXT/CSV），支持端部 4 种连续性方案（共享边界、G1 连接、附着端等）。
 
+<figure class="doc-figure">
+  <img src="docs/images/wp2-graphic.svg" alt="双几何管线：同一参数源驱动网格与 NURBS 两条求值链" loading="lazy">
+  <figcaption><strong>图 4-1 ｜ 双几何管线：同一参数源分别驱动网格与 NURBS 两条求值链</strong>读图：上行是实时预览的网格管线（22 维参数→48 截面环→装配→Three.js 渲染），下行是工程交付的 NURBS 管线（自由曲面→连续性检查→STEP 写出）；两链共享同一参数源与同一比例表，因此浏览器里的预览与下载的交付模型在轮廓上逐点对齐，而不是两套各自近似的模型。</figcaption>
+</figure>
+
 ### 4.3 曲面质量评估与优化
 
 - **G0/G1/G2 分级**：G1 阈值 5°、G2 阈值 2°；
@@ -160,6 +170,16 @@ EVOLUTION AI 是面向汽车 A 级曲面开发的 AI 造型平台，以「**从�
 | L3 后端 | FastAPI 0.104 + Pydantic v2；19 薄壳路由模块 / 153 端点 |
 | L4 算法 | algorithm_model 独立可安装包：car_modeling / freeform / surface_quality / storyboard |
 | L5 基础设施 | SQLite + 文件存储；可选 Redis（缺失时降级进程内会话）；后台训练线程 |
+
+<figure class="doc-figure">
+  <img src="docs/images/wp2-chart.svg" alt="19 个路由模块的端点分布柱状图" loading="lazy">
+  <figcaption><strong>图 5-2 ｜ 19 个路由模块的 151 个端点分布</strong>读图：横轴按设计/几何、智能/流程、运营/治理三组着色，纵轴为端点数（0–20 刻度）；analytics 21、modify 15、training 15 居前三，合计 51 个占 33.8%；19 根柱值之和为 151，与文档口径的 153 个端点相差 main.py 的 2 个系统端点。</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/wp2-legend.svg" alt="白皮书图例：颜色、线型与标记语义" loading="lazy">
+  <figcaption><strong>图 5-3 ｜ 图例：白皮书各图共用的颜色、线型与标记语义</strong>读图：A 卡是分层语义色（蓝=前端/接入、绿=后端/编排、琥珀=算法/计算、紫=数据/存储、红=异常/拒绝/降级），B 卡是线型（实线同步调用、琥珀虚线异步触发或轮询、蓝色点线可选降级、红虚线异常回退），C 卡是认证标记（🔐 必须认证 / 👑 管理员 / 🔹 可选认证 / 无标记公开），D 卡是图形语法（圆角矩形=模块/服务/层、圆点=端点或数据节点、菱形=决策闸口、平行四边形=外部依赖、1—N=一对多）；颜色只表达层次与语义，不表达数量。</figcaption>
+</figure>
 
 ### 5.2 数据模型（17 张 ORM 表）
 

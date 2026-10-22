@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="478" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">根脉之树：四维哲学根基如何长出知识体系</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Roots, Trunk, Canopy</text>
+
+  <!-- 土壤 -->
+  <line x1="40" y1="300" x2="920" y2="300" stroke="#334155" stroke-width="1.2" stroke-dasharray="6 5"/>
+  <text x="40" y="292" fill="#475569" font-size="9.5">地表 · 中国造物哲学</text>
+
+  <!-- 树冠 -->
+  <g stroke-width="1.2">
+    <ellipse cx="365" cy="152" rx="58" ry="32" fill="#FBBF24" opacity=".13" stroke="#FBBF24"/>
+    <ellipse cx="325" cy="134" rx="38" ry="22" fill="#FBBF24" opacity=".13" stroke="#FBBF24"/>
+    <ellipse cx="407" cy="136" rx="40" ry="22" fill="#FBBF24" opacity=".13" stroke="#FBBF24"/>
+    <ellipse cx="352" cy="116" rx="34" ry="20" fill="#FBBF24" opacity=".13" stroke="#FBBF24"/>
+    <ellipse cx="480" cy="112" rx="52" ry="27" fill="#A78BFA" opacity=".16" stroke="#A78BFA"/>
+    <ellipse cx="440" cy="104" rx="38" ry="22" fill="#A78BFA" opacity=".16" stroke="#A78BFA"/>
+    <ellipse cx="521" cy="103" rx="38" ry="22" fill="#A78BFA" opacity=".16" stroke="#A78BFA"/>
+    <ellipse cx="480" cy="84" rx="34" ry="19" fill="#A78BFA" opacity=".16" stroke="#A78BFA"/>
+    <ellipse cx="600" cy="148" rx="55" ry="30" fill="#34D399" opacity=".13" stroke="#34D399"/>
+    <ellipse cx="645" cy="132" rx="36" ry="20" fill="#34D399" opacity=".13" stroke="#34D399"/>
+    <ellipse cx="558" cy="130" rx="38" ry="21" fill="#34D399" opacity=".13" stroke="#34D399"/>
+  </g>
+  <!-- 枝干 -->
+  <g fill="none" stroke="#8B5E3C" stroke-width="7" stroke-linecap="round">
+    <path d="M480 214 C462 190 410 172 372 156"/>
+    <path d="M480 214 C480 180 480 150 480 118"/>
+    <path d="M486 216 C512 192 560 170 596 154"/>
+  </g>
+  <!-- 主干 -->
+  <path d="M456 300 C452 268 456 240 466 212 L494 212 C504 240 508 268 504 300 Z" fill="#5B3A24" stroke="#8B5E3C" stroke-width="1.4"/>
+  <!-- 根系 -->
+  <g fill="none" stroke-width="3.2" stroke-linecap="round">
+    <path d="M462 300 C410 330 330 350 265 398" stroke="#A78BFA"/>
+    <path d="M474 300 C452 350 428 380 406 404" stroke="#38BDF8"/>
+    <path d="M492 300 C520 350 546 380 570 404" stroke="#34D399"/>
+    <path d="M500 300 C560 330 640 350 700 398" stroke="#FBBF24"/>
+  </g>
+  <g fill="none" stroke-width="1.4" opacity=".5">
+    <path d="M420 336 C396 344 372 352 352 366" stroke="#A78BFA"/>
+    <path d="M540 340 C566 348 600 356 620 368" stroke="#FBBF24"/>
+    <path d="M458 340 C452 366 448 384 444 400" stroke="#38BDF8"/>
+  </g>
+
+  <!-- 冠层标注 -->
+  <text x="480" y="60" fill="#C4B5FD" font-size="11.5" font-weight="700" text-anchor="middle">元理论四维 · 九层抽象</text>
+  <text x="480" y="74" fill="#64748B" font-size="9.5" text-anchor="middle">本体 / 认识 / 方法 / 价值 + L1–L9</text>
+  <path d="M300 156 L318 152" stroke="#FBBF24" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="164" y="146" fill="#FCD34D" font-size="11" font-weight="600">十维度知识体系</text>
+  <text x="164" y="161" fill="#64748B" font-size="9.5">原有 5 维保留深化 + 新增 5 维</text>
+  <text x="164" y="175" fill="#64748B" font-size="9.5">共 10 个维度、53 项结构化要素</text>
+  <path d="M556 140 L548 138" stroke="#34D399" stroke-width="1" stroke-dasharray="3 3"/>
+  <path d="M640 148 L660 148" stroke="#34D399" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="668" y="142" fill="#6EE7B7" font-size="11" font-weight="600">九大设计原则</text>
+  <text x="668" y="157" fill="#64748B" font-size="9.5">中国造型语言与范式：</text>
+  <text x="668" y="171" fill="#64748B" font-size="9.5">R 角 · 色彩 · 纹样 · 比例</text>
+
+  <!-- 主干标注 -->
+  <text x="524" y="238" fill="#E2E8F0" font-size="11" font-weight="600">造物传统 = 树干</text>
+  <text x="524" y="253" fill="#94A3B8" font-size="10">《考工记》·《天工开物》· 谢赫六法</text>
+  <text x="524" y="268" fill="#64748B" font-size="9.5">天有时 · 地有气 · 材有美 · 工有巧</text>
+  <path d="M520 246 L506 250" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- 根系标注 -->
+  <g font-size="10.5" text-anchor="middle">
+    <text x="258" y="424" fill="#C4B5FD" font-weight="600">本体论</text>
+    <text x="258" y="438" fill="#64748B" font-size="9">天人共生 · 气化生成</text>
+    <text x="404" y="424" fill="#7DD3FC" font-weight="600">认识论</text>
+    <text x="404" y="438" fill="#64748B" font-size="9">具身认知 · 心物交融</text>
+    <text x="572" y="424" fill="#6EE7B7" font-weight="600">方法论</text>
+    <text x="572" y="438" fill="#64748B" font-size="9">巧法造化 · 器以载道</text>
+    <text x="702" y="424" fill="#FCD34D" font-weight="600">价值论</text>
+    <text x="702" y="438" fill="#64748B" font-size="9">日用即道 · 技进乎道</text>
+  </g>
+  <text x="40" y="462" fill="#64748B" font-size="11.5">读法：自下而上读——四条根决定「为什么」，树干承续造物传统，树冠结出可操作的维度、原则与语言；根系越深，冠层越稳，这就是元理论先于方法论的意义。</text>
+</svg>

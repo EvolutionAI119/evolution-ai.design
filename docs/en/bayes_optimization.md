@@ -34,6 +34,11 @@
 - Both maximize and minimize objectives are handled internally as maximization (minimize negates the score).
 - Sessions are stored **in process memory** (the same pattern as the training-task manager). Sessions are cleared on backend restart — use `samples` to persist when needed.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/bayes2-chart.svg" alt="Bayesian convergence chart: best-score curve and EI acquisition decay" loading="lazy">
+  <figcaption><strong>Fig. 1-2 ｜ How convergence is quantified: a dual criterion of score plateau and EI decay</strong> How to read: the left panel shows the best score rising monotonically and flattening into a plateau after 20–40 rounds; the right panel shows EI decaying roughly logarithmically and crossing the 0.01 threshold, meaning further exploration has negligible expected value. Both must hold for genuine convergence — score alone mistakes a local plateau for the end, EI alone ignores evaluation noise.</figcaption>
+</figure>
+
 ---
 
 ## 2. Quick Start (Full Example)
@@ -65,12 +70,22 @@ curl http://localhost:8000/api/v1/bayes/sessions/$SID/samples
 
 The frontend `bayesAPI` (see Section 5) implements the same loop.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/bayes2-image.svg" alt="Suggest, evaluate and observe inside one Bayesian session" loading="lazy">
+  <figcaption><strong>Fig. 2-1 ｜ Inside one session: suggest 4587.3 / 1972.8, evaluate 88.5, observe lifts best to 91.2</strong> How to read: follow ①→②→③ — the left panel holds the parameter card returned by <code>suggest</code>, the middle turns it into one costly evaluation, the right refits the GP on <code>observe</code>. Key takeaway: a surrogate only pays off inside the suggest–evaluate–observe loop, and fewer than 2 observations still fall back to random filling.</figcaption>
+</figure>
+
 ---
 
 ## 3. API Reference
 
 All endpoints are prefixed with `/api/v1/bayes`; requests and responses are JSON.
 Endpoints currently do not enforce authentication and can be called directly.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/bayes2-diagram.svg" alt="Bayesian session call sequence across client, routes, engine and registry" loading="lazy">
+  <figcaption><strong>Fig. 3-1 ｜ Session lifecycle: create → suggest → observe → best / samples</strong> How to read: trace each request down four lifelines; solid arrows are requests and dashed are responses. Note that <code>suggest</code> falls back to random filling below 2 observations, <code>observe</code> must carry all 14 dimensions, and <code>best</code> returns 409 before any observation.</figcaption>
+</figure>
 
 ### 3.1 Create Session
 
@@ -208,6 +223,11 @@ When `space` is omitted, the following 14 styling parameters are used (aligned w
 Custom-space example, a one-dimensional optimization: `{"space": [{"name": "x", "min": 0, "max": 1}]}`.
 All parameters are continuous; parameter names must be unique.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/bayes2-legend.svg" alt="Legend for units, bounds, loop stages and thresholds" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ Optimization legend: colour = unit, dot/line = loop stage, number = hyperparameter or gate</strong> How to read: blue marks the 11 millimetre dimensions and amber the 3 angle dimensions; hollow dots are cold-start random fills, solid dots are observed samples, green is the current best. The thresholds at right (ℓ=0.25, 1e-6, xi=0.01, kappa=2.0, cold start 2, pool 4096) are the ruler for checking whether an experiment really converged.</figcaption>
+</figure>
+
 ---
 
 ## 5. Frontend SDK (bayesAPI)
@@ -253,6 +273,11 @@ Choosing an acquisition function:
 
 - **EI** (default): a robust exploitation / exploration balance; converges fast when the objective is smooth.
 - **UCB**: exploration strength is explicitly tunable via `kappa`; suited to multi-modal objectives or when deliberately widening sample coverage.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/bayes2-graphic.svg" alt="EI and UCB acquisition function curves" loading="lazy">
+  <figcaption><strong>Fig. 6-1 ｜ Acquisition curves: EI probability of improvement vs the UCB confidence bound</strong> How to read: on the left, the EI peak sits where improvement room and uncertainty coexist, and its x coordinate is the next sample; on the right, UCB lifts the posterior mean by κσ, and κ=2.0 is more willing to probe unsampled regions. Both panels take a maximum over a 4096-point pool, not an analytic solution.</figcaption>
+</figure>
 
 ---
 

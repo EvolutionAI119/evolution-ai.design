@@ -24,6 +24,11 @@
 | FastAPI 后端服务 | 8000 | ✅ 运行中 | `backend/start.py` 启动，Swagger: `/docs` |
 | LLM 推理服务 (Ollama 兼容) | 11434 | ✅ 运行中 | `scripts/llm_server.py`，含 RAG 检索 |
 
+<figure class="doc-figure">
+  <img src="docs/images/ptest2-image.svg" alt="四端联调现场：7 个前端模块与四个运行端口" loading="lazy">
+  <figcaption><strong>图 1-1 ｜ 四端联调现场（7 模块 × 四端口）</strong>读图：左侧是 7 个前端模块的真实渲染现场，右侧四个端口全部在线；连线表示 Vite 把 `/api/v1` 代理到 8000，8000 再调用 11434。</figcaption>
+</figure>
+
 ---
 
 ## 2. LLM 推理端到端测试 (Q1 + Q3 + Q10)
@@ -134,12 +139,22 @@ POST /api/v1/car/generate → 200 OK
 | **P5** | 🟢 极低 | Vite 端口 | 默认 5173 被占用，Vite 自动切到 5174，但 DEMO 页面动画资源仍硬编码请求 5175 | 仅影响 DEMO 动画 | 将动画资源改为相对路径或动态 `import.meta.env` |
 | **P6** | 🟢 极低 | AI Designer | `/api/v1/ai/health` 返回 500 → "AI stats not available" warning | 仅 AI 统计卡片不显示，生成功能完全正常 | 在 car_generator 中增加 AI 健康检查的兜底返回 |
 
+<figure class="doc-figure">
+  <img src="docs/images/ptest2-legend.svg" alt="图例：测试状态、严重度与阻塞语义" loading="lazy">
+  <figcaption><strong>图 4-1 ｜ 图例：测试状态、严重度与阻塞语义</strong>读图：A/B 段先建立「低 / 极低 / 阻塞」的共同语言，再看 C/D 段的图表口径；黄色只表示低严重度，不代表失败。</figcaption>
+</figure>
+
 ### 4.2 无阻塞结论
 
 **所有 P1-P6 均不阻塞当前平台的核心使用流程**：
 - AI Designer 参数化生成与后端 API 连通 ✓
 - 其他 6 个模块均渲染正常，功能入口完整 ✓
 - LLM 端到端测试 3/3 全通过 ✓
+
+<figure class="doc-figure">
+  <img src="docs/images/ptest2-graphic.svg" alt="已知问题矩阵：P1–P6 × 严重度 × 阻塞状态" loading="lazy">
+  <figcaption><strong>图 4-2 ｜ 已知问题矩阵（P1–P6 × 严重度 × 阻塞）</strong>读图：逐行看「影响面」与最右「阻塞」列；六项全为「否」，因此核心演示路径 Designer → Quality → Deliver 不受影响。</figcaption>
+</figure>
 
 ---
 

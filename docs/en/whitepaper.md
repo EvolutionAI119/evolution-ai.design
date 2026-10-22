@@ -64,6 +64,11 @@ Unify design intent and engineering hard points through a **parameter space**; a
   <figcaption><strong>Fig. 3-1 ｜ End-to-end user journey: guest → creator → delivery (aligned with the four-level RBAC)</strong> How to read: Three role swimlanes and a serpentine main line — guests browse freely while write actions trigger the amber login prompt; signing up unlocks parametric modeling, AI tools and Bayesian tuning; the green row is admin-owned review and delivery, purple is operations. The right panel lists six journey design principles.</figcaption>
 </figure>
 
+<figure class="doc-figure">
+  <img src="docs/images/en/wp2-hero.svg" alt="Platform capability panorama: from design intent to a deliverable model" loading="lazy">
+  <figcaption><strong>Fig. 3-2 ｜ Platform capability panorama: from design intent to a deliverable model</strong> How to read: The left is the design-intent and 22-parameter entry, the middle is parametric body and NURBS surface evaluation, and the right is the five-stage pipeline (intent parsing → full-vehicle modeling → Bayesian/training → G0/G1/G2 assessment → STEP/GLB delivery). The five numbers at the bottom (19 route modules, 153 endpoints, 17 ORM tables, 12 frontend pages, 955 automated tests) describe scale and chain completeness, not performance.</figcaption>
+</figure>
+
 ### 3.1 Five User Types and Their Value
 
 | Role | Core need | Platform value |
@@ -113,6 +118,11 @@ Unify design intent and engineering hard points through a **parameter space**; a
 - Writes engineering-grade STEP without any heavy CAD kernel (`step_writer.py`) and provides NURBS body STEP export;
 - The continuity checker outputs pair-by-pair deviation reports (TXT/CSV) at 0.1 mm positional / 1.0° angular tolerance, supporting four end-continuity schemes (shared boundary, G1 join, attached ends, etc.).
 
+<figure class="doc-figure">
+  <img src="docs/images/en/wp2-graphic.svg" alt="Dual geometry pipeline: one parameter source driving mesh and NURBS chains" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ Dual geometry pipeline: one parameter source drives two evaluation chains</strong> How to read: The upper row is the real-time preview mesh chain (22 parameters → 48 section rings → assembly → Three.js rendering); the lower row is the engineering-delivery NURBS chain (free-form surfaces → continuity check → STEP writing). Both chains share the same parameter source and ratio table, so the browser preview and the downloaded model align point by point instead of being two independently approximated models.</figcaption>
+</figure>
+
 ### 4.3 Surface-Quality Evaluation and Optimization
 
 - **G0/G1/G2 grading**: G1 threshold 5°, G2 threshold 2°;
@@ -160,6 +170,16 @@ Unify design intent and engineering hard points through a **parameter space**; a
 | L3 Backend | FastAPI 0.104 + Pydantic v2; 19 thin-shell route modules / 153 endpoints |
 | L4 Algorithm | Independently installable algorithm_model package: car_modeling / freeform / surface_quality / storyboard |
 | L5 Infrastructure | SQLite + file storage; optional Redis (degrades to in-process sessions); background training threads |
+
+<figure class="doc-figure">
+  <img src="docs/images/en/wp2-chart.svg" alt="Bar chart of endpoints across the 19 route modules" loading="lazy">
+  <figcaption><strong>Fig. 5-2 ｜ Endpoint distribution across 19 route modules (151 endpoints)</strong> How to read: The x-axis groups modules by design/geometry, intelligence/flow and operations/governance, and the y-axis is the endpoint count (0–20). analytics 21, modify 15 and training 15 lead, together 51 or 33.8%. The 19 bars sum to 151; the remaining 2 of the documented 153 endpoints are the system endpoints defined in main.py.</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/en/wp2-legend.svg" alt="Whitepaper legend: colors, line types and marker semantics" loading="lazy">
+  <figcaption><strong>Fig. 5-3 ｜ Legend: colors, line types and markers shared by the whitepaper figures</strong> How to read: Card A is layer color (blue = frontend/gateway, green = backend/orchestration, amber = algorithm/compute, purple = data/storage, red = error/rejection/degradation); Card B is line type (solid = synchronous call, amber dashed = async trigger or polling, blue dotted = optional/degraded path, red dashed = error fallback); Card C is auth markers (🔐 required, 👑 admin, 🔹 optional, unmarked = public); Card D is shape grammar (rounded box = module/service/layer, dot = endpoint or data node, diamond = decision gate, parallelogram = external dependency, 1–N = one-to-many). Color carries hierarchy and semantics, never quantity.</figcaption>
+</figure>
 
 ### 5.2 Data Model (17 ORM Tables)
 

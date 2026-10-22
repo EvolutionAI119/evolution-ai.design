@@ -24,6 +24,11 @@
 - SOP checklist: 13 checks, 183 records, 67 automated, 79% automation pass rate
 - AI expert Q&A: a NURBS knowledge service over a fine-tuned model plus RAG retrieval
 
+<figure class="doc-figure">
+  <img src="docs/images/en/audit2-image.svg" alt="Audit floor: cleanup, tests, tuning and containers in parallel" loading="lazy">
+  <figcaption><strong>Fig. 1-1 ｜ Audit floor panorama (cleanup, tests, tuning, containers in parallel)</strong> How to read: archive boxes at left, the test terminal in the center, Q&A results at top right and container artifacts at bottom right — the four workstreams; 201 and 70% are Aug-9/10 values.</figcaption>
+</figure>
+
 ---
 
 ## II. Audit Record, August 9
@@ -103,6 +108,11 @@
 - Wrong concept definition: 14% (1)
 - Refusal pattern: 14% (1)
 - High-risk categories (100% failure): continuity, nurbs_basics, parametric_design, quality_assessment
+
+<figure class="doc-figure">
+  <img src="docs/images/en/audit2-chart.svg" alt="LLM benchmark: 10% to 30% to 70%, with failure roots" loading="lazy">
+  <figcaption><strong>Fig. 2-1 ｜ LLM ten-question benchmark: 10% → 30% → 70% and failure roots</strong> How to read: the three bars are the same ten questions measured three times (1/10 → 3/10 → 7/10); the right panel attributes the 7 failures at the 30% stage, with the first two causes at 72%, pointing to data gaps rather than model capacity.</figcaption>
+</figure>
 
 ---
 
@@ -197,6 +207,11 @@
 <figure class="doc-figure">
   <img src="docs/images/en/october-test-results.svg" alt="October test scale and results" loading="lazy">
   <figcaption><strong>Fig. 4-2 ｜ October test scale and results</strong> How to read: the bar chart shows the five test layers run on the same day — backend 341 / frontend 142 / topology 12 / guest mode 2 / standalone admin 3; the right-side badges give the combined 483 cases with zero failures and the backend 341 pass / 1 skip / 2 xfail breakdown.</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/en/audit2-legend.svg" alt="Legend: audit states, colors and time scope" loading="lazy">
+  <figcaption><strong>Fig. 4-3 ｜ Legend: audit states, colors and time scope</strong> How to read: read the time scope in D first, then states and colors in A/B; 201 (Aug 9) and 483 (Oct 11) belong to different snapshots and never overwrite each other.</figcaption>
 </figure>
 
 ---

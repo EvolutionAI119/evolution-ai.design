@@ -15,6 +15,11 @@ Automotive styling development has never been an isolated geometry problem. It i
 - **Giant**: the number of subsystems is enormous (styling parameters, surface patches, parts, data flows, decision points);
 - **Complex**: the couplings among subsystems are nonlinear and multi-level, beyond any single reductionist method.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/syst-image.svg" alt="Open complex giant system: six external sources around a central vehicle" loading="lazy">
+  <figcaption><strong>Fig. 1-1 ｜ An Open Complex Giant System: the vehicle as the center of multi-source coupling</strong> How to read: the dashed box is the system's open boundary; market, brand, technology, manufacturing, culture and users keep crossing it with constraints and feedback. Inside the box are the parameter space, surface-patch population, quality gates and data flows — the enormous subsystem set. The vehicle at the center is their emergent result: no single subsystem explains it, which is exactly what "the whole exceeds the sum of its parts" looks like.</figcaption>
+</figure>
+
 The EVOLUTION AI platform itself is such a system. Therefore the platform must not be built as a stack of items on a feature checklist, but through **top-level design and continuous evolution guided by systems thinking**: overall planning, unified research, and coordinated problem-solving from the perspective of the whole.
 
 > **Core thesis: the platform's deep evolution is not a linear accumulation of features, but a structural, epistemic, and mechanism-level leap of the system as a whole.**
@@ -30,6 +35,11 @@ The EVOLUTION AI platform itself is such a system. Therefore the platform must n
 | Holism first: the whole exceeds the sum of parts | Five-layer architecture precedes single features; parameter space and quality standards exist before generation and optimization |
 | Clear hierarchy: different levels obey different laws | Four-layer knowledge pyramid (philosophy → strategy → arch → quality); three-layer styling cognition (volume → form → graphic) |
 | Dynamic evolution: order emerges through feedback | The deep-evolution loop: suggest → evaluate → observe → converge → export → train → revise theory |
+
+<figure class="doc-figure">
+  <img src="docs/images/en/syst-diagram.svg" alt="Systems-thinking principles mapped onto platform decisions" loading="lazy">
+  <figcaption><strong>Fig. 2-1 ｜ Three systems principles → their platform internalization</strong> How to read: the left column holds three systems-science principles and the right column their concrete landing points; the arrows show the direction of translation from principle to decision. Holism constrains structure (five-layer architecture first), hierarchy constrains translation (pyramid plus three-layer styling cognition), and dynamics constrains time (the backfill-driven loop). Remove any one of them and the platform degrades back into a feature pile.</figcaption>
+</figure>
 
 ---
 
@@ -73,6 +83,11 @@ Three key understandings:
 2. **Belief is revisable**: the GP surrogate is not truth but current belief; every observe updates it. This is isomorphic to the epistemic cycle of "practice — cognition — practice again — cognition again".
 3. **Samples are the sediment of cognition**: the samples exported from a Bayesian session are the fossil record of each qualitative-to-quantitative leap; as training data they let the next generation taste the prior generation's experience — **individual cognition rises into organizational cognition**.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/syst-chart.svg" alt="Quality score converging over observation rounds" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ Qualitative-to-quantitative convergence: quality score rising over observation rounds</strong> How to read: the x-axis counts observes, the y-axis is the composite quality score; the green line is the best estimate under current belief, and the blue dashed band is GP uncertainty. Read three things — the starting point (how strong the qualitative prior is: 0.62, not zero, at round one), the slope (information per round), and the bandwidth (how much evidence is still missing). Rounds 20–40 reach the plateau, and after convergence 955 tests keep behaviour locked.</figcaption>
+</figure>
+
 ---
 
 ## 5. The Metasynthesis Workshop: Human–Machine Combination, Human-Led Collaboration
@@ -90,6 +105,11 @@ The institutional form of "human-led" on the platform:
 - **Expert advice assists, never adjudicates**: the LLM provides domain knowledge; final value judgment remains with responsible humans;
 - **Scoring criteria are human-defined**: quality thresholds (G1 5° / G2 2°, A/B/C/D lines) encode engineering consensus, not machine self-generation;
 - **Honest reporting when machines are absent**: missing dependencies degrade explicitly (503 / marked fallback), never fabricating "the machine's opinion" — trust is built on honesty.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/syst-legend.svg" alt="Workshop legend: three systems, decision authority and signal states" loading="lazy">
+  <figcaption><strong>Fig. 5-1 ｜ Workshop legend: three systems · decision authority · signal states</strong> How to read: first use shape and colour to tell which system an element belongs to — expert (blue circle), machine (green square) or knowledge (purple hexagon); then use line style to see who adjudicates — solid = human-led decision, dashed = machine proposal, red = explicit degradation; finally read signal dots as filled (evidence exists) or hollow (no evidence). "Human-led" on the chart simply means the human always sits at the vertex of the loop.</figcaption>
+</figure>
 
 ---
 
@@ -127,6 +147,11 @@ Engineering implications:
 1. **Fast variables search within the order-parameter framework**: a Bayesian session's space definition (14-dim default space, bounds) is itself an instantiation of order parameters — genes first, search second;
 2. **Order-parameter evolution must go through the knowledge-layer process**: adjusting a brand gene is not changing one parameter value — it is a **knowledge-system event** that updates the brand knowledge base, retrains models, and revises philosophy documents;
 3. **Deep evolution = continuous convergence of fast variables + controlled transition of order parameters.** Fast-variable convergence alone is local optimization; order-parameter transition alone is a castle in the air; only their coupling is deep evolution.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/syst-graphic.svg" alt="Fast-variable sawtooth trace inside an order-parameter envelope" loading="lazy">
+  <figcaption><strong>Fig. 7-1 ｜ Fast variables and order parameters: the dual time scales of the parameter space</strong> How to read: the pink sawtooth is the fast variables (22 dimensions sampled round by round, second-to-round scale); the purple dashed band is the admissible range granted by order parameters (brand genes, philosophy and quality thresholds, month-to-year scale), and the solid purple curve is the baseline. The red vertical line marks a "knowledge-system event" — the baseline can only be raised by updating the knowledge base, retraining models and revising thresholds, never rewritten quietly by a single-round score.</figcaption>
+</figure>
 
 ---
 

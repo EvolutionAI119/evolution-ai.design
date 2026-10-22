@@ -20,7 +20,17 @@
 | 6 | 顶层 console.log ×3（SISA 反馈单问题 A） | `<script setup>` 顶层语句每次挂载执行，控制台噪声 | 低 |
 | 7 | 参数缺省用 `\|\|` | 合法的 `0` 值（如 rear_slant_angle: 0）被吞成默认值 | 低 |
 
+<figure class="doc-figure">
+  <img src="docs/images/sisa-before-after.svg" alt="同一组 Cayenne 参数：修复前画面只剩悬浮小圆、窗线与贴地小弧，修复后为闭合车身与触地双轮" loading="lazy">
+  <figcaption><strong>图 1-1 ｜ 同一组 Cayenne 参数：修复前只剩碎片，修复后是闭合整车</strong> 读图指引：左右对照同一组参数——左侧车顶落在画布之外（roofTopY ≈ −72 px），轮辋与轮胎不同心；右侧车顶回到画布内、双轮触地、车身由单条 path 闭合。修复的正是表中缺陷 1–3。</figcaption>
+</figure>
+
 ## 2. 渲染管线重构（`src/components/Car2D.vue`）
+
+<figure class="doc-figure">
+  <img src="docs/images/sisa-pipeline.svg" alt="2D 渲染管线五段：车型参数、双向缩放、单一闭合 path、分层叠加、输出 800×420 SVG" loading="lazy">
+  <figcaption><strong>图 2-1 ｜ 2D 渲染管线：从车型参数到 800×420 的闭合 SVG</strong> 读图指引：从左到右读五段——车型参数 → 双向缩放 → 单一闭合 path → 分层叠加 → 800×420 SVG。关键在第二段：`scale` 取宽度方向与高度方向的较小值，所以任意参数组合下车顶都不会越界。</figcaption>
+</figure>
 
 ### 2.1 双向自适应缩放（修缺陷 1）
 
@@ -40,6 +50,11 @@ scale = min( (svgWidth - 80) / L, (groundY - padTop) / (H + gc) )
 - 车身底边 = 侧裙下缘 = `groundY − 离地间隙`，轮拱以轮心为圆心（r×1.16）
   在底边上开口，端点由弦长公式计算并钳位。
 
+<figure class="doc-figure">
+  <img src="docs/images/sisa-geometry.svg" alt="后轮局部几何：轮胎、轮辋 0.58r、轮毂 0.12r 三圆同心，轮拱 1.16r 在底边开口，轮胎最低点触地" loading="lazy">
+  <figcaption><strong>图 2-2 ｜ 几何构造：轮拱开口、三圆同心与触地关系</strong> 读图指引：先看轮心与地面——`wheelCY = groundY − r` 让轮胎最低点正好落在地面线；再看三圆同心（轮胎 r / 轮辋 0.58r / 轮毂 0.12r）；最后看轮拱以 1.16r 在底边切出的开口与弦长标注。</figcaption>
+</figure>
+
 ### 2.3 闭合车身轮廓（修缺陷 3）
 
 单一 `<path>`：前保立面 → 圆角鼻 → 引擎盖 → A 柱 → 车顶 → C 柱 → 尾门圆角 →
@@ -58,6 +73,11 @@ scale = min( (svgWidth - 80) / L, (groundY - padTop) / (H + gc) )
 | pickup | 0.60 | 0.78 | 0.80 |
 
 SUV hood 取 0.66 逼近 SISA 实测 `hood_height_ratio ≈ 0.69`（参考车同为 SUV 形态）。
+
+<figure class="doc-figure">
+  <img src="docs/images/sisa-proportions.svg" alt="六种车型的 hood、belt、trunk 三段分层比例分组柱状图，SUV belt 0.80 最高" loading="lazy">
+  <figcaption><strong>图 2-3 ｜ 六种车型的三段分层比例：hood / belt / trunk</strong> 读图指引：每组三根柱依次是 hood / belt / trunk，纵轴 0.40–0.90；SUV 的 belt 0.80 明显高于轿车的 0.74，正是为了逼近 SISA 实测 `hood_height_ratio ≈ 0.69` 的 SUV 形态。</figcaption>
+</figure>
 
 ### 2.5 全链路钳位（修缺陷 5）
 
@@ -110,6 +130,11 @@ shared_reference/SISA_REVERSE_REFERENCE_PACK.json   （SISA 交付，85KB）
    SUV 分层比例校正（§2.4）。
 4. **后续扩展预留**：`sections[]`（24 截面 × 80 点）已随包留存，
    供 3D 断面校验/封闭化约束使用（本次未动 3D 管线，避免超范围改动）。
+
+<figure class="doc-figure">
+  <img src="docs/images/sisa-legend.svg" alt="2D 渲染与 SISA 叠加图例：色块表示几何层，线型区分结构线与参考线，数字给出 RMSE 0.217 与数据规模" loading="lazy">
+  <figcaption><strong>图 3-1 ｜ 2D 渲染与 SISA 叠加图例</strong> 读图指引：先用色块认出车身 / 轮胎 / 轮辋 / 轮毂，再用线型区分真实几何与 SISA 参考（黄色虚线，拉伸到当前车长），最后看 RMSE 刻度判断像不像——0.217 是两台不同车的客观形状差距，参考线不对齐是信息，不是渲染故障。</figcaption>
+</figure>
 
 ## 4. 验证记录
 

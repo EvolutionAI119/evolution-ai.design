@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="prod2en-lg-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#34D399"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="428" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Platform legend: capability domains · runtime states · baseline</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Encoding Guide</text>
+
+  <rect x="24" y="56" width="290" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="42" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Colour = capability side</text>
+  <g font-size="10.5">
+    <circle cx="52" cy="104" r="8" fill="#38BDF8" opacity=".85"/>
+    <text x="70" y="108" fill="#CBD5E1">Design side</text>
+    <text x="70" y="122" fill="#64748B" font-size="9">parametric generation, 3D, variants</text>
+
+    <rect x="45" y="145" width="15" height="15" rx="4" fill="#34D399" opacity=".85"/>
+    <text x="70" y="157" fill="#CBD5E1">Intelligence side</text>
+    <text x="70" y="171" fill="#64748B" font-size="9">training, generative, Bayesian, LLM</text>
+
+    <path d="M52 197 L61 191 L70 197 L70 209 L61 215 L52 209 Z" fill="#A78BFA" opacity=".85"/>
+    <text x="80" y="207" fill="#CBD5E1">Engineering side</text>
+    <text x="80" y="221" fill="#64748B" font-size="9">CAD re-param, Class-A, export</text>
+
+    <rect x="45" y="243" width="15" height="15" rx="4" fill="#F472B6" opacity=".85"/>
+    <text x="70" y="255" fill="#CBD5E1">Account side</text>
+    <text x="70" y="269" fill="#64748B" font-size="9">sign-up/login, JWT, API keys</text>
+  </g>
+  <line x1="42" y1="290" x2="296" y2="290" stroke="#1E2A3A"/>
+  <text x="42" y="310" fill="#94A3B8" font-size="9.5">All four sides share one account/permission model;</text>
+  <text x="42" y="326" fill="#64748B" font-size="9">roles differ only in visible pages and writes.</text>
+  <text x="42" y="342" fill="#475569" font-size="9">Shape also encodes the side, so print stays legible.</text>
+
+  <rect x="336" y="56" width="290" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="354" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Line / dot = runtime state</text>
+  <g font-size="10.5">
+    <line x1="356" y1="104" x2="404" y2="104" stroke="#34D399" stroke-width="2" marker-end="url(#prod2en-lg-ar)"/>
+    <text x="416" y="108" fill="#CBD5E1">Normal call</text>
+    <text x="416" y="122" fill="#64748B" font-size="9">backend online, real result</text>
+
+    <line x1="356" y1="146" x2="404" y2="146" stroke="#FBBF24" stroke-width="1.8" stroke-dasharray="6 4"/>
+    <text x="416" y="150" fill="#CBD5E1">Mock fallback</text>
+    <text x="416" y="164" fill="#64748B" font-size="9">backend down, no blank screen</text>
+
+    <line x1="356" y1="188" x2="404" y2="188" stroke="#F87171" stroke-width="1.8" stroke-dasharray="5 4"/>
+    <text x="416" y="192" fill="#CBD5E1">Explicit degradation (503)</text>
+    <text x="416" y="206" fill="#64748B" font-size="9">missing dependency is reported</text>
+  </g>
+  <line x1="354" y1="220" x2="608" y2="220" stroke="#1E2A3A"/>
+  <text x="354" y="238" fill="#E2E8F0" font-size="11" font-weight="600">Marker = evidence</text>
+  <circle cx="364" cy="256" r="6" fill="#34D399"/><text x="380" y="260" fill="#CBD5E1" font-size="9.5">implemented / observed</text>
+  <circle cx="364" cy="280" r="6" fill="none" stroke="#64748B" stroke-width="1.6"/><text x="380" y="284" fill="#CBD5E1" font-size="9.5">anonymous / no observation</text>
+  <path d="M358 300 L370 300 M364 294 L364 312" stroke="#F87171" stroke-width="1.6"/><text x="380" y="308" fill="#CBD5E1" font-size="9.5">unavailable / rejected</text>
+  <text x="354" y="332" fill="#475569" font-size="9">Filled = evidence; hollow = none.</text>
+
+  <rect x="648" y="56" width="288" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="666" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Number = scale &amp; grade</text>
+  <g font-size="10">
+    <text x="666" y="104" fill="#CBD5E1">Platform baseline (2026-09-27)</text>
+    <text x="666" y="122" fill="#94A3B8" font-size="9.5">19 routers · 153 endpoints · 17 tables</text>
+    <text x="666" y="138" fill="#94A3B8" font-size="9.5">12 pages · 955 tests (205/388/362)</text>
+    <text x="666" y="162" fill="#CBD5E1">Surface grade</text>
+  </g>
+  <g font-size="10" font-weight="700">
+    <rect x="666" y="170" width="26" height="19" rx="4" fill="#0F241C" stroke="#34D399"/><text x="679" y="184" fill="#6EE7B7" text-anchor="middle">A</text>
+    <rect x="698" y="170" width="26" height="19" rx="4" fill="#0E1E2E" stroke="#38BDF8"/><text x="711" y="184" fill="#7DD3FC" text-anchor="middle">B</text>
+    <rect x="730" y="170" width="26" height="19" rx="4" fill="#2A1A0E" stroke="#FBBF24"/><text x="743" y="184" fill="#FCD34D" text-anchor="middle">C</text>
+    <rect x="762" y="170" width="26" height="19" rx="4" fill="#2A1016" stroke="#F87171"/><text x="775" y="184" fill="#FCA5A5" text-anchor="middle">D</text>
+  </g>
+  <line x1="666" y1="204" x2="918" y2="204" stroke="#1E2A3A"/>
+  <text x="666" y="224" fill="#CBD5E1" font-size="10">Continuity levels</text>
+  <g font-size="9.5" fill="#94A3B8">
+    <text x="666" y="242">G0 position: patches meet, hard point</text>
+    <text x="666" y="260">G1 tangent: shared direction, curvature jump</text>
+    <text x="666" y="278">G2 curvature: continuous, Class-A</text>
+  </g>
+  <line x1="666" y1="294" x2="918" y2="294" stroke="#1E2A3A"/>
+  <text x="666" y="314" fill="#64748B" font-size="9.5">Grade A–D is a composite from the quality evaluator;</text>
+  <text x="666" y="330" fill="#475569" font-size="9">G0/G1/G2 are per-item evidence, not substitutes.</text>
+  <text x="666" y="346" fill="#475569" font-size="9">Numbers track the code snapshot and the body text.</text>
+
+  <text x="24" y="382" fill="#64748B" font-size="10.5">How to use: colour tells which side a capability belongs to; line and dot tell whether this call has real evidence; numbers give scale and quality grade.</text>
+  <text x="24" y="404" fill="#475569" font-size="10">Shared encoding: green = verified success, amber = fallback or exploration, red = honest problem report, purple = engineering hand-off, pink = account credentials.</text>
+</svg>

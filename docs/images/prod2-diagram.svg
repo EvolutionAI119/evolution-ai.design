@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="prod2-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker>
+    <marker id="prod2-ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="418" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">页面 → 状态 → API → 路由 → 数据：四段式薄壳编排</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Thin-Shell Orchestration</text>
+
+  <g font-size="12" font-weight="700" text-anchor="middle">
+    <rect x="24" y="60" width="164" height="62" rx="10" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".45"/>
+    <text x="106" y="86" fill="#7DD3FC">12 个前端页面</text>
+    <text x="106" y="106" fill="#94A3B8" font-size="9.5" font-weight="400">Dashboard … Account</text>
+
+    <rect x="206" y="60" width="164" height="62" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="288" y="86" fill="#E2E8F0">Pinia Store</text>
+    <text x="288" y="106" fill="#94A3B8" font-size="9.5" font-weight="400">auth / project / car / quality</text>
+
+    <rect x="388" y="60" width="164" height="62" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="470" y="86" fill="#E2E8F0">API SDK 层</text>
+    <text x="470" y="106" fill="#94A3B8" font-size="9.5" font-weight="400">carAPI / aiAPI / qualityAPI</text>
+
+    <rect x="570" y="60" width="164" height="62" rx="10" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".45"/>
+    <text x="652" y="86" fill="#C4B5FD">19 个路由模块</text>
+    <text x="652" y="106" fill="#94A3B8" font-size="9.5" font-weight="400">153 个 HTTP 端点</text>
+
+    <rect x="752" y="60" width="164" height="62" rx="10" fill="#0F241C" stroke="#34D399" stroke-opacity=".45"/>
+    <text x="834" y="86" fill="#6EE7B7">17 张 ORM 表</text>
+    <text x="834" y="106" fill="#94A3B8" font-size="9.5" font-weight="400">SQLite 持久化</text>
+  </g>
+  <g stroke="#38BDF8" stroke-width="1.6">
+    <line x1="190" y1="91" x2="200" y2="91" marker-end="url(#prod2-ar)"/>
+    <line x1="372" y1="91" x2="382" y2="91" marker-end="url(#prod2-ar)"/>
+    <line x1="554" y1="91" x2="564" y2="91" marker-end="url(#prod2-ar)"/>
+    <line x1="736" y1="91" x2="746" y2="91" marker-end="url(#prod2-ar)"/>
+  </g>
+
+  <g>
+    <rect x="24" y="146" width="892" height="56" rx="9" fill="#0E1E2E" stroke="#38BDF8" stroke-opacity=".25"/>
+    <text x="40" y="170" fill="#7DD3FC" font-size="11" font-weight="700">Designer</text>
+    <text x="40" y="187" fill="#64748B" font-size="9.5">参数面板 + 3D 预览</text>
+    <text x="196" y="178" fill="#94A3B8" font-size="10.5">designer store</text>
+    <line x1="300" y1="174" x2="318" y2="174" stroke="#64748B" marker-end="url(#prod2-ar2)"/>
+    <text x="328" y="178" fill="#CBD5E1" font-size="10.5">carAPI.generate · aiAPI.optimize</text>
+    <line x1="628" y1="174" x2="646" y2="174" stroke="#64748B" marker-end="url(#prod2-ar2)"/>
+    <text x="656" y="178" fill="#94A3B8" font-size="10.5">projects · model_files</text>
+  </g>
+  <g>
+    <rect x="24" y="210" width="892" height="56" rx="9" fill="#0F241C" stroke="#34D399" stroke-opacity=".25"/>
+    <text x="40" y="234" fill="#6EE7B7" font-size="11" font-weight="700">Quality</text>
+    <text x="40" y="251" fill="#64748B" font-size="9.5">检查 · 报告 · 历史</text>
+    <text x="196" y="242" fill="#94A3B8" font-size="10.5">quality store</text>
+    <line x1="300" y1="238" x2="318" y2="238" stroke="#64748B" marker-end="url(#prod2-ar2)"/>
+    <text x="328" y="242" fill="#CBD5E1" font-size="10.5">qualityAPI.check / list / get</text>
+    <line x1="628" y1="238" x2="646" y2="238" stroke="#64748B" marker-end="url(#prod2-ar2)"/>
+    <text x="656" y="242" fill="#94A3B8" font-size="10.5">quality_reports</text>
+  </g>
+  <g>
+    <rect x="24" y="274" width="892" height="56" rx="9" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".25"/>
+    <text x="40" y="298" fill="#FCD34D" font-size="11" font-weight="700">Deliver</text>
+    <text x="40" y="315" fill="#64748B" font-size="9.5">导入 · 改参 · 导出</text>
+    <text x="196" y="306" fill="#94A3B8" font-size="10.5">deliver store</text>
+    <line x1="300" y1="302" x2="318" y2="302" stroke="#64748B" marker-end="url(#prod2-ar2)"/>
+    <text x="328" y="306" fill="#CBD5E1" font-size="10.5">importExportAPI.import / modify / export</text>
+    <line x1="628" y1="302" x2="646" y2="302" stroke="#64748B" marker-end="url(#prod2-ar2)"/>
+    <text x="656" y="306" fill="#94A3B8" font-size="10.5">parameter_sets · model_variants</text>
+  </g>
+
+  <text x="24" y="356" fill="#94A3B8" font-size="10.5">读图顺序：从左到右看一次点击如何落到数据表；三条泳道是同一编排在三个页面上的实例。</text>
+  <text x="24" y="376" fill="#64748B" font-size="10">薄壳原则：页面只持有视图状态，Store 只做缓存与订阅，路由层不承载几何算法；算法在 algorithm_model 内。</text>
+  <text x="24" y="396" fill="#475569" font-size="10">降级原则：后端不可用 → mock 兜底；PyTorch / Ollama / Redis / CLIP 缺失 → 503 或显式降级，不伪装成功。</text>
+</svg>

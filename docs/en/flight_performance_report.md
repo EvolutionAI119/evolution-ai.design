@@ -208,6 +208,16 @@ The table below gives the complete envelope of the six types under default prese
 
 Note: the 360° full-turn duration is 15.0 s for all types (constant 45°/s comfort limit); the 19 brand models inherit presets from their vehicle type, with explicit overrides taking precedence.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/flight2-image.svg" alt="Six-type hover panorama (sedan hover point)" loading="lazy">
+  <figcaption><strong>Fig. 9 ｜ Six-type hover panorama (sedan hover point)</strong> How to read: green dashed = field energy, blue rings = lift fans; sport is amber because its uncapped 0.688 share yields the lowest endurance — evidence of model self-consistency.</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/en/flight2-legend.svg" alt="Legend: symbols, lines and thresholds in this report" loading="lazy">
+  <figcaption><strong>Fig. 10 ｜ Legend: symbols, lines and thresholds in this report</strong> How to read: read line types in A and verdicts in C, then thresholds in D; amber always means "passing with a slim margin", never failure.</figcaption>
+</figure>
+
 ## 09 Live Verification Record (2026-10-16)
 
 After deployment, per the mandatory verification protocol, a browser-automation agent completed a **7/7-pass** full-flow test on the public site `https://evolution-ai.design/?v=ag2#/designer` (cache-busted):

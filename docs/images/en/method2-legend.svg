@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="428" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Methodology Legend: Path Styles · Gate Markers · Threshold Units</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Method Legend</text>
+
+  <!-- A line styles -->
+  <rect x="40" y="56" width="286" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="56" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Line style = path and state</text>
+  <g font-size="10.5">
+    <line x1="58" y1="106" x2="108" y2="106" stroke="#34D399" stroke-width="2"/><text x="120" y="110" fill="#CBD5E1">Fast path</text>
+    <text x="120" y="124" fill="#64748B" font-size="9">Mesh in seconds, for exploration</text>
+    <line x1="58" y1="148" x2="108" y2="148" stroke="#38BDF8" stroke-width="3.4"/><text x="120" y="152" fill="#CBD5E1">Exact path</text>
+    <text x="120" y="166" fill="#64748B" font-size="9">NURBS fairing, for delivery</text>
+    <line x1="58" y1="190" x2="108" y2="190" stroke="#A78BFA" stroke-width="1.6" stroke-dasharray="6 5"/><text x="120" y="194" fill="#CBD5E1">Async task</text>
+    <text x="120" y="208" fill="#64748B" font-size="9">Training runs in background</text>
+    <line x1="58" y1="232" x2="108" y2="232" stroke="#64748B" stroke-width="1.4" stroke-dasharray="2 5"/><text x="120" y="236" fill="#CBD5E1">Reference bound</text>
+    <text x="120" y="250" fill="#64748B" font-size="9">Validation rules and targets</text>
+    <line x1="58" y1="274" x2="108" y2="274" stroke="#F87171" stroke-width="1.6" stroke-dasharray="5 4"/><text x="120" y="278" fill="#CBD5E1">Gate fallback</text>
+    <text x="120" y="292" fill="#64748B" font-size="9">Send back to prior stage</text>
+  </g>
+  <text x="56" y="322" fill="#475569" font-size="9.5">Line weight shows hierarchy, not quantity.</text>
+
+  <!-- B markers -->
+  <rect x="352" y="56" width="286" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="368" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Marker = process role</text>
+  <g font-size="10.5">
+    <path d="M378 104 L388 112 L378 120 L368 112 Z" fill="#FBBF24" opacity=".9"/><text x="400" y="116" fill="#CBD5E1">G1–G4 gate</text>
+    <circle cx="378" cy="148" r="6.5" fill="#0F1622" stroke="#A78BFA" stroke-width="2"/><text x="400" y="152" fill="#CBD5E1">Variant snapshot</text>
+    <path d="M378 178 L386 190 L370 190 Z" fill="#34D399"/><text x="400" y="188" fill="#CBD5E1">Review decision</text>
+    <rect x="370" y="208" width="16" height="14" rx="3" fill="none" stroke="#38BDF8" stroke-width="1.5"/><text x="400" y="220" fill="#CBD5E1">Background task</text>
+    <path d="M368 240 L384 240 L384 254 L376 248 L368 254 Z" fill="none" stroke="#94A3B8" stroke-width="1.4"/><text x="400" y="252" fill="#CBD5E1">Quality report / record</text>
+  </g>
+  <line x1="368" y1="274" x2="622" y2="274" stroke="#1E2A3A"/>
+  <text x="368" y="294" fill="#94A3B8" font-size="9.5">Diamonds sit at stage boundaries, dots on</text>
+  <text x="368" y="310" fill="#94A3B8" font-size="9.5">variants or sessions — marker = state position.</text>
+  <text x="368" y="330" fill="#475569" font-size="9.5">No record, no decision.</text>
+
+  <!-- C thresholds -->
+  <rect x="664" y="56" width="272" height="290" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="680" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Thresholds and units</text>
+  <g font-size="10.5">
+    <text x="680" y="106" fill="#CBD5E1">Continuity check</text>
+    <text x="680" y="124" fill="#64748B" font-size="9.5">position deviation 0.1 mm</text>
+    <text x="680" y="140" fill="#64748B" font-size="9.5">tangent / normal angle 1.0°</text>
+    <text x="680" y="160" fill="#CBD5E1">Order</text>
+    <text x="680" y="178" fill="#64748B" font-size="9.5">G0 position / G1 tangent / G2 curvature</text>
+    <text x="680" y="198" fill="#CBD5E1">Overall grade</text>
+  </g>
+  <g font-size="10" font-weight="700">
+    <rect x="680" y="206" width="24" height="18" rx="4" fill="#0F241C" stroke="#34D399"/><text x="692" y="219" fill="#6EE7B7" text-anchor="middle">A</text>
+    <rect x="710" y="206" width="24" height="18" rx="4" fill="#0E1E2E" stroke="#38BDF8"/><text x="722" y="219" fill="#7DD3FC" text-anchor="middle">B</text>
+    <rect x="740" y="206" width="24" height="18" rx="4" fill="#2A1A0E" stroke="#FBBF24"/><text x="752" y="219" fill="#FCD34D" text-anchor="middle">C</text>
+    <rect x="770" y="206" width="24" height="18" rx="4" fill="#2A1016" stroke="#F87171"/><text x="782" y="219" fill="#FCA5A5" text-anchor="middle">D</text>
+  </g>
+  <g font-size="9.5" fill="#64748B">
+    <text x="680" y="246">A/B/C/D = composite grade from continuity</text>
+    <text x="680" y="260">counts plus reflection lines, not one metric.</text>
+    <text x="680" y="282" fill="#CBD5E1" font-size="10">Time units</text>
+    <text x="680" y="298">sec = one generation + evaluation</text>
+    <text x="680" y="312">round = Bayesian observe (20–40 converge)</text>
+    <text x="680" y="326">week = project stage rhythm</text>
+  </g>
+
+  <text x="40" y="378" fill="#64748B" font-size="10.5">Usage: read line style to tell generation, async work or fallback; read markers to see the process object; then use thresholds to judge pass or fail.</text>
+  <text x="40" y="402" fill="#475569" font-size="10">Same encoding as Fig. 5-2 in Design Philosophy: green = number/pass, blue = reason/exact, purple = parameters &amp; variants, amber = gate, red = fail.</text>
+</svg>

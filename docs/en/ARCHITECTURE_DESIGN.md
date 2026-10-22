@@ -12,6 +12,11 @@
   <figcaption><strong>Fig. 1-1 ｜ Platform architecture overview: frontend / backend / algorithm / data layers plus deployment channel</strong> How to read: Read as an architecture overview — four layers annotated with inter-layer call protocols, and a deployment channel listing dev, production, tunnel and static publishing; the algorithm layer has zero framework dependencies and can run standalone.</figcaption>
 </figure>
 
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-layers.svg" alt="Oblique slices of the five-layer architecture" loading="lazy">
+  <figcaption><strong>Fig. 1-2 ｜ Oblique slices of the five-layer architecture: L1 frontend → L2 gateway → L3 backend → L4 algorithm → L5 infrastructure</strong> How to read: Top-down oblique slabs encode the dependency direction; each layer lists its key components and outbound protocol (HTTP/JSON, proxy, function call, ORM). L4 is an independently installable package with no FastAPI dependency and can be tested without L1–L3. The only layering rule: upper layers may depend on lower ones, never the reverse.</figcaption>
+</figure>
+
 The platform uses a five-layer architecture:
 
 ```
@@ -107,6 +112,11 @@ Backend root: `backend/`; application entry `app/main.py` (assembled by `create_
 
 Endpoint-by-endpoint detail: see [api_reference.md](api_reference.md).
 
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-matrix.svg" alt="Heat matrix of the 19 route modules by HTTP method" loading="lazy">
+  <figcaption><strong>Fig. 3-1 ｜ Heat matrix of 19 route modules × HTTP method</strong> How to read: Rows are the 19 modules, columns are GET/POST/PUT/DELETE, and each cell holds the endpoint count with darker color for higher concentration. Column totals on the right are GET 75, POST 63, PUT 4, DELETE 9 = 151, cross-checked row by row. Takeaway: analytics and training are read-heavy (11 of 21 and 9 of 15), modify is write-heavy (8 of 15), and PUT appears only on a few state-update endpoints.</figcaption>
+</figure>
+
 ### 3.2 Domain Modules (`backend/app/`)
 
 | Module | Responsibility |
@@ -173,6 +183,11 @@ Unified external entry: `api.py` (build_car / get_car_stats / evaluate_surface /
 Relationships: Project 1–N ModelFile / Workflow / QualityReport; Workflow 1–N WorkflowStep;
 ModelFile 1–N ModelVariant (with self-referencing parent); User 1–N ApiKey / LoginRecord / Notification.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-orm.svg" alt="Domain donut chart of the 17 ORM tables" loading="lazy">
+  <figcaption><strong>Fig. 5-1 ｜ Domain grouping of the 17 ORM tables</strong> How to read: The donut groups tables into five domains — projects/processes/models (4), quality/parameters/variants (4), users/audit/keys (4), training tasks (1), community/notifications/tracking (4) = 17. The right-hand cards list table names for direct comparison with the table above; the footer gives foreign-key directions such as Project 1–N ModelFile / Workflow / QualityReport and Workflow 1–N WorkflowStep. Grouping aids comprehension only and does not change the schema.</figcaption>
+</figure>
+
 ---
 
 ## 6. Key Data Flows
@@ -226,6 +241,11 @@ Login → probe /auth/methods
 - **Security headers**: `main.py` middleware injects X-Content-Type-Options / X-Frame-Options / CSP / Referrer-Policy / Permissions-Policy / Cache-Control; removes `server: uvicorn`.
 - **CORS**: open in DEBUG; explicit production allow-list; the `ACAO: *` + credentials combination is forbidden (with an ASGI correction middleware).
 - **Exception handling**: StarletteHTTPException / RequestValidationError / Exception / 405 handled uniformly; error responses likewise complete CORS.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/arch2-legend.svg" alt="Architecture legend: layer colors, line types, nodes and state markers" loading="lazy">
+  <figcaption><strong>Fig. 7-1 ｜ Legend: layer colors, line types, node shapes and state markers used in this document</strong> How to read: Card A gives the five layer colors; Card B gives line types (solid = call, dashed = async/error, arrow = direction, 1–N = one-to-many); Card C gives node shapes (rounded box = module/service/layer, cylinder = data table, diamond = decision gate, parallelogram = external package, double-line box = optional capability); Card D gives state markers (✓ pass, ✕ fail, 503 capability not ready, ①② step order, 0.1 mm / 1.0° geometric tolerances). Color distinguishes layers only — read quantities from tables or cell numbers.</figcaption>
+</figure>
 
 ---
 

@@ -13,6 +13,11 @@
 
 设计原则：凭据最小暴露（Token 仅存于前端内存/localStorage 与请求头，绝不出现在日志）；归属强校验（训练产出只能由本人送审）；审核不可绕过（自动执行通道对审核型工作流显式拒绝）。
 
+<figure class="doc-figure">
+  <img src="docs/images/flow2-hero.svg" alt="三段式主链：登录认证、凭据训练、产出送审" loading="lazy">
+  <figcaption><strong>图 1-1 ｜ 三段式主链：登录认证 → 凭据训练 → 产出送审</strong>读图：三个场景卡从左到右串联——登录卡签发 7 天 JWT，训练卡以 Bearer 启动后台任务并按秒轮询，审核卡在 completed 后自动创建两道人工步骤；卡下方虚线为错误出口（401 引导登录、404 资源不存在、400 前置条件不满足），说明任何一步失败都不会进入下一步。</figcaption>
+</figure>
+
 ## 2. 模块功能关联地图
 
 <figure class="doc-figure">
@@ -79,6 +84,11 @@ DeepLearning 页面在"开始训练"动作前置**身份验证闸口**：未登�
 
 约定：鉴权失败统一返回 `401 {"detail":"缺少认证信息，请先登录"}` 或 `401 {"detail":"Token 无效或已过期"}`；业务校验失败返回 400/404 并在 `detail` 中给出可读原因；审核结论中的 `comment` 上限 500 字符。
 
+<figure class="doc-figure">
+  <img src="docs/images/flow2-chart.svg" alt="主链四模块端点规模与真实契约占比" loading="lazy">
+  <figcaption><strong>图 4-1 ｜ 主链接口面 41 个端点与 6 个真实契约</strong>读图：四根柱分别为 auth 12、training 15、workflow 9、project 5，合计 41 个端点；右侧卡列出本链实际调用的 6 个契约（login、train、tasks/{id}、training-review、steps/{sid}/review、steps），6/41 = 14.6%，说明主链只占用相关模块的一小部分接口面，其余端点属于管理与扩展能力，不会被这条链路触发。</figcaption>
+</figure>
+
 ## 5. 权限验证机制
 
 - **签发**：JWT 载荷携带 `sub`（user_id）、`email`、`exp`、`iat`，签名算法 HS256；
@@ -86,6 +96,11 @@ DeepLearning 页面在"开始训练"动作前置**身份验证闸口**：未登�
 - **校验**：受保护路由通过 `Depends(get_current_user)` 解析并验证签名与有效期，失败即 401；
 - **归属强校验（授权层）**：送审接口执行双重校验——任务 `user_id` 必须等于 Token 主体（防越权送审他人产出），且任务必须处于 completed 终态；
 - **审计**：审核结论落库时记录 `reviewer` 邮箱与时间戳，形成不可抵赖的审核证据链。
+
+<figure class="doc-figure">
+  <img src="docs/images/flow2-legend.svg" alt="主链图例：角色色、线型、状态与闸口" loading="lazy">
+  <figcaption><strong>图 5-1 ｜ 图例：主链图的角色色、线型、状态与闸口</strong>读图：A 卡为角色/凭据色（绿=JWT、蓝=调用方、琥珀=训练与轮询、粉=人工审核、红=失败），B 卡为线型（实线同步请求、琥珀虚线自动触发、蓝点线轮询、红虚线驳回），C 卡为状态色（pending / running / completed / failed），D 卡为闸口标记（🔐 认证、👑 管理员、🔹 可选、✓ 通过、✕ 拒绝）。阅读本文各图前先用本卡确认标记含义。</figcaption>
+</figure>
 
 ## 6. 审核状态机
 
@@ -110,6 +125,11 @@ DeepLearning 页面在"开始训练"动作前置**身份验证闸口**：未登�
 ```
 
 步骤级状态：`pending →（审核通过）completed` 或 `pending →（驳回）rejected`；rejected 为终态，需重新发起训练或另行处理。工作流级状态由步骤聚合推导，无手工置入路径。
+
+<figure class="doc-figure">
+  <img src="docs/images/flow2-state.svg" alt="送审请求的生命周期状态机（含错误出口）" loading="lazy">
+  <figcaption><strong>图 6-1 ｜ 送审请求的生命周期状态机（含错误出口）</strong>读图：上排依次为未认证→已认证→训练运行中→待送审，然后转折进入下排审核中→审核完成，或由任一驳回转入审核失败；箭头上标注 ①②③④ 步序（邮箱密码、Bearer、completed 轮询、送审 201）；底部错误出口统一为 401/404/400，闸口顺序是认证→归属与存在性→前置条件→审核，任一步失败都不会留下半完成状态。</figcaption>
+</figure>
 
 ## 7. 验证记录
 

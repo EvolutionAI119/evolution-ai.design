@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="wp2h-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">从一句话到 3D 整车：平台总览主视觉</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">From One Sentence to a 3D Vehicle</text>
+
+  <!-- 左：设计意图 -->
+  <rect x="30" y="62" width="250" height="330" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="48" y="88" fill="#7DD3FC" font-size="12.5" font-weight="700">① 设计意图</text>
+  <rect x="48" y="100" width="214" height="86" rx="12" fill="#0B101A" stroke="#38BDF8" stroke-opacity=".45"/>
+  <text x="62" y="128" fill="#E2E8F0" font-size="11.5">低趴姿态、长轴距</text>
+  <text x="62" y="150" fill="#E2E8F0" font-size="11.5">运动型 SUV</text>
+  <text x="62" y="172" fill="#E2E8F0" font-size="11.5">贯穿式尾灯</text>
+  <path d="M70 186 L84 186 L76 198 Z" fill="#0B101A" stroke="#38BDF8" stroke-opacity=".45"/>
+  <text x="48" y="214" fill="#94A3B8" font-size="10.5" font-weight="700">结构化参数（22 维）</text>
+  <g font-size="10" fill="#94A3B8" text-anchor="middle">
+    <rect x="48" y="224" width="100" height="26" rx="7" fill="#12293D"/><text x="98" y="241">车长</text>
+    <rect x="154" y="224" width="100" height="26" rx="7" fill="#12293D"/><text x="204" y="241">轴距</text>
+    <rect x="48" y="254" width="100" height="26" rx="7" fill="#12293D"/><text x="98" y="271">车高</text>
+    <rect x="154" y="254" width="100" height="26" rx="7" fill="#12293D"/><text x="204" y="271">轮距</text>
+    <rect x="48" y="284" width="100" height="26" rx="7" fill="#12293D"/><text x="98" y="301">风挡角</text>
+    <rect x="154" y="284" width="100" height="26" rx="7" fill="#12293D"/><text x="204" y="301">轮拱</text>
+    <rect x="48" y="314" width="100" height="26" rx="7" fill="#12293D"/><text x="98" y="331">腰线</text>
+    <rect x="154" y="314" width="100" height="26" rx="7" fill="#12293D"/><text x="204" y="331">车灯</text>
+  </g>
+  <text x="48" y="362" fill="#64748B" font-size="10">自然语言 → 参数面板</text>
+  <text x="48" y="380" fill="#64748B" font-size="10">游客可用 · 免登录体验</text>
+
+  <!-- 中：3D 预览 -->
+  <rect x="300" y="62" width="400" height="330" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="316" y="88" fill="#E2E8F0" font-size="12.5" font-weight="700">3D 实时预览 · Three.js</text>
+  <g stroke="#1E2A3A" stroke-width="1" opacity=".65">
+    <line x1="320" y1="108" x2="320" y2="310"/><line x1="365" y1="108" x2="365" y2="310"/>
+    <line x1="410" y1="108" x2="410" y2="310"/><line x1="455" y1="108" x2="455" y2="310"/>
+    <line x1="500" y1="108" x2="500" y2="310"/><line x1="545" y1="108" x2="545" y2="310"/>
+    <line x1="590" y1="108" x2="590" y2="310"/><line x1="635" y1="108" x2="635" y2="310"/>
+    <line x1="680" y1="108" x2="680" y2="310"/>
+    <line x1="320" y1="130" x2="680" y2="130"/><line x1="320" y1="166" x2="680" y2="166"/>
+    <line x1="320" y1="202" x2="680" y2="202"/><line x1="320" y1="238" x2="680" y2="238"/>
+    <line x1="320" y1="274" x2="680" y2="274"/><line x1="320" y1="310" x2="680" y2="310"/>
+  </g>
+  <ellipse cx="505" cy="318" rx="180" ry="10" fill="#0B101A"/>
+  <path d="M322 288 C320 264 330 252 352 246 L410 238 C425 214 450 198 490 194 L560 194 C600 196 628 212 646 238 L672 246 C688 250 692 264 690 288 Z" fill="#13293D" stroke="#38BDF8" stroke-width="1.6"/>
+  <polygon points="438,236 458,212 496,212 496,236" fill="#0F1622" stroke="#38BDF8" stroke-opacity=".7"/>
+  <polygon points="504,212 540,212 590,234 504,236" fill="#0F1622" stroke="#38BDF8" stroke-opacity=".7"/>
+  <rect x="672" y="262" width="15" height="8" rx="2" fill="#FBBF24"/>
+  <rect x="324" y="264" width="12" height="7" rx="2" fill="#F87171"/>
+  <circle cx="378" cy="290" r="27" fill="#0B101A" stroke="#64748B" stroke-width="3"/>
+  <circle cx="378" cy="290" r="13" fill="none" stroke="#38BDF8" stroke-width="1.5"/>
+  <circle cx="612" cy="290" r="27" fill="#0B101A" stroke="#64748B" stroke-width="3"/>
+  <circle cx="612" cy="290" r="13" fill="none" stroke="#38BDF8" stroke-width="1.5"/>
+  <g fill="#A78BFA">
+    <circle cx="322" cy="288" r="3"/><circle cx="352" cy="246" r="3"/><circle cx="410" cy="238" r="3"/>
+    <circle cx="490" cy="194" r="3"/><circle cx="560" cy="194" r="3"/><circle cx="646" cy="238" r="3"/><circle cx="690" cy="288" r="3"/>
+  </g>
+  <text x="316" y="362" fill="#64748B" font-size="10">参数 → 几何：22 维 → 48 截面 → 10 部件</text>
+  <text x="316" y="380" fill="#64748B" font-size="10">紫点为 NURBS 控制点，曲面可直接导出 STEP</text>
+
+  <!-- 右：交付管线 -->
+  <text x="726" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">从意图到交付</text>
+  <g text-anchor="middle" font-size="10.5">
+    <rect x="726" y="96" width="204" height="42" rx="9" fill="#12293D" stroke="#38BDF8" stroke-opacity=".45"/>
+    <text x="828" y="115" fill="#7DD3FC" font-weight="700">1 · 意图解析</text>
+    <text x="828" y="130" fill="#94A3B8" font-size="9.5">design_intent</text>
+    <rect x="726" y="146" width="204" height="42" rx="9" fill="#0F241C" stroke="#34D399" stroke-opacity=".45"/>
+    <text x="828" y="165" fill="#6EE7B7" font-weight="700">2 · 参数化车身</text>
+    <text x="828" y="180" fill="#94A3B8" font-size="9.5">car_modeling</text>
+    <rect x="726" y="196" width="204" height="42" rx="9" fill="#1A1230" stroke="#A78BFA" stroke-opacity=".45"/>
+    <text x="828" y="215" fill="#C4B5FD" font-weight="700">3 · AI 优化</text>
+    <text x="828" y="230" fill="#94A3B8" font-size="9.5">bayes / training</text>
+    <rect x="726" y="246" width="204" height="42" rx="9" fill="#2A1A0E" stroke="#FBBF24" stroke-opacity=".45"/>
+    <text x="828" y="265" fill="#FCD34D" font-weight="700">4 · 质量评估</text>
+    <text x="828" y="280" fill="#94A3B8" font-size="9.5">G0 / G1 / G2</text>
+    <rect x="726" y="296" width="204" height="42" rx="9" fill="#2A1420" stroke="#F472B6" stroke-opacity=".45"/>
+    <text x="828" y="315" fill="#F9A8D4" font-weight="700">5 · 工程交付</text>
+    <text x="828" y="330" fill="#94A3B8" font-size="9.5">STEP / GLB</text>
+  </g>
+  <g stroke="#34D399" stroke-width="1.6" marker-end="url(#wp2h-ar)">
+    <line x1="828" y1="138" x2="828" y2="144"/><line x1="828" y1="188" x2="828" y2="194"/>
+    <line x1="828" y1="238" x2="828" y2="244"/><line x1="828" y1="288" x2="828" y2="294"/>
+  </g>
+  <text x="726" y="362" fill="#64748B" font-size="10">每步产物落库，可追溯可回滚</text>
+  <text x="726" y="380" fill="#64748B" font-size="10">算法层零框架依赖，可独立运行</text>
+
+  <!-- 底部规模条 -->
+  <g font-size="10.5" fill="#94A3B8" text-anchor="middle">
+    <rect x="40" y="406" width="166" height="30" rx="8" fill="#131C2A" stroke="#1E2A3A"/><text x="123" y="425">19 路由模块</text>
+    <rect x="214" y="406" width="166" height="30" rx="8" fill="#131C2A" stroke="#1E2A3A"/><text x="297" y="425">153 HTTP 端点</text>
+    <rect x="388" y="406" width="166" height="30" rx="8" fill="#131C2A" stroke="#1E2A3A"/><text x="471" y="425">17 ORM 表</text>
+    <rect x="562" y="406" width="166" height="30" rx="8" fill="#131C2A" stroke="#1E2A3A"/><text x="645" y="425">12 前端页面</text>
+    <rect x="736" y="406" width="166" height="30" rx="8" fill="#131C2A" stroke="#1E2A3A"/><text x="819" y="425">955 自动化测试</text>
+  </g>
+</svg>

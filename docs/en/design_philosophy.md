@@ -39,6 +39,11 @@ Traditional automotive styling was driven by hand sketching: designers outlined 
 | Iteration speed | Weeks | Seconds |
 | Traceability | Weak | Full-chain traceable |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/phil2-chart.svg" alt="Iteration cycle by era on a log scale" loading="lazy">
+  <figcaption><strong>Fig. 1-2 ｜ One styling loop by era: from weeks to minutes</strong> How to read: the y-axis is logarithmic, so equal steps mean a 10× difference and lower dots are faster; hand-drawn takes about 5 days, parametric about 8 hours, and the AI loop about 40 seconds — roughly 10⁴× end to end. The right-hand cards give the step-by-step compression ratios: the paradigm shift is not a marginal speed-up but what first makes large-scale proposal comparison possible.</figcaption>
+</figure>
+
 ### 1.2 Three Principles
 
 - **World-model driven** — a car is the unity of function and aesthetics. Every dimension of the parameter space maps to real physical constraints (aerodynamics, ergonomics, manufacturing).
@@ -76,6 +81,11 @@ The four-layer philosophical architecture of v3.0 expands, in the platform era, 
 
 Form is defined by parameterized feature structures: the side silhouette, belt line (the upper/lower body division and source of dynamism), shoulder line (the upper crease conveying muscularity), roof contour, front and rear styling (brand identity and strength), wheel arches (sportiness), daylight opening line (elegance), and lower sill (solidity).
 
+<figure class="doc-figure">
+  <img src="docs/images/en/phil2-image.svg" alt="Three views and annotated feature lines" loading="lazy">
+  <figcaption><strong>Fig. 2-2 ｜ Three views and feature lines: where Form-layer intent lands</strong> How to read: front, side and top views are three orthogonal projections of the same 22-dimension parameter vector; the numbered lines in side view (greenhouse, shoulder, belt, wheel arch, rocker) form the skeleton. Read side view first for posture, then use front and top views to check symmetry and proportion — the higher a line sits, the more it decides whether the object reads as a car.</figcaption>
+</figure>
+
 ### 2.2 Logic — Engineering Constraints
 
 | Constraint domain | Core content |
@@ -91,7 +101,12 @@ Parameterized modeling chain: **22-dimension CarParams → parameterized feature
 
 The 22 parameters cover primary dimensions, section lengths, ground clearance, styling angles and radii, glass depth, and wheel and lighting details. Quality is precisely described through G0/G1/G2 continuity, reflection-line score, and an overall grade (A/B/C/D).
 
-> Form, Logic, and Mathematics are not three stages but three aspects of one thing: form without logic cannot be built; logic without mathematics cannot be transmitted; mathematics without form has no meaning.
+<figure class="doc-figure">
+  <img src="docs/images/en/phil2-graphic.svg" alt="G0 G1 G2 curvature-comb comparison" loading="lazy">
+  <figcaption><strong>Fig. 2-3 ｜ G0/G1/G2 continuity: reading surface quality from curvature combs</strong> How to read: the vertical teeth along each curve are curvature combs — longer teeth mean higher curvature. At the joint, how the teeth relate is the continuity order: G0 touches in position only and the comb snaps; G1 shares a tangent but the comb length jumps, so highlights crease; G2 carries the comb continuously and the reflection line stays unbroken. The dashed control polygons show how parameters rewrite curvature, which is what makes the Mathematics layer explainable.</figcaption>
+</figure>
+
+> Form, logic and mathematics are not three stages but three aspects of one thing: form without logic cannot be built; logic without mathematics cannot be transmitted; mathematics without form has no meaning.
 
 ---
 
@@ -179,6 +194,11 @@ Engineering delivery (STEP / GLB export, continuity-deviation report)
 ### 5.2 An Honest View of Quality
 
 The platform does not hide the shortcomings of raw geometry: an unsmoothed reference surface receives a D grade, which demonstrates that the quality standard is a genuine gate, not decoration. A parameterized body single-side mesh can show "good angular continuity (G2 ratio 0.855) but insufficient curvature uniformity (reflection line 0.158, overall C grade)" — a true intermediate state during styling convergence.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/phil2-legend.svg" alt="Visual encoding legend for this document" loading="lazy">
+  <figcaption><strong>Fig. 5-2 ｜ Legend: colour, line style, marker and threshold semantics</strong> How to read: in the left column colour maps to semantic layer (purple = Form, blue = Logic, green = Mathematics, amber = gates, pink = humanity, red = failure and fallback); the middle column separates main chain, data dependency, feedback/fallback and reference bounds by line style; the right column explains gate, observation, decision and parameter-bound markers plus the mm/deg/s/round units. All other figures share this encoding, so they can be cross-read.</figcaption>
+</figure>
 
 ### 5.3 The Hard-Point Philosophy
 

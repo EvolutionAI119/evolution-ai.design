@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#A78BFA"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Legend: audit states, colors and time scope</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Legend · States, Colors, Time Scope</text>
+
+  <!-- A States -->
+  <rect x="40" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">A · State markers</text>
+  <g font-size="10.5">
+    <text x="58" y="108" fill="#34D399" font-size="12" font-weight="700">✓</text><text x="82" y="108" fill="#94A3B8">Pass / compliant (tests, checks)</text>
+    <text x="58" y="130" fill="#FBBF24" font-size="12" font-weight="700">⚠</text><text x="82" y="130" fill="#94A3B8">Observed / pending (non-blocking)</text>
+    <text x="58" y="152" fill="#F87171" font-size="12" font-weight="700">✕</text><text x="82" y="152" fill="#94A3B8">Fail / defect (none this round)</text>
+    <text x="58" y="174" fill="#34D399" font-size="12" font-weight="700">●</text><text x="82" y="174" fill="#94A3B8">Healthy: service online / component usable</text>
+    <text x="58" y="196" fill="#A78BFA" font-size="12" font-weight="700">✓</text>
+    <line x1="56" y1="191" x2="72" y2="191" stroke="#A78BFA" stroke-width="1.4"/>
+    <text x="82" y="196" fill="#94A3B8">Strike + ✓ = done (backlog item closed)</text>
+  </g>
+
+  <!-- B Colors -->
+  <rect x="496" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">B · Color semantics</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="514" y="98" width="26" height="13" rx="3" fill="#34D399"/><text x="552" y="109">Pass / fixed (201, 70%)</text>
+    <rect x="514" y="120" width="26" height="13" rx="3" fill="#FBBF24"/><text x="552" y="131">Pending / observed (P1–P3 fixes)</text>
+    <rect x="514" y="142" width="26" height="13" rx="3" fill="#F87171"/><text x="552" y="153">Defect / below target (zero this round)</text>
+    <rect x="514" y="164" width="26" height="13" rx="3" fill="#38BDF8"/><text x="552" y="175">Metric / value (tests, pass rate)</text>
+    <rect x="514" y="186" width="26" height="13" rx="3" fill="#F472B6"/><text x="552" y="197">Archive / snapshot (_archive/)</text>
+  </g>
+
+  <!-- C Chart syntax -->
+  <rect x="40" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">C · Chart syntax</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="58" y="280" width="14" height="18" rx="2" fill="#38BDF8" opacity="0.8"/>
+    <text x="82" y="294">Bar = scale (tests / files)</text>
+    <circle cx="66" cy="322" r="10" fill="none" stroke="#38BDF8" stroke-width="4" stroke-dasharray="18 8"/>
+    <text x="82" y="326">Ring = composition (341 / 1 / 2)</text>
+    <line x1="58" y1="348" x2="86" y2="348" stroke="#94A3B8" stroke-width="1.5"/>
+    <polygon points="90,348 82,344 82,352" fill="#94A3B8"/>
+    <text x="100" y="352">Solid arrow = main flow (request → response)</text>
+    <line x1="58" y1="370" x2="82" y2="370" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <polygon points="90,370 82,366 82,374" fill="#A78BFA"/>
+    <text x="100" y="374">Dashed arrow = async / follow-up work</text>
+    <text x="58" y="394" fill="#64748B" font-size="10">A 100% stacked bar shows composition, not a time trend</text>
+  </g>
+
+  <!-- D Time scope -->
+  <rect x="496" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">D · Time scope (read this first)</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <text x="514" y="288"><tspan fill="#7DD3FC">Aug 9</tspan> full suite 201 / 201 (main evidence)</text>
+    <text x="514" y="310"><tspan fill="#7DD3FC">Aug 10</tspan> LLM 7 / 10 (70%, Q10 pending)</text>
+    <text x="514" y="332"><tspan fill="#7DD3FC">Oct 11</tspan> supplement 341 backend + 142 frontend</text>
+    <text x="514" y="354" fill="#A78BFA">Rule: snapshots are never rewritten; additions stand alone</text>
+    <text x="514" y="376">Hence 201 and 483 can coexist without contradiction</text>
+    <text x="514" y="396" fill="#64748B" font-size="10">Fig. 4-2 is labelled Oct 11 and is not an Aug 9 snapshot</text>
+  </g>
+
+  <text x="40" y="428" fill="#94A3B8" font-size="10">Applies to Fig. 1-1, 2-1, 4-1 to 4-3 and 7-1 to 7-6. Every value is copied from its chapter table.</text>
+  <text x="40" y="446" fill="#64748B" font-size="10">Note: amber in the defect table means low severity + pending fix, never failure; green means pass or already fixed.</text>
+</svg>

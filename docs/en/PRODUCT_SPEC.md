@@ -17,6 +17,11 @@ The platform also hosts:
 - **Engineering side**: CAD import/re-param, Class-A quality checks, multi-format export and data handover;
 - **Account side**: registration/login (password / WeChat), API-key management.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/prod2-image.svg" alt="Unified twelve-page workspace: parameter panel, 3D viewport and quality panel" loading="lazy">
+  <figcaption><strong>Fig. 1-1 ｜ The platform in one screen: parameter panel → 3D viewport → quality panel</strong> How to read: the sliders on the left are a visible slice of the 22-D CarParams, the vehicle profile in the centre is driven live by those parameters and can be orbited, and the right column shows quality readings of the same model (G2 continuity, reflection deviation, overall score); the twelve chips below map every routed page. The key point is that all three views share one model state — change a parameter and geometry and quality move together; there are never three copies of the data.</figcaption>
+</figure>
+
 ---
 
 ## 2. User Roles
@@ -46,6 +51,11 @@ The platform also hosts:
 5. **Bayesian search**: create a session → suggested parameters → score backfill → converge → export training samples.
 6. **Account and login**: register / password login / WeChat scan or official-account authorization; configure LLM-provider API keys in Account.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/prod2-diagram.svg" alt="Four-stage orchestration across pages, stores, API, routers and tables" loading="lazy">
+  <figcaption><strong>Fig. 3-2 ｜ Four-stage thin-shell orchestration: page → store → API → 19 route modules / 153 endpoints → 17 tables</strong> How to read: follow one click left to right through the five columns, then trace the three swimlanes to see the same orchestration on Designer, Quality and Deliver. Key takeaway: pages and stores hold no geometry logic; algorithms converge behind the routers into algorithm_model.</figcaption>
+</figure>
+
 ---
 
 ## 4. Page Function Definitions
@@ -67,6 +77,11 @@ The AI parameterized designer and core workbench:
   - `evaluateQuality` styling-parameter quality evaluation;
   - `generateDesign` generative design;
   - `optimize` parameter optimization.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/prod2-graphic.svg" alt="Parametric body proportions and dimension bounds" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ Parametric proportions: one 22-field CarParams vector drives mesh, NURBS, quality and export</strong> How to read: amber dimension lines mark hard parameter bounds (length 4000–6200, wheelbase 2400–3700, overhangs and ground clearance); compare the green generated profile with the purple alternative; the four rows on the right show how one vector feeds four consumers with no second mesh-to-NURBS fit.</figcaption>
+</figure>
 
 ### 4.3 Projects (`/projects`)
 
@@ -153,6 +168,11 @@ Function demonstration: fetch body parameters (`carAPI.getParameters`), generate
 | Knowledge base | Parameters and design-language metadata for 5 brands and 19 models, semantic queries and similarity retrieval |
 | Graph & Help | 3D graph (12 docs / 4 layers / logical links), module manual, doc-system overview, inline Markdown reading |
 
+<figure class="doc-figure">
+  <img src="docs/images/en/prod2-chart.svg" alt="Platform structural scale and 955-case test baseline" loading="lazy">
+  <figcaption><strong>Fig. 5-1 ｜ Platform scale and the 955-case test baseline</strong> How to read: the left panel compares 153 endpoints, 19 route modules, 17 tables and 12 pages by order of magnitude; the right panel splits 955 cases into algorithm 205, backend 388 and frontend 362. Key takeaway: endpoint density far exceeds page count (~12.8 per page), while backend plus frontend tests total 750 cases (78.5%), matching verification depth to feature breadth.</figcaption>
+</figure>
+
 ---
 
 ## 6. Non-Functional Requirements
@@ -162,6 +182,11 @@ Function demonstration: fetch body parameters (`carAPI.getParameters`), generate
 - **Security**: JWT auth, Fernet API-key encryption, production SECRET_KEY fail-fast, unified security headers and CORS allow-list (see architecture doc).
 - **Observability**: frontend request/response logging; persisted training-task progress, metrics, and logs.
 - **Deployment adaptability**: local development (Vite/FastAPI/cpolar) and Docker Compose production.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/prod2-legend.svg" alt="Legend for capability sides, runtime states and scale grades" loading="lazy">
+  <figcaption><strong>Fig. 6-1 ｜ Platform legend: colour = capability side, line/dot = runtime state, number = scale and grade</strong> How to read: for any module or status marker, use colour to place it on the design, intelligence, engineering or account side, then line style to tell a real call from mock fallback or explicit 503 degradation, then the number for scale and A–D / G0–G2 grade. Red only means an honest problem report, never system failure.</figcaption>
+</figure>
 
 ---
 

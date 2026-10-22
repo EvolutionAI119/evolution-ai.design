@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <marker id="arch2l-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34D399"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="518" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#38BDF8"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Five-layer architecture: top-down dependencies, bottom-up capabilities</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Layered Stack</text>
+
+  <!-- L1 -->
+  <g>
+    <polygon points="190,100 260,74 780,74 710,100" fill="#103048" stroke="#38BDF8" stroke-opacity=".7"/>
+    <polygon points="710,100 780,74 780,136 710,162" fill="#0B1826" stroke="#38BDF8" stroke-opacity=".7"/>
+    <rect x="190" y="100" width="520" height="62" rx="8" fill="#0E1E2E" stroke="#38BDF8"/>
+    <text x="48" y="130" fill="#38BDF8" font-size="15" font-weight="700">L1</text>
+    <text x="48" y="150" fill="#94A3B8" font-size="10.5">Frontend</text>
+    <text x="210" y="124" fill="#7DD3FC" font-size="12.5" font-weight="700">Frontend · Vue 3 SPA</text>
+    <text x="690" y="124" fill="#64748B" font-size="10" text-anchor="end">Hash routing</text>
+    <text x="210" y="145" fill="#94A3B8" font-size="10">Vue 3 + Vite + Three.js · Element Plus · Pinia · 12 pages · bilingual i18n</text>
+  </g>
+  <!-- L2 -->
+  <g>
+    <polygon points="190,172 260,146 780,146 710,172" fill="#3A1A2C" stroke="#F472B6" stroke-opacity=".7"/>
+    <polygon points="710,172 780,146 780,208 710,234" fill="#1F0F18" stroke="#F472B6" stroke-opacity=".7"/>
+    <rect x="190" y="172" width="520" height="62" rx="8" fill="#2A1420" stroke="#F472B6"/>
+    <text x="48" y="202" fill="#F472B6" font-size="15" font-weight="700">L2</text>
+    <text x="48" y="222" fill="#94A3B8" font-size="10.5">Gateway</text>
+    <text x="210" y="196" fill="#F9A8D4" font-size="12.5" font-weight="700">Gateway · proxy and tunnel</text>
+    <text x="690" y="196" fill="#64748B" font-size="10" text-anchor="end">HTTP/JSON</text>
+    <text x="210" y="217" fill="#94A3B8" font-size="10">Vite proxy / Nginx · /api/v1 → FastAPI:8000 · cpolar HTTPS tunnel</text>
+  </g>
+  <!-- L3 -->
+  <g>
+    <polygon points="190,244 260,218 780,218 710,244" fill="#123528" stroke="#34D399" stroke-opacity=".7"/>
+    <polygon points="710,244 780,218 780,280 710,306" fill="#0B1A14" stroke="#34D399" stroke-opacity=".7"/>
+    <rect x="190" y="244" width="520" height="62" rx="8" fill="#0F241C" stroke="#34D399"/>
+    <text x="48" y="274" fill="#34D399" font-size="15" font-weight="700">L3</text>
+    <text x="48" y="294" fill="#94A3B8" font-size="10.5">Backend</text>
+    <text x="210" y="268" fill="#6EE7B7" font-size="12.5" font-weight="700">Backend services · FastAPI</text>
+    <text x="690" y="268" fill="#64748B" font-size="10" text-anchor="end">JWT · RBAC</text>
+    <text x="210" y="289" fill="#94A3B8" font-size="10">FastAPI 0.104 + Pydantic v2 · 19 route modules / 153 endpoints · thin shell</text>
+  </g>
+  <!-- L4 -->
+  <g>
+    <polygon points="190,316 260,290 780,290 710,316" fill="#3A2A12" stroke="#FBBF24" stroke-opacity=".7"/>
+    <polygon points="710,316 780,290 780,352 710,378" fill="#1F1309" stroke="#FBBF24" stroke-opacity=".7"/>
+    <rect x="190" y="316" width="520" height="62" rx="8" fill="#2A1A0E" stroke="#FBBF24"/>
+    <text x="48" y="346" fill="#FBBF24" font-size="15" font-weight="700">L4</text>
+    <text x="48" y="366" fill="#94A3B8" font-size="10.5">Algorithm</text>
+    <text x="210" y="340" fill="#FCD34D" font-size="12.5" font-weight="700">Algorithm · algorithm_model (standalone)</text>
+    <text x="690" y="340" fill="#64748B" font-size="10" text-anchor="end">Zero framework deps</text>
+    <text x="210" y="361" fill="#94A3B8" font-size="10">car_modeling / freeform / surface_quality / storyboard · Cython accelerated</text>
+  </g>
+  <!-- L5 -->
+  <g>
+    <polygon points="190,388 260,362 780,362 710,388" fill="#241A40" stroke="#A78BFA" stroke-opacity=".7"/>
+    <polygon points="710,388 780,362 780,424 710,450" fill="#130D24" stroke="#A78BFA" stroke-opacity=".7"/>
+    <rect x="190" y="388" width="520" height="62" rx="8" fill="#1A1230" stroke="#A78BFA"/>
+    <text x="48" y="418" fill="#A78BFA" font-size="15" font-weight="700">L5</text>
+    <text x="48" y="438" fill="#94A3B8" font-size="10.5">Infrastructure</text>
+    <text x="210" y="412" fill="#C4B5FD" font-size="12.5" font-weight="700">Infrastructure · data and storage</text>
+    <text x="690" y="412" fill="#64748B" font-size="10" text-anchor="end">Docker Compose</text>
+    <text x="210" y="433" fill="#94A3B8" font-size="10">SQLite + SQLAlchemy 2.0 · 17 ORM tables · file storage · optional Redis</text>
+  </g>
+
+  <line x1="900" y1="84" x2="900" y2="452" stroke="#34D399" stroke-width="1.6" marker-end="url(#arch2l-ar)"/>
+  <text x="922" y="268" fill="#64748B" font-size="10" text-anchor="middle" transform="rotate(90 922 268)">Request / data flow</text>
+
+  <text x="40" y="482" fill="#94A3B8" font-size="10">The stack expresses layering and dependency, not physical deployment; L1→L3 uses HTTP/JSON, L3→L4 function calls, L3→L5 ORM.</text>
+  <text x="40" y="502" fill="#64748B" font-size="10">Rule: upper layers may depend on lower ones, never the reverse; L4 has zero framework dependencies and runs standalone.</text>
+</svg>

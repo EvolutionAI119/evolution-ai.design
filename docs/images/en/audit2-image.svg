@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="478" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#F472B6"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Audit floor, Aug 9–10: cleanup, tests, tuning, containers</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Audit Floor · Four Workstreams</text>
+
+  <text x="40" y="56" fill="#94A3B8" font-size="10.5">2026-08-09 ~ 08-10 · 139 files changed · 76 insertions / 33,974 deletions</text>
+  <text x="920" y="56" fill="#64748B" font-size="10.5" text-anchor="end">commit c6a65af3 · v1.01-reconstruct</text>
+
+  <!-- Archive boxes -->
+  <g>
+    <rect x="60" y="240" width="150" height="52" rx="6" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="76" y="262" fill="#94A3B8" font-size="10">_archive/</text>
+    <text x="76" y="280" fill="#64748B" font-size="9.5">old scripts / builds</text>
+    <rect x="60" y="182" width="150" height="52" rx="6" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="76" y="204" fill="#94A3B8" font-size="10">Historical reports</text>
+    <text x="76" y="222" fill="#64748B" font-size="9.5">W1–W4 · M2.5</text>
+    <rect x="60" y="124" width="150" height="52" rx="6" fill="#2A1420" stroke="#F472B6"/>
+    <text x="76" y="146" fill="#F9A8D4" font-size="10" font-weight="700">Archived 80+ files</text>
+    <text x="76" y="164" fill="#94A3B8" font-size="9.5">137 deleted / 2 modified</text>
+    <path d="M52 124 L60 132 L68 124" fill="none" stroke="#F472B6" stroke-width="1.2"/>
+  </g>
+
+  <!-- Test monitor -->
+  <rect x="240" y="100" width="340" height="222" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+  <rect x="240" y="100" width="340" height="26" rx="9" fill="#0B101A" stroke="#1E2A3A"/>
+  <circle cx="256" cy="113" r="3.5" fill="#F87171"/><circle cx="268" cy="113" r="3.5" fill="#FBBF24"/><circle cx="280" cy="113" r="3.5" fill="#34D399"/>
+  <text x="566" y="117" fill="#64748B" font-size="9" text-anchor="end">terminal</text>
+  <rect x="252" y="134" width="316" height="176" rx="6" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="268" y="156" fill="#64748B" font-size="10">$ pytest -q</text>
+  <text x="268" y="188" fill="#6EE7B7" font-size="24" font-weight="700">201 passed</text>
+  <text x="268" y="208" fill="#94A3B8" font-size="9.5">9 warnings · 0 failed · 0 skipped</text>
+  <text x="268" y="232" fill="#64748B" font-size="9.5">17 components · 33 surfaces</text>
+  <text x="268" y="250" fill="#64748B" font-size="9.5">SOP 13 checks · 183 records · 67 automated</text>
+  <text x="268" y="268" fill="#64748B" font-size="9.5">79% automation pass · 9 warnings unrelated</text>
+  <rect x="268" y="282" width="120" height="6" rx="3" fill="#1E2A3A"/>
+  <rect x="268" y="282" width="120" height="6" rx="3" fill="#34D399" opacity="0.55"/>
+  <text x="398" y="290" fill="#64748B" font-size="9">Aug 9 full run</text>
+
+  <!-- Q&A card -->
+  <rect x="610" y="100" width="300" height="104" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="626" y="122" fill="#E2E8F0" font-size="11" font-weight="700">AI expert Q&amp;A (tuned + RAG)</text>
+  <text x="626" y="144" fill="#6EE7B7" font-size="10">Q1 G1 definition → 4/4 PASS</text>
+  <text x="626" y="164" fill="#6EE7B7" font-size="10">Q3 body↔bumper → 2/2 PASS</text>
+  <text x="626" y="184" fill="#94A3B8" font-size="10">10-question benchmark: 7 / 10 (70%)</text>
+  <path d="M626 192 L626 200 L618 192" fill="#131C2A" stroke="#1E2A3A"/>
+
+  <!-- Container blocks -->
+  <g>
+    <rect x="610" y="220" width="300" height="38" rx="7" fill="#0B101A" stroke="#38BDF8"/>
+    <rect x="622" y="230" width="18" height="18" rx="3" fill="#0E1E2E" stroke="#38BDF8"/>
+    <text x="650" y="244" fill="#7DD3FC" font-size="10">Dockerfile.llm</text>
+    <text x="890" y="244" fill="#64748B" font-size="9" text-anchor="end">torch CPU</text>
+    <rect x="610" y="266" width="300" height="38" rx="7" fill="#0B101A" stroke="#1E2A3A"/>
+    <rect x="622" y="276" width="18" height="18" rx="3" fill="#0E1E2E" stroke="#38BDF8"/>
+    <text x="650" y="290" fill="#94A3B8" font-size="10">docker-compose.llm.yml</text>
+    <text x="890" y="290" fill="#64748B" font-size="9" text-anchor="end">mount model</text>
+    <rect x="610" y="312" width="300" height="38" rx="7" fill="#0B101A" stroke="#1E2A3A"/>
+    <rect x="622" y="322" width="18" height="18" rx="3" fill="#0E1E2E" stroke="#38BDF8"/>
+    <text x="650" y="336" fill="#94A3B8" font-size="10">docker-llm.ps1</text>
+    <text x="890" y="336" fill="#64748B" font-size="9" text-anchor="end">up / test / down</text>
+  </g>
+
+  <!-- Metric chips -->
+  <g>
+    <rect x="40" y="370" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="54" y="388" fill="#94A3B8" font-size="10">Unit tests</text>
+    <text x="54" y="406" fill="#6EE7B7" font-size="12" font-weight="700">201 / 201 pass</text>
+    <rect x="270" y="370" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="284" y="388" fill="#94A3B8" font-size="10">Archived files</text>
+    <text x="284" y="406" fill="#F9A8D4" font-size="12" font-weight="700">~80+ → _archive/</text>
+    <rect x="500" y="370" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="514" y="388" fill="#94A3B8" font-size="10">LLM benchmark</text>
+    <text x="514" y="406" fill="#7DD3FC" font-size="12" font-weight="700">7 / 10 (70%)</text>
+    <rect x="730" y="370" width="210" height="42" rx="8" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="744" y="388" fill="#94A3B8" font-size="10">Model and RAG</text>
+    <text x="744" y="406" fill="#C4B5FD" font-size="12" font-weight="700">494M · 20 blocks</text>
+  </g>
+
+  <text x="40" y="446" fill="#64748B" font-size="10">How to read: archive boxes at left, the Aug-9 full test run on the monitor, post-fix Q&amp;A at top right, container deliverables at bottom right — four lines inside one audit window.</text>
+  <text x="40" y="464" fill="#64748B" font-size="10">Note: 201 and 70% are the 2026-08-09~10 snapshot; the Oct-11 supplement is Fig. 4-2 and this section is not rewritten.</text>
+</svg>

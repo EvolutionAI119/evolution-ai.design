@@ -208,6 +208,16 @@ E = P_base / P_悬停 ≥ 3    （同电量续航倍数，六车型预设达标�
 
 注：360° 全周转向时长全部为 15.0 s（45°/s 舒适限恒定）；19 款品牌车型按所属车型类别继承同款预设，显式覆盖优先。
 
+<figure class="doc-figure">
+  <img src="docs/images/flight2-image.svg" alt="六车型悬浮姿态全景（sedan 悬浮点）" loading="lazy">
+  <figcaption><strong>图 9 ｜ 六车型悬浮姿态全景（sedan 悬浮点）</strong>读图：绿色虚线为场维持能量场，蓝色四环为升力风扇；sport 标琥珀色——场份额 0.688 未顶格，因此续航最低，这正是模型自洽的证据。</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/flight2-legend.svg" alt="图例：本报告图表的符号、线型与阈值" loading="lazy">
+  <figcaption><strong>图 10 ｜ 图例：本报告图表的符号、线型与阈值</strong>读图：先读 A 线型与 C 判定，再看 D 阈值；琥珀色始终表示「达标但余量偏小」，不表示失败。</figcaption>
+</figure>
+
 ## 09 公网实测记录（2026-10-16）
 
 部署完成后按强制校验流程，经浏览器自动化代理在公网环境 `https://evolution-ai.design/?v=ag2#/designer`（cache-busting）完成 **7/7 项**全流程测试：

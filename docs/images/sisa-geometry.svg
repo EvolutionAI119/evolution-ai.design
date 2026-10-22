@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <defs>
+    <linearGradient id="sisa-geo-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34D399" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#38BDF8" stop-opacity=".08"/>
+    </linearGradient>
+    <marker id="sisa-geo-dim" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#FBBF24"/></marker>
+  </defs>
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">几何构造：轮拱开口、三圆同心与触地关系</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Geometry Construction</text>
+
+  <!-- 左：后轮局部 -->
+  <rect x="24" y="56" width="576" height="340" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="44" y="80" fill="#7DD3FC" font-size="12.5" font-weight="700">后轮区域放大（示意）</text>
+  <text x="580" y="80" fill="#64748B" font-size="9" text-anchor="end">画布坐标</text>
+
+  <!-- 车身 -->
+  <path d="M110 340 L216 340 Q300 247 384 340 L500 340 L500 270 Q500 258 488 256 L430 252 Q420 250 412 242 L360 200 Q352 194 342 194 L248 194 Q238 194 232 202 L200 240 Q194 246 184 248 L120 254 Q110 256 110 266 Z"
+        fill="url(#sisa-geo-body)" stroke="#34D399" stroke-width="1.8"/>
+  <!-- 轮拱轮廓 -->
+  <path d="M216 340 Q300 247 384 340" fill="none" stroke="#6EE7B7" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <!-- 轮胎三圆 -->
+  <circle cx="300" cy="300" r="80" fill="#0B101A" stroke="#E2E8F0" stroke-width="2.2"/>
+  <circle cx="300" cy="300" r="46" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+  <circle cx="300" cy="300" r="10" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+  <circle cx="300" cy="300" r="2.5" fill="#94A3B8"/>
+  <!-- 地面 -->
+  <line x1="60" y1="380" x2="580" y2="380" stroke="#475569" stroke-width="1.4"/>
+  <text x="66" y="394" fill="#64748B" font-size="9">groundY = 364（800×420 画布）· z = 0</text>
+
+  <!-- 半径标注 -->
+  <line x1="300" y1="300" x2="380" y2="300" stroke="#FBBF24" stroke-width="1.2" marker-end="url(#sisa-geo-dim)"/>
+  <text x="340" y="294" fill="#FCD34D" font-size="9.5" text-anchor="middle">r</text>
+  <line x1="300" y1="300" x2="346" y2="300" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="300" y="322" fill="#94A3B8" font-size="9" text-anchor="middle">0.58r</text>
+  <text x="300" y="340" fill="#64748B" font-size="8.5" text-anchor="middle">0.12r</text>
+  <line x1="300" y1="300" x2="300" y2="380" stroke="#F87171" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="392" y="374" fill="#FCA5A5" font-size="8.5">轮胎最低点 = 地面</text>
+
+  <!-- 离地间隙 -->
+  <line x1="520" y1="340" x2="520" y2="380" stroke="#FBBF24" stroke-width="1.2" marker-start="url(#sisa-geo-dim)" marker-end="url(#sisa-geo-dim)"/>
+  <text x="530" y="364" fill="#FCD34D" font-size="9.5">gc</text>
+  <text x="530" y="378" fill="#64748B" font-size="8.5">车底 = 364 − gc</text>
+
+  <!-- 弦长 -->
+  <line x1="216" y1="340" x2="384" y2="340" stroke="#38BDF8" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <circle cx="216" cy="340" r="3" fill="#38BDF8"/><circle cx="384" cy="340" r="3" fill="#38BDF8"/>
+  <text x="392" y="356" fill="#7DD3FC" font-size="9">弦长 = 2√(R_arch² − gc²)</text>
+
+  <!-- 轮拱半径 -->
+  <line x1="300" y1="300" x2="356" y2="244" stroke="#F472B6" stroke-width="1.2" marker-end="url(#sisa-geo-dim)"/>
+  <text x="362" y="240" fill="#F9A8D4" font-size="9">R_arch = 1.16r</text>
+
+  <!-- 右：关系卡 -->
+  <rect x="624" y="56" width="312" height="340" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="642" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">闭合关系</text>
+  <g font-size="9.5">
+    <text x="642" y="104" fill="#CBD5E1">① 三圆同心</text>
+    <text x="642" y="120" fill="#64748B" font-size="9">轮胎 r · 轮辋 0.58r · 轮毂 0.12r</text>
+    <text x="642" y="144" fill="#CBD5E1">② 轮拱开口</text>
+    <text x="642" y="160" fill="#64748B" font-size="9">R_arch = r×1.16，圆心与轮心重合</text>
+    <text x="642" y="176" fill="#64748B" font-size="9">端点 = cx ± √(R_arch² − gc²)，越界即钳位</text>
+    <text x="642" y="200" fill="#CBD5E1">③ 垂直关系</text>
+    <text x="642" y="216" fill="#64748B" font-size="9">wheelCY = groundY − r</text>
+    <text x="642" y="232" fill="#64748B" font-size="9">bodyBottom = groundY − gc</text>
+    <text x="642" y="248" fill="#64748B" font-size="9">车底永远高于地面，车轮永远触地</text>
+    <text x="642" y="272" fill="#CBD5E1">④ 描边</text>
+    <text x="642" y="288" fill="#64748B" font-size="9">vector-effect = non-scaling-stroke</text>
+  </g>
+  <line x1="642" y1="302" x2="918" y2="302" stroke="#1E2A3A"/>
+  <text x="642" y="322" fill="#94A3B8" font-size="9.5">比例尺（以 r 为单位）</text>
+  <rect x="642" y="332" width="276" height="10" rx="3" fill="#0B101A" stroke="#1E2A3A"/>
+  <rect x="642" y="332" width="33" height="10" rx="3" fill="#94A3B8"/>
+  <rect x="642" y="332" width="160" height="10" rx="3" fill="#38BDF8" opacity=".55"/>
+  <g font-size="8.5" fill="#64748B">
+    <text x="642" y="356">0</text>
+    <text x="675" y="356">0.12r</text>
+    <text x="802" y="356">0.58r</text>
+    <text x="918" y="356" text-anchor="end">1.00r</text>
+  </g>
+  <text x="642" y="378" fill="#475569" font-size="8.5">轮毂 / 轮辋 / 轮胎三层按固定比例缩放。</text>
+
+  <text x="24" y="416" fill="#94A3B8" font-size="10.5">读图：轮拱不是另一条独立曲线，而是以轮心为圆心、1.16r 为半径的圆与车底直线的交；弦长公式决定开口宽度，gc 决定开口深度。</text>
+  <text x="24" y="436" fill="#64748B" font-size="10">关键结论：轮胎最低点对齐地面、车底抬高 gc、三圆同心——三者同时成立，才不会出现「悬浮小圆 + 贴地小弧」。</text>
+</svg>

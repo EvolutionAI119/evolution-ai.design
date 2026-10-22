@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="468" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">贝叶斯寻优的收敛量化：评分平台期与 EI 衰减</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Convergence: best-score plateau and EI decay</text>
+
+  <!-- 左图：收敛轨迹 -->
+  <rect x="24" y="46" width="456" height="352" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="44" y="72" fill="#E2E8F0" font-size="12.5" font-weight="700">最优评分 vs 轮次（单调不降）</text>
+  <text x="44" y="90" fill="#64748B" font-size="10">Best score per round · maximize</text>
+
+  <!-- 网格与坐标轴 -->
+  <g stroke="#1E2A3A" stroke-width="1">
+    <line x1="62" y1="340" x2="452" y2="340"/>
+    <line x1="62" y1="292" x2="452" y2="292"/>
+    <line x1="62" y1="244" x2="452" y2="244"/>
+    <line x1="62" y1="196" x2="452" y2="196"/>
+    <line x1="62" y1="148" x2="452" y2="148"/>
+    <line x1="62" y1="100" x2="452" y2="100"/>
+  </g>
+  <g fill="#64748B" font-size="10" text-anchor="end">
+    <text x="56" y="344">70</text>
+    <text x="56" y="296">75</text>
+    <text x="56" y="248">80</text>
+    <text x="56" y="200">85</text>
+    <text x="56" y="152">90</text>
+    <text x="56" y="104">95</text>
+  </g>
+  <g fill="#64748B" font-size="10" text-anchor="middle">
+    <text x="62" y="358">0</text>
+    <text x="159.5" y="358">10</text>
+    <text x="257" y="358">20</text>
+    <text x="354.5" y="358">30</text>
+    <text x="452" y="358">40</text>
+  </g>
+  <text x="452" y="376" fill="#64748B" font-size="10" text-anchor="end">迭代轮次 Round</text>
+
+  <!-- 收敛带（视觉放大，注明） -->
+  <rect x="257" y="130" width="195" height="16" rx="3" fill="#34D399" fill-opacity="0.14"/>
+  <text x="257" y="124" fill="#34D399" font-size="9.5">平台期判据 Δ&lt;0.01（纵向视觉放大）</text>
+
+  <!-- 收敛曲线 -->
+  <polyline points="62,320.8 110.75,263.2 159.5,215.2 208.25,172 257,149.9 305.75,142.2 354.5,138.4 403.25,137.4 452,137.2"
+            fill="none" stroke="#34D399" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <g fill="#0F1622" stroke="#34D399" stroke-width="1.8">
+    <circle cx="62" cy="320.8" r="3.6"/>
+    <circle cx="110.75" cy="263.2" r="3.6"/>
+    <circle cx="159.5" cy="215.2" r="3.6"/>
+    <circle cx="208.25" cy="172" r="3.6"/>
+    <circle cx="257" cy="149.9" r="3.6"/>
+    <circle cx="305.75" cy="142.2" r="3.6"/>
+    <circle cx="354.5" cy="138.4" r="3.6"/>
+    <circle cx="403.25" cy="137.4" r="3.6"/>
+    <circle cx="452" cy="137.2" r="3.6"/>
+  </g>
+  <text x="430" y="128" fill="#E2E8F0" font-size="10" text-anchor="end">91.15</text>
+
+  <!-- 右图：EI 衰减 -->
+  <rect x="480" y="46" width="456" height="352" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="500" y="72" fill="#E2E8F0" font-size="12.5" font-weight="700">EI 采集值 vs 轮次（对数式衰减）</text>
+  <text x="500" y="90" fill="#64748B" font-size="10">Expected Improvement · threshold 0.01</text>
+
+  <g stroke="#1E2A3A" stroke-width="1">
+    <line x1="520" y1="340" x2="910" y2="340"/>
+    <line x1="520" y1="286.7" x2="910" y2="286.7"/>
+    <line x1="520" y1="233.3" x2="910" y2="233.3"/>
+    <line x1="520" y1="180" x2="910" y2="180"/>
+    <line x1="520" y1="126.7" x2="910" y2="126.7"/>
+    <line x1="520" y1="100" x2="910" y2="100"/>
+  </g>
+  <g fill="#64748B" font-size="10" text-anchor="end">
+    <text x="514" y="344">0</text>
+    <text x="514" y="290.7">0.08</text>
+    <text x="514" y="237.3">0.16</text>
+    <text x="514" y="184">0.24</text>
+    <text x="514" y="130.7">0.32</text>
+  </g>
+  <g fill="#64748B" font-size="10" text-anchor="middle">
+    <text x="520" y="358">0</text>
+    <text x="617.5" y="358">10</text>
+    <text x="715" y="358">20</text>
+    <text x="812.5" y="358">30</text>
+    <text x="910" y="358">40</text>
+  </g>
+  <text x="910" y="376" fill="#64748B" font-size="10" text-anchor="end">迭代轮次 Round</text>
+
+  <!-- 阈值线 -->
+  <line x1="520" y1="333.3" x2="910" y2="333.3" stroke="#F472B6" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="906" y="328" fill="#F472B6" font-size="9.5" text-anchor="end">阈值 0.01（停止有效探索）</text>
+
+  <!-- EI 曲线 -->
+  <polyline points="520,113.3 568.75,206.7 617.5,266.7 666.25,303.3 715,320 763.75,328 812.5,332 861.25,334.7 910,336"
+            fill="none" stroke="#F472B6" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <g fill="#0F1622" stroke="#F472B6" stroke-width="1.8">
+    <circle cx="520" cy="113.3" r="3.4"/>
+    <circle cx="568.75" cy="206.7" r="3.4"/>
+    <circle cx="617.5" cy="266.7" r="3.4"/>
+    <circle cx="666.25" cy="303.3" r="3.4"/>
+    <circle cx="715" cy="320" r="3.4"/>
+    <circle cx="763.75" cy="328" r="3.4"/>
+    <circle cx="812.5" cy="332" r="3.4"/>
+    <circle cx="861.25" cy="334.7" r="3.4"/>
+    <circle cx="910" cy="336" r="3.4"/>
+  </g>
+
+  <!-- 图例 -->
+  <g font-size="10.5">
+    <line x1="44" y1="424" x2="74" y2="424" stroke="#34D399" stroke-width="2.4"/>
+    <text x="82" y="428" fill="#94A3B8">最优评分（单调不降）</text>
+    <line x1="246" y1="424" x2="276" y2="424" stroke="#F472B6" stroke-width="2.4"/>
+    <text x="284" y="428" fill="#94A3B8">EI 采集值</text>
+    <line x1="386" y1="424" x2="416" y2="424" stroke="#F472B6" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <text x="424" y="428" fill="#94A3B8">0.01 阈值</text>
+    <rect x="546" y="416" width="16" height="12" rx="3" fill="#34D399" fill-opacity="0.14"/>
+    <text x="570" y="428" fill="#94A3B8">Δ&lt;0.01 收敛带（视觉放大）</text>
+  </g>
+  <text x="44" y="450" fill="#64748B" font-size="9.5">说明：曲线基于默认 14 维参数空间与 EI 采集函数的行为示意；评分区间与平台质量分 0–100 对齐。</text>
+</svg>

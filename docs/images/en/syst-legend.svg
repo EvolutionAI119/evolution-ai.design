@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="428" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#A78BFA"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">Workshop Legend: Three Systems, Decision Rights, Signals</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Legend</text>
+
+  <rect x="40" y="56" width="286" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="56" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Shape/colour = system</text>
+  <g font-size="10.5">
+    <circle cx="68" cy="102" r="9" fill="#38BDF8" opacity=".85"/><text x="88" y="106" fill="#CBD5E1">Expert system</text>
+    <text x="88" y="121" fill="#64748B" font-size="9">designers, quality engineers + LLM</text>
+    <text x="88" y="135" fill="#64748B" font-size="9">source and final arbiter of the qualitative</text>
+    <rect x="61" y="152" width="16" height="16" rx="4" fill="#34D399" opacity=".85"/><text x="88" y="165" fill="#CBD5E1">Machine system</text>
+    <text x="88" y="180" fill="#64748B" font-size="9">Bayesian engine, PyTorch, CLIP, render</text>
+    <text x="88" y="194" fill="#64748B" font-size="9">massive exploration and exact computation</text>
+    <path d="M68 220 L77 214 L86 220 L86 232 L77 238 L68 232 Z" fill="#A78BFA" opacity=".85"/><text x="96" y="230" fill="#CBD5E1">Knowledge system</text>
+    <text x="96" y="245" fill="#64748B" font-size="9">12+ doc graph, brand and texture libraries</text>
+    <text x="96" y="259" fill="#64748B" font-size="9">storage, retrieval, activation of experience</text>
+  </g>
+  <line x1="56" y1="276" x2="310" y2="276" stroke="#1E2A3A"/>
+  <text x="56" y="296" fill="#94A3B8" font-size="9.5">Shape, not only colour, separates systems</text>
+  <text x="56" y="310" fill="#64748B" font-size="9">so they survive black-and-white printing.</text>
+  <text x="56" y="334" fill="#475569" font-size="9.5">"Human-led" = the circle stays in the loop.</text>
+
+  <rect x="352" y="56" width="286" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="368" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Line = who decides</text>
+  <g font-size="10.5">
+    <line x1="370" y1="104" x2="418" y2="104" stroke="#38BDF8" stroke-width="2.2" marker-end="url(#systl-ar1-en)"/>
+    <text x="432" y="108" fill="#CBD5E1">Human adjudicates</text>
+    <text x="432" y="122" fill="#64748B" font-size="9">final trade-off and value judgment</text>
+    <line x1="370" y1="146" x2="418" y2="146" stroke="#94A3B8" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#systl-ar2-en)"/>
+    <text x="432" y="150" fill="#CBD5E1">Machine suggests</text>
+    <text x="432" y="164" fill="#64748B" font-size="9">adopt, reject, but always record</text>
+    <line x1="370" y1="188" x2="418" y2="188" stroke="#F87171" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <text x="432" y="192" fill="#CBD5E1">Explicit degradation (503)</text>
+    <text x="432" y="206" fill="#64748B" font-size="9">report absence, never fabricate it</text>
+  </g>
+  <line x1="368" y1="220" x2="622" y2="220" stroke="#1E2A3A"/>
+  <text x="368" y="238" fill="#E2E8F0" font-size="11" font-weight="600">Dot = signal state</text>
+  <circle cx="380" cy="256" r="6.5" fill="#34D399"/><text x="398" y="260" fill="#CBD5E1" font-size="9.5">Valid observation (observed)</text>
+  <circle cx="380" cy="280" r="6.5" fill="none" stroke="#64748B" stroke-width="1.6"/><text x="398" y="284" fill="#CBD5E1" font-size="9.5">Missing / not observed / reverted</text>
+  <path d="M374 300 L386 300 M380 294 L380 312" stroke="#F87171" stroke-width="1.6"/><text x="398" y="308" fill="#CBD5E1" font-size="9.5">Unavailable (gate or dependency)</text>
+  <text x="368" y="334" fill="#475569" font-size="9">Solid = evidence exists; hollow = none.</text>
+
+  <rect x="664" y="56" width="272" height="300" rx="10" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="680" y="80" fill="#E2E8F0" font-size="12.5" font-weight="700">Thresholds and time scales</text>
+  <g font-size="10">
+    <text x="680" y="104" fill="#CBD5E1">Continuity gates</text>
+    <text x="680" y="120" fill="#64748B" font-size="9.5">G1 ≤ 5° · G2 ≤ 2° · position 0.1 mm</text>
+    <text x="680" y="140" fill="#CBD5E1">Overall grade</text>
+  </g>
+  <g font-size="10" font-weight="700">
+    <rect x="680" y="148" width="24" height="18" rx="4" fill="#0F241C" stroke="#34D399"/><text x="692" y="161" fill="#6EE7B7" text-anchor="middle">A</text>
+    <rect x="710" y="148" width="24" height="18" rx="4" fill="#0E1E2E" stroke="#38BDF8"/><text x="722" y="161" fill="#7DD3FC" text-anchor="middle">B</text>
+    <rect x="740" y="148" width="24" height="18" rx="4" fill="#2A1A0E" stroke="#FBBF24"/><text x="752" y="161" fill="#FCD34D" text-anchor="middle">C</text>
+    <rect x="770" y="148" width="24" height="18" rx="4" fill="#2A1016" stroke="#F87171"/><text x="782" y="161" fill="#FCA5A5" text-anchor="middle">D</text>
+  </g>
+  <line x1="680" y1="180" x2="920" y2="180" stroke="#1E2A3A"/>
+  <text x="680" y="200" fill="#CBD5E1" font-size="10">Two time scales</text>
+  <g>
+    <rect x="680" y="210" width="56" height="14" rx="3" fill="#F472B6" opacity=".8"/><text x="744" y="221" fill="#CBD5E1" font-size="9.5">sec–round (fast)</text>
+    <rect x="680" y="232" width="150" height="14" rx="3" fill="#A78BFA" opacity=".8"/><text x="840" y="243" fill="#CBD5E1" font-size="9.5">months–years (slow)</text>
+    <rect x="680" y="254" width="248" height="14" rx="3" fill="#64748B" opacity=".5"/><text x="680" y="284" fill="#CBD5E1" font-size="9.5">Longer bar = less allowed to drift per round.</text>
+  </g>
+  <line x1="680" y1="296" x2="920" y2="296" stroke="#1E2A3A"/>
+  <text x="680" y="314" fill="#64748B" font-size="9.5">22 dims · 14 searchable · 8 frozen</text>
+  <text x="680" y="330" fill="#475569" font-size="9">Thresholds encode consensus, not machines.</text>
+
+  <text x="40" y="380" fill="#64748B" font-size="10.5">How to read: system colour/shape first, then line style for who decides, then the signal dot for whether evidence exists.</text>
+  <text x="40" y="402" fill="#475569" font-size="10">Shared with the Fig. 8 series: human = blue, machine = green, knowledge = purple; red always means "honestly report a problem", not failure.</text>
+  <defs>
+    <marker id="systl-ar1-en" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#38BDF8"/></marker>
+    <marker id="systl-ar2-en" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#94A3B8"/></marker>
+  </defs>
+</svg>

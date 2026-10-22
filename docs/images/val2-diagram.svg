@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#F472B6"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">缺陷修复闭环：五项缺陷 → 489 用例全绿</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Defect-Fix Loop · 5 Defects to 489 Green</text>
+
+  <text x="40" y="56" fill="#94A3B8" font-size="10.5">2026-09-27 · 第 5 章缺陷表 · 每项均标注修复位置与验证方式</text>
+  <text x="920" y="56" fill="#64748B" font-size="10.5" text-anchor="end">发现 → 定位 → 修复 → 验证</text>
+
+  <!-- 五项缺陷 -->
+  <g>
+    <rect x="40" y="70" width="168" height="88" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="56" y="92" fill="#F87171" font-size="9.5" font-weight="700">D1</text>
+    <text x="56" y="112" fill="#E2E8F0" font-size="10.5" font-weight="700">统计字典漂移</text>
+    <text x="56" y="130" fill="#64748B" font-size="9.5">assembler.py</text>
+    <text x="56" y="146" fill="#64748B" font-size="9.5">缺 total_vertices</text>
+
+    <rect x="220" y="70" width="168" height="88" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="236" y="92" fill="#F87171" font-size="9.5" font-weight="700">D2</text>
+    <text x="236" y="112" fill="#E2E8F0" font-size="10.5" font-weight="700">夹具截面过时</text>
+    <text x="236" y="130" fill="#64748B" font-size="9.5">test_all.py</text>
+    <text x="236" y="146" fill="#64748B" font-size="9.5">8 顶点 box reshape</text>
+
+    <rect x="400" y="70" width="168" height="88" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="416" y="92" fill="#F87171" font-size="9.5" font-weight="700">D3</text>
+    <text x="416" y="112" fill="#E2E8F0" font-size="10.5" font-weight="700">构造顺序被打乱</text>
+    <text x="416" y="130" fill="#64748B" font-size="9.5">body.py</text>
+    <text x="416" y="146" fill="#64748B" font-size="9.5">新增 process 参数</text>
+
+    <rect x="580" y="70" width="168" height="88" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="596" y="92" fill="#F87171" font-size="9.5" font-weight="700">D4</text>
+    <text x="596" y="112" fill="#E2E8F0" font-size="10.5" font-weight="700">全流程运行即崩</text>
+    <text x="596" y="130" fill="#64748B" font-size="9.5">api.py</text>
+    <text x="596" y="146" fill="#64748B" font-size="9.5">8 顶点 → 49×25 网格</text>
+
+    <rect x="760" y="70" width="168" height="88" rx="9" fill="#131C2A" stroke="#1E2A3A"/>
+    <text x="776" y="92" fill="#F87171" font-size="9.5" font-weight="700">D5</text>
+    <text x="776" y="112" fill="#E2E8F0" font-size="10.5" font-weight="700">端点计数不一</text>
+    <text x="776" y="130" fill="#64748B" font-size="9.5">README / 架构 / API</text>
+    <text x="776" y="146" fill="#64748B" font-size="9.5">113 或 116 → 118</text>
+  </g>
+
+  <!-- 汇聚箭头 -->
+  <g stroke="#F87171" stroke-width="1.4" fill="none">
+    <line x1="124" y1="158" x2="124" y2="180"/>
+    <line x1="304" y1="158" x2="304" y2="180"/>
+    <line x1="484" y1="158" x2="484" y2="180"/>
+    <line x1="664" y1="158" x2="664" y2="180"/>
+    <line x1="844" y1="158" x2="844" y2="180"/>
+  </g>
+  <g fill="#F87171">
+    <polygon points="124,182 120,174 128,174"/>
+    <polygon points="304,182 300,174 308,174"/>
+    <polygon points="484,182 480,174 488,174"/>
+    <polygon points="664,182 660,174 668,174"/>
+    <polygon points="844,182 840,174 848,174"/>
+  </g>
+
+  <!-- 修复 -->
+  <rect x="40" y="184" width="888" height="60" rx="9" fill="#131C2A" stroke="#38BDF8"/>
+  <text x="56" y="206" fill="#7DD3FC" font-size="12" font-weight="700">修复：5 处源码改动</text>
+  <text x="56" y="228" fill="#94A3B8" font-size="9.5">返回 total_vertices · build_body(process=False) · process=True · 参数化单侧网格 · 端点统一 118</text>
+
+  <line x1="484" y1="244" x2="484" y2="258" stroke="#38BDF8" stroke-width="1.4"/>
+  <polygon points="484,260 480,252 488,252" fill="#38BDF8"/>
+
+  <!-- 验证 -->
+  <rect x="40" y="262" width="888" height="54" rx="9" fill="#131C2A" stroke="#34D399"/>
+  <text x="56" y="282" fill="#6EE7B7" font-size="12" font-weight="700">验证：四条证据链</text>
+  <text x="56" y="302" fill="#94A3B8" font-size="10">自检通过</text>
+  <text x="280" y="302" fill="#94A3B8" font-size="10">200 测试通过</text>
+  <text x="500" y="302" fill="#94A3B8" font-size="10">完整跑通</text>
+  <text x="700" y="302" fill="#94A3B8" font-size="10">装饰器逐文件复核</text>
+  <g stroke="#1E2A3A" stroke-width="1">
+    <line x1="250" y1="290" x2="250" y2="308"/>
+    <line x1="470" y1="290" x2="470" y2="308"/>
+    <line x1="670" y1="290" x2="670" y2="308"/>
+  </g>
+
+  <line x1="484" y1="316" x2="484" y2="330" stroke="#34D399" stroke-width="1.4"/>
+  <polygon points="484,332 480,324 488,324" fill="#34D399"/>
+
+  <!-- 结论 -->
+  <rect x="40" y="334" width="888" height="52" rx="9" fill="#0F241C" stroke="#34D399"/>
+  <text x="484" y="358" fill="#6EE7B7" font-size="14" font-weight="700" text-anchor="middle">复验结论：489 / 489 全绿 · 0 失败 · 0 跳过</text>
+  <text x="484" y="376" fill="#94A3B8" font-size="9.5" text-anchor="middle">三层合计 200 + 178 + 111；一站式自检 5 模块 7.13 s</text>
+
+  <text x="40" y="410" fill="#94A3B8" font-size="10">读法：上方五张卡片是当日缺陷，向下汇入同一修复带，再由四条证据链离场；闭环规则为「任一验证失败即回到定位重走」，本轮五项均一次通过。</text>
+  <text x="40" y="430" fill="#64748B" font-size="10">口径：200 / 178 / 111 为 2026-09-27 当日数字，与正文一致，不引入后续版本基线。</text>
+</svg>

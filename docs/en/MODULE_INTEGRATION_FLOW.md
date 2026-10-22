@@ -13,6 +13,11 @@ This report maps the functional correlation among the auth, training, and workfl
 
 Design principles: minimal credential exposure (the Token lives only in frontend memory/localStorage and request headers — never in logs); strict ownership checks (training outputs can only be submitted by their owner); non-bypassable review (the auto-execution channel explicitly rejects review-type workflows).
 
+<figure class="doc-figure">
+  <img src="docs/images/en/flow2-hero.svg" alt="Three-stage spine: authentication, credentialed training, output review" loading="lazy">
+  <figcaption><strong>Fig. 1-1 ｜ Three-stage spine: authentication → credentialed training → output review</strong> How to read: Three scene cards chain left to right — login issues a 7-day JWT, training starts a background job with the Bearer token and polls every second, and review auto-creates two manual steps once the task is completed. The dashed exits below the cards (401 login prompt, 404 missing resource, 400 unmet precondition) show that any failure stops the chain before the next stage.</figcaption>
+</figure>
+
 ## 2. Module Correlation Map
 
 <figure class="doc-figure">
@@ -79,6 +84,11 @@ Both steps carry a training-evidence digest in `input_params` (task_id, task nam
 
 Conventions: auth failures return `401 {"detail":"Missing credentials, please log in first"}` or `401 {"detail":"Token is invalid or expired"}` — backend `detail` messages are returned verbatim; business validation failures return 400/404 with a readable `detail`; review `comment` is capped at 500 characters.
 
+<figure class="doc-figure">
+  <img src="docs/images/en/flow2-chart.svg" alt="Endpoint surface of the four related modules and the share actually used" loading="lazy">
+  <figcaption><strong>Fig. 4-1 ｜ 41 endpoints across the four related modules vs 6 contracts actually used</strong> How to read: The bars are auth 12, training 15, workflow 9 and project 5, totaling 41 endpoints. The right-hand card lists the 6 contracts this spine really calls (login, train, tasks/{id}, training-review, steps/{sid}/review, steps) — 6/41 = 14.6%, so the spine touches only a fraction of the interface surface; the remaining endpoints are management and extension capacity never triggered by this chain.</figcaption>
+</figure>
+
 ## 5. Authentication and Authorization Mechanism
 
 - **Issuance**: JWT payload carries `sub` (user_id), `email`, `exp`, `iat`, signed with HS256;
@@ -86,6 +96,11 @@ Conventions: auth failures return `401 {"detail":"Missing credentials, please lo
 - **Validation (AuthN)**: protected routes resolve and verify signature and expiry through `Depends(get_current_user)`; any failure is 401;
 - **Ownership checks (AuthZ)**: the submission endpoint double-checks — the task's `user_id` must equal the Token subject (prevents submitting someone else's output) and the task must be in the completed terminal state;
 - **Auditability**: review verdicts persist the `reviewer` email and timestamp, forming a non-repudiable evidence chain.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/flow2-legend.svg" alt="Main-chain legend: roles, line types, states and gates" loading="lazy">
+  <figcaption><strong>Fig. 5-1 ｜ Legend: roles, line types, states and gates in the main-chain figures</strong> How to read: Card A gives role and credential colors (green = JWT, blue = caller, amber = training and polling, pink = human review, red = failure); Card B gives line types (solid = synchronous request, amber dashed = auto trigger, blue dotted = polling, red dashed = rejection); Card C gives state colors (pending / running / completed / failed); Card D gives gate markers (🔐 auth, 👑 admin, 🔹 optional, ✓ approved, ✕ rejected). Decode every figure in this document with this card first.</figcaption>
+</figure>
 
 ## 6. Review State Machine
 
@@ -110,6 +125,11 @@ Conventions: auth failures return `401 {"detail":"Missing credentials, please lo
 ```
 
 Step-level states: `pending → completed` (approved) or `pending → rejected` (rejected); rejected is terminal, requiring a re-run or separate handling. Workflow-level status is derived by aggregating steps — there is no manual set path.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/flow2-state.svg" alt="Request lifecycle state machine with error exits" loading="lazy">
+  <figcaption><strong>Fig. 6-1 ｜ Request lifecycle state machine with error exits</strong> How to read: The top row runs unauthenticated → authenticated → training running → awaiting submission, then drops into the lower row of review in progress → review complete, with any rejection turning into review failed. Arrows ①–④ mark the step order (email/password, Bearer, completed polling, submission 201). The bottom strip collects the 401/404/400 error exits; gate order is auth → ownership/existence → precondition → review, and no failure leaves a half-completed state.</figcaption>
+</figure>
 
 ## 7. Verification Records
 

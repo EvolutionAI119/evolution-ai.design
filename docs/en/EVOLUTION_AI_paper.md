@@ -179,6 +179,11 @@ premises.
   <figcaption><strong>Figure 3-1 ｜ System architecture: four layers (frontend / backend / algorithm / data) and the deployment channel</strong> How to read: four layers top-down — Vue 3 SPA frontend, FastAPI backend (15 routers + RBAC), the standalone algorithm_model layer, and the data layer (SQLite/files/Redis/knowledge JSON) — with call types annotated between layers; the right channel covers development, production, tunnel and static publishing. Layering rule: upper layers may depend on lower ones, never the reverse.</figcaption>
 </figure>
 
+<figure class="doc-figure">
+  <img src="docs/images/en/paper2-image.svg" alt="Design workbench scene with parameter sliders, viewport and engineering hand-off" loading="lazy">
+  <figcaption><strong>Fig. 3-2 ｜ Inside the design workbench: one 22-field vector feeds sliders, viewport and engineering hand-off</strong> How to read: sliders are the only input; the viewport is one consumer, the right column is the engineering contract. Key takeaway: the same numbers that drive the preview are graded against 0.1 mm / 1.0° thresholds and written to STEP, with no mesh-to-NURBS refit in between.</figcaption>
+</figure>
+
 EVOLUTION AI is organized as five layers (Figure 1, conceptual).
 
 ```
@@ -222,6 +227,11 @@ surface-quality evaluation, optimization, and storyboard rendering.
 Because web services call these entry points rather than embedding
 geometry logic, the core can be upgraded or replaced without touching the
 HTTP layer.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/paper2-legend.svg" alt="Legend for layer colours, call types and acceptance thresholds" loading="lazy">
+  <figcaption><strong>Fig. 3-3 ｜ Visual grammar: colour = layer, line = call type, number = acceptance threshold</strong> How to read: colour locates a component on L1–L5, line style separates a runtime call from a degradation path or an async job, and the right column lists the bars a claim must clear (0.1 mm, 1.0°, 5°) plus the 205/388/362 test split. Key takeaway: a green line proves a call returned, never that the result is accurate.</figcaption>
+</figure>
 
 ---
 
@@ -280,6 +290,11 @@ lines, and smoothing/optimization operators (including simulated
 annealing-based fairing). The two granularities are deliberately
 complementary: exact NURBS continuity at seams, and curvature-distribution
 analysis over the tessellated body for interactive feedback.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/paper2-graphic.svg" alt="NURBS control polygon, evaluated curve and curvature comb with continuity thresholds" loading="lazy">
+  <figcaption><strong>Fig. 4-2 ｜ NURBS construction: control polygon → analytic curve → curvature comb, with G0/G1/G2 acceptance</strong> How to read: blue dots and dashes are the control net that CarParams re-seats; the green curve is analytic, not a fitted polyline; on the right, comb length reveals curvature, so a kink appears as a spike. Key takeaway: 0.1 mm and 1.0° are per-seam checks emitted to TXT/CSV, and the 5° band is a visual guide rather than a substitute for G2 continuity.</figcaption>
+</figure>
 
 ### 4.4 Engineering Export: STEP Without a Heavy Kernel
 
@@ -564,6 +579,11 @@ statistics dictionary (callers expected `total_vertices`, which had been
 removed) and an outdated test fixture (an 8-vertex box reshaped into a
 section grid) were identified and fixed; all suites then passed. This is
 reported as evidence of the baseline's role as a genuine regression gate.
+
+<figure class="doc-figure">
+  <img src="docs/images/en/paper2-chart.svg" alt="Bar chart of 205 algorithm, 388 backend and 362 frontend test cases" loading="lazy">
+  <figcaption><strong>Fig. 8-1 ｜ 955 test cases across three independent layers: 205 algorithm + 388 backend + 362 frontend</strong> How to read: bar heights are case counts on a 0–400 axis, not pass rates; the right panel converts them to shares of 955 (21.5% / 40.6% / 37.9%). Key takeaway: the 5-module self-check sits outside the sum, and the suites act as a regression gate rather than a coverage claim.</figcaption>
+</figure>
 
 ### 8.2 Optimizer Convergence
 

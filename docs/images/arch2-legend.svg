@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">图例：架构图的颜色、线型、节点与标记</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Architecture Legend</text>
+
+  <rect x="40" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">A · 层色语义</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="58" y="95" width="26" height="13" rx="3" fill="#38BDF8"/><text x="96" y="106">L1 前端层（Vue 3 SPA）</text>
+    <rect x="58" y="115" width="26" height="13" rx="3" fill="#F472B6"/><text x="96" y="126">L2 接入层（代理 / 隧道）</text>
+    <rect x="58" y="135" width="26" height="13" rx="3" fill="#34D399"/><text x="96" y="146">L3 后端层（FastAPI 编排）</text>
+    <rect x="58" y="155" width="26" height="13" rx="3" fill="#FBBF24"/><text x="96" y="166">L4 算法层（可独立安装）</text>
+    <rect x="58" y="175" width="26" height="13" rx="3" fill="#A78BFA"/><text x="96" y="186">L5 基础设施层（数据 / 存储）</text>
+    <rect x="58" y="195" width="26" height="13" rx="3" fill="#F87171"/><text x="96" y="206">故障 / 拒绝 / 降级路径</text>
+  </g>
+
+  <rect x="496" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">B · 线型与链路</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <line x1="514" y1="105" x2="574" y2="105" stroke="#34D399" stroke-width="2"/>
+    <text x="590" y="109">同步调用（HTTP / 函数调用）</text>
+    <line x1="514" y1="127" x2="574" y2="127" stroke="#FBBF24" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="590" y="131">异步触发 / 轮询（训练、审核）</text>
+    <line x1="514" y1="149" x2="574" y2="149" stroke="#38BDF8" stroke-width="2" stroke-dasharray="2 3"/>
+    <text x="590" y="153">可选 / 降级路径（缺失即显式降级）</text>
+    <line x1="514" y1="171" x2="574" y2="171" stroke="#F87171" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="590" y="175">异常分支 / 驳回回退</text>
+    <text x="514" y="194" fill="#94A3B8">1—N = 一对多关系（Project → ModelFile …）</text>
+  </g>
+
+  <rect x="40" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">C · 节点形态</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="58" y="279" width="26" height="13" rx="3" fill="#12293D" stroke="#38BDF8"/>
+    <text x="96" y="290">圆角矩形 = 模块 / 服务 / 层</text>
+    <ellipse cx="71" cy="301" rx="13" ry="5" fill="#241A40" stroke="#A78BFA"/>
+    <rect x="58" y="301" width="26" height="11" fill="#241A40" stroke="#A78BFA"/>
+    <ellipse cx="71" cy="312" rx="13" ry="5" fill="#241A40" stroke="#A78BFA"/>
+    <text x="96" y="312">圆柱 = 数据表 / 持久化</text>
+    <polygon points="71,325 79,333 71,341 63,333" fill="#2A1A0E" stroke="#FBBF24"/>
+    <text x="96" y="337">菱形 = 决策闸口 / 分支点</text>
+    <polygon points="58,352 74,352 70,364 54,364" fill="#2A1420" stroke="#F472B6"/>
+    <text x="96" y="363">平行四边形 = 外部包 / 服务</text>
+    <rect x="58" y="374" width="26" height="13" rx="3" fill="#12293D" stroke="#34D399"/>
+    <rect x="61" y="377" width="20" height="7" rx="2" fill="none" stroke="#34D399" stroke-dasharray="2 2"/>
+    <text x="96" y="385">双层边框 = 可选能力（缺失即降级）</text>
+  </g>
+
+  <rect x="496" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">D · 标记与状态</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="514" y="279" width="30" height="14" rx="3" fill="#2A1420" stroke="#F87171"/>
+    <text x="529" y="290" fill="#F87171" font-size="9" text-anchor="middle">503</text>
+    <text x="556" y="290">能力未就绪，显式降级（绝不伪装成功）</text>
+    <text x="514" y="317" fill="#34D399" font-size="13">✓</text>
+    <text x="556" y="316">通过 / 完成 / 已交付</text>
+    <text x="514" y="339" fill="#F87171" font-size="13">✕</text>
+    <text x="556" y="338">拒绝 / 失败 / 终态</text>
+    <text x="514" y="360" fill="#94A3B8">①②</text>
+    <text x="556" y="360">步骤或路径序号（读图顺序）</text>
+    <text x="514" y="382" fill="#94A3B8" font-size="9.5">0.1 mm / 1.0°</text>
+    <text x="556" y="382">几何公差阈值（位置 / 角度）</text>
+  </g>
+
+  <text x="40" y="428" fill="#94A3B8" font-size="10">前缀规则：模块文件名即路由前缀；例外 import_export → /import-export、llm_proxy → /llm、auth → /auth + /api-keys。</text>
+  <text x="40" y="446" fill="#64748B" font-size="10">图号约定：图 X-Y 表示第 X 章第 Y 图；本图解释本文各架构图中的编码语义。</text>
+</svg>

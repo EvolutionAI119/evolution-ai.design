@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">图例：主链图的角色色、线型、状态与闸口</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Integration Flow Legend</text>
+
+  <rect x="40" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">A · 角色与凭据色</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="58" y="95" width="26" height="13" rx="3" fill="#34D399"/><text x="96" y="106">JWT / Bearer Token</text>
+    <rect x="58" y="117" width="26" height="13" rx="3" fill="#38BDF8"/><text x="96" y="128">调用方 / 前端</text>
+    <rect x="58" y="139" width="26" height="13" rx="3" fill="#FBBF24"/><text x="96" y="150">训练任务 / 异步轮询</text>
+    <rect x="58" y="161" width="26" height="13" rx="3" fill="#F472B6"/><text x="96" y="172">人工审核 / 工作流</text>
+    <rect x="58" y="183" width="26" height="13" rx="3" fill="#F87171"/><text x="96" y="194">失败 / 驳回 / 拒绝</text>
+  </g>
+
+  <rect x="496" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">B · 线型</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <line x1="514" y1="105" x2="574" y2="105" stroke="#34D399" stroke-width="2"/>
+    <text x="590" y="109">同步请求（HTTP 调用）</text>
+    <line x1="514" y1="127" x2="574" y2="127" stroke="#FBBF24" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="590" y="131">自动触发 / 轮询</text>
+    <line x1="514" y1="149" x2="574" y2="149" stroke="#38BDF8" stroke-width="2" stroke-dasharray="2 3"/>
+    <text x="590" y="153">轮询 / 可选路径</text>
+    <line x1="514" y1="171" x2="574" y2="171" stroke="#F87171" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="590" y="175">驳回 / 异常回退</text>
+    <text x="514" y="194">①→② = 步骤顺序（同图阅读顺序）</text>
+  </g>
+
+  <rect x="40" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">C · 状态色</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="58" y="278" width="58" height="16" rx="3" fill="#2A1A0E" stroke="#FBBF24"/><text x="87" y="290" fill="#FCD34D" font-size="9" text-anchor="middle">pending</text>
+    <text x="130" y="290">等待审核 / 尚未开始</text>
+    <rect x="58" y="300" width="58" height="16" rx="3" fill="#12293D" stroke="#38BDF8"/><text x="87" y="312" fill="#7DD3FC" font-size="9" text-anchor="middle">running</text>
+    <text x="130" y="312">处理中 / 已部分通过</text>
+    <rect x="58" y="322" width="58" height="16" rx="3" fill="#0F241C" stroke="#34D399"/><text x="87" y="334" fill="#6EE7B7" font-size="9" text-anchor="middle">completed</text>
+    <text x="130" y="334">已完成 / 可交付</text>
+    <rect x="58" y="344" width="58" height="16" rx="3" fill="#2A1420" stroke="#F87171"/><text x="87" y="356" fill="#F87171" font-size="9" text-anchor="middle">failed</text>
+    <text x="130" y="356">已失败 / 流程终态</text>
+    <text x="58" y="382" fill="#64748B" font-size="9.5">步骤级 rejected 归入 failed，需重新训练或另开流程</text>
+  </g>
+
+  <rect x="496" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">D · 闸口与判定标记</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <text x="514" y="292" font-size="12">🔐</text><text x="552" y="292">认证闸口：无有效 JWT 即 401</text>
+    <text x="514" y="314" font-size="12">👑</text><text x="552" y="314">管理员闸口：超级管理员才可操作</text>
+    <text x="514" y="336" font-size="12">🔹</text><text x="552" y="336">可选认证：有 JWT 则关联用户</text>
+    <text x="514" y="360" fill="#34D399" font-size="13">✓</text><text x="552" y="360">通过：写入 status 与 reviewer</text>
+    <text x="514" y="382" fill="#F87171" font-size="13">✕</text><text x="552" y="382">拒绝：不可绕过、不可代审</text>
+  </g>
+
+  <text x="40" y="430" fill="#94A3B8" font-size="10">读法：图 5-1；Token 仅经 Authorization: Bearer 传输；图中数字均为实测端点 / 场景数。</text>
+  <text x="40" y="448" fill="#64748B" font-size="10">颜色只表达语义层级，不表达数量；数量以柱长、格内数字与列合计为准。</text>
+</svg>

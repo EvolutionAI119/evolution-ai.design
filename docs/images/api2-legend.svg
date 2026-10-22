@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="468" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#FBBF24"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">图例：认证标记、方法色、路径记法与状态码</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">API Reference Legend</text>
+
+  <rect x="40" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">A · 认证标记</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <text x="58" y="108" font-size="12">🔐</text><text x="96" y="108">必须认证：Bearer JWT（get_current_user）</text>
+    <text x="58" y="130" font-size="12">👑</text><text x="96" y="130">管理员：require_admin / require_superadmin</text>
+    <text x="58" y="152" font-size="12">🔹</text><text x="96" y="152">可选认证：携带 JWT 时关联用户</text>
+    <circle cx="64" cy="168" r="5" fill="none" stroke="#64748B"/>
+    <text x="96" y="172">无标记：公开端点，游客可访问</text>
+    <text x="58" y="204" fill="#64748B" font-size="9.5">统计：公开 114 · 可选 9 · 必须 12 · 管理员 16 = 151</text>
+  </g>
+
+  <rect x="496" y="58" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="84" fill="#E2E8F0" font-size="12.5" font-weight="700">B · HTTP 方法与颜色</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="514" y="96" width="44" height="16" rx="3" fill="#12293D" stroke="#38BDF8"/><text x="536" y="108" fill="#7DD3FC" font-size="8.5" text-anchor="middle">GET</text><text x="570" y="108">查询：列表 / 详情 / 导出</text>
+    <rect x="514" y="118" width="44" height="16" rx="3" fill="#0F241C" stroke="#34D399"/><text x="536" y="130" fill="#6EE7B7" font-size="8.5" text-anchor="middle">POST</text><text x="570" y="130">创建：提交 / 训练 / 导出</text>
+    <rect x="514" y="140" width="44" height="16" rx="3" fill="#2A1A0E" stroke="#FBBF24"/><text x="536" y="152" fill="#FCD34D" font-size="8.5" text-anchor="middle">PUT</text><text x="570" y="152">更新：参数 / 步骤 / 密钥</text>
+    <rect x="514" y="162" width="44" height="16" rx="3" fill="#2A1420" stroke="#F87171"/><text x="536" y="174" fill="#F87171" font-size="8.5" text-anchor="middle">DELETE</text><text x="570" y="174">删除：资源 / 会话 / 密钥</text>
+  </g>
+
+  <rect x="40" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="58" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">C · 路径与参数记法</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <text x="58" y="292" fill="#7DD3FC" font-size="10">/api/v1/{module}/{action}</text>
+    <text x="58" y="312">统一前缀，{module} 对应 19 个路由文件</text>
+    <text x="58" y="334" fill="#A78BFA" font-size="10">{project_id} / {session_id}</text>
+    <text x="58" y="354">路径参数；资源不存在即 404</text>
+    <text x="58" y="376" fill="#F9A8D4" font-size="10">{path} / {filename}</text>
+    <text x="58" y="396">文件路径参数，服务端白名单校验</text>
+  </g>
+
+  <rect x="496" y="238" width="424" height="168" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="514" y="264" fill="#E2E8F0" font-size="12.5" font-weight="700">D · 状态码语义</text>
+  <g font-size="10.5" fill="#94A3B8">
+    <rect x="514" y="280" width="58" height="16" rx="3" fill="#2A1A0E" stroke="#FBBF24"/><text x="543" y="292" fill="#FCD34D" font-size="9" text-anchor="middle">400 / 422</text>
+    <text x="584" y="292">业务校验失败 / schema 不合法</text>
+    <rect x="514" y="306" width="58" height="16" rx="3" fill="#2A1420" stroke="#F87171"/><text x="543" y="318" fill="#F87171" font-size="9" text-anchor="middle">401</text>
+    <text x="584" y="318">缺少、过期或无效 JWT</text>
+    <rect x="514" y="332" width="58" height="16" rx="3" fill="#1F2937" stroke="#64748B"/><text x="543" y="344" fill="#94A3B8" font-size="9" text-anchor="middle">404/405</text>
+    <text x="584" y="344">资源不存在 / 方法不允许（409 状态冲突）</text>
+    <rect x="514" y="358" width="58" height="16" rx="3" fill="#1A1230" stroke="#A78BFA"/><text x="543" y="370" fill="#C4B5FD" font-size="9" text-anchor="middle">503</text>
+    <text x="584" y="370">可选能力未就绪（PyTorch / Ollama / 微信）</text>
+  </g>
+
+  <text x="40" y="430" fill="#94A3B8" font-size="10">前缀缩写：模块文件名 → 路径前缀；例外 import_export → /import-export，llm_proxy → /llm，auth → /auth + /api-keys。</text>
+  <text x="40" y="448" fill="#64748B" font-size="10">统计口径：19 模块 151 端点 = 148 @router + 3 keys_router；main.py 系统端点 2 → 总计 153。</text>
+</svg>

@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
+  <rect x="1" y="1" width="958" height="458" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
+  <rect x="24" y="18" width="12" height="12" rx="3" fill="#A78BFA"/>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">平台规模与 955 例测试基线</text>
+  <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Platform Scale &amp; Test Baseline</text>
+
+  <!-- 左：结构规模 -->
+  <rect x="24" y="58" width="520" height="330" rx="12" fill="#0B101A" stroke="#1E2A3A"/>
+  <text x="44" y="84" fill="#7DD3FC" font-size="12.5" font-weight="700">结构规模（个）</text>
+  <text x="44" y="102" fill="#64748B" font-size="9.5">不同计量单位，仅作数量级对照</text>
+  <g stroke="#1E2A3A">
+    <line x1="100" y1="120" x2="100" y2="300"/>
+    <line x1="200" y1="120" x2="200" y2="300"/>
+    <line x1="300" y1="120" x2="300" y2="300"/>
+    <line x1="400" y1="120" x2="400" y2="300"/>
+    <line x1="500" y1="120" x2="500" y2="300"/>
+    <line x1="100" y1="300" x2="516" y2="300" stroke="#475569"/>
+  </g>
+  <g font-size="9.5" fill="#64748B" text-anchor="middle">
+    <text x="100" y="316">0</text><text x="200" y="316">40</text><text x="300" y="316">80</text><text x="400" y="316">120</text><text x="500" y="316">160</text>
+  </g>
+
+  <g font-size="10.5">
+    <text x="92" y="148" fill="#CBD5E1" text-anchor="end">153 端点</text>
+    <rect x="100" y="134" width="382" height="22" rx="4" fill="#38BDF8"/>
+    <text x="490" y="149" fill="#E2E8F0" font-size="10" font-weight="700">153</text>
+
+    <text x="92" y="196" fill="#CBD5E1" text-anchor="end">19 路由模块</text>
+    <rect x="100" y="182" width="48" height="22" rx="4" fill="#A78BFA"/>
+    <text x="158" y="197" fill="#E2E8F0" font-size="10" font-weight="700">19</text>
+
+    <text x="92" y="244" fill="#CBD5E1" text-anchor="end">17 数据表</text>
+    <rect x="100" y="230" width="43" height="22" rx="4" fill="#34D399"/>
+    <text x="153" y="245" fill="#E2E8F0" font-size="10" font-weight="700">17</text>
+
+    <text x="92" y="292" fill="#CBD5E1" text-anchor="end">12 页面</text>
+    <rect x="100" y="278" width="30" height="22" rx="4" fill="#FBBF24"/>
+    <text x="140" y="293" fill="#E2E8F0" font-size="10" font-weight="700">12</text>
+  </g>
+  <text x="44" y="344" fill="#94A3B8" font-size="10">153 个端点 = 151 个路由端点 + 2 个系统端点（/health、/i18n/config）。</text>
+  <text x="44" y="364" fill="#64748B" font-size="10">17 张表覆盖项目、模型文件、工作流、质量报告、变体、账户与训练任务。</text>
+  <text x="44" y="380" fill="#475569" font-size="9.5">端点/表为 2026-09-27 代码现状快照。</text>
+
+  <!-- 右：955 测试构成 -->
+  <rect x="552" y="58" width="384" height="330" rx="12" fill="#131C2A" stroke="#1E2A3A"/>
+  <text x="572" y="84" fill="#6EE7B7" font-size="12.5" font-weight="700">自动化测试基线 · 955 例</text>
+  <text x="572" y="118" fill="#E2E8F0" font-size="30" font-weight="700">955</text>
+  <text x="646" y="116" fill="#94A3B8" font-size="10.5">例 · 三层独立执行</text>
+
+  <g>
+    <rect x="572" y="140" width="72" height="26" fill="#38BDF8"/>
+    <rect x="644" y="140" width="137" height="26" fill="#A78BFA"/>
+    <rect x="781" y="140" width="127" height="26" rx="4" fill="#34D399"/>
+  </g>
+  <g font-size="10">
+    <rect x="572" y="188" width="10" height="10" rx="2" fill="#38BDF8"/>
+    <text x="592" y="197" fill="#CBD5E1">算法层 pytest</text>
+    <text x="916" y="197" fill="#E2E8F0" text-anchor="end" font-weight="700">205 · 21.5%</text>
+    <rect x="572" y="212" width="10" height="10" rx="2" fill="#A78BFA"/>
+    <text x="592" y="221" fill="#CBD5E1">后端 pytest</text>
+    <text x="916" y="221" fill="#E2E8F0" text-anchor="end" font-weight="700">388 · 40.6%</text>
+    <rect x="572" y="236" width="10" height="10" rx="2" fill="#34D399"/>
+    <text x="592" y="245" fill="#CBD5E1">前端 vitest</text>
+    <text x="916" y="245" fill="#E2E8F0" text-anchor="end" font-weight="700">362 · 37.9%</text>
+  </g>
+  <line x1="572" y1="266" x2="916" y2="266" stroke="#1E2A3A"/>
+  <text x="572" y="288" fill="#94A3B8" font-size="10">另有 5 模块自检（test_all.py）作为一键端到端闸门。</text>
+  <text x="572" y="308" fill="#64748B" font-size="10">三层各自运行，任一层失败即视为基线破坏。</text>
+  <text x="572" y="330" fill="#475569" font-size="9.5">205 + 388 + 362 = 955；占比按 955 计算。</text>
+  <text x="572" y="352" fill="#F87171" font-size="10">注意：本图不把自检的 5 个模块计入 955 例。</text>
+  <text x="572" y="372" fill="#475569" font-size="9.5">测试是回归门禁，不是覆盖率宣传数字。</text>
+
+  <text x="24" y="414" fill="#94A3B8" font-size="10.5">读图：左图看「平台有多大」——端点远多于页面，说明薄壳后端按能力拆分；右图看「验证有多厚」——三层测试量级相当。</text>
+  <text x="24" y="436" fill="#64748B" font-size="10">关键结论：12 个页面由 153 个端点支撑，平均每页约 12.8 个端点；后端与前端测试合计 750 例，占 78.5%。</text>
+  <text x="24" y="452" fill="#475569" font-size="9.5">数据来源：PRODUCT_SPEC §5 能力矩阵 + 平台 2026-09-27 快照。</text>
+</svg>

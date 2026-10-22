@@ -21,6 +21,11 @@
 
 **总结论：平台 v1.2 全部自动化质量门禁通过，知识库文档所述规模事实与源码一致。**
 
+<figure class="doc-figure">
+  <img src="docs/images/val2-image.svg" alt="v1.2 质量门禁全景：三层测试汇入一站式自检" loading="lazy">
+  <figcaption><strong>图 1-1 ｜ v1.2 质量门禁全景（489 用例汇入一站式自检）</strong>读图：三条传送带是彼此独立的算法 / 后端 / 前端用例流，全部汇入 test_all.py 闸口；三枚徽章即放行凭据，489 与 7.13 s 均为当日实跑值。</figcaption>
+</figure>
+
 ---
 
 ## 2. 三层自动化测试
@@ -28,6 +33,11 @@
 <figure class="doc-figure">
   <img src="docs/images/validation-metrics.svg" alt="三层测试规模与通过率" loading="lazy">
   <figcaption><strong>图 2-1 ｜ 三层自动化测试规模与通过率（489 用例全通过）</strong>读图：柱状图给出各层用例规模——算法层 200、后端集成 178、前端组件 111、一站式自检 5，合计 489 例全通过（0 失败 0 跳过）；右侧徽章补充贝叶斯收敛验证与文档-源码核对两项结论。横轴为用例数，柱色全绿代表全部通过。</figcaption>
+</figure>
+
+<figure class="doc-figure">
+  <img src="docs/images/val2-legend.svg" alt="图例：通过 / 警告 / 降级语义" loading="lazy">
+  <figcaption><strong>图 2-2 ｜ 图例：本报告的通过 / 警告 / 降级语义</strong>读图：先看 A 列状态符号，再看 B 列线型；琥珀色只表示「需要关注」，从不代表失败，因此 9 条已知警告不影响 489 全绿的结论。</figcaption>
 </figure>
 
 ### 2.1 结果总表
@@ -93,6 +103,11 @@
 
 证据含义：随机填充 → GP 拟合 → 采集寻优的完整路径正确工作，两种采集均能在小预算内定位到已知最优区域。该实验用于**引擎正确性**验证，不宣称对外部调优库的样本效率优势。
 
+<figure class="doc-figure">
+  <img src="docs/images/val2-graphic.svg" alt="贝叶斯一维目标收敛曲线（EI / UCB）" loading="lazy">
+  <figcaption><strong>图 4-1 ｜ 贝叶斯一维目标收敛曲线（EI / UCB）</strong>读图：绿色横带为 −0.01 收敛带，两种采集函数的最优点（0.5000 / 0.4999）几乎重合且都落在带内，说明「随机填充 → GP 拟合 → 采集寻优」整条路径正确。</figcaption>
+</figure>
+
 ---
 
 ## 5. 本轮缺陷修复与验证
@@ -104,6 +119,11 @@
 | build_body 构造顺序被自动处理打乱 | body.py | 新增 `process: bool = True` 参数 | 200 测试通过 |
 | `run_full_pipeline` 从 8 顶点 box reshape 49×25（运行即崩） | api.py | 改由参数化车身构造单侧网格；docstring 同步 | 完整跑通 |
 | 文档端点计数口径不一（113/116） | README/架构/API/论文 | 统一为 **118**（116 路由端点 + 2 系统端点） | 装饰器逐文件复核 |
+
+<figure class="doc-figure">
+  <img src="docs/images/val2-diagram.svg" alt="缺陷修复闭环：五项缺陷到 489 用例全绿" loading="lazy">
+  <figcaption><strong>图 5-1 ｜ 缺陷修复闭环（五项缺陷 → 489 用例全绿）</strong>读图：五张卡片自上而下汇入同一修复带，再由四条证据链离场；修复与验证一一对应，不存在只改代码不验证的项。</figcaption>
+</figure>
 
 ---
 

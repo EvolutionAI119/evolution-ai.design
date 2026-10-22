@@ -12,6 +12,11 @@
   <figcaption><strong>图 1-1 ｜ 平台四层一通道架构总览（前端/后端/算法/数据 + 部署通道）</strong>读图：读图方式同架构总览——四层自上而下（前端/后端/算法/数据）逐层标注调用协议，右侧部署通道列出开发态、生产态、公网隧道与静态发布四条路径；关键约束是算法层零框架依赖，可脱离平台独立运行与测试。</figcaption>
 </figure>
 
+<figure class="doc-figure">
+  <img src="docs/images/arch2-layers.svg" alt="五层架构的分层切片" loading="lazy">
+  <figcaption><strong>图 1-2 ｜ 五层架构的分层切片：L1 前端 → L2 接入 → L3 后端 → L4 算法 → L5 基础设施</strong>读图：自上而下的斜切块表示依赖方向，每层标注关键组件与对外协议（HTTP/JSON、代理、函数调用、ORM）；L4 算法层是独立可安装包，不含 FastAPI 依赖，可脱离 L1–L3 单独测试；分层约束只有一条——上层可依赖下层，下层不感知上层。</figcaption>
+</figure>
+
 平台采用五层分层架构：
 
 ```
@@ -107,6 +112,11 @@
 
 逐端点明细见 [api_reference.md](api_reference.md)。
 
+<figure class="doc-figure">
+  <img src="docs/images/arch2-matrix.svg" alt="19 个路由模块与 HTTP 方法的热力矩阵" loading="lazy">
+  <figcaption><strong>图 3-1 ｜ 19 个路由模块 × HTTP 方法的热力矩阵</strong>读图：行是 19 个模块、列是 GET/POST/PUT/DELETE，格内数字为该组合的端点数，颜色越深表示越集中；右侧列合计 GET 75、POST 63、PUT 4、DELETE 9，总计 151，与行合计逐行互校。读法结论：analytics 与 training 以 GET 为主（11/21、9/15），modify 以 POST 为主（8/15），PUT 仅出现在少数状态更新端点。</figcaption>
+</figure>
+
 ### 3.2 领域模块（`backend/app/`）
 
 | 模块 | 职责 |
@@ -173,6 +183,11 @@
 关系链：Project 1—N ModelFile / Workflow / QualityReport；Workflow 1—N WorkflowStep；
 ModelFile 1—N ModelVariant（含自引用 parent）；User 1—N ApiKey / LoginRecord / Notification。
 
+<figure class="doc-figure">
+  <img src="docs/images/arch2-orm.svg" alt="17 张 ORM 表的领域分组环形图" loading="lazy">
+  <figcaption><strong>图 5-1 ｜ 17 张 ORM 表的领域分组</strong>读图：环形按五个领域分组——项目/流程/模型 4 张、质量/参数/变体 4 张、用户/审计/密钥 4 张、训练任务 1 张、社区/通知/埋点 4 张，合计 17；右侧表名卡按组排列，可与上方表格逐项对照；底部关系链给出 Project 1—N ModelFile / Workflow / QualityReport、Workflow 1—N WorkflowStep 等主外键方向。分组只用于理解边界，不改变表结构。</figcaption>
+</figure>
+
 ---
 
 ## 6. 关键数据流
@@ -226,6 +241,11 @@ Login → /auth/methods 探测能力
 - **安全响应头**：`main.py` 中间件统一注入 X-Content-Type-Options / X-Frame-Options / CSP / Referrer-Policy / Permissions-Policy / Cache-Control；去除 `server: uvicorn`。
 - **CORS**：DEBUG 放行，生产显式白名单；禁止 ACAO `*` + credentials 组合（含 ASGI 校正中间件）。
 - **异常处理**：StarletteHTTPException / RequestValidationError / Exception / 405 统一处理，错误响应同样补齐 CORS。
+
+<figure class="doc-figure">
+  <img src="docs/images/arch2-legend.svg" alt="架构文档图例：层色、线型、节点与状态标记" loading="lazy">
+  <figcaption><strong>图 7-1 ｜ 图例：架构文档的层色、线型、节点形状与状态标记</strong>读图：A 卡为五层语义色，B 卡为线型（实线调用、虚线异步/异常、带箭头表示方向、1—N 表示一对多），C 卡为节点形态（圆角矩形=模块/服务/层、圆柱=数据表、菱形=决策闸口、平行四边形=外部包、双层边框=可选能力），D 卡为状态标记（✓ 通过、✕ 失败、503 能力未就绪、①② 步骤序号、0.1 mm / 1.0° 几何公差）；颜色只区分层次，不与数量对应，数量一律读表格或格内数字。</figcaption>
+</figure>
 
 ---
 
