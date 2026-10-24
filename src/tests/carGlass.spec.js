@@ -910,14 +910,14 @@ describe('bandGlassSpine 玻璃带脊柱线（车顶 G1 圆角包裹，折痕拓
 describe('玻璃贴面偏移必须叠加车身 bevel 外扩量（折痕根因防回归）', () => {
   // three.js ExtrudeGeometry 的 bevel 会把整个侧壁沿 X-Y 外扩 bevelSize：
   // 车身真实壁面（含车顶）位于原始轮廓外 BODY_BEVEL_SIZE 处。
-  it('BODY_BEVEL_SIZE = 30mm，GLASS_SURFACE_GAP 为毫米级小间隙', () => {
-    expect(BODY_BEVEL_SIZE).toBeCloseTo(0.03, 12)
+  it('BODY_BEVEL_SIZE = 12mm，GLASS_SURFACE_GAP 为毫米级小间隙', () => {
+    expect(BODY_BEVEL_SIZE).toBeCloseTo(0.012, 12)
     expect(GLASS_SURFACE_GAP).toBeGreaterThan(0)
     expect(GLASS_SURFACE_GAP).toBeLessThan(0.002)
   })
 
-  it('只按 GLASS_SURFACE_GAP 偏移的玻璃落在 bevel 外扩壁面内侧 29mm（整块不可见）', () => {
-    expect(BODY_BEVEL_SIZE - GLASS_SURFACE_GAP).toBeCloseTo(0.029, 12)
+  it('只按 GLASS_SURFACE_GAP 偏移的玻璃落在 bevel 外扩壁面内侧 11mm（整块不可见）', () => {
+    expect(BODY_BEVEL_SIZE - GLASS_SURFACE_GAP).toBeCloseTo(0.011, 12)
   })
 
   it('GLASS_GAP = BODY_BEVEL_SIZE + GLASS_SURFACE_GAP：与只加间隙的脊柱逐点相距恰为 bevel 量', () => {

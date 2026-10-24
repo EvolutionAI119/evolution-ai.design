@@ -305,11 +305,17 @@ export function bodySideOutline(P, carType, fillets, ramps = null) {
   const L = (x, y) => cmd.push({ k: 'L', x, y })
   const Q = (cx, cy, x, y) => cmd.push({ k: 'Q', cx, cy, x, y })
   const A = (cx, cy, rx, ry, a0, a1, cw) => cmd.push({ k: 'A', cx, cy, rx, ry, a0, a1, cw })
-  // 轮拱 notch（沿底边 +X 行进：后唇→上缘→前唇）
+  // 轮拱 notch（沿底边 +X 行进：后唇→上缘→前唇）。
+  // 底部内角加小圆角 r：bevel 在 90° 凹角处会因 miter 展开产生折叠/多余面，
+  // 圆角让 outline 在角点处切线连续，bevel 沿圆角走不产生自交。
+  const archFillet = 0.012
   const archNotch = (ax, a) => {
-    L(ax - a.rx, bodyBottomY); L(ax - a.rx, archY)
+    L(ax - a.rx + archFillet, bodyBottomY)
+    Q(ax - a.rx, bodyBottomY, ax - a.rx, bodyBottomY + archFillet)
+    L(ax - a.rx, archY)
     A(ax, archY, a.rx, a.ry, Math.PI, 0, true)
-    L(ax + a.rx, bodyBottomY)
+    L(ax + a.rx, bodyBottomY + archFillet)
+    Q(ax + a.rx, bodyBottomY, ax + a.rx - archFillet, bodyBottomY)
   }
 
   if (pickup) {

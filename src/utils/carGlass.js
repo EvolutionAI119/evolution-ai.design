@@ -35,7 +35,7 @@ export const ROOF_FILLETS = {
  * 因此车身真实壁面位于 ROOF 轮廓之外 BODY_BEVEL_SIZE 处——贴面玻璃的偏移量必须 ≥ 该值，
  * 否则整块风挡/后风挡会沉入车身内部不可见。
  */
-export const BODY_BEVEL_SIZE = 0.03
+export const BODY_BEVEL_SIZE = 0.012
 
 /** 玻璃带相对 bevel 外扩壁面的贴面间隙（米）：仅避免与车身共面 z-fighting */
 export const GLASS_SURFACE_GAP = 0.001

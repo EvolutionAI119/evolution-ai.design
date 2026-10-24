@@ -580,7 +580,10 @@ const createCar = () => {
     }
   }
 
-  const bodyDepth = W
+  // 车身挤出深度 = W − 2×bevel：three.js 的 bevel 在 Z 两端各扩展 bevelThickness，
+  // 因此整车宽度 = depth + 2×bevelThickness = W（不被倒角撑大）。
+  // bodyExtentZ = (depth + 2×bevel) / 2 = W / 2，即车身侧壁外表面 |z| = W/2。
+  const bodyDepth = W - BODY_BEVEL_SIZE * 2
   const bodyThickness = BODY_BEVEL_SIZE
   const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
   // 车轮装配配合（纯函数同源判据）：胎外侧面收进侧壁内，杜绝轮-身干涉观感
@@ -619,7 +622,7 @@ const createCar = () => {
   // 把洞壁三角形改判为内饰材质组，|z| ≥ 外蒙皮端面处的倒角环带仍保留车身色作门框唇边。
   let bodyMats = bodyMat
   if (doorAperture) {
-    splitDoorApertureInterior(bodyGeom, doorAperture, bodyDepth / 2 - bodyThickness)
+    splitDoorApertureInterior(bodyGeom, doorAperture, bodyDepth / 2)
     bodyMats = [bodyMat, interiorMat]
   }
 
