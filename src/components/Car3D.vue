@@ -519,16 +519,16 @@ const createCar = () => {
   // ---- 座舱玻璃划分（与 2D Car2D windowPath 同源锚点：玻璃与车身两种状态） ----
   // 前后风挡贴合拉伸体侧壁（壁面被 bevel 外扩 bodyThickness），侧窗贴合端盖外缘；
   // 玻璃统一用独立透明材质与车身漆面区分；B 柱在 55% 分段处保留车身色立柱（与 2D pillarX 同源）
-  // 汽车玻璃写实材质：深色灰绿 tint（真车侧窗透光率 70% 级视觉），低环境反射——
-  // 杜绝浅蓝镜面化（roughness 0.06 + envMap 1.2）产生的杂乱高光与「折射」假象，
+  // 汽车玻璃写实材质：深色灰绿 tint（真车侧窗透光率 70% 级视觉），零环境反射——
+  // 杜绝浅蓝镜面化与风挡斜面 RoomEnvironment 菲涅尔发白（envMapIntensity=0）；
   // 深色低透同时遮蔽对侧门缝黑条（移除透见的不合理门缝）。
   const glassMat = new THREE.MeshPhysicalMaterial({
     color: 0x212c30,
     transparent: true,
-    opacity: 0.62,
+    opacity: 0.70,
     metalness: 0,
-    roughness: 0.14,
-    envMapIntensity: 0.35,
+    roughness: 0.50,
+    envMapIntensity: 0.0,
     side: THREE.DoubleSide,
     wireframe: wireframeMode.value
   })

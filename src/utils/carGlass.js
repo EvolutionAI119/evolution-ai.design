@@ -104,6 +104,9 @@ export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0, bot
  * 约定：fillet 按行进方向给——a = 斜面侧切点（入口）、b = 车顶侧切点（出口）；
  *   roofFilletSet.rear 的 a/b 与行进方向相反，调用方需交换后传入。
  * 每点沿局部外法线抬离 offset（贴合被 bevel 外扩的车身壁面），法线统一 ny ≥ 0。
+ *   offset 渐减：A 柱段（ny = baseNy）满 offset；圆角段随法线朝车顶旋转
+ *   （ny↑）线性递减；车顶搭接段（ny=1）offset=0 → 玻璃与车顶齐平，
+ *   消除「玻璃顶高出车顶 3cm」的台阶折痕。
  * @param {object} opts { topInset, bottomInset, offset, fillet: {a,ctrl,b}|null, filletSamples, roofOverlap }
  * @returns {number[][]} [[x,y],…] 脊柱点（含 offset），底→顶
  */
@@ -113,8 +116,18 @@ export function bandGlassSpine(x1, y1, x2, y2, opts = {}) {
   const len = Math.hypot(dx, dy) || 1
   let nx = dy / len, ny = -dx / len
   if (ny < 0) { nx = -nx; ny = -ny }   // 法线统一朝上（外表面）
+  const baseNy = ny
+  // offset 乘数：法线未朝上翘时（A 柱斜面）为 1；法线朝车顶（ny→1）时线性降到 0
+  const offsetMult = (nYy) => {
+    if (nYy <= baseNy) return 1
+    if (nYy >= 1) return 0
+    return (1 - nYy) / (1 - baseNy)
+  }
   const pts = []
-  const push = (x, y, nX, nY) => pts.push([x + nX * offset, y + nY * offset])
+  const push = (x, y, nX, nY) => {
+    const m = offsetMult(nY)
+    pts.push([x + nX * offset * m, y + nY * offset * m])
+  }
   // 底点（bottomInset 沿斜线上退）
   let bx = x1, by = y1
   if (bottomInset > 0) {

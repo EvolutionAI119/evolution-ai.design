@@ -697,9 +697,9 @@ describe('bandGlassSpine 玻璃带脊柱线（车顶 G1 圆角包裹，折痕拓
     const f = roofFilletSet(p, type, ROOF_FILLETS).front
     const ws = cabin.windshield
     const spine = bandGlassSpine(ws.x1, ws.y1, ws.x2, ws.y2, { topInset: ws.topInset, bottomInset: ws.bottomInset, offset: 0.031, fillet: f })
-    // 末端 y ≈ 车顶 + offset（搭接段水平，法线 (0,1)）
+    // 末端 y ≈ 车顶（搭接段法线 (0,1)，offset 渐减到 0 → 玻璃顶与车顶齐平，无台阶）
     const last = spine[spine.length - 1]
-    expect(last[1]).toBeCloseTo(p.roofTopY + 0.031, 3)
+    expect(last[1]).toBeCloseTo(p.roofTopY, 3)
     // 起点 y 在腰带线附近（bottomInset 上退后仍低于 A 柱顶圆角）
     expect(spine[0][1]).toBeGreaterThan(p.beltLineY)
     expect(spine[0][1]).toBeLessThan(f.a[1])
@@ -715,7 +715,7 @@ describe('bandGlassSpine 玻璃带脊柱线（车顶 G1 圆角包裹，折痕拓
     const rw = cabin.rearWindow
     const spine = bandGlassSpine(rw.x1, rw.y1, rw.x2, rw.y2, { topInset: rw.topInset, bottomInset: ROOF_FILLETS.cPillarBottom, offset: 0.031, fillet: swapped })
     const last = spine[spine.length - 1]
-    expect(last[1]).toBeCloseTo(p.roofTopY + 0.031, 3)
+    expect(last[1]).toBeCloseTo(p.roofTopY, 3)   // 搭接段 offset=0，与车顶齐平
     for (let i = 1; i < spine.length; i++) expect(spine[i][0]).toBeGreaterThanOrEqual(spine[i - 1][0] - 1e-9)
     // 底端在 C 柱底圆角切点 a 附近（y 高于腰带线 = 已上退）
     expect(spine[0][1]).toBeGreaterThan(p.beltLineY)
