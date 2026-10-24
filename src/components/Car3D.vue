@@ -108,7 +108,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, roofFilletSet } from '../utils/carProfile.js'
-import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, greenhouseInsetAt, bandGlassSpine, ROOF_FILLETS } from '../utils/carGlass.js'
+import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, deriveDloPaneRanges, shellHalfZAt, bandGlassSpine, ROOF_FILLETS, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
 
@@ -369,6 +369,64 @@ const createNurbsWheel = (w) => {
 }
 
 /**
+ * 按位置焊接后平滑法线（保留硬边）
+ *
+ * ExtrudeGeometry 为非索引几何：每个三角形持有一份独立法线。greenhouse 收窄是随 y 变化的
+ * 线性 Z 缩放，会把原本平坦的侧围端盖变成双曲面；此时 computeVertexNormals() 只能给出
+ * 逐面法线——侧围 / 车顶 / 倒角上因此出现一片片明暗不同的三角面（用户读作「亮色破面」），
+ * 车顶薄倒角更会被切成一串高亮细条（读作「尖刺」）。
+ * 这里按位置把法线焊接平均，只合并夹角小于阈值的面，腰线、轮拱等硬边仍是硬边。
+ */
+function smoothNormalsKeepHardEdges(geom, tol = 1e-4, angleDeg = 32) {
+  const pos = geom.attributes.position
+  const arr = pos.array
+  const n = pos.count
+  const cosT = Math.cos((angleDeg * Math.PI) / 180)
+  const keyOf = (i) => `${Math.round(arr[i * 3] / tol)}_${Math.round(arr[i * 3 + 1] / tol)}_${Math.round(arr[i * 3 + 2] / tol)}`
+
+  // 位置 → 落在该位置上的所有顶点索引
+  const buckets = new Map()
+  for (let i = 0; i < n; i++) {
+    const k = keyOf(i)
+    const b = buckets.get(k)
+    if (b) b.push(i); else buckets.set(k, [i])
+  }
+
+  // 逐三角形面法线（同一三角形的三个顶点共用）
+  const face = new Float32Array(n * 3)
+  for (let t = 0; t < n; t += 3) {
+    const o = t * 3
+    const ux = arr[o + 3] - arr[o], uy = arr[o + 4] - arr[o + 1], uz = arr[o + 5] - arr[o + 2]
+    const vx = arr[o + 6] - arr[o], vy = arr[o + 7] - arr[o + 1], vz = arr[o + 8] - arr[o + 2]
+    let nx = uy * vz - uz * vy
+    let ny = uz * vx - ux * vz
+    let nz = ux * vy - uy * vx
+    const len = Math.hypot(nx, ny, nz) || 1
+    nx /= len; ny /= len; nz /= len
+    for (let j = 0; j < 3; j++) {
+      const w = (t + j) * 3
+      face[w] = nx; face[w + 1] = ny; face[w + 2] = nz
+    }
+  }
+
+  // 焊接平均：仅合并与自身面夹角小于阈值的相邻面
+  const out = new Float32Array(n * 3)
+  for (let i = 0; i < n; i++) {
+    const own = i * 3
+    const f0x = face[own], f0y = face[own + 1], f0z = face[own + 2]
+    let sx = 0, sy = 0, sz = 0
+    for (const j of buckets.get(keyOf(i))) {
+      const q = j * 3
+      if (face[q] * f0x + face[q + 1] * f0y + face[q + 2] * f0z < cosT) continue
+      sx += face[q]; sy += face[q + 1]; sz += face[q + 2]
+    }
+    const len = Math.hypot(sx, sy, sz) || 1
+    out[own] = sx / len; out[own + 1] = sy / len; out[own + 2] = sz / len
+  }
+  geom.setAttribute('normal', new THREE.BufferAttribute(out, 3))
+}
+
+/**
  * 门洞内壁材质分组（开门状态专用）
  *
  * 车身由侧围轮廓整宽挤出：门洞沿 Z 贯穿，洞口的四壁（底槛面 / 前后门框面）
@@ -404,7 +462,7 @@ function splitDoorApertureInterior(geom, rect, zCap) {
   for (const o of interior) for (let j = 0; j < 9; j++) out[k++] = arr[o + j]
   geom.setAttribute('position', new THREE.BufferAttribute(out, 3))
   geom.deleteAttribute('uv')          // 顶点重排后 uv 失效；本模型不使用贴图
-  geom.computeVertexNormals()         // normal 属性不随重排走，必须整面重算
+  smoothNormalsKeepHardEdges(geom)    // normal 属性不随重排走，必须整面重算
   geom.clearGroups()
   geom.addGroup(0, extVerts, 0)
   geom.addGroup(extVerts, k / 3 - extVerts, 1)
@@ -523,7 +581,7 @@ const createCar = () => {
   }
 
   const bodyDepth = W
-  const bodyThickness = 0.03
+  const bodyThickness = BODY_BEVEL_SIZE
   const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
   // 车轮装配配合（纯函数同源判据）：胎外侧面收进侧壁内，杜绝轮-身干涉观感
   const fit = deriveWheelFitment(P, bodyThickness)
@@ -544,15 +602,16 @@ const createCar = () => {
 
   // 车身 greenhouse 收窄：DLO 底边（腰带线）以上的侧壁/车顶按与 DLO 玻璃面同公式
   // 内收——A/B/C 柱剪影与车顶随玻璃角度/桶面联动，玻璃面始终位于车身外侧同间隙
-  // （greenhouseInsetAt 纯函数，可单测；k 为按高度的比例因子，避免内部顶点越过中线）
-  const taperK = (y) => Math.max(1 - greenhouseInsetAt(y, dloFrame) / bodyExtentZ, 0.35)
+  // （shellHalfZAt 为唯一 Z 公式：车身、风挡带、DLO 玻璃共用同一条内收曲线）
+  const taperK = (y) => shellHalfZAt(y, dloFrame, bodyExtentZ) / bodyExtentZ
   const applyGreenhouseTaper = (geom) => {
     const pos = geom.attributes.position
     for (let i = 0; i < pos.count; i++) {
       pos.setZ(i, pos.getZ(i) * taperK(pos.getY(i)))
     }
     pos.needsUpdate = true
-    geom.computeVertexNormals()
+    // 收窄后侧围端盖已成双曲面：必须按位置焊接求平滑法线，否则逐面法线烧出三角破面
+    smoothNormalsKeepHardEdges(geom)
   }
   applyGreenhouseTaper(bodyGeom)
 
@@ -601,10 +660,17 @@ const createCar = () => {
   })
 
   // 斜面玻璃带：脊柱线由 carGlass.bandGlassSpine 生成（可单测）——含车顶 G1 圆角包裹
-  // 采样与顶面搭接，玻璃随车身同一圆角弯曲，消除风挡顶/车顶后缘的台阶折痕；
-  // Z 向随高度按 taperK 收窄（与车身 greenhouse 同公式），顶缘不越过收窄后的车身
+  // 采样与顶面搭接，玻璃随车身同一圆角弯曲。
+  // 偏移量 = BODY_BEVEL_SIZE + GLASS_SURFACE_GAP：ExtrudeGeometry 的 bevel 会把整个侧壁
+  // 沿 X-Y 外扩 bevelSize(=BODY_BEVEL_SIZE)，车身真实壁面因此在原始轮廓外该尺寸；
+  // 玻璃必须骑在这层外扩壁面上，再留贴面间隙避免共面 z-fighting。
+  // minOffsetRatio=1：全程保持同一偏移——旧实现让法线转向车顶时偏移渐减到 0，
+  // 玻璃在 A 柱顶/C 柱顶瞬间沉入车身 30mm，肉眼即 COWL/车顶前缘的台阶折痕。
+  const GLASS_GAP = BODY_BEVEL_SIZE + GLASS_SURFACE_GAP
   const addBandGlass = (x1, y1, x2, y2, width, topInset = 0, bottomInset = 0, fillet = null) => {
-    const spine = bandGlassSpine(x1, y1, x2, y2, { topInset, bottomInset, offset: bodyThickness + 0.001, fillet })
+    const spine = bandGlassSpine(x1, y1, x2, y2, {
+      topInset, bottomInset, offset: GLASS_GAP, minOffsetRatio: 1, fillet
+    })
     const hw = width / 2
     const verts = []
     for (let i = 0; i < spine.length - 1; i++) {
@@ -645,7 +711,7 @@ const createCar = () => {
   // 门片挂到对应车门铰链 Group（与门板同轴同角度），开门时玻璃随门一同外摆；
   // 分缝两侧各留半个缝宽间隙 → 玻璃上同样能看到门缝（与 2D 分缝线同坐标）。
   const DLO_ROWS = 16
-  const dloSeamGap = Math.min(Math.max(props.carParams?.door_seam_width ?? 8, 2), 20) / 2000
+  const paneRanges = deriveDloPaneRanges(dl, props.carParams?.door_seam_width ?? 8)
   const doorGlass = []
   const addDloPane = (xFront, xRear, zSide, hingeKey) => {
     const positions = buildDloStripRange(cabin.dlo, dloFrame, DLO_ROWS, zSide, xFront, xRear)
@@ -658,16 +724,11 @@ const createCar = () => {
     else group.add(panel)
   }
   for (const zSide of [1, -1]) {
-    // A 柱前固定片（前门分缝之前）
-    addDloPane(null, dl.frontSeamX + dloSeamGap, zSide, null)
-    // 前门片：前门分缝 → B 柱
-    addDloPane(dl.frontSeamX - dloSeamGap, dl.midSeamX + dloSeamGap, zSide, 'front')
-    // 后门片：B 柱 → 后门分缝（皮卡无后门，跳过）
-    if (dl.rearSeamX !== null) {
-      addDloPane(dl.midSeamX - dloSeamGap, dl.rearSeamX + dloSeamGap, zSide, 'rear')
+    // 分片边界与门缝坐标全部来自 carGlass.deriveDloPaneRanges（纯函数，可单测）：
+    // A 柱前固定片 / 前门片 / 后门片（双门与皮卡无此片）/ C 柱后固定片
+    for (const pane of paneRanges) {
+      addDloPane(pane.xFront, pane.xRear, zSide, pane.hingeKey)
     }
-    // C 柱后固定片（非皮卡为后门分缝之后；皮卡为 B 柱之后的驾驶室后侧窗）
-    addDloPane(dl.rearSeamX === null ? dl.midSeamX - dloSeamGap : dl.rearSeamX - dloSeamGap, null, zSide, null)
   }
 
   // B 柱：分缝线 B柱位置车身色立柱（叠于玻璃之上，与 2D B 柱线同位置）；

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, filletCorner, roofFilletSet } from '../utils/carProfile.js'
-import { bandGlassEndpoints, bandGlassSpine, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, buildDloStripRange, greenhouseInsetAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { deriveCarProfile, deriveDoorLayout, filletCorner, roofFilletSet } from '../utils/carProfile.js'
+import { bandGlassEndpoints, bandGlassSpine, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, buildDloStripRange, deriveDloPaneRanges, greenhouseInsetAt, shellHalfZAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -550,6 +550,117 @@ describe('buildDloFrame / buildDloStrip DLO 条带网格（Car3D 消费端纯函
   })
 })
 
+describe('deriveDloPaneRanges 侧窗玻璃分片划分（Car3D 消费端纯函数）', () => {
+  // gap = clamp(seamWidthMM, 2, 20) / 2000（毫米 → 米）
+  const gapOf = (mm) => Math.min(Math.max(mm, 2), 20) / 2000
+  // 典型分缝（X+ 朝车头，前缘 X 更大）：A 柱缝 → B 柱缝 → C 柱缝
+  const fourDoor = { frontSeamX: 0.8, midSeamX: 0.0, rearSeamX: -0.9 }
+  const twoDoor = { frontSeamX: 0.8, midSeamX: -0.1, rearSeamX: null }
+
+  it('四门车型切 4 片，key 顺序 fixedFront → front → rear → fixedRear', () => {
+    expect(deriveDloPaneRanges(fourDoor).map((p) => p.key))
+      .toEqual(['fixedFront', 'front', 'rear', 'fixedRear'])
+  })
+
+  it('hingeKey 分配：固定片为 null，门片为 front / rear', () => {
+    const byKey = Object.fromEntries(deriveDloPaneRanges(fourDoor).map((p) => [p.key, p.hingeKey]))
+    expect(byKey).toEqual({ fixedFront: null, front: 'front', rear: 'rear', fixedRear: null })
+  })
+
+  it('分缝两侧各让半个缝宽：相邻两片之间恰好留出一个缝宽', () => {
+    const gap = gapOf(8)
+    const [ff, front, rear] = deriveDloPaneRanges(fourDoor, 8)
+    expect(ff.xRear).toBeCloseTo(fourDoor.frontSeamX + gap, 12)
+    expect(front.xFront).toBeCloseTo(fourDoor.frontSeamX - gap, 12)
+    expect(ff.xRear - front.xFront).toBeCloseTo(2 * gap, 12)      // A 柱缝
+    expect(front.xRear).toBeCloseTo(fourDoor.midSeamX + gap, 12)
+    expect(rear.xFront).toBeCloseTo(fourDoor.midSeamX - gap, 12)
+    expect(front.xRear - rear.xFront).toBeCloseTo(2 * gap, 12)    // B 柱缝
+    expect(rear.xRear).toBeCloseTo(fourDoor.rearSeamX + gap, 12)  // C 柱缝前侧
+  })
+
+  it('首片 xFront / 末片 xRear 为 null（贴 DLO 前后缘，交给 buildDloStripRange 夹取）', () => {
+    const panes = deriveDloPaneRanges(fourDoor)
+    expect(panes[0].xFront).toBeNull()
+    expect(panes[panes.length - 1].xRear).toBeNull()
+    for (const p of panes.slice(0, -1)) expect(typeof p.xRear).toBe('number')
+    for (const p of panes.slice(1)) expect(typeof p.xFront).toBe('number')
+  })
+
+  it('分片沿车身从前到后排列：xFront 与 xRear 均单调递减，自身不退化', () => {
+    const panes = deriveDloPaneRanges(fourDoor)
+    const heads = panes.map((p) => (p.xFront === null ? Infinity : p.xFront))
+    const tails = panes.map((p) => (p.xRear === null ? -Infinity : p.xRear))
+    for (let i = 0; i < panes.length; i++) {
+      if (i > 0) {
+        expect(heads[i]).toBeLessThan(heads[i - 1])
+        expect(tails[i]).toBeLessThan(tails[i - 1])
+      }
+      expect(tails[i]).toBeLessThan(heads[i])   // 每片前界在后界之前
+    }
+  })
+
+  it('双门车型（rearSeamX = null）切 3 片，无后门片，后固定片自 B 柱缝后起算', () => {
+    const panes = deriveDloPaneRanges(twoDoor)
+    expect(panes.map((p) => p.key)).toEqual(['fixedFront', 'front', 'fixedRear'])
+    expect(panes.some((p) => p.hingeKey === 'rear')).toBe(false)
+    expect(panes[2].xFront).toBeCloseTo(twoDoor.midSeamX - gapOf(8), 12)
+    expect(panes[2].xRear).toBeNull()
+  })
+
+  it('缝宽钳位：过窄取下限 2mm、过宽取上限 20mm（异常参数不会撑开缝隙）', () => {
+    const x0 = fourDoor.frontSeamX
+    expect(deriveDloPaneRanges(fourDoor, 0.5)[0].xRear).toBeCloseTo(x0 + 2 / 2000, 12)
+    expect(deriveDloPaneRanges(fourDoor, 8)[0].xRear).toBeCloseTo(x0 + 8 / 2000, 12)
+    expect(deriveDloPaneRanges(fourDoor, 999)[0].xRear).toBeCloseTo(x0 + 20 / 2000, 12)
+    // 缺省不传时按 8mm
+    expect(deriveDloPaneRanges(fourDoor)[0].xRear).toBeCloseTo(x0 + 8 / 2000, 12)
+  })
+
+  it('六车型都由 deriveDoorLayout 推导：分片结构与顺序合法', () => {
+    const expectedKeys = {
+      sedan: ['fixedFront', 'front', 'rear', 'fixedRear'],
+      suv: ['fixedFront', 'front', 'rear', 'fixedRear'],
+      mpv: ['fixedFront', 'front', 'rear', 'fixedRear'],
+      coupe: ['fixedFront', 'front', 'fixedRear'],
+      sport: ['fixedFront', 'front', 'fixedRear'],
+      pickup: ['fixedFront', 'front', 'fixedRear']
+    }
+    for (const type of ALL_TYPES) {
+      const P = deriveCarProfile(carTypeParams[type], type)
+      const cabin = deriveCabinGlass(P, { carType: type })
+      const dl = deriveDoorLayout(P, cabin, { carType: type })
+      const panes = deriveDloPaneRanges(dl)
+      expect(panes.map((p) => p.key), type).toEqual(expectedKeys[type])
+      expect(panes[0].xFront, type).toBeNull()
+      expect(panes[panes.length - 1].xRear, type).toBeNull()
+      // 每片都是正向区间（前界 X ≥ 后界 X），否则会被 buildDloStripRange 夹成零宽片
+      for (const p of panes) {
+        const head = p.xFront === null ? Infinity : p.xFront
+        const tail = p.xRear === null ? -Infinity : p.xRear
+        expect(tail, `${type}:${p.key}`).toBeLessThanOrEqual(head)
+      }
+    }
+  })
+
+  it('消费端契约：同一分片范围在左右两侧生成镜像玻璃（X 区间一致，Z 取反）', () => {
+    const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const cabin = deriveCabinGlass(P, { carType: 'sedan' })
+    const dl = deriveDoorLayout(P, cabin, { carType: 'sedan' })
+    const f = buildDloFrame(cabin, 1.05)
+    for (const pane of deriveDloPaneRanges(dl)) {
+      const right = buildDloStripRange(cabin.dlo, f, 4, 1, pane.xFront, pane.xRear)
+      const left = buildDloStripRange(cabin.dlo, f, 4, -1, pane.xFront, pane.xRear)
+      expect(left.length).toBe(right.length)
+      for (let i = 0; i < right.length; i += 3) {
+        expect(left[i]).toBeCloseTo(right[i], 12)
+        expect(left[i + 1]).toBeCloseTo(right[i + 1], 12)
+        expect(left[i + 2]).toBeCloseTo(-right[i + 2], 12)
+      }
+    }
+  })
+})
+
 describe('greenhouseInsetAt 车身 greenhouse 收窄（A/B/C 柱与车顶随玻璃角度联动）', () => {
   const F = { dloYBot: 0.8, dloYSpan: 0.4, tiltInsetZ: 0.1, barrelRad: (10 * Math.PI) / 180, barrelRadius: 0.9, dloZBase: 1.05 }
 
@@ -593,6 +704,67 @@ describe('greenhouseInsetAt 车身 greenhouse 收窄（A/B/C 柱与车顶随玻�
       const f = buildDloFrame(cabin, 1.0)
       expect(greenhouseInsetAt(cabin.dlo[1][1], f)).toBeCloseTo(cabin.dloTopInsetZ, 12)
       expect(greenhouseInsetAt(cabin.dlo[0][1] - 0.5, f)).toBeCloseTo(0, 12)
+    }
+  })
+})
+
+describe('shellHalfZAt 外壳唯一 Z 公式（车身/风挡带/DLO 玻璃共用）', () => {
+  const F = { dloYBot: 0.8, dloYSpan: 0.4, tiltInsetZ: 0.1, barrelRad: (10 * Math.PI) / 180, barrelRadius: 0.9, dloZBase: 1.05 }
+
+  it('腰带线处不收缩；任意高度 = baseHalfZ − greenhouseInsetAt', () => {
+    expect(shellHalfZAt(0.8, F, 1.0)).toBeCloseTo(1.0, 12)
+    for (const y of [0.8, 0.9, 1.0, 1.1, 1.2, 1.5]) {
+      expect(shellHalfZAt(y, F, 1.0)).toBeCloseTo(1.0 - greenhouseInsetAt(y, F), 12)
+    }
+  })
+
+  it('随高度单调不增（越往车顶越窄）', () => {
+    let prev = Infinity
+    for (let i = 0; i <= 10; i++) {
+      const z = shellHalfZAt(0.8 + i * 0.04, F, 1.0)
+      expect(z).toBeLessThanOrEqual(prev + 1e-12)
+      prev = z
+    }
+  })
+
+  it('极端倾角触发 35% 下限，壳层不压穿中线', () => {
+    const extreme = { ...F, tiltInsetZ: 1.2, barrelRad: 0, barrelRadius: 0 }
+    expect(shellHalfZAt(1.2, extreme, 1.0)).toBeCloseTo(0.35, 12)
+    expect(shellHalfZAt(1.2, extreme, 1.0, 0.5)).toBeCloseTo(0.5, 12)
+  })
+
+  it('I1 六车型：DLO 玻璃面恒在车身侧壁外 2mm（两条基准曲线严格平行）', () => {
+    for (const type of ALL_TYPES) {
+      const P = deriveCarProfile(carTypeParams[type], type)
+      const cabin = deriveCabinGlass(P, { carType: type })
+      const bodyExtentZ = P.W / 2 + 0.03          // 挤出半宽 = 车宽/2 + bevelThickness
+      const f = buildDloFrame(cabin, bodyExtentZ + 0.002)
+      for (let i = 0; i <= 20; i++) {
+        const y = f.dloYBot + (i / 20) * f.dloYSpan
+        const glass = Math.abs(dloZAt(y, f, 1))
+        const shell = shellHalfZAt(y, f, bodyExtentZ)
+        expect(glass - shell, `${type}@${y}`).toBeCloseTo(0.002, 12)
+      }
+    }
+  })
+
+  it('I1 六车型：风挡带半宽（bandHalfZ × taper）恒小于车身半宽，不可能越界成薄片', () => {
+    for (const type of ALL_TYPES) {
+      const P = deriveCarProfile(carTypeParams[type], type)
+      const cabin = deriveCabinGlass(P, { carType: type })
+      const bodyExtentZ = P.W / 2 + 0.03
+      const f = buildDloFrame(cabin, bodyExtentZ + 0.002)
+      const bandHalfZ = cabin.windshield.width / 2
+      // 车身 taper 比例（与 Car3D 同式）
+      const taper = (y) => shellHalfZAt(y, f, bodyExtentZ) / bodyExtentZ
+      for (let i = 0; i <= 20; i++) {
+        const y = f.dloYBot + (i / 20) * f.dloYSpan
+        const bandZ = bandHalfZ * taper(y)
+        const shellZ = shellHalfZAt(y, f, bodyExtentZ)
+        expect(bandZ, `${type}@${y}`).toBeLessThan(shellZ)
+        // 留出的余量 = 车身半宽 − 带半宽（至少 10mm 量级，构成 A 柱)
+        expect(shellZ - bandZ).toBeGreaterThan(0.01)
+      }
     }
   })
 })
@@ -720,6 +892,69 @@ describe('bandGlassSpine 玻璃带脊柱线（车顶 G1 圆角包裹，折痕拓
     // 底端在 C 柱底圆角切点 a 附近（y 高于腰带线 = 已上退）
     expect(spine[0][1]).toBeGreaterThan(p.beltLineY)
   })
+
+  it('minOffsetRatio=1：全程等距贴面（车顶搭接段仍保留间隙，不与车顶共面）', () => {
+    const f = filletCorner(1, 0, 0, 1, -2, 1, 0.2)
+    const gap = 0.0015
+    const base = bandGlassSpine(1, 0, 0, 1, { fillet: f, filletSamples: 6, roofOverlap: 0.03, offset: gap })
+    const hold = bandGlassSpine(1, 0, 0, 1, { fillet: f, filletSamples: 6, roofOverlap: 0.03, offset: gap, minOffsetRatio: 1 })
+    expect(base.length).toBe(hold.length)
+    // 默认 ratio=0：末端与车顶齐平；ratio=1：末端抬离 gap（+Y）
+    expect(hold[hold.length - 1][1] - base[base.length - 1][1]).toBeCloseTo(gap, 12)
+    expect(hold[hold.length - 1][1]).toBeGreaterThan(f.b[1])
+    // 斜面段两者一致（ny ≤ baseNy 时乘数恒为 1）
+    expect(hold[0][1] - base[0][1]).toBeCloseTo(0, 12)
+  })
+})
+
+describe('玻璃贴面偏移必须叠加车身 bevel 外扩量（折痕根因防回归）', () => {
+  // three.js ExtrudeGeometry 的 bevel 会把整个侧壁沿 X-Y 外扩 bevelSize：
+  // 车身真实壁面（含车顶）位于原始轮廓外 BODY_BEVEL_SIZE 处。
+  it('BODY_BEVEL_SIZE = 30mm，GLASS_SURFACE_GAP 为毫米级小间隙', () => {
+    expect(BODY_BEVEL_SIZE).toBeCloseTo(0.03, 12)
+    expect(GLASS_SURFACE_GAP).toBeGreaterThan(0)
+    expect(GLASS_SURFACE_GAP).toBeLessThan(0.002)
+  })
+
+  it('只按 GLASS_SURFACE_GAP 偏移的玻璃落在 bevel 外扩壁面内侧 29mm（整块不可见）', () => {
+    expect(BODY_BEVEL_SIZE - GLASS_SURFACE_GAP).toBeCloseTo(0.029, 12)
+  })
+
+  it('GLASS_GAP = BODY_BEVEL_SIZE + GLASS_SURFACE_GAP：与只加间隙的脊柱逐点相距恰为 bevel 量', () => {
+    const f = filletCorner(1, 0, 0, 1, -2, 1, 0.2)
+    const opts = { fillet: f, filletSamples: 6, roofOverlap: 0.03, minOffsetRatio: 1 }
+    const full = bandGlassSpine(1, 0, 0, 1, { ...opts, offset: BODY_BEVEL_SIZE + GLASS_SURFACE_GAP })
+    const flat = bandGlassSpine(1, 0, 0, 1, { ...opts, offset: GLASS_SURFACE_GAP })
+    expect(full.length).toBe(flat.length)
+    for (let i = 0; i < full.length; i++) {
+      expect(Math.hypot(full[i][0] - flat[i][0], full[i][1] - flat[i][1]), `pt${i}`)
+        .toBeCloseTo(BODY_BEVEL_SIZE, 12)
+    }
+  })
+
+  it.each(['sedan', 'suv', 'coupe', 'sport', 'mpv'])(
+    '%s 风挡顶端 = 车顶面（roofTopY + bevel）外 GLASS_SURFACE_GAP，不沉入车身',
+    (type) => {
+      const p = deriveCarProfile(carTypeParams[type], type)
+      const cabin = deriveCabinGlass(p, { carType: type })
+      const f = roofFilletSet(p, type, ROOF_FILLETS).front
+      const ws = cabin.windshield
+      const spine = bandGlassSpine(ws.x1, ws.y1, ws.x2, ws.y2, {
+        topInset: ws.topInset, bottomInset: ws.bottomInset,
+        offset: BODY_BEVEL_SIZE + GLASS_SURFACE_GAP, minOffsetRatio: 1, fillet: f
+      })
+      const last = spine[spine.length - 1]
+      // 车顶面 Y = roofTopY + BODY_BEVEL_SIZE（bevel 外扩）；玻璃再抬 GLASS_SURFACE_GAP
+      expect(last[1]).toBeCloseTo(p.roofTopY + BODY_BEVEL_SIZE + GLASS_SURFACE_GAP, 10)
+      // 对照：minOffsetRatio 默认为 0 → 顶端回到原始轮廓 roofTopY，
+      // 即沉入 bevel 车顶面以下 BODY_BEVEL_SIZE + GLASS_SURFACE_GAP（旧折痕根因）
+      const sunk = bandGlassSpine(ws.x1, ws.y1, ws.x2, ws.y2, {
+        topInset: ws.topInset, bottomInset: ws.bottomInset,
+        offset: BODY_BEVEL_SIZE + GLASS_SURFACE_GAP, fillet: f
+      })
+      expect(sunk[sunk.length - 1][1]).toBeCloseTo(p.roofTopY, 10)
+    }
+  )
 })
 
 describe('六车型玻璃拓扑守卫（复刻 bodyShape 轮廓内点判定，与数值审计同判据）', () => {

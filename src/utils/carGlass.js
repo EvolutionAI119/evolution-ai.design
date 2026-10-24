@@ -30,6 +30,17 @@ export const ROOF_FILLETS = {
 }
 
 /**
+ * 车身挤出倒角尺寸（米）：Car3D 的 ExtrudeGeometry bevelThickness / bevelSize 同值。
+ * three.js 的 bevel 会把整个侧壁沿 X-Y 外扩该尺寸（实测：墙面的轮廓 = 原始轮廓 + bevelSize），
+ * 因此车身真实壁面位于 ROOF 轮廓之外 BODY_BEVEL_SIZE 处——贴面玻璃的偏移量必须 ≥ 该值，
+ * 否则整块风挡/后风挡会沉入车身内部不可见。
+ */
+export const BODY_BEVEL_SIZE = 0.03
+
+/** 玻璃带相对 bevel 外扩壁面的贴面间隙（米）：仅避免与车身共面 z-fighting */
+export const GLASS_SURFACE_GAP = 0.001
+
+/**
  * 侧玻璃倾角（tumblehome，度）：侧窗面顶部向车身中线内收的角度，决定前视车肩造型。
  * 2D 侧视图无法表达该维度，为 3D 专属参数；可用 carParams.side_glass_angle 显式覆盖。
  * 参考真车：911/488 ≈ 25°+（车肩窄），Cayenne ≈ 12°，V级 ≈ 10°，F-150 ≈ 8°（车肩宽）
@@ -107,21 +118,28 @@ export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0, bot
  *   offset 渐减：A 柱段（ny = baseNy）满 offset；圆角段随法线朝车顶旋转
  *   （ny↑）线性递减；车顶搭接段（ny=1）offset=0 → 玻璃与车顶齐平，
  *   消除「玻璃顶高出车顶 3cm」的台阶折痕。
- * @param {object} opts { topInset, bottomInset, offset, fillet: {a,ctrl,b}|null, filletSamples, roofOverlap }
+ * @param {object} opts { topInset, bottomInset, offset, fillet: {a,ctrl,b}|null,
+ *   filletSamples, roofOverlap, minOffsetRatio（默认 0；1 = 全程等距贴面） }
  * @returns {number[][]} [[x,y],…] 脊柱点（含 offset），底→顶
  */
 export function bandGlassSpine(x1, y1, x2, y2, opts = {}) {
-  const { topInset = 0, bottomInset = 0, offset = 0, fillet = null, filletSamples = 6, roofOverlap = 0.02 } = opts
+  const {
+    topInset = 0, bottomInset = 0, offset = 0, fillet = null,
+    filletSamples = 6, roofOverlap = 0.02, minOffsetRatio = 0
+  } = opts
   const dx = x2 - x1, dy = y2 - y1
   const len = Math.hypot(dx, dy) || 1
   let nx = dy / len, ny = -dx / len
   if (ny < 0) { nx = -nx; ny = -ny }   // 法线统一朝上（外表面）
   const baseNy = ny
-  // offset 乘数：法线未朝上翘时（A 柱斜面）为 1；法线朝车顶（ny→1）时线性降到 0
+  // offset 乘数：法线未朝上翘时（A 柱斜面）为 1；法线朝车顶（ny→1）时线性降到
+  // minOffsetRatio（默认 0 → 玻璃顶与车顶齐平；传 1 → 全程等距贴面，保持 1~2mm
+  // 恒定间隙，避免与车身共面产生 z-fighting）
   const offsetMult = (nYy) => {
     if (nYy <= baseNy) return 1
-    if (nYy >= 1) return 0
-    return (1 - nYy) / (1 - baseNy)
+    if (nYy >= 1) return minOffsetRatio
+    const t = (1 - nYy) / (1 - baseNy)
+    return minOffsetRatio + (1 - minOffsetRatio) * t
   }
   const pts = []
   const push = (x, y, nX, nY) => {
@@ -490,6 +508,40 @@ export function buildDloStripRange(dlo, frame, rows, zSide, xFront = null, xRear
 }
 
 /**
+ * 侧窗 DLO 分片划分（Car3D 消费端纯函数）
+ *
+ * 侧窗按车门分缝切成 4 片/侧：A 柱前固定片 → 前门片 → 后门片 → C 柱后固定片。
+ * 分缝两侧各让出半个缝宽，使相邻两片之间恰好留出一个缝宽的空隙——
+ * 玻璃上的门缝因此与 2D 分缝线、车身门缝同位同宽。
+ * 双门车型（coupe/sport）与皮卡无后门：doorLayout.rearSeamX 为 null，
+ * 此时后门片不存在，后固定片直接从 B 柱接缝之后起算。
+ *
+ * @param {{ frontSeamX: number, midSeamX: number, rearSeamX: number|null }} doorLayout
+ *        deriveDoorLayout 返回值（X+ 朝车头，前缘 X 更大）
+ * @param {number} seamWidthMM 门缝宽度（毫米），与车身门缝同一参数
+ * @returns {Array<{ key: string, xFront: number|null, xRear: number|null, hingeKey: string|null }>}
+ *          xFront/xRear 为世界 X；null 表示该片直接贴到 DLO 前/后缘（由 buildDloStripRange 夹取）
+ */
+export function deriveDloPaneRanges(doorLayout, seamWidthMM = 8) {
+  const gap = Math.min(Math.max(seamWidthMM, 2), 20) / 2000
+  const { frontSeamX, midSeamX, rearSeamX } = doorLayout
+  const panes = [
+    { key: 'fixedFront', xFront: null, xRear: frontSeamX + gap, hingeKey: null },
+    { key: 'front', xFront: frontSeamX - gap, xRear: midSeamX + gap, hingeKey: 'front' }
+  ]
+  if (rearSeamX !== null) {
+    panes.push({ key: 'rear', xFront: midSeamX - gap, xRear: rearSeamX + gap, hingeKey: 'rear' })
+  }
+  panes.push({
+    key: 'fixedRear',
+    xFront: rearSeamX === null ? midSeamX - gap : rearSeamX - gap,
+    xRear: null,
+    hingeKey: null
+  })
+  return panes
+}
+
+/**
  * 车身 greenhouse 在高度 y 处的侧壁内收量（米）。
  * 与 DLO 玻璃面同公式（倾角线性 + 桶面圆弧，t 按 [dloYBot, dloYBot+dloYSpan] 钳位），
  * 供车身挤出体/玻璃带做 Z 向收窄变形——车身侧壁、车顶、柱剪影随玻璃角度联动，
@@ -500,4 +552,23 @@ export function buildDloStripRange(dlo, frame, rows, zSide, xFront = null, xRear
  */
 export function greenhouseInsetAt(y, frame) {
   return frame.dloZBase - Math.abs(dloZAt(y, frame, 1))
+}
+
+/**
+ * 车身外壳在高度 y 处的侧向半宽（米）——车身收窄与全部玻璃共用的唯一 Z 公式。
+ *
+ * 任意以 baseHalfZ 为「腰带线处半宽」的壳层，其侧壁半宽 = baseHalfZ − greenhouseInsetAt(y)。
+ * 车身（baseHalfZ = bodyExtentZ）、风挡带（baseHalfZ = band 半宽）、DLO 玻璃
+ * （baseHalfZ = dloZBase）因此共享同一条内收曲线，不存在两套基准：
+ *   - DLO 玻璃：|dloZAt| − shellHalfZAt(y, frame, bodyExtentZ) ≡ 2mm（buildDloFrame 的 +0.002）
+ *   - 风挡带：halfZ = bandHalfZ × taper 恒小于车身半宽 → 不可能越界成薄片
+ * 下限 minRatio 防止极端倾角把壳层压穿中线。
+ * @param {number} y 目标高度
+ * @param {object} frame buildDloFrame 返回值
+ * @param {number} baseHalfZ 腰带线处的基准半宽（米）
+ * @param {number} [minRatio=0.35] 最小收缩比例
+ * @returns {number} 该高度的外壳半宽（米）
+ */
+export function shellHalfZAt(y, frame, baseHalfZ, minRatio = 0.35) {
+  return Math.max(baseHalfZ - greenhouseInsetAt(y, frame), baseHalfZ * minRatio)
 }
