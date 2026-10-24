@@ -192,6 +192,7 @@ let flightGroundGlow = null   // 地面能量场（scene 子对象，随高度�
 // doorOpen 开关；doorProgress ∈ [0,1] 缓动趋近目标；doorHinges 由 createCar 重建
 const doorOpen = ref(false)
 let doorHinges = []
+let doorSeams = []
 let doorProgress = 0
 const toggleDoor = () => { doorOpen.value = !doorOpen.value }
 
@@ -586,8 +587,9 @@ const createCar = () => {
   const bodyDepth = W - BODY_BEVEL_SIZE * 2
   const bodyThickness = BODY_BEVEL_SIZE
   const bodyExtentZ = (bodyDepth + bodyThickness * 2) / 2
-  // 车轮装配配合（纯函数同源判据）：胎外侧面收进侧壁内，杜绝轮-身干涉观感
-  const fit = deriveWheelFitment(P, bodyThickness)
+  // 车轮/车门/门缝/后视镜的安装基准：车身实际半宽 bodyExtentZ（= W/2），
+  // 不是 W/2 + bevel——否则这些部件会整体浮出车身外表面。
+  const fit = deriveWheelFitment(P, bodyExtentZ)
 
   const extrudeSettings = {
     depth: bodyDepth,
@@ -929,11 +931,13 @@ const createCar = () => {
   const doorH = doorTop - doorBottom
   const seamW = (props.carParams?.door_seam_width ?? 8) / 1000
   doorHinges = []
+  doorSeams = []
   const addSeam = (x) => {
     for (const zSide of [1, -1]) {
       const s = new THREE.Mesh(new THREE.BoxGeometry(seamW, doorH, 0.004), seamMat)
       s.position.set(x, doorBottom + doorH / 2, zSide * (fit.wall + 0.002))
       group.add(s)
+      doorSeams.push(s)   // 开门时随动画隐藏：否则细缝条会悬在空洞中央形成遮挡
     }
   }
   addSeam(dl.frontSeamX); addSeam(dl.midSeamX)
@@ -1303,6 +1307,10 @@ const animate = () => {
     const openRad = ((props.carParams?.door_open_angle ?? 70) * Math.PI) / 180
     const e = quinticSmoothstep(doorProgress) * openRad
     for (const d of doorHinges) d.hinge.rotation.y = d.sign * e   // 正负号使门板向外摆（+Z 侧向 +Z、−Z 侧向 −Z）
+    // 门缝条属于「关门时的分缝观感」：门一开就与门板脱开、悬在洞口中央，
+    // 必须在 doorProgress 抬起后立即隐藏，只在完全关闭时显示。
+    const seamVisible = doorProgress < 0.02
+    for (const s of doorSeams) s.visible = seamVisible
   }
 
   if (autoRotate.value && !isDragging && currentView.value === 'perspective') {

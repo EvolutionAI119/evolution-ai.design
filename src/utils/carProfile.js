@@ -436,10 +436,12 @@ export function deriveLiftDevices(P, count = 6) {
 
 /**
  * 车轮装配配合（2D/3D 同源判据）：轮胎外侧面必须收进车身侧壁之内，
- * 杜绝侧视「轮胎压过拱唇/裙边」的干涉观感。bodyThickness 与 Car3D 拉伸 bevel 一致。
+ * 杜绝侧视「轮胎压过拱唇/裙边」的干涉观感。
+ * bodyHalfZ 为车身挤出后的实际半宽（Car3D 传 bodyExtentZ）：
+ * 挤出深度 = W − 2×bevel ⇒ 半宽 = W/2，与 bevel 大小无关，不可再用 W/2 + bevel。
  */
-export function deriveWheelFitment(P, bodyThickness = 0.03, margin = 0.02) {
-  const wall = (P.W + bodyThickness * 2) / 2          // 车身侧壁外表面（含 bevel 外扩）
+export function deriveWheelFitment(P, bodyHalfZ = P.W / 2, margin = 0.02) {
+  const wall = bodyHalfZ                              // 车身侧壁外表面 |z|（最外侧）
   const tireW = P.tireWidth
   const wheelZ = wall - tireW / 2 - margin            // 轮心 Z：胎外侧面藏于侧壁内 margin
   return { wall, tireW, wheelZ, tireOuter: wheelZ + tireW / 2 }
