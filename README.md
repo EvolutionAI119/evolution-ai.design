@@ -230,7 +230,7 @@ _writer            已验证           body_ends(G1)       SOP 报告 / FreeCAD 
 - [模块集成数据流](docs/MODULE_INTEGRATION_FLOW.md) — 模块间集成与数据流转
 - [SISA 2D 渲染集成](docs/SISA_2D_RENDER_INTEGRATION.md) — SISA 2D 渲染管线集成说明
 - [飞行性能报告](docs/flight_performance_report.md) — VTOL + 反重力飞控全栈性能核验（附 [HTML 完整版](docs/flight_performance_analysis.html)）
-- [英文学术论文](docs/EVOLUTION_AI_paper.md) — 贝叶斯优化 + NURBS A 级曲面 + DL/LLM 融合 + 端到端集成
+- [学术论文](docs/EVOLUTION_AI_paper.md) — 贝叶斯优化 + NURBS A 级曲面 + DL/LLM 融合 + 端到端集成（英文版：[docs/en/EVOLUTION_AI_paper.md](docs/en/EVOLUTION_AI_paper.md)）
 - [造型开发方法论](docs/methodology.md) — 五维度方法论、SOP、成熟度自检
 - [汽车造型设计哲学](docs/design_philosophy.md) — 形·理·数，观察·约束·生成·演化，跨文明哲学根基
 - [设计元理论与自主知识体系](docs/design_meta_theory.md) — Love 九层框架、十维度知识体系、中国造型哲学（考工记/谢赫六法）
