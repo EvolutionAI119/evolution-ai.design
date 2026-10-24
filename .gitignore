@@ -266,3 +266,16 @@ backend/tools/analyze_a_surface_*
 backend/app/brand_dna/dnas/*
 !backend/app/brand_dna/dnas/README.md
 !backend/app/brand_dna/dnas/demo_public.json
+
+# ======================================================================
+# 2026-10-24 审计治理：一次性调试脚本与运行产物归档忽略
+# ======================================================================
+
+# scripts/ 下划线前缀子目录均为一次性调试/候选产物（诊断、Cayenne 背景修复等）
+scripts/_*/
+
+# 多工具协同 IDE 工作文档（.trae/agents 与 .trae/skills 仍入库，仅忽略 documents）
+.trae/documents/
+
+# 算法运行中间输出（可重新生成）
+algorithm_model/outputs/
