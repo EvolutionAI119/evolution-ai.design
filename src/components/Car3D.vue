@@ -368,6 +368,49 @@ const createNurbsWheel = (w) => {
   return g
 }
 
+/**
+ * 门洞内壁材质分组（开门状态专用）
+ *
+ * 车身由侧围轮廓整宽挤出：门洞沿 Z 贯穿，洞口的四壁（底槛面 / 前后门框面）
+ * 因此横贯整车宽度。开门后被看成大片车身色板——即「多余车身」。
+ * 把三角形重心落在门洞矩形内、且不在外蒙皮端面（|z| 接近半车宽的倒角环带保留
+ * 车身色作门框唇边）的三角形归入材质组 1，用深色内饰材质渲染，
+ * 门洞内读作座舱内壁，车身色不再出现在门洞里。
+ *
+ * @param {THREE.BufferGeometry} geom 车身挤出几何（非索引，就地重排）
+ * @param {{x0:number,x1:number,y0:number,y1:number}} rect 门洞矩形（米）
+ * @param {number} zCap 外蒙皮端面保留带宽（|z| ≥ zCap 的三角形保持车身色）
+ * @returns {number} 归入内饰组的三角形数
+ */
+function splitDoorApertureInterior(geom, rect, zCap) {
+  const pos = geom.attributes.position
+  const arr = pos.array
+  const nTri = pos.count / 3
+  const exterior = []
+  const interior = []
+  for (let i = 0; i < nTri; i++) {
+    const o = i * 9
+    const cx = (arr[o] + arr[o + 3] + arr[o + 6]) / 3
+    const cy = (arr[o + 1] + arr[o + 4] + arr[o + 7]) / 3
+    const cz = (arr[o + 2] + arr[o + 5] + arr[o + 8]) / 3
+    const inAperture = cx > rect.x0 && cx < rect.x1 && cy > rect.y0 && cy < rect.y1 && Math.abs(cz) < zCap
+    ;(inAperture ? interior : exterior).push(o)
+  }
+  if (!interior.length) return 0
+  const out = new Float32Array(arr.length)
+  let k = 0
+  for (const o of exterior) for (let j = 0; j < 9; j++) out[k++] = arr[o + j]
+  const extVerts = k / 3
+  for (const o of interior) for (let j = 0; j < 9; j++) out[k++] = arr[o + j]
+  geom.setAttribute('position', new THREE.BufferAttribute(out, 3))
+  geom.deleteAttribute('uv')          // 顶点重排后 uv 失效；本模型不使用贴图
+  geom.computeVertexNormals()         // normal 属性不随重排走，必须整面重算
+  geom.clearGroups()
+  geom.addGroup(0, extVerts, 0)
+  geom.addGroup(extVerts, k / 3 - extVerts, 1)
+  return interior.length
+}
+
 const createCar = () => {
   // 有后端真实网格时走高保真路径
   if (props.nurbsMesh) return createNurbsCar(props.nurbsMesh)
@@ -391,6 +434,16 @@ const createCar = () => {
     color: bodyColor,
     metalness: 0.6,
     roughness: 0.25,
+    wireframe: wireframeMode.value
+  })
+
+  // 门洞内壁材质（开门状态）：深色内饰面，替代洞壁上的车身色 → 门洞里读作座舱，
+  // 不再是一块横贯车宽的车身色板。DoubleSide 兜住洞壁朝向差异。
+  const interiorMat = new THREE.MeshStandardMaterial({
+    color: 0x1b1d22,
+    metalness: 0.2,
+    roughness: 0.9,
+    side: THREE.DoubleSide,
     wireframe: wireframeMode.value
   })
 
@@ -449,6 +502,7 @@ const createCar = () => {
   // 开门时侧壁不再与门板重复，物理空间唯一、无 z-fighting。
   // 关闭状态不挖洞：门板薄板贴于完整侧壁外，即常规车关闭门缝的视觉。
   // 注意：用 holes 而非压平轮廓，避免挤出 bevel 在压平区产生折叠/顶点爆炸。
+  let doorAperture = null
   if (props.doorOpened || doorOpen.value) {
     const doorRearEdge = (dl.rearSeamX === null ? dl.midSeamX : dl.rearSeamX) - 0.004
     const doorFrontEdge = dl.frontSeamX + 0.004
@@ -461,6 +515,11 @@ const createCar = () => {
     hole.lineTo(doorRearEdge, doorHoleTop)
     hole.closePath()
     bodyShape.holes.push(hole)
+    // 门洞矩形（供挤出后把洞口内壁改判为内饰材质，见 splitDoorApertureInterior）
+    doorAperture = {
+      x0: doorRearEdge - 0.008, x1: doorFrontEdge + 0.008,
+      y0: doorHoleBottom - 0.008, y1: doorHoleTop + 0.004
+    }
   }
 
   const bodyDepth = W
@@ -497,7 +556,15 @@ const createCar = () => {
   }
   applyGreenhouseTaper(bodyGeom)
 
-  const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat)
+  // 开门状态：门洞四壁横贯整车宽度（holes 沿 Z 通透），整片车身色在门洞里外露。
+  // 把洞壁三角形改判为内饰材质组，|z| ≥ 外蒙皮端面处的倒角环带仍保留车身色作门框唇边。
+  let bodyMats = bodyMat
+  if (doorAperture) {
+    splitDoorApertureInterior(bodyGeom, doorAperture, bodyDepth / 2 - bodyThickness)
+    bodyMats = [bodyMat, interiorMat]
+  }
+
+  const bodyMesh = new THREE.Mesh(bodyGeom, bodyMats)
   bodyMesh.castShadow = true
   bodyMesh.receiveShadow = true
   group.add(bodyMesh)
