@@ -1,0 +1,69 @@
+# 第 13 章 安全围栏与游客模式
+
+> 作者：量子剑客
+> 第四卷 · 工程：把不确定性收敛为交付
+
+## 一、引言问题
+
+AI 原生平台的攻击面比传统 Web 更宽。它多出了三类传统系统没有的暴露：模型代理要把请求转发给外部大模型，URL 若可由用户控制就是现成的 SSRF 通道；用户把各家模型的 API Key 托付给平台，入库方式直接决定拖库时的损失；为了演示与导流，平台还想让未登录访客体验全功能——"开放"与"失守"之间只隔一层开关。安全设计要回答的不是"要不要加锁"，而是三件更细的事：默认姿态是什么、违规在何时被发现、开放如何被显式设计。
+
+本章的命题是：**默认拒绝、显式放行、生产 fail-fast**。默认拒绝让攻击面收敛到白名单之内；显式放行让每一处开放都有名有姓、可被审计；fail-fast 把安全违规从"运行期事故"提前为"启动期报错"——宁可起不来，不可带病上线。
+
+## 二、原则
+
+**其一，默认拒绝，一切放行皆白名单。** CORS 生产白名单、模型提供商固定注册表、CSP 严格策略，三者的共同结构是：先假设请求者有恶意，再逐条列出被允许的名字。白名单之外没有"暂时放行"。
+
+**其二，生产 fail-fast，违规止于启动。** 安全配置的校验发生在应用启动阶段，而不是第一次被攻击时。校验失败即抛异常，进程拒绝起来；一个起不来的服务是事故，一个带着弱密钥运行的服务是灾难。
+
+**其三，密钥分层，各自独立失守面。** 平台自身的签发密钥、用户托付的模型 Key、部署侧的隧道凭据，是三个独立秘密：各自存储、各自轮换、各自的泄露不级联。
+
+**其四，开放是显式设计，不是权限漏洞。** 游客模式这类"全站放行"必须是带着防护栏的产品决策：放行的边界写进代码、写进测试、写进启动校验，而不是一次没人记得的临时改动。
+
+## 三、案例解剖
+
+先看 fail-fast 的落点。`backend/app/config.py` 的配置模型上挂着一个生产校验器：`ENVIRONMENT=production` 时，`SECRET_KEY` 不得等于内置开发默认值、长度不得少于 32 位；`DEBUG` 必须为 false（DEBUG 开启时 CORS 退化为任意 Origin 且 500 响应暴露堆栈）；`GUEST_MODE` 必须关闭。任一条件不满足，pydantic 在启动阶段直接抛 `ValidationError`，应用拒绝上线。部署侧与之一致：`deploy/docker-compose.yml` 用 `${SECRET_KEY:?...}` 让缺失密钥时 compose 直接报错，两道关卡一外一内。
+
+再看密钥分层。JWT 由 PyJWT 签发，密码哈希存储；用户托付的各模型 API Key 以 Fernet 对称加密入 `api_keys` 表，加密密钥由 `SECRET_KEY` 经 SHA256 派生——明文 Key 只在转发请求的内存里短暂存在；cpolar authtoken 等部署凭据只进 `.env`，禁止进入命令载荷。三层秘密互不包含，任何一层失守都不自动交出另外两层。
+
+游客模式是"显式开放"的样本。账号封存期开启 `GUEST_MODE` 后，`security.py` 的 `get_current_user` 把无令牌请求统一落到内置 guest 账户（惰性幂等创建），全站功能对匿名访客可达；但这不是无边界裸奔：生产环境开启即触发前述 fail-fast，管理语义仍由依赖注入收敛，测试侧则由 `backend/tests/conftest.py` 强制 `GUEST_MODE=false`，保证 401/403 用例走真实鉴权路径。`test_guest_mode.py` 用两条例锁定边界：游客放行成立，生产开启必拒。
+
+<figure class="doc-figure"><img src="../docs/images/october-guest-arch.svg" alt="游客模式架构：GUEST_MODE 开关将匿名请求落到内置 guest 账户，生产环境开启则 fail-fast，测试强制关闭"><figcaption><strong>图 13-1 ｜ 游客模式架构：全功能开放 + 生产防护</strong> 读图：匿名请求经 `GUEST_MODE` 开关与 `security.py` 旁路落到内置 guest 账户，Designer、Projects、Quality 等全站功能与 /admin 后台随之可达；右侧两条防护栏是硬约束——生产环境开启即启动拒绝（与弱 SECRET_KEY 同级校验），测试套件经 conftest 强制关闭，防止鉴权语义用例被游客旁路击穿。</figcaption></figure>
+
+CSP 展示了"默认拒绝"如何细化到路径粒度。`main.py` 的安全头中间件统一注入 X-Content-Type-Options、X-Frame-Options、CSP、Referrer-Policy、Permissions-Policy 与 Cache-Control，并抹去 `server: uvicorn`；CSP 默认严格，`script-src 'self'`。但独立后台依赖 vue-i18n 的运行时编译，需要 `unsafe-eval`；平台的解法不是全站放宽，而是按路径选择策略——仅 `/admin` 文档单独放行 `unsafe-eval`，公开 API 与主站保持严格。`test_admin_console.py` 把这条边界写成断言：`unsafe-eval` 出现在且仅出现在后台文档的 CSP 中。
+
+SSRF 的解法是消灭选择。`llm_proxy.py` 把七家提供商的官方端点写死在注册表里，用户只能选择 provider，不能提交 URL；请求体另有围栏限值（全局 50MB、LLM 单请求 256KB、64 条消息、6 万字符），提示注入特征扫描默认记录预警。代理可以透传，但目的地从不由请求者决定。
+
+<figure class="doc-figure"><img src="../docs/images/october-csp-scope.svg" alt="CSP 作用域：/admin 文档放行 unsafe-eval 供 vue-i18n 编译，公开 API 与主站保持严格策略"><figcaption><strong>图 13-2 ｜ CSP 作用域：/admin 放行 unsafe-eval，其余严格</strong> 读图：左列为默认严格域（`/api/v1/*` 与主站，`script-src 'self'`），右列为 `/admin` 文档的专用放宽（仅允许 Function 构造器供 vue-i18n 编译）；中间 SecurityHeadersMiddleware 按请求路径选择策略。下方记录了这条边界的来历：首测后台白屏（EvalError），修复后由回归测试锁定作用域。</figcaption></figure>
+
+## 四、反模式与代价
+
+**弱默认密钥上线。** SECRET_KEY 沿用开发默认值，JWT 签发与用户 Key 加密同源失守。fail-fast 的反面不是"跑得起来"，而是"带着可预测的秘密静默裸奔"。
+
+**游客模式进生产。** 一次演示配置被带进部署，全部受保护接口（含超管）对匿名开放。代价不是被攻击，而是攻击发生时没有任何记录能区分访客与管理员。
+
+**用户可控 URL。** 模型代理允许前端提交 endpoint 字段。这是教科书式 SSRF：内网地址、云元数据接口随之暴露。消灭这个字段，比任何过滤正则都可靠。
+
+**一刀切 CSP。** 要么全站 `unsafe-eval`（等于没有 CSP），要么全站严格（后台白屏）。正确的粒度是路径作用域，并用测试锁死。
+
+**测试走游客旁路。** 测试环境继承 `GUEST_MODE=true`，401/403 用例全被放行，鉴权回归静默失效。conftest 里的一行强制关闭，价值超过一百条用例。
+
+**密钥进命令载荷。** 把 authtoken 写进启动脚本与命令行。进程列表与 shell 历史都是泄露面；凭据只应活在 `.env` 与环境变量里。
+
+## 五、操作清单
+
+1. 生产启动前列三项硬校验：SECRET_KEY 非默认且 ≥32 位、DEBUG=false、GUEST_MODE=false（见 `config.py` 校验器）。
+2. 部署侧用 `${SECRET_KEY:?...}` 让 compose 缺密钥即报错，与应用校验形成双闸。
+3. 用户 API Key 一律经 Fernet 加密入 `api_keys` 表，明文不落库、不进日志。
+4. 新增外部调用先问"URL 谁定的"：必须来自服务端注册表，禁止请求者提供目的地。
+5. CSP 调整只允许路径级放宽，参照 `/admin` 模式，并为新作用域写回归断言。
+6. 安全响应头由中间件统一注入，禁止在单路由里即兴改写。
+7. CORS 生产白名单显式列举 Origin，禁止 ACAO `*` 与 credentials 组合。
+8. 测试环境在 conftest 强制关闭游客模式与调试开关，鉴权用例必须走真实路径。
+9. 为每条安全边界配一条测试：游客放行、生产 fail-fast、CSP 作用域各至少一例。
+10. 凭据只进 `.env`，入库前审查脚本与文档，杜绝密钥出现在命令载荷与提交历史。
+
+## 六、本章自检
+
+1. 把生产环境的 SECRET_KEY 换成开发默认值，你的系统会在启动时拒绝，还是会静默运行到被攻破？
+2. 你的"开放体验"开关有没有三道锁：生产禁开、管理收敛、测试强制真实鉴权？缺哪一道？
+3. 如果攻击者拿到了你系统里所有的用户 API Key 密文，他还差什么才能用？这个"还差什么"是否只有一个秘密？

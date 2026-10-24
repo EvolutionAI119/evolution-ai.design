@@ -1,0 +1,75 @@
+# Chapter 8. Surrogate Models and Bayesian Optimization
+
+> Author: Quantum Swordsman
+> Volume III · Intelligence: Putting Models into the System
+
+## 1. The Problem: When Every Evaluation Is Expensive
+
+Grid search and random search rest on a hidden assumption: evaluating the objective once costs almost nothing. Automotive styling development violates that assumption. Scoring one set of styling parameters means building the vehicle and running the quality evaluator — hundreds of milliseconds per shot in software; in real engineering, one evaluation may be a CFD run, a clay model, or an expert review, costing hours or weeks. In a world of expensive evaluations, **deciding which parameter set deserves the next evaluation is itself the most valuable decision.**
+
+Brute force hits two walls here: the dimension wall and the cost wall. EVOLUTION AI's styling search space has 14 continuous dimensions (carved out of the 22-dimensional CarParams, with the 8 dimensions carrying size, regulation, and structural hard points frozen). Even ten grid points per dimension would mean 10^14 evaluations. The proposition of this chapter is: **when evaluation is expensive, trade a GP surrogate plus an acquisition function for data efficiency, and judge convergence with dual criteria.** The essence of Bayesian optimization is not cleverer sampling; it is pricing uncertainty — every unit of evaluation budget must buy back the most information possible.
+
+## 2. Principles
+
+### Principle 1. Build the surrogate first, then talk about search
+
+The first weapon of Bayesian optimization is not the acquisition function but the surrogate: a cheap probabilistic model that approximates the expensive true objective. The platform uses a Gaussian process with an RBF kernel, isotropic length scale ℓ=0.25 in normalized space, diagonal jitter of 1e-6, and Cholesky-based solves — the whole engine runs on NumPy and SciPy alone. The value of a GP is not raw fitting accuracy; it is that it returns a posterior mean and an uncertainty together. It knows where it does not know, and that is the precondition for pricing exploration.
+
+### Principle 2. The acquisition function prices exploration
+
+With mean and uncertainty in hand, the acquisition function answers "where to sample next." Expected Improvement (EI, ξ=0.01) favors regions with both room to improve and high uncertainty; Upper Confidence Bound (UCB, κ=2.0) lifts the posterior mean by κσ across the board and is more willing to visit unsampled areas. Both are maximized over a candidate pool of 4096 random points — a derivative-free, naturally parallel, deliberately simple optimizer. Minimization objectives are negated internally so that one shared maximization path serves both goals.
+
+### Principle 3. Cold start must be honest
+
+With fewer than two observations, the GP carries no information, and any "model suggestion" would be posturing. The engine therefore performs random space-filling in this phase and says so explicitly; only after two observations does it switch to GP-driven acquisition. An honest cold start is the "signal first" principle restated inside the algorithm.
+
+### Principle 4. Convergence needs dual criteria
+
+"Not improving anymore" is not the same as "converged." The platform requires two criteria simultaneously. First, the best score is monotonically non-decreasing across rounds and enters a plateau where the slope approaches zero — empirically within 20–40 rounds. Second, the EI acquisition value falls below the 0.01 threshold, meaning the expected gain from further exploration is negligible. Watching only the score mistakes a local plateau for the finish line; watching only EI ignores evaluation noise. Two independent signals must cross-confirm before convergence becomes a defensible engineering claim.
+
+<figure class="doc-figure"><img src="../docs/images/en/paper-bayes-engine.svg" alt="Bayesian optimization loop with GP surrogate"><figcaption><strong>Figure 8-1 | The Bayesian optimization loop: GP surrogate (left) and the five-step iteration (right)</strong> How to read: in the left panel, amber dots are evaluated samples, the green line is the posterior mean, the shaded band is the ±σ confidence region (wider means more uncertain), and the pink dashed line marks the EI maximum — the next sampling point. The right panel shows the five-step loop (initial DOE → real evaluation → surrogate update → EI selection → suggestion output). The inset convergence trace shows the best score monotonically non-decreasing, reaching a plateau within 20–40 rounds.</figcaption></figure>
+
+## 3. Case Study: The Full Lifecycle of One Session
+
+The platform's Bayesian module has only 7 endpoints, yet it makes the loop of "suggest → evaluate → report → converge → export" a reproducible first-class citizen.
+
+**Step one, create the session.** `POST /bayes/sessions` carries the parameter space (14 dimensions by default, with engineering bounds such as length 4000–6200 and wheelbase 2400–3700), the goal direction, the acquisition function, and a random seed. An empty space, duplicate names, or `max <= min` all return 400 — the contract stops illegal experiments at the door.
+
+**Step two, suggest.** `suggest` returns parameter sets guaranteed inside the bounds. With fewer than two observations this is honest random filling; afterward it is GP-plus-acquisition targeted suggestion.
+
+**Step three, evaluate for real.** The suggested parameters are used to build the vehicle and scored through `/ai/evaluate-quality` as an engineering proxy, or handed to human review. This is the only expensive step in the loop, and it is the one all data efficiency exists to serve.
+
+**Step four, report back.** `observe` requires parameters covering all 14 dimensions of the space; unknown, missing, or out-of-bounds values return 400. On receipt, the GP retrains immediately and beliefs update.
+
+**Step five, converge and export.** `best` returns the current optimum (409 when no observation exists — never a fabricated empty best); `samples` exports every observation, with `feature_order` aligned position-by-position to the training pipeline's feature columns. An optimization campaign thus settles into a supervised training dataset.
+
+<figure class="doc-figure"><img src="../docs/images/en/bayes2-chart.svg" alt="Quantified Bayesian convergence: best-score curve and EI decay"><figcaption><strong>Figure 8-2 | How convergence is quantified: the dual criteria of score plateau and EI decay</strong> How to read: the left panel shows the best score monotonically non-decreasing across rounds, entering a near-zero-slope plateau within 20–40 rounds; the right panel shows the EI acquisition value decaying logarithmically, crossing below the 0.01 threshold when further exploration is negligible. Both panels must hold at once for true convergence.</figcaption></figure>
+
+Engine correctness is backed by experiment: on the controlled one-dimensional objective `-(x-0.7)²`, both EI and UCB run 15 suggest–observe rounds, and both push the best-so-far past the -0.01 band, effectively reaching the known optimum. The 12 tests in `backend/tests/test_bayes.py` cover the session lifecycle, boundary validation, directional correctness, and export format. One caution: sessions live in process memory and are wiped on backend restart — a deliberate simplicity. Anything worth keeping must go through `samples` export; memory belongs to data, not to the process.
+
+## 4. Anti-Patterns and Their Costs
+
+**Anti-pattern 1: Random search masquerading as Bayesian optimization.** No surrogate, no acquisition, just uniform sampling and luck. The cost is evaluation budget sprayed evenly across a 14-dimensional space where most regions are useless, multiplying the rounds to convergence.
+
+**Anti-pattern 2: Treating the surrogate as truth.** Using the GP posterior mean directly as the quality score, skipping real evaluation. The cost is a model that lies confidently where it has no data, and an optimization that converges to a phantom optimum existing only in the surrogate.
+
+**Anti-pattern 3: Single-signal convergence.** Declaring victory when the score curve flattens. The cost is mistaking a local plateau for the global end — or, conversely, abandoning a still-profitable region too early in the presence of noise.
+
+**Anti-pattern 4: Observation formats divorced from training.** Field order, units, and conventions in the optimization log disagree with the training pipeline. The cost is that accumulated observations cannot be replayed as a training set; the bridge between search and learning is quietly dismantled.
+
+## 5. Operational Checklist
+
+1. When defining a search space, write each dimension's name, unit, and engineering bounds (following the default 14-dimensional space); frozen hard-point dimensions stay out of the space.
+2. Fix the random seed for every experiment so the suggestion sequence is reproducible.
+3. Reported observations must cover every dimension of the space; reject incomplete ones outright.
+4. Default to EI; switch to UCB for multi-modal objectives or wider coverage, and record κ.
+5. Declare convergence only when both the score plateau and the EI threshold (0.01) hold.
+6. Export and archive through `samples` as soon as a session converges; never rely on in-process memory.
+7. Before feeding exported samples into training, verify `feature_order` matches the training pipeline position by position.
+8. Maintain convergence tests for the optimizer (following the 15-round one-dimensional experiment) and rerun them on every change.
+
+## 6. Chapter Self-Check
+
+1. Can your optimizer say why the next evaluation point deserves its budget? If not, it is just random search.
+2. When you declare an optimization converged, how many independent pieces of evidence do you hold? With only one, it is not yet time to declare.
+3. Can the observations from your last optimization campaign be replayed today as training data, exactly as recorded? If not, where did the bridge between search and learning break?
