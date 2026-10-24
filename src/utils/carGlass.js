@@ -96,6 +96,64 @@ export function bandGlassEndpoints(x1, y1, x2, y2, topInset = 0, offset = 0, bot
 }
 
 /**
+ * 斜面玻璃带脊柱线（自底向顶有序，米制，可单测）。
+ * 无 fillet：退化为「底缘→顶缘」两点（与 bandGlassEndpoints 同语义）。
+ * 有 fillet：直线段止于圆角切点 a → 二次贝塞尔采样包裹圆角 → 沿 b 点切向
+ *   向车顶延伸 roofOverlap 搭接——玻璃随车身同一 G1 圆角弯曲，消除
+ *   「平顶玻璃 vs 圆角车身」的台阶折痕（风挡顶/车顶后缘折痕拓扑修复）。
+ * 约定：fillet 按行进方向给——a = 斜面侧切点（入口）、b = 车顶侧切点（出口）；
+ *   roofFilletSet.rear 的 a/b 与行进方向相反，调用方需交换后传入。
+ * 每点沿局部外法线抬离 offset（贴合被 bevel 外扩的车身壁面），法线统一 ny ≥ 0。
+ * @param {object} opts { topInset, bottomInset, offset, fillet: {a,ctrl,b}|null, filletSamples, roofOverlap }
+ * @returns {number[][]} [[x,y],…] 脊柱点（含 offset），底→顶
+ */
+export function bandGlassSpine(x1, y1, x2, y2, opts = {}) {
+  const { topInset = 0, bottomInset = 0, offset = 0, fillet = null, filletSamples = 6, roofOverlap = 0.02 } = opts
+  const dx = x2 - x1, dy = y2 - y1
+  const len = Math.hypot(dx, dy) || 1
+  let nx = dy / len, ny = -dx / len
+  if (ny < 0) { nx = -nx; ny = -ny }   // 法线统一朝上（外表面）
+  const pts = []
+  const push = (x, y, nX, nY) => pts.push([x + nX * offset, y + nY * offset])
+  // 底点（bottomInset 沿斜线上退）
+  let bx = x1, by = y1
+  if (bottomInset > 0) {
+    const t = Math.min(bottomInset / len, 0.9)
+    bx += dx * t; by += dy * t
+  }
+  push(bx, by, nx, ny)
+  if (!fillet) {
+    let tx = x2, ty = y2
+    if (topInset > 0) {
+      const t = Math.min(topInset / len, 0.9)
+      tx -= dx * t; ty -= dy * t
+    }
+    push(tx, ty, nx, ny)
+    return pts
+  }
+  // 圆角包裹段：直线止于切点 a，贝塞尔采样至 b，再沿车顶切向搭接
+  const { a, ctrl, b } = fillet
+  push(a[0], a[1], nx, ny)
+  const N = Math.max(2, Math.round(filletSamples))
+  for (let i = 1; i <= N; i++) {
+    const t = i / N
+    const omt = 1 - t
+    const px = omt * omt * a[0] + 2 * t * omt * ctrl[0] + t * t * b[0]
+    const py = omt * omt * a[1] + 2 * t * omt * ctrl[1] + t * t * b[1]
+    const dtx = 2 * omt * (ctrl[0] - a[0]) + 2 * t * (b[0] - ctrl[0])
+    const dty = 2 * omt * (ctrl[1] - a[1]) + 2 * t * (b[1] - ctrl[1])
+    const tl = Math.hypot(dtx, dty) || 1
+    let fnx = dty / tl, fny = -dtx / tl
+    if (fny < 0) { fnx = -fnx; fny = -fny }
+    push(px, py, fnx, fny)
+  }
+  const ex = b[0] - ctrl[0], ey = b[1] - ctrl[1]
+  const el = Math.hypot(ex, ey) || 1
+  push(b[0] + (ex / el) * roofOverlap, b[1] + (ey / el) * roofOverlap, 0, 1)
+  return pts
+}
+
+/**
  * 求圆角二次贝塞尔曲线上指定高度 y 处的 X 坐标。
  * filletCorner 的 ctrl = 角点本身，轮廓圆角实为二次贝塞尔
  * P(t) = (1−t)²a + 2t(1−t)ctrl + t²b；本函数解 y(t) = y 的参数 t ∈ [0,1]，

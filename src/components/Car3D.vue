@@ -107,8 +107,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, greenhouseInsetAt, ROOF_FILLETS } from '../utils/carGlass.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, roofFilletSet } from '../utils/carProfile.js'
+import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, greenhouseInsetAt, bandGlassSpine, ROOF_FILLETS } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
 
@@ -430,7 +430,8 @@ const createCar = () => {
   const dl = deriveDoorLayout(P, cabin, {
     bPillarWidthRatio: props.carParams?.b_pillar_width_ratio,
     handleDropRatio: props.carParams?.handle_drop_ratio,
-    handleXRatio: props.carParams?.handle_x_ratio
+    handleXRatio: props.carParams?.handle_x_ratio,
+    carType: props.carType
   })
 
   // ---- 侧围外轮廓（2D/3D 唯一真源 bodySideOutline：顶边 G1 圆角 + 底边轮拱 notch + 接近/离去角切角）----
@@ -518,29 +519,34 @@ const createCar = () => {
   // ---- 座舱玻璃划分（与 2D Car2D windowPath 同源锚点：玻璃与车身两种状态） ----
   // 前后风挡贴合拉伸体侧壁（壁面被 bevel 外扩 bodyThickness），侧窗贴合端盖外缘；
   // 玻璃统一用独立透明材质与车身漆面区分；B 柱在 55% 分段处保留车身色立柱（与 2D pillarX 同源）
+  // 汽车玻璃写实材质：深色灰绿 tint（真车侧窗透光率 70% 级视觉），低环境反射——
+  // 杜绝浅蓝镜面化（roughness 0.06 + envMap 1.2）产生的杂乱高光与「折射」假象，
+  // 深色低透同时遮蔽对侧门缝黑条（移除透见的不合理门缝）。
   const glassMat = new THREE.MeshPhysicalMaterial({
-    color: 0x87ceeb,
+    color: 0x212c30,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.62,
     metalness: 0,
-    roughness: 0.06,
-    envMapIntensity: 1.2,
+    roughness: 0.14,
+    envMapIntensity: 0.35,
     side: THREE.DoubleSide,
     wireframe: wireframeMode.value
   })
 
-  // 斜面玻璃带：端点/法线/顶缘下退的计算在 utils/carGlass.js 纯函数中（可单测）；
+  // 斜面玻璃带：脊柱线由 carGlass.bandGlassSpine 生成（可单测）——含车顶 G1 圆角包裹
+  // 采样与顶面搭接，玻璃随车身同一圆角弯曲，消除风挡顶/车顶后缘的台阶折痕；
   // Z 向随高度按 taperK 收窄（与车身 greenhouse 同公式），顶缘不越过收窄后的车身
-  const addBandGlass = (x1, y1, x2, y2, width, topInset = 0, bottomInset = 0) => {
-    const { a, b } = bandGlassEndpoints(x1, y1, x2, y2, topInset, bodyThickness + 0.001, bottomInset || 0)
+  const addBandGlass = (x1, y1, x2, y2, width, topInset = 0, bottomInset = 0, fillet = null) => {
+    const spine = bandGlassSpine(x1, y1, x2, y2, { topInset, bottomInset, offset: bodyThickness + 0.001, fillet })
     const hw = width / 2
-    const raw = [
-      a[0], a[1], -hw, a[0], a[1], hw, b[0], b[1], -hw,
-      a[0], a[1], hw, b[0], b[1], hw, b[0], b[1], -hw
-    ]
     const verts = []
-    for (let i = 0; i < raw.length; i += 3) {
-      verts.push(raw[i], raw[i + 1], raw[i + 2] * taperK(raw[i + 1]))
+    for (let i = 0; i < spine.length - 1; i++) {
+      const [ax, ay] = spine[i]
+      const [bx, by] = spine[i + 1]
+      const az = hw * taperK(ay)
+      const bz = hw * taperK(by)
+      verts.push(ax, ay, -az, ax, ay, az, bx, by, -bz)
+      verts.push(ax, ay, az, bx, by, bz, bx, by, -bz)
     }
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3))
@@ -550,13 +556,19 @@ const createCar = () => {
     group.add(m)
   }
 
-  // 前风挡：底缘 = COWL（bottomInset 下退避开 bevel 外扩角），顶缘 = 车顶前缘（与 2D A 柱线同源）
+  // 车顶 G1 圆角集（与车身轮廓同一真源 roofFilletSet）：风挡顶/车顶后缘玻璃包裹用
+  const roofFillets = roofFilletSet(P, props.carType, ROOF_FILLETS)
+
+  // 前风挡：底缘 = COWL（bottomInset 下退避开 bevel 外扩角），顶缘包裹 A柱顶圆角并搭上车顶
   const ws = cabin.windshield
-  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width, ws.topInset, ws.bottomInset)
-  // 后风挡：顶缘 = 车顶后缘，底缘 = 行李箱前缘（皮卡驾驶室后壁为车身，无后风挡）
+  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width, ws.topInset, ws.bottomInset, roofFillets.front)
+  // 后风挡：顶缘包裹车顶后缘圆角（rear 圆角 a/b 与行进方向相反 → 交换传入）；
+  // 底缘下退 cPillarBottom 至 C 柱底圆角切点（玻璃不戳入尾部圆角，皮卡无后风挡）
   if (cabin.rearWindow) {
     const rw = cabin.rearWindow
-    addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width, rw.topInset)
+    const rf = roofFillets.rear
+    const rearFillet = rf ? { a: rf.b, ctrl: rf.ctrl, b: rf.a } : null
+    addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width, rw.topInset, ROOF_FILLETS.cPillarBottom, rearFillet)
   }
 
   // 侧窗 DLO（左右各分片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；

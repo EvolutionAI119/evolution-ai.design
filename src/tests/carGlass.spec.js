@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, filletCorner } from '../utils/carProfile.js'
-import { bandGlassEndpoints, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, buildDloStripRange, greenhouseInsetAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
+import { deriveCarProfile, filletCorner, roofFilletSet } from '../utils/carProfile.js'
+import { bandGlassEndpoints, bandGlassSpine, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, buildDloStripRange, greenhouseInsetAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -661,6 +661,64 @@ describe('bandGlassEndpoints bottomInset 底缘下退（COWL 角避让）', () =
     expect(normal[1]).toBeCloseTo(0, 12)
     expect(a[0]).toBeCloseTo(0.031, 12)
     expect(a[1]).toBeCloseTo(0.5, 12)
+  })
+})
+
+describe('bandGlassSpine 玻璃带脊柱线（车顶 G1 圆角包裹，折痕拓扑修复）', () => {
+  it('无 fillet 退化为两点（与 bandGlassEndpoints 同端点）', () => {
+    const spine = bandGlassSpine(0, 0, 0, 2, { topInset: 0.3, bottomInset: 0.2, offset: 0.031 })
+    const { a, b } = bandGlassEndpoints(0, 0, 0, 2, 0.3, 0.031, 0.2)
+    expect(spine.length).toBe(2)
+    expect(spine[0][0]).toBeCloseTo(a[0], 9); expect(spine[0][1]).toBeCloseTo(a[1], 9)
+    expect(spine[1][0]).toBeCloseTo(b[0], 9); expect(spine[1][1]).toBeCloseTo(b[1], 9)
+  })
+
+  it('有 fillet：直线止于切点 a，贝塞尔采样至 b，车顶搭接段方向 ≈ 水平（G1）', () => {
+    // 斜面 45° 上行（-x,+y），角点 (0,1)，车顶沿 -x 水平
+    const f = filletCorner(1, 0, 0, 1, -2, 1, 0.2)
+    const spine = bandGlassSpine(1, 0, 0, 1, { fillet: f, filletSamples: 6, roofOverlap: 0.03 })
+    expect(spine.length).toBe(1 + 1 + 6 + 1)   // 底点 + 切点a + 采样×6 + 车顶搭接点
+    // 切点 a 出现在脊柱第 2 点（offset=0 时逐点一致）
+    expect(spine[1][0]).toBeCloseTo(f.a[0], 9); expect(spine[1][1]).toBeCloseTo(f.a[1], 9)
+    // 采样终点 ≈ fillet.b
+    expect(spine[7][0]).toBeCloseTo(f.b[0], 6); expect(spine[7][1]).toBeCloseTo(f.b[1], 6)
+    // 车顶搭接：末段方向 = b−ctrl 的水平方向（dx<0，|dy|≈0）
+    const [lx, ly] = spine[8], [px, py] = spine[7]
+    expect(lx - px).toBeLessThan(0)
+    expect(Math.abs(ly - py)).toBeLessThan(1e-6)
+    expect(Math.hypot(lx - px, ly - py)).toBeCloseTo(0.03, 9)
+    // y 单调不减（底→顶→车顶，无回折）
+    for (let i = 1; i < spine.length; i++) expect(spine[i][1]).toBeGreaterThanOrEqual(spine[i - 1][1] - 1e-9)
+  })
+
+  it.each(['sedan', 'suv', 'coupe', 'sport', 'mpv'])('%s 风挡脊柱包裹 front 圆角：末端搭上车顶、起点在 COWL 之上', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const cabin = deriveCabinGlass(p, { carType: type })
+    const f = roofFilletSet(p, type, ROOF_FILLETS).front
+    const ws = cabin.windshield
+    const spine = bandGlassSpine(ws.x1, ws.y1, ws.x2, ws.y2, { topInset: ws.topInset, bottomInset: ws.bottomInset, offset: 0.031, fillet: f })
+    // 末端 y ≈ 车顶 + offset（搭接段水平，法线 (0,1)）
+    const last = spine[spine.length - 1]
+    expect(last[1]).toBeCloseTo(p.roofTopY + 0.031, 3)
+    // 起点 y 在腰带线附近（bottomInset 上退后仍低于 A 柱顶圆角）
+    expect(spine[0][1]).toBeGreaterThan(p.beltLineY)
+    expect(spine[0][1]).toBeLessThan(f.a[1])
+    // 风挡行进方向：x 单调向车尾（递减）
+    for (let i = 1; i < spine.length; i++) expect(spine[i][0]).toBeLessThanOrEqual(spine[i - 1][0] + 1e-9)
+  })
+
+  it('后窗脊柱包裹 rear 圆角（a/b 交换后行进方向 +x），底端退至 C 柱底切点之上', () => {
+    const p = deriveCarProfile(carTypeParams.sedan, 'sedan')
+    const cabin = deriveCabinGlass(p, { carType: 'sedan' })
+    const rf = roofFilletSet(p, 'sedan', ROOF_FILLETS).rear
+    const swapped = { a: rf.b, ctrl: rf.ctrl, b: rf.a }
+    const rw = cabin.rearWindow
+    const spine = bandGlassSpine(rw.x1, rw.y1, rw.x2, rw.y2, { topInset: rw.topInset, bottomInset: ROOF_FILLETS.cPillarBottom, offset: 0.031, fillet: swapped })
+    const last = spine[spine.length - 1]
+    expect(last[1]).toBeCloseTo(p.roofTopY + 0.031, 3)
+    for (let i = 1; i < spine.length; i++) expect(spine[i][0]).toBeGreaterThanOrEqual(spine[i - 1][0] - 1e-9)
+    // 底端在 C 柱底圆角切点 a 附近（y 高于腰带线 = 已上退）
+    expect(spine[0][1]).toBeGreaterThan(p.beltLineY)
   })
 })
 

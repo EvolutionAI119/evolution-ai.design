@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
-import { deriveCabinGlass } from '../utils/carGlass.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, roofFilletSet, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
+import { deriveCabinGlass, ROOF_FILLETS } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -212,6 +212,74 @@ describe('deriveDoorLayout 门缝/B柱/把手布置（2D/3D 同源）', () => {
     // B柱宽随 ratio 单调（实车区间 0.08~0.30）
     const wide = deriveDoorLayout(p, cabin, { bPillarWidthRatio: 0.26 })
     expect(wide.bWidth).toBeGreaterThan(dl.bWidth)
+  })
+})
+
+describe('双门布局（coupe/sport：无后门缝，长前门）', () => {
+  it.each(['coupe', 'sport'])('%s rearSeamX/rearHandleX 为 null，B 柱后移（前门占门模块 >60%）', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const cabin = deriveCabinGlass(p, { carType: type })
+    const dl = deriveDoorLayout(p, cabin, { carType: type })
+    expect(dl.rearSeamX).toBeNull()
+    expect(dl.rearHandleX).toBeNull()
+    expect(dl.frontSeamX).toBeGreaterThan(dl.midSeamX)
+    const share = (dl.frontSeamX - dl.midSeamX) / (dl.frontSeamX - dl.rearBound)
+    expect(share).toBeGreaterThan(0.6)
+    expect(dl.frontHandleX).toBeLessThanOrEqual(dl.frontSeamX + 1e-9)
+    expect(dl.frontHandleX).toBeGreaterThanOrEqual(dl.midSeamX - 1e-9)
+    // 门板仍不得覆盖轮拱：双门前门后沿同样让开后拱前唇
+    expect(dl.midSeamX).toBeGreaterThan(p.rearWheelX + p.wheelArch.rear.rx)
+  })
+
+  it.each(['sedan', 'suv', 'mpv'])('%s 四门回归：rearSeamX 非空、后门把手存在', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const cabin = deriveCabinGlass(p, { carType: type })
+    const dl = deriveDoorLayout(p, cabin, { carType: type })
+    expect(dl.rearSeamX).not.toBeNull()
+    expect(dl.rearHandleX).not.toBeNull()
+  })
+
+  it('缺省 carType 保持四门行为（向后兼容）', () => {
+    const p = deriveCarProfile(carTypeParams.coupe, 'coupe')
+    const cabin = deriveCabinGlass(p, { carType: 'coupe' })
+    expect(deriveDoorLayout(p, cabin).rearSeamX).not.toBeNull()
+  })
+})
+
+describe('roofFilletSet 车顶 G1 圆角集（与 bodySideOutline 单一真源）', () => {
+  it.each(['sedan', 'suv', 'coupe', 'sport', 'mpv'])('%s front/rear/cBase 与轮廓 Q 指令逐点一致', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const fs = roofFilletSet(p, type, ROOF_FILLETS)
+    const cmd = bodySideOutline(p, type, ROOF_FILLETS, p.ramps)
+    // 非皮卡轮廓 Q 序列：0=前脸机盖圆角，1=front，2=rear，3=cBase
+    const qIdx = cmd.map((c, i) => (c.k === 'Q' ? i : -1)).filter((i) => i >= 0)
+    const triples = [[fs.front, qIdx[1]], [fs.rear, qIdx[2]], [fs.cBase, qIdx[3]]]
+    for (const [f, qi] of triples) {
+      const q = cmd[qi]
+      expect(q.cx).toBeCloseTo(f.ctrl[0], 9)
+      expect(q.cy).toBeCloseTo(f.ctrl[1], 9)
+      expect(q.x).toBeCloseTo(f.b[0], 9)
+      expect(q.y).toBeCloseTo(f.b[1], 9)
+      const prev = cmd[qi - 1]   // Q 前的 L 终点 = 圆角切点 a
+      expect(prev.x).toBeCloseTo(f.a[0], 9)
+      expect(prev.y).toBeCloseTo(f.a[1], 9)
+    }
+    // 车顶段水平：front.b 与 rear.a 同高（= 车顶 Y）
+    expect(fs.front.b[1]).toBeCloseTo(fs.rear.a[1], 9)
+  })
+
+  it('pickup：front/cabTop/cabBase 与轮廓一致', () => {
+    const p = deriveCarProfile(carTypeParams.pickup, 'pickup')
+    const fs = roofFilletSet(p, 'pickup', ROOF_FILLETS)
+    const cmd = bodySideOutline(p, 'pickup', ROOF_FILLETS, p.ramps)
+    const qIdx = cmd.map((c, i) => (c.k === 'Q' ? i : -1)).filter((i) => i >= 0)
+    const triples = [[fs.front, qIdx[1]], [fs.cabTop, qIdx[2]], [fs.cabBase, qIdx[3]]]
+    for (const [f, qi] of triples) {
+      const q = cmd[qi]
+      expect(q.cx).toBeCloseTo(f.ctrl[0], 9)
+      expect(q.x).toBeCloseTo(f.b[0], 9)
+      expect(cmd[qi - 1].x).toBeCloseTo(f.a[0], 9)
+    }
   })
 })
 

@@ -209,7 +209,8 @@ const cabin2d = computed(() => deriveCabinGlass(profile.value, {
 const dl2d = computed(() => deriveDoorLayout(profile.value, cabin2d.value, {
   bPillarWidthRatio: props.carParams.b_pillar_width_ratio,
   handleDropRatio: props.carParams.handle_drop_ratio,
-  handleXRatio: props.carParams.handle_x_ratio
+  handleXRatio: props.carParams.handle_x_ratio,
+  carType: props.carType
 }))
 
 // B 柱：与 3D 立柱同宽同高同 X（宽度 = b_pillar_width_ratio × 座舱高；X = 门模块分缝）

@@ -251,6 +251,37 @@ export function deriveEndRamps(P, approachDeg, departureDeg) {
 }
 
 /**
+ * 车顶区 G1 圆角集（2D 轮廓 / 3D 玻璃包裹的唯一真源）。
+ * 常规车：front=风挡顶圆角、rear=车顶后缘圆角、cBase=C柱底圆角；
+ * 皮卡：front=风挡顶、cabTop=驾驶室后壁顶、cabBase=驾驶室后壁底。
+ * 返回 filletCorner 的 { a, ctrl, b }（路径 lineTo(a) → quadraticCurveTo(ctrl, b)），
+ * 并附尾部锚点（tailCtrlX/tailCtrlY）供轮廓尾段与测试对照。
+ */
+export function roofFilletSet(P, carType, fillets) {
+  const F = fillets || { aPillarTop: 0.09, roofRear: 0.09, cPillarBottom: 0.06, pickupCabTop: 0.05, pickupCabBottom: 0.03 }
+  const {
+    roofTopY, beltLineY, trunkLineY, hoodEndX, windshieldTopX,
+    rearWindowTopX, rearWindowBottomX, rearX, pickup
+  } = P
+  const tailCtrlX = rearX + 0.02, tailCtrlY = trunkLineY - 0.016
+  if (pickup) {
+    const cabBotX = pickup.cabWindowBottomX
+    return {
+      front: filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, F.aPillarTop),
+      cabTop: filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, F.pickupCabTop),
+      cabBase: filletCorner(pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, F.pickupCabBottom),
+      tailCtrlX, tailCtrlY
+    }
+  }
+  return {
+    front: filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, F.aPillarTop),
+    rear: filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, F.roofRear),
+    cBase: filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, F.cPillarBottom),
+    tailCtrlX, tailCtrlY
+  }
+}
+
+/**
  * 侧围外轮廓命令序列（2D/3D 唯一真源，返回米制指令数组）。
  * 顶边：前脸→机盖→A柱顶/车顶后缘/C柱底三处 G1 圆角→尾部（沿用现锚点与 ROOF_FILLETS）。
  * 底边：自车尾向车头行进，绕前后轮拱各升起一个 notch（竖唇 + 半椭圆上缘 + 竖唇），
@@ -268,7 +299,7 @@ export function bodySideOutline(P, carType, fillets, ramps = null) {
     frontX, rearX, frontWheelX, rearWheelX, wheelArch, archY, pickup
   } = P
   const R = ramps || { front: { cornerY: bodyBottomY, rampX: frontX }, rear: { cornerY: bodyBottomY, rampX: rearX - 0.036 } }
-  const tailCtrlX = rearX + 0.02, tailCtrlY = trunkLineY - 0.016, tailEndY = trunkLineY - 0.056
+  const tailEndY = trunkLineY - 0.056
   const cmd = []
   const M = (x, y) => cmd.push({ k: 'M', x, y })
   const L = (x, y) => cmd.push({ k: 'L', x, y })
@@ -283,9 +314,8 @@ export function bodySideOutline(P, carType, fillets, ramps = null) {
 
   if (pickup) {
     const cabBotX = pickup.cabWindowBottomX
-    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, F.aPillarTop)
-    const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, F.pickupCabTop)
-    const f3 = filletCorner(pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, F.pickupCabBottom)
+    const fs = roofFilletSet(P, carType, F)
+    const f1 = fs.front, f2 = fs.cabTop, f3 = fs.cabBase
     M(R.front.rampX, bodyBottomY); L(frontX, R.front.cornerY)
     Q(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
     L(cowlStartX, hoodLineY); L(hoodEndX, beltLineY)
@@ -301,9 +331,9 @@ export function bodySideOutline(P, carType, fillets, ramps = null) {
     archNotch(frontWheelX, wheelArch.front)
     L(R.front.rampX, bodyBottomY)
   } else {
-    const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, rearWindowTopX, roofTopY, F.aPillarTop)
-    const f2 = filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, F.roofRear)
-    const f3 = filletCorner(rearWindowTopX, roofTopY, rearWindowBottomX, beltLineY, tailCtrlX, tailCtrlY, F.cPillarBottom)
+    const fs = roofFilletSet(P, carType, F)
+    const f1 = fs.front, f2 = fs.rear, f3 = fs.cBase
+    const { tailCtrlX, tailCtrlY } = fs
     M(R.front.rampX, bodyBottomY); L(frontX, R.front.cornerY)
     Q(frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
     L(cowlStartX, hoodLineY); L(hoodEndX, beltLineY)
@@ -332,8 +362,12 @@ export function deriveDoorLayout(P, cabin, opts = {}) {
     bPillarWidthRatio = 0.16,   // × 座舱高：轿车 ≈75mm、SUV ≈91mm（实车 60~120mm）
     handleDropRatio = 0.10,     // 把手中线距腰带线：≈50mm（实车 30~70mm）
     handleXRatio = 0.15,        // 把手距门后沿占比（实车把手靠门尾、紧邻分缝）
-    frontDoorShare = 0.52       // 前门占「门模块」长度比（实车 0.5~0.55，B 柱略偏后）
+    frontDoorShare = 0.52,      // 前门占「门模块」长度比（实车 0.5~0.55，B 柱略偏后）
+    carType = null              // 车型：coupe/sport 为双门车（无后门缝，长前门）
   } = opts
+  // 双门车（911/488 基准）：无后门与后门缝，单一长前门 + B 柱后固定三角窗；
+  // B 柱占门模块 66%（实车双门车门长 1.1~1.3m，B 柱大幅后移）
+  const twoDoor = carType === 'coupe' || carType === 'sport'
   // 门模块 = 前拱后唇 → 后拱前唇（两侧留 40mm 安全间隙，门板绝不覆盖轮腔开口）
   const frontBound = P.frontWheelX - P.wheelArch.front.rx - 0.04
   const rearBound = P.rearWheelX + P.wheelArch.rear.rx + 0.04
@@ -341,8 +375,10 @@ export function deriveDoorLayout(P, cabin, opts = {}) {
   const frontSeamX = frontBound
   const midSeamX = P.pickup
     ? rearBound                                              // 单排皮卡：门尾 = 驾驶室后壁
-    : frontSeamX - frontDoorShare * (frontSeamX - rearBound)  // B 柱：前门占门模块 52%
-  const rearSeamX = P.pickup ? null : rearBound
+    : twoDoor
+      ? frontSeamX - 0.66 * (frontSeamX - rearBound)         // 双门：B 柱后移，长前门
+      : frontSeamX - frontDoorShare * (frontSeamX - rearBound) // B 柱：前门占门模块 52%
+  const rearSeamX = (P.pickup || twoDoor) ? null : rearBound
   const bWidth = bPillarWidthRatio * (P.roofTopY - P.beltLineY)
   const handleY = P.beltLineY - handleDropRatio * (P.roofTopY - P.beltLineY)  // 距腰带线，按座舱高比例
   // 把手布置：位于各门尾段（前后门分别紧邻 B 柱 / C 柱侧分缝）
