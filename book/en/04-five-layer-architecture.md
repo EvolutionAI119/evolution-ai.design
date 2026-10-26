@@ -17,19 +17,32 @@ The old sermon about layered architecture gains a new reason in AI-native system
 
 **Principle 2: The web layer is a thin shell; orchestration does not compute.** An HTTP handler has a fixed list of duties: validate parameters, authorize, persist, orchestrate, map errors. It contains no geometry formulas, no optimization mathematics, no hand-rolled business rules. The test is plain: if a handler exceeds the three-beat rhythm of receive—delegate—return, it is secretly growing a second heart.
 
+> **When this does not apply**: systems that need a full business-workflow engine—branching, long transactions, human approval interleaved—where the thin shell must yield to an explicit state machine and the receive–delegate–return rhythm no longer suffices.
+
 **Principle 3: The algorithm kernel is independently installable.** Algorithmic capability is the system's heavy asset. It deserves its own package structure, its own entry points, its own dependency manifest, and its own test suite. Whether `pip install` plus the full numeric test suite runs on a machine with no database and no web framework is the touchstone of algorithmic independence.
+
+The precise boundary: L4's core kernel is pure NumPy, installable and testable standalone via `pip`. Deep learning and large models are not part of the kernel; they are optional, losable plug-ins—an enhancement when present, a degradation when absent, never a crash. The division criterion follows: orchestration (routing, auth, persistence, tasks, secrets) lives in L3; inference, prompt strategy, scoring, and training live in L4 or the optional-capability layer. The evidence is behavioral: without PyTorch, training endpoints return 503—honest degradation, not a process crash.
+
+> **When this does not apply**: hyperscale GPU training—thousand-card scheduling and throughput optimization exceed the reach of a pure-NumPy kernel; that concern belongs to the optional plug-in layer, where the kernel principle does not apply.
 
 **Principle 4: Capability boundaries are drawn between layers.** Detection and degradation of optional capabilities (PyTorch, CLIP, Redis, LLMs) must happen on inter-layer interfaces: the lower layer truthfully reports what it lacks, and the upper layer chooses a degradation path and labels it. Failures are not hidden inside layers; success is not fabricated between them.
 
 ## 3. Case Anatomy: Five Layers, Each in Its Place
 
-EVOLUTION AI divides into five layers. L1, the frontend: Vue 3.4 + Vite 5 + Three.js 0.166, twelve hash-routed pages. L2, access: Vite Dev Proxy in development, Nginx in production, a unified `/api/v1` prefix, and a cpolar HTTPS tunnel for public exposure. L3, backend services: FastAPI 0.104 + Pydantic v2, 19 route modules serving 153 endpoints—151 routed plus 2 system endpoints declared in `main.py`. L4, algorithms: the independently installable `algorithm_model` package with four subpackages (car_modeling, freeform, surface_quality, storyboard). L5, infrastructure: SQLite with SQLAlchemy 2.0 across 17 ORM tables, file storage, optional Redis, and Docker Compose deployment.
+EVOLUTION AI divides into five layers. L1, the frontend: Vue 3.4 + Vite 5 + Three.js 0.166, twelve hash-routed pages. L2, access: Vite Dev Proxy in development, Nginx in production, a unified `/api/v1` prefix, and a cpolar HTTPS tunnel for public exposure. L3, backend services: FastAPI 0.104 + Pydantic v2, 19 route modules serving 154 endpoints—152 routed plus 2 system endpoints declared in `main.py`. L4, algorithms: the independently installable `algorithm_model` package with four subpackages (car_modeling, freeform, surface_quality, storyboard). L5, infrastructure: SQLite with SQLAlchemy 2.0 across 17 ORM tables, file storage, optional Redis, and Docker Compose deployment.
+
+> **Two views—do not read them as one.** The "four layers plus a pipeline" of Figure 4-2 (imagery, parameters, surfaces, engineering) is a **responsibility view**, divided by deliverable. The L1–L5 layers here are a **deployment view**, divided by runtime boundary. They do not conflict: "backend" in the responsibility view expands into L2 (access) and L3 (backend services) here, while "data" expands into L5; "frontend" and "algorithm" are the same in both. Whenever you cite a layer count, state which view you mean.
 
 Evidence of the thin shell lives in the endpoints. Take the Bayesian module: the seven endpoints in `backend/app/routes/bayes.py` do exactly four things—validate the parameter space (non-empty, unique names, lower bound below upper), delegate to the session registry in `bayes_optimizer.py`, map the optimizer's explicit exceptions to HTTP 400/404/409, and persist observations. The Cholesky factorization of the Gaussian process, the scoring of the 4096-point candidate pool, and the EI/UCB computation all live in the pure NumPy/SciPy implementation on the L4 side; not a single formula appears in the route file.
 
-Evidence of algorithmic independence lives in the tests. L4's 205 pytest cases run in about four seconds with no web component present, and `algorithm_model/test_all.py` provides a one-command, five-module self-check (vehicle modeling, surface quality, simulated annealing, storyboard generation, and the full pipeline). Neither suite imports FastAPI, touches a database, or starts an HTTP server. L4 can be cloned alone onto any machine and verified—that is the operational definition of "independently installable, testable, replaceable." When the geometry kernel is upgraded, the external semantics of all 153 endpoints remain unchanged; when a page is redesigned, the algorithm package is not implicated.
+Evidence of algorithmic independence lives in the tests. L4's 200 pytest cases run in about four seconds with no web component present, and `algorithm_model/test_all.py` provides a one-command, five-module self-check (vehicle modeling, surface quality, simulated annealing, storyboard generation, and the full pipeline). Neither suite imports FastAPI, touches a database, or starts an HTTP server. L4 can be cloned alone onto any machine and verified—that is the operational definition of "independently installable, testable, replaceable." When the geometry kernel is upgraded, the external semantics of all 154 endpoints remain unchanged; when a page is redesigned, the algorithm package is not implicated.
 
 <figure class="doc-figure"><img src="../docs/images/en/whitepaper-arch.svg" alt="Platform four-layer-plus-pipeline architecture overview"><figcaption><strong>Figure 4-2 ｜ The platform overview: read protocols and deployment paths separately</strong> Read it this way: the four layers—frontend, backend, algorithm, data—are annotated with their call protocols, while the right column lists four deployment paths (development, production, public tunnel, static publishing). The key reading is dependency monotonicity: every arrow points downward, and none points back up.</figcaption></figure>
+
+**Cross-domain mapping.** Layering and inter-layer honesty do not depend on a geometry kernel:
+
+- In this platform = capability probing happens between layers: the lower layer reports what is missing, the upper layer degrades and labels it (training endpoints return 503 without PyTorch); in a general-purpose agent = when a tool is unavailable, the orchestration layer reports "unavailable" truthfully instead of faking success. The inter-layer interface is the last place where the truth can still be told.
+- In this platform = three suites (200 algorithm / 411 backend / 416 frontend) run per layer, so one layer can be replaced without disturbing the others; in LLM evaluation = unit evals, chain evals, and end-to-end baselines are locked per layer, and drift in one layer alarms alone. Verifiability organized by layer is the hard evidence that layering is real.
 
 ## 4. Antipatterns and Their Cost
 
@@ -46,11 +59,11 @@ Evidence of algorithmic independence lives in the tests. L4's 205 pytest cases r
 | Item | Pass criterion | Evidence in this repository (file or command) |
 |---|---|---|
 | Dependency direction is monotonic | No lower layer imports any upper-layer symbol | L4 `algorithm_model/` has zero FastAPI dependency; constraint documented in `docs/ARCHITECTURE_DESIGN.md` |
-| Handlers are thin shells | Each handler only validates, authorizes, persists, orchestrates, maps errors | `backend/app/routes/bayes.py` and the other 19 modules serving 153 endpoints |
-| The algorithm package installs alone | Numeric tests pass with no web or database present | `pytest algorithm_model/tests` (205 cases, ~4 s); `python algorithm_model/test_all.py` |
+| Handlers are thin shells | Each handler only validates, authorizes, persists, orchestrates, maps errors | `backend/app/routes/bayes.py` and the other 19 modules serving 154 endpoints |
+| The algorithm package installs alone | Numeric tests pass with no web or database present | `pytest algorithm_model/tests` (200 cases, ~4 s); `python algorithm_model/test_all.py` |
 | Inter-layer protocols are explicit | One protocol per boundary: HTTP/JSON, function calls, ORM | L2 `/api/v1` prefix; L3–L4 via `algorithm_model/api.py`; L5 via SQLAlchemy 2.0 |
-| Capability probing happens between layers | Missing optional capabilities are reported below and degraded—and labeled—above | PyTorch/CLIP/Redis degradation contracts; 503 branches among the 388 backend tests |
-| Each layer verifies independently | Three suites with separate commands and directories | 205 algorithm + 388 backend + 362 frontend = 955 |
+| Capability probing happens between layers | Missing optional capabilities are reported below and degraded—and labeled—above | PyTorch/CLIP/Redis degradation contracts; 503 branches among the 411 backend tests |
+| Each layer verifies independently | Three suites with separate commands and directories | 200 algorithm + 411 backend + 416 frontend ≈ 1,027 (2026-10-25, `docs/VALIDATION_REPORT_20261025.md`) |
 
 ## 6. Chapter Self-Check
 

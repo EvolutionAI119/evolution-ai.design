@@ -36,9 +36,14 @@ Historical reports are archives, not living documents. Old numbers are preserved
 
 The platform turns documentation consistency into a repeatable skill (doc-code-audit). When triggered, it first runs a deterministic script built only on the standard library to extract a factual baseline from the source: the total number of HTTP endpoints (the APIRouter variables across route modules plus the system endpoints in main.py), the number of ORM tables (the `__tablename__` entries in database.py), the number of frontend pages (route records in router.js), the number of CarParams fields, and the dimensionality of the default Bayesian search space. It then checks every statement of scale in the documents against that baseline, correcting documents to match the source wherever they disagree. Dead links must be fixed to paths verified to exist—guessing is forbidden; `file:///` machine-local links are rewritten as repository-relative paths; and the script is re-run until it reports zero problems. If the session also involves code changes, the three test layers are executed for real and their actual output is used as evidence.
 
-This mechanism guards a factual baseline shared across the entire repository: 19 route modules, 153 HTTP endpoints, 17 ORM tables, 12 frontend pages, and 955 automated tests (205 algorithm, 388 backend, 362 frontend). The architecture document declares at the top that "all modules, paths, and data in this document take the current codebase as the sole source of truth," labeled with the corresponding version and date. The evolution of the test baseline is likewise traceable: 201 cases on 2026-08-09, 489 on 2026-09-27, 483 items on 2026-10-11, and 955 as the current baseline—four figures, each with its own date and convention, and every citation must name its time point. The endpoint counting convention was unified from the historical 118 to the current 153 (151 route endpoints plus 2 system endpoints); the old number is preserved and labeled rather than erased from the report.
+This mechanism guards a factual baseline shared across the entire repository: 19 route modules, 154 HTTP endpoints, 17 ORM tables, 12 frontend pages, and roughly 1,027 automated tests (200 algorithm, 411 backend, 416 frontend). The architecture document declares at the top that "all modules, paths, and data in this document take the current codebase as the sole source of truth," labeled with the corresponding version and date. The evolution of the test baseline is likewise traceable: 201 cases on 2026-08-09, 489 on 2026-09-27, 483 items on 2026-10-11, and roughly 1,027 as the current baseline (2026-10-25, per `docs/VALIDATION_REPORT_20261025.md`)—five figures, each with its own date and convention, and every citation must name its time point. The endpoint counting convention was unified from the historical 118 to the current 154 (152 route endpoints plus 2 system endpoints); the old number is preserved and labeled rather than erased from the report.
 
 <figure class="doc-figure"><img src="../docs/images/en/phil-closedloop.svg" alt="End-to-end closed loop from intent to verification and back to knowledge" loading="lazy"><figcaption><strong>Figure 16-2 | The document–code closed loop</strong> Reading guide: every stage of the loop—intent, implementation, verification, archiving—produces both code artifacts and document artifacts; the audit circuit pulls the documents back to the source for checking, and the deviation itself becomes new knowledge input. An open-loop document inevitably drifts; only a closed-loop document can remain trustworthy over time.</figcaption></figure>
+
+**Cross-Domain Mapping.**
+
+- Here = docs live in the same repository as code and are reconciled within the same commit; a stale number counts as a defect. In a RAG knowledge base = documents and index must be rebuilt together; a lagging index is a wrong answer.
+- Here = the glossary and chapters cite each other, with one source for every figure. In LLM evaluation = the evaluation spec and the scoring script share one origin, so "the metric in the doc" and "the metric in the script" never diverge.
 
 ## 4. Anti-patterns and their costs
 
@@ -62,7 +67,7 @@ These anti-patterns share one feature: each severs the feedback loop between doc
 5. Are historical snapshots labeled with date and counting convention, and left unedited in their factual bodies?
 6. Are document changes reviewed and committed together with the corresponding code changes?
 7. When an audit finds a problem, is the document corrected against the source and the verification re-run until the script reports zero issues?
-8. Are key figures—such as the 955-test baseline—consistent across all current documents?
+8. Are key figures—such as the ~1,027-test baseline—consistent across all current documents?
 
 ## 6. Self-check
 

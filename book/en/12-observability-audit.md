@@ -33,6 +33,13 @@ The final link of the audit system is its own credibility. The audit report of 1
 
 <figure class="doc-figure"><img src="../docs/images/en/audit2-legend.svg" alt="Audit legend: status symbols, colour blocks and time definitions; 201 and 483 belong to different snapshots"><figcaption><strong>Figure 12-2 ｜ Audit legend: status, colour blocks and time definitions</strong> How to read: read section D for time definitions first, then sections A/B for status and colour; 201 (9 Aug) and 483 (11 Oct) belong to different snapshots and must not overwrite each other. The legend is itself a visualised audit rule: before any number enters a report, it declares which time point and which definition it belongs to.</figcaption></figure>
 
+**Cross-Domain Mapping.**
+
+- Here = every restyle, training run, and adjudication leaves a JSONL audit record, so the decision chain can be replayed. In a general agent = tool-call traces, intermediate reasoning, and the final action are all retained; incident review does not rely on memory.
+- Here = metrics and logs answer "which layer failed". In RAG = retrieval hits, cited sources, and generated passages must align line by line, so a hallucination can be traced to retrieval or to generation.
+
+**Capability status.** JSONL audit trails and request tracing are [Implemented · Test-Locked]; cross-service causal attribution remains a design principle [Design Principle].
+
 ## 4. Anti-Patterns and Their Costs
 
 **Treating logs as audit.** Scattered `print` statements and text logs are called an audit system. The cost appears at questioning time: aggregation by person or object is impossible, and grep-produced fragments form neither a chain nor evidence.

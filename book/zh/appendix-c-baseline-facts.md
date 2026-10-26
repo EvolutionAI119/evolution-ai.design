@@ -6,7 +6,7 @@
 
 ---
 
-## C.1 后端路由模块（19 个，151 个路由端点）
+## C.1 后端路由模块（19 个，152 个路由端点）
 
 | 模块文件 | 路径前缀 | 端点数 | 职责 | 出处 |
 |---|---|---:|---|---|
@@ -27,13 +27,13 @@
 | llm_proxy.py | `/api/v1/llm` | 4 | 多 LLM 提供商统一代理 | 同上 |
 | design_intent.py | `/api/v1/design-intent` | 3 | 自然语言设计意图解析与变体 | 同上 |
 | analytics.py | `/api/v1/analytics` | 21 | 埋点统计、社区留言/引用线索、通知中心、数据导出 | 同上 |
-| admin.py | `/api/v1/admin` | 7 | 管理后台：用户/登录记录/审计/错误日志 | 同上 |
+| admin.py | `/api/v1/admin` | 8 | 管理后台：用户/登录记录/审计/错误日志 | 同上 |
 | auth.py | `/api/v1/auth`、`/api/v1/api-keys` | 12 | 注册/登录/微信授权（9）、API Key 管理（3） | 同上 |
-| **合计** | — | **151** | — | — |
+| **合计** | — | **152** | — | — |
 
-**端点计数校验**：5+4+6+6+15+4+7+9+9+15+3+7+3+11+4+3+21+7+12 = **151**。
-另有 `main.py` 2 个系统端点，合计 **153 个 HTTP 端点**（口径：151 路由 + 2 系统）。
-HTTP 方法分布：GET 75 / POST 63 / PUT 4 / DELETE 9，合计 151，与逐模块行合计互校一致。
+**端点计数校验**：5+4+6+6+15+4+7+9+9+15+3+7+3+11+4+3+21+8+12 = **152**。
+另有 `main.py` 2 个系统端点，合计 **154 个 HTTP 端点**（口径：152 路由 + 2 系统）。
+HTTP 方法分布：GET 76 / POST 63 / PUT 4 / DELETE 9，合计 152，与逐模块行合计互校一致。
 出处：`docs/ARCHITECTURE_DESIGN.md` §3.1（含图 3-1 图注）。
 
 ## C.2 ORM 数据表（17 张）
@@ -77,19 +77,19 @@ HTTP 方法分布：GET 75 / POST 63 / PUT 4 / DELETE 9，合计 151，与逐模
 | 11 | `/community` | Community | 社区互动（留言、引用线索） | 同上 |
 | 12 | `/contact` | Contact | 联系与反馈 | 同上 |
 
-注：登录/账户页源码封存于 `src/views/Login.vue`、`src/views/Account.vue`（游客免登录，不计入 12 路由页）。
+注：`/demo` 页的 VTOL 飞行物理是有意的跨域技术演示——用于验证几何/物理内核可迁移到非汽车域，不计入汽车平台的功能基线。登录/账户页源码封存于 `src/views/Login.vue`、`src/views/Account.vue`（游客免登录，不计入 12 路由页）。
 
-## C.4 自动化测试（955 例基线）
+## C.4 自动化测试（约 1027 例基线，2026-10-25）
 
 | 测试套件 | 用例数 | 结果 | 出处 |
 |---|---:|---|---|
-| algorithm_model pytest（tests/） | 205 | 全过 | `docs/ARCHITECTURE_DESIGN.md` §9 |
-| backend pytest（tests/） | 388（1 跳过、2 xfailed） | 全过 | 同上 |
-| frontend vitest | 362 | 全过 | 同上 |
-| **合计** | **955+** | **全绿** | 同上 |
+| algorithm_model pytest（tests/） | 200 | 全过 | `docs/VALIDATION_REPORT_20261025.md`（SHA b42e51e4） |
+| backend pytest（tests/） | 411 收集（408 通过 + 1 跳过、2 xfailed） | 全过 | 同上 |
+| frontend vitest | 416 | 全过 | 同上 |
+| **合计** | **约 1027** | **全绿** | 同上 |
 
-**计数校验**：205 + 388 + 362 = **955**。后端 1 跳过（需 `RUN_REAL_LLM=1`）与 2 预期失败（曲率管线已迁至 SISA，xfail 标注）单独列示，不混入"通过"。另有 `test_all.py` 一站式五模块自检，验证装配后可运行性，**不计入 955 求和**。分层占比：算法 21.5% / 后端 40.6% / 前端 37.9%；后端与前端合计 750 例（78.5%）。
-历史口径（仅供回溯，不用于当前基线）：2026-09-27 快照为 489 例（算法 200 / 后端 178 / 前端 111，另有一站式自检 5 模块），出处 `docs/VALIDATION_REPORT_20260927.md` §1–§2。
+**计数校验**：200 + 411 + 416 = **1027**（统计日 2026-10-25）。后端 1 跳过（需 `RUN_REAL_LLM=1`）与 2 预期失败（曲率管线已迁至 SISA，xfail 标注）单独列示，不混入"通过"。另有 `test_all.py` 一站式五模块自检，验证装配后可运行性，**不计入基线求和**。分层占比：算法 19.5% / 后端 40.0% / 前端 40.5%；后端与前端合计 827 例（80.5%）。
+历史口径（仅供回溯，不用于当前基线）：2026-09-27 快照为 489 例（算法 200 / 后端 178 / 前端 111，另有一站式自检 5 模块），出处 `docs/VALIDATION_REPORT_20260927.md` §1–§2；955 例（205/388/362）为 2026-10 中间口径，已被 2026-10-25 实测取代。
 
 ## C.5 核心算法规格
 
@@ -98,11 +98,12 @@ HTTP 方法分布：GET 75 / POST 63 / PUT 4 / DELETE 9，合计 151，与逐模
 | CarParams 参数向量维度 | 22 维 | `docs/evolution_systems_thinking.md`（"22 维造型参数 × 176 顶点 × 33 曲面"）；`docs/PRODUCT_SPEC.md` §4.2 |
 | 车身网格顶点数 | 176 顶点 | `docs/evolution_systems_thinking.md`（巨量性行） |
 | NURBS 曲面片数 | 33 曲面 | 同上；`docs/AUDIT_REPORT_20260810.md`（"17 个组件、33 个曲面"） |
-| 连续性等级 | G0 / G1 / G2（公差 0.1 mm / 1.0°） | `docs/ARCHITECTURE_DESIGN.md` §7 图例；`algorithm_model/surface_quality/` |
+| 连续性等级 | G0 / G1 / G2（网格评估阈值 G1 < 5°、G2 < 2°；工程检查 G0 0.1mm、G1 1.0° 逐缝判定） | `docs/ARCHITECTURE_DESIGN.md` §7 图例；`algorithm_model/surface_quality/` |
+| 几何导出格式 | 8 种几何格式（glb/gltf/stl/obj/iges/step/igs/stp）+ JSON 参数导出；主推 mesh→STL/GLB、NURBS→STEP/IGES，OBJ/GLTF/IGS/STP 为兼容保留 | `backend/app/routes/export.py`（SUPPORTED_FORMATS）；第 5 章 |
 | 贝叶斯默认优化空间 | 14 维（归一化 [0,1]） | `docs/bayes_optimization.md` §3；`docs/EVOLUTION_AI_paper.md`（"14 维默认空间、GP、EI/UCB、会话"） |
 | 高斯过程核 | 各向同性 RBF（ℓ=0.25） | `backend/app/bayes_optimizer.py`；第 8 章 |
 | 采集函数 | EI / UCB | `docs/bayes_optimization.md` |
-| 收敛阈值 | 0.01（双判据） | 第 8 章；`docs/bayes_optimization.md` |
+| 收敛停止参考 | EI 最小改进量 0.01（ei_xi）；平台期由会话观察与人工裁决，自动双判据收敛为路线图项 | 第 8 章；`docs/bayes_optimization.md` |
 | 训练网络 | 紧凑 MLP（隐藏层 48 单元） | `docs/EVOLUTION_AI_paper.md` |
 
 ## C.6 品牌知识库
@@ -116,4 +117,4 @@ HTTP 方法分布：GET 75 / POST 63 / PUT 4 / DELETE 9，合计 151，与逐模
 
 ---
 
-**总校验**：151（路由端点）+ 2（系统端点）= **153**；17 张表；12 个页面；955 例测试（205+388+362）。以上数字与 `docs/ARCHITECTURE_DESIGN.md`、`docs/api_reference.md`、`docs/PRODUCT_SPEC.md`、`docs/VALIDATION_REPORT_20260927.md`（历史口径）一致。
+**总校验**：152（路由端点）+ 2（系统端点）= **154**；17 张表；12 个页面；约 1027 例测试（200+411+416）。测试与端点数字取自 `docs/VALIDATION_REPORT_20261025.md`（2026-10-25，SHA b42e51e4）；`docs/ARCHITECTURE_DESIGN.md`、`docs/api_reference.md`、`docs/PRODUCT_SPEC.md`、`docs/VALIDATION_REPORT_20260927.md` 中的旧口径（151+2=153、955 例）为历史快照，保留不删改。

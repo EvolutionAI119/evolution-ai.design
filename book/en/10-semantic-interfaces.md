@@ -39,6 +39,13 @@ The entire value of a semantic score lies in regression: the same image, the sam
 
 **One end-to-end confluence.** A stylist supplies a lamp texture reference. CLIP scores it on the six style axes; brand knowledge recommends matching DNA and parameter adjustments; the Deliver page applies those adjustments inside an import-modify-export session and produces STEP output. Throughout, the designer can consult the local NURBS expert about a continuity warning. Semantics, parameters, and engineering delivery close the loop inside one system, and no step requires "paraphrasing by feel."
 
+**Cross-Domain Mapping.**
+
+- Here = brand DNA is a structured contract that constrains texture and lamp-language generation. In RAG = the embedding model and chunking strategy need the same versioned contract, so swapping embeddings does not change the retrieval interface.
+- Here = semantic scoring returns an interpretable scalar with its basis, not a vibe. In LLM evaluation = semantic similarity must be pinned to a model version and threshold, or the scores are not comparable.
+
+**Capability status.** Semantic scoring and the brand-DNA structure are [Implemented · Test-Locked] but depend on an external model download, placing them in the optional-capability class [Partially Implemented].
+
 ## 4. Anti-Patterns and Their Costs
 
 **Anti-pattern 1: The black-box composite score.** One unexplainable number standing in for taste. The cost is a score that cannot be attributed or regressed, and reviews that degenerate into a shouting match of "trust the score or trust me."

@@ -16,6 +16,8 @@ The general design department and the metasynthesis hall proposed by Qian Xuesen
 
 <figure class="doc-figure"><img src="../docs/images/en/syst-image.svg" alt="An open complex giant system: six external sources surrounding a central vehicle" loading="lazy"><figcaption><strong>Figure 15-1 | An open complex giant system: the vehicle as an emergent result of multi-source coupling</strong> Reading guide: the dashed frame is the system boundary; market, brand, technology, manufacturing, culture, and users continuously cross it with constraints and feedback. Inside the frame sit the parameter space, surface patches, quality gates, and data flows that constitute the many subsystems. The central vehicle cannot be explained by any one subsystem—precisely why a general design department must establish the whole before dividing it into parts.</figcaption></figure>
 
+> **Boundary statement.** The "metasynthesis seminar hall" and the "general design department" described here are **organizational discipline and design principles [Design Principle]**, not a module inside the platform. What the codebase carries today is their engineering shadow: eight frozen hard parameters, fixed thresholds (G0 0.1 mm / G1 1.0°), JSONL audit trails, and the separation of advice from adjudication. **There is no automated seminar-hall module**; reading it as a shipped feature is a misreading.
+
 ## 2. Principles
 
 ### 2.1 Establish the whole first: fix interfaces before parallel implementation
@@ -40,9 +42,9 @@ Machine capability has limits. When a dependency is missing, the system should e
 
 ### 3.1 The general design department: thin-shell orchestration and an independent algorithm package
 
-The backend consists of 19 route modules and 153 HTTP endpoints (151 route endpoints plus 2 system endpoints). It connects downward to 17 ORM tables and upward to 12 frontend pages. What matters is not the count but the division of labor: `algorithm_model` is an independently installable Python package with its own entry points, dependencies, and tests. The backend performs parameter validation, authentication, persistence, and orchestration; it does not reimplement geometry.
+The backend consists of 19 route modules and 154 HTTP endpoints (152 route endpoints plus 2 system endpoints). It connects downward to 17 ORM tables and upward to 12 frontend pages. What matters is not the count but the division of labor: `algorithm_model` is an independently installable Python package with its own entry points, dependencies, and tests. The backend performs parameter validation, authentication, persistence, and orchestration; it does not reimplement geometry.
 
-This is the technical expression of a general design department. The orchestration layer does not manufacture parts; it defines the assembly contract between them. The algorithm package can run, be tested, and be replaced without the web layer. When the geometry kernel is upgraded, the external semantics of all 153 endpoints remain unchanged; when a page is revised, the algorithm package is untouched. The payoff of establishing the whole first is precisely this non-hostage-taking mode of evolution.
+This is the technical expression of a general design department. The orchestration layer does not manufacture parts; it defines the assembly contract between them. The algorithm package can run, be tested, and be replaced without the web layer. When the geometry kernel is upgraded, the external semantics of all 154 endpoints remain unchanged; when a page is revised, the algorithm package is untouched. The payoff of establishing the whole first is precisely this non-hostage-taking mode of evolution.
 
 ### 3.2 The expert system: thresholds are defined by people
 
@@ -50,11 +52,16 @@ The continuity thresholds G1 5° and G2 2°, together with the A/B/C/D cutoffs o
 
 ### 3.3 The machine system: exploring inside a human frame
 
-A Bayesian session searches a 14-dimensional space that people carve out of the 22-dimensional CarParams; dimensions carrying sizes, regulatory constraints, and structural hard points are frozen. The acquisition function (EI or UCB) answers only "where should the next parameter set be tried," never "which design is more beautiful." After scores are fed back, the Gaussian-process surrogate updates its belief until the best value enters the 0.01 convergence band, typically after 20 to 40 rounds. The machine performs rational exploration; value judgment stays on the human side.
+A Bayesian session searches a 14-dimensional space that people carve out of the 22-dimensional CarParams; dimensions carrying sizes, regulatory constraints, and structural hard points are frozen. The acquisition function (EI or UCB) answers only "where should the next parameter set be tried," never "which design is more beautiful." After scores are fed back, the Gaussian-process surrogate updates its belief; the loop uses the EI minimum improvement 0.01 (`ei_xi`) as its stopping reference, and the plateau—typically reached within 20 to 40 rounds—is confirmed by session observation and human judgment. The machine performs rational exploration; value judgment stays on the human side.
 
 ### 3.4 The knowledge system: turning the last round into the next prior
 
 The samples exported after each session are the fossil record of every qualitative-to-quantitative transition. They can enter a training task and become input to the next model, or enter the knowledge base and become a reference for the next review. The purpose of the knowledge system is not archiving but shortening the distance to a valid solution next time. The platform organizes more than twelve documents into a four-layer, three-dimensional knowledge graph so that knowledge appears at the moment it must be mobilized rather than sleeping in a directory.
+
+**Cross-Domain Mapping.**
+
+- Here = humans adjudicate direction; machines supply comparable candidates and evidence. In RAG = humans define the evaluation set and machines run the regression; metrics never replace acceptance judgment.
+- Here = the seminar's output is a decision with an evidence chain, not a consensus memo. In agent release review = go-live conditions are a checkable list, not "the team feels good about it".
 
 ## 4. Anti-patterns and their costs
 
@@ -77,7 +84,7 @@ These costs share one structure: each is an efficiency choice in the short term 
 5. When a machine capability is missing, does the system return 503 or an explicit degradation instead of a silent simulation?
 6. Can the algorithm package be installed, run, and tested without the web layer?
 7. Are the samples produced this round exported, archived, and retrievable by the next round?
-8. Do all 955 tests pass (205 algorithm, 388 backend, 362 frontend)?
+8. Do all ~1,027 tests pass (200 algorithm, 411 backend, 416 frontend)?
 
 ## 6. Self-check
 

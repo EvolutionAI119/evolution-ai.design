@@ -12,6 +12,8 @@ Many teams have lived through this: the system is visibly under continuous "opti
 
 Synergetics tells us that a system's order is not achieved by controlling every variable but by holding the few order parameters firmly and letting the many fast variables relax freely within their frame. AI-native systems amplify the issue: a machine can produce thousands of fast-variable iterations overnight, and if the order parameters lack institutional protection, the direction of convergence is dragged around by noise and short-term scores. Using the platform's parameter space as the specimen, this chapter gives an engineering method for separating the two time scales, plus seven programs that keep a system in deep evolution.
 
+> **Boundary statement.** The seven guidelines and "order-parameter identification" are **an evolutionary direction and engineering discipline [Design Principle]**. What the codebase shows is the actual fixation of slow variables (parameter sets, quality thresholds, documents, evaluation baselines) and the actual tinkering of fast variables (candidate generation, experiment sessions). **Automatic order-parameter identification is not implemented**; humans designate it today from audits and metrics.
+
 ## 2. Principles
 
 ### 2.1 Separate the scales before optimizing anything
@@ -34,7 +36,7 @@ Deep evolution equals the continuous convergence of fast variables plus the cont
 
 ## 3. Case study: two time scales and seven programs on the platform
 
-The platform writes the dual time scales into the parameter space itself. The 22-dimensional CarParams are the fast variables' field of action; the 14-dimensional default search space of a Bayesian session, with its boundaries, is the order parameters' institutional constraint on them—dimensions carrying sizes, regulations, and structural hard points are frozen, and the acquisition function only proposes the next trial position inside the frame. The convergence criteria are layered as well: a single-round score is a fast-variable signal; entering the 0.01 convergence band after 20 to 40 rounds ends one round of fast variables; while the G1 5° and G2 2° quality thresholds move with no single-round result—their revision is an evolution-level event. Validation data shows the quality score converging steadily over observation rounds, which is the healthy shape of fast variables working inside a correct frame.
+The platform writes the dual time scales into the parameter space itself. The 22-dimensional CarParams are the fast variables' field of action; the 14-dimensional default search space of a Bayesian session, with its boundaries, is the order parameters' institutional constraint on them—dimensions carrying sizes, regulations, and structural hard points are frozen, and the acquisition function only proposes the next trial position inside the frame. The convergence criteria are layered as well: a single-round score is a fast-variable signal; the EI minimum improvement 0.01 (`ei_xi`) serves as the stopping reference, and the plateau—typically reached within 20 to 40 rounds and confirmed by session observation and human judgment—ends one round of fast variables; while the G1 5° and G2 2° quality thresholds move with no single-round result—their revision is an evolution-level event. Validation data shows the quality score converging steadily over observation rounds, which is the healthy shape of fast variables working inside a correct frame.
 
 <figure class="doc-figure"><img src="../docs/images/en/syst-chart.svg" alt="Quality score converging over observation rounds" loading="lazy"><figcaption><strong>Figure 18-2 | The healthy shape of fast-variable convergence</strong> Reading guide: the quality score rises with observation rounds and enters a plateau with narrowing variance. Converging inside the order-parameter frame is a sign of health; if the curve oscillates persistently or repeatedly breaks its historical envelope, the first thing to inspect is not the acquisition function but whether the order parameters have been quietly moved.</figcaption></figure>
 
@@ -43,14 +45,19 @@ On this foundation, the platform's deep evolution follows seven programs, each w
 | # | Program | Platform landing (present → direction) |
 |---|---|---|
 | 1 | Strengthen the general organization | Thin orchestration shell plus an independent algorithm package → governance rules upgraded with scale |
-| 2 | Reinforce top-level design | Five-layer architecture and the 153-endpoint contract first → architecture decision records institutionalized |
+| 2 | Reinforce top-level design | Five-layer architecture and the 154-endpoint contract first → architecture decision records institutionalized |
 | 3 | Reshape the knowledge system | Four-layer knowledge base → automated document–code consistency auditing standing guard |
 | 4 | Independent innovation | In-house NURBS kernel and a pure-numpy Bayesian engine → multi-fidelity surrogates and learnable kernels |
-| 5 | Value practical summarization | 955 tests and validation reports → real optimization-campaign samples steadily replacing synthetic ones |
+| 5 | Value practical summarization | ~1,027 tests and validation reports → real optimization-campaign samples steadily replacing synthetic ones |
 | 6 | Virtual–real dynamic monitoring | Quality reports and training-task monitoring → system-level tracking of the deviation between virtual metrics and empirical feedback |
 | 7 | Continuous evolution and iteration | The theory–practice–training–feedback loop → the programs themselves revised after each circuit |
 
 The seven programs share one structure: each combines an order-parameter action of "holding" with a fast-variable direction of "releasing." Hold the orchestration boundary, release algorithm iteration; hold the contracts, release module evolution; hold the threshold conventions, release trial and error inside the search space. Evolution is not a synonym for change but the coupling of controlled change with guarded constancy.
+
+**Cross-Domain Mapping.**
+
+- Here = parameters, thresholds, and documents are slow variables; experiments and candidates are fast; the loop sediments fast-variable experience back into slow variables. In RAG = corpus and index are fast variables, while the evaluation set and chunking strategy are order parameters—change those to change system behavior.
+- Here = the seven guidelines are an evolutionary direction, not quarterly OKRs. In LLM application evolution = prompts churn fast while the evaluation baseline converges slowly; never swap their tempos.
 
 ## 4. Anti-patterns and their costs
 
@@ -67,7 +74,7 @@ The seven programs share one structure: each combines an order-parameter action 
 1. Does the change-review form include a "fast variable / order parameter" field, with order-parameter changes routed through the knowledge-layer process?
 2. Do the search space's boundaries and frozen dimensions have a documented definer and version?
 3. Does every threshold revision synchronously update the knowledge base, re-validate the models, and revise the philosophy documents?
-4. When baseline figures (such as the 955 tests) are updated, are date and convention labeled and the old rows preserved?
+4. When baseline figures (such as the total test-baseline case count) are updated, are date and convention labeled and the old rows preserved?
 5. Is the deviation between virtual metrics and empirical feedback monitored and registered as new knowledge?
 6. After each closed loop, is it checked whether the landing points of the seven programs themselves need revision?
 7. When fast variables fail to converge for long, is the frame suspected of having moved before the acquisition function is blamed?

@@ -31,6 +31,13 @@ The last mile of the traffic entry is pinned down by the nginx configuration. `d
 
 The first-deployment command chain is therefore short: `npm run build` produces `dist/`; `docker compose up -d --build` raises the whole stack; a fresh database takes one `alembic upgrade head`; and legacy SQLite data, if needed, is migrated once by `backend/scripts/migrate_sqlite_to_pg.py`. Local development is another declared topology—Vite on 5173, FastAPI on 8000 and a cpolar tunnel on 4040—while the LLM inference service is orchestrated separately in `docker-compose.llm.yml`, never holding the main stack hostage.
 
+**Cross-Domain Mapping.**
+
+- Here = frontend bundle, backend image, and algorithm package are version-locked together, and rollback is atomic. In an LLM application = model version, prompt version, and evaluation baseline must ship together, or a rollback cannot reproduce the outputs of that moment.
+- Here = build chunking is decoupled from deployment topology; development and production differ only in one access layer. In an agent platform = the capability list ships with the version and is externally checkable, so "the docs say it exists" never outruns production.
+
+**Capability status.** Build chunking, images, and deployment topology are [Implemented · Test-Locked]; canary release and automated rollback are roadmap items [Partially Implemented].
+
 ## 4. Anti-Patterns and Their Costs
 
 **Splitting chunks without limit.** Worshipping "smaller is better" and giving every dependency its own file multiplies the request count, destroys library-level caching, and makes the first screen slower. Size-warning-driven splitting is vanity engineering.

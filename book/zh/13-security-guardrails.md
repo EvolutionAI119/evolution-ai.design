@@ -35,6 +35,13 @@ SSRF 的解法是消灭选择。`llm_proxy.py` 把七家提供商的官方端点
 
 <figure class="doc-figure"><img src="../docs/images/october-csp-scope.svg" alt="CSP 作用域：/admin 文档放行 unsafe-eval 供 vue-i18n 编译，公开 API 与主站保持严格策略"><figcaption><strong>图 13-2 ｜ CSP 作用域：/admin 放行 unsafe-eval，其余严格</strong> 读图：左列为默认严格域（`/api/v1/*` 与主站，`script-src 'self'`），右列为 `/admin` 文档的专用放宽（仅允许 Function 构造器供 vue-i18n 编译）；中间 SecurityHeadersMiddleware 按请求路径选择策略。下方记录了这条边界的来历：首测后台白屏（EvalError），修复后由回归测试锁定作用域。</figcaption></figure>
 
+**跨域映射。**
+
+- 在本平台 = 鉴权四档（公开 / 可选 / 必须 / 管理员）在依赖注入层统一执行，默认拒绝；在 RAG 系统 = 文档权限必须在检索前过滤，而不是生成后再删改答案。
+- 在本平台 = 游客模式放行只读、拦住写入；在通用 Agent = 工具白名单按会话授权，未授权工具如实回报不可用。
+
+【能力状态】鉴权四档、游客模式与默认拒绝为【已实现·测试锁定】（152 个路由端点按 114 / 9 / 12 / 17 分档）；威胁建模与密钥轮换为工程纪律【设计原则】。
+
 ## 四、反模式与代价
 
 **弱默认密钥上线。** SECRET_KEY 沿用开发默认值，JWT 签发与用户 Key 加密同源失守。fail-fast 的反面不是"跑得起来"，而是"带着可预测的秘密静默裸奔"。

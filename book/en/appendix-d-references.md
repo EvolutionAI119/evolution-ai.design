@@ -46,8 +46,8 @@ Cited in GB/T 7714 style, in four groups: Qian Xuesen's system-science originals
 
 ## D.5 Documents in This Repository (relative paths)
 
-27. [ARCHITECTURE_DESIGN.md](../docs/en/ARCHITECTURE_DESIGN.md) — the authoritative source for the five-layer architecture, 19 route modules, 17 ORM tables, and the 955-case quality baseline.
-28. [api_reference.md](../docs/en/api_reference.md) — endpoint-by-endpoint detail of all 153 HTTP endpoints.
+27. [ARCHITECTURE_DESIGN.md](../docs/en/ARCHITECTURE_DESIGN.md) — the authoritative source for the five-layer architecture, 19 route modules, 17 ORM tables, and the test-quality baseline.
+28. [api_reference.md](../docs/en/api_reference.md) — endpoint-by-endpoint detail of all 154 HTTP endpoints.
 29. [PRODUCT_SPEC.md](../docs/en/PRODUCT_SPEC.md) — page functional definitions, the platform capability matrix, and non-functional requirements.
 30. [VALIDATION_REPORT_20260927.md](../docs/VALIDATION_REPORT_20260927.md) — the 2026-09-27 historical baseline of 489 cases and the record of five defect fixes.
 31. [bayes_optimization.md](../docs/en/bayes_optimization.md) — the Bayesian optimization session lifecycle, EI/UCB, and the 14-dimensional default space.
@@ -56,3 +56,4 @@ Cited in GB/T 7714 style, in four groups: Qian Xuesen's system-science originals
 34. [methodology.md](../docs/methodology.md) — the platform methodology charter: parameters as language, thin-shell orchestration, and end-to-end auditability.
 35. [MODULE_INTEGRATION_FLOW.md](../docs/en/MODULE_INTEGRATION_FLOW.md) — module integration and data-flow views.
 36. [AUDIT_REPORT_20260810.md](../docs/AUDIT_REPORT_20260810.md) — the 2026-08-10 consistency audit: 17 components, 33 surfaces, and endpoint reconciliation.
+37. [VALIDATION_REPORT_20261025.md](../docs/VALIDATION_REPORT_20261025.md) — **the single source of truth for every number in this book** (Chinese): the 2026-10-25 three-suite run (algorithm 200 / backend 411 / frontend 416), with the commands and commit SHA behind 19 route modules, 154 endpoints, 17 tables, 12 pages, and 8 export formats.

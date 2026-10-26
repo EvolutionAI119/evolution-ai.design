@@ -6,7 +6,7 @@ This appendix is the single source of every empirical figure used in the book. E
 
 ---
 
-## C.1 Backend Route Modules (19 modules, 151 route endpoints)
+## C.1 Backend Route Modules (19 modules, 152 route endpoints)
 
 | Module file | Path prefix | Endpoints | Responsibility | Source |
 |---|---|---:|---|---|
@@ -27,13 +27,13 @@ This appendix is the single source of every empirical figure used in the book. E
 | llm_proxy.py | `/api/v1/llm` | 4 | Unified proxy across LLM providers | same |
 | design_intent.py | `/api/v1/design-intent` | 3 | Natural-language design intent parsing & variants | same |
 | analytics.py | `/api/v1/analytics` | 21 | Tracking stats, community messages/reference leads, notifications, data export | same |
-| admin.py | `/api/v1/admin` | 7 | Admin console: users/login records/audit/error logs | same |
+| admin.py | `/api/v1/admin` | 8 | Admin console: users/login records/audit/error logs | same |
 | auth.py | `/api/v1/auth`, `/api/v1/api-keys` | 12 | Register/login/WeChat authorization (9), API key management (3) | same |
-| **Total** | — | **151** | — | — |
+| **Total** | — | **152** | — | — |
 
-**Endpoint count verification**: 5+4+6+6+15+4+7+9+9+15+3+7+3+11+4+3+21+7+12 = **151**.
-`main.py` adds 2 system endpoints, yielding **153 HTTP endpoints** (scope: 151 routes + 2 system).
-HTTP method distribution: GET 75 / POST 63 / PUT 4 / DELETE 9, totaling 151, cross-checked row-by-row against per-module totals.
+**Endpoint count verification**: 5+4+6+6+15+4+7+9+9+15+3+7+3+11+4+3+21+8+12 = **152**.
+`main.py` adds 2 system endpoints, yielding **154 HTTP endpoints** (scope: 152 routes + 2 system).
+HTTP method distribution: GET 76 / POST 63 / PUT 4 / DELETE 9, totaling 152, cross-checked row-by-row against per-module totals.
 Source: `docs/ARCHITECTURE_DESIGN.md` §3.1 (incl. Figure 3-1 caption).
 
 ## C.2 ORM Tables (17 tables)
@@ -77,19 +77,19 @@ Source: `docs/ARCHITECTURE_DESIGN.md` §3.1 (incl. Figure 3-1 caption).
 | 11 | `/community` | Community | Community interaction (messages, reference leads) | same |
 | 12 | `/contact` | Contact | Contact & feedback | same |
 
-Note: the login/account pages are source-sealed at `src/views/Login.vue` and `src/views/Account.vue` (guest access without login; not counted among the 12 routed pages).
+Note: the VTOL flight physics on the `/demo` page is a deliberate cross-domain technology demonstration—it verifies that the geometry/physics kernel can migrate beyond the automotive domain and is not counted in the automotive platform's feature baseline. The login/account pages are source-sealed at `src/views/Login.vue` and `src/views/Account.vue` (guest access without login; not counted among the 12 routed pages).
 
-## C.4 Automated Tests (955-case baseline)
+## C.4 Automated Tests (~1,027-case baseline, 2026-10-25)
 
 | Test suite | Cases | Result | Source |
 |---|---:|---|---|
-| algorithm_model pytest (tests/) | 205 | all pass | `docs/ARCHITECTURE_DESIGN.md` §9 |
-| backend pytest (tests/) | 388 (1 skipped, 2 xfailed) | all pass | same |
-| frontend vitest | 362 | all pass | same |
-| **Total** | **955+** | **all green** | same |
+| algorithm_model pytest (tests/) | 200 | all pass | `docs/VALIDATION_REPORT_20261025.md` (SHA b42e51e4) |
+| backend pytest (tests/) | 411 collected (408 passed + 1 skipped + 2 xfailed) | all pass | same |
+| frontend vitest | 416 | all pass | same |
+| **Total** | **~1,027** | **all green** | same |
 
-**Count verification**: 205 + 388 + 362 = **955**. The backend's 1 skip (requires `RUN_REAL_LLM=1`) and 2 expected failures (curvature pipeline migrated to SISA, marked xfail) are listed separately and never mixed into "passed." A separate `test_all.py` one-stop five-module self-check verifies post-assembly runnability and is **excluded from the 955 sum**. Layer shares: algorithm 21.5% / backend 40.6% / frontend 37.9%; backend + frontend total 750 cases (78.5%).
-Historical scope (for backtracking only, not the current baseline): the 2026-09-27 snapshot recorded 489 cases (algorithm 200 / backend 178 / frontend 111, plus a 5-module self-check) — source `docs/VALIDATION_REPORT_20260927.md` §1–§2.
+**Count verification**: 200 + 411 + 416 = **1,027**. The backend's 1 skip (requires `RUN_REAL_LLM=1`) and 2 expected failures (curvature pipeline migrated to SISA, marked xfail) are listed separately and never mixed into "passed." A separate `test_all.py` one-stop five-module self-check verifies post-assembly runnability and is **not counted in the baseline sum**. Layer shares: algorithm 19.5% / backend 40.0% / frontend 40.5%; backend + frontend total 827 cases (80.5%).
+Historical scope (for backtracking only, not the current baseline): the 2026-09-27 snapshot recorded 489 cases (algorithm 200 / backend 178 / frontend 111, plus a 5-module self-check) — source `docs/VALIDATION_REPORT_20260927.md` §1–§2. The 955-case figure (205/388/362) was an intermediate 2026-10 scope and has been superseded by the 2026-10-25 measurement.
 
 ## C.5 Core Algorithm Specifications
 
@@ -98,11 +98,12 @@ Historical scope (for backtracking only, not the current baseline): the 2026-09-
 | CarParams parameter vector | 22 dimensions | `docs/evolution_systems_thinking.md` ("22-dim parameters × 176 vertices × 33 surfaces"); `docs/PRODUCT_SPEC.md` §4.2 |
 | Body mesh vertices | 176 vertices | `docs/evolution_systems_thinking.md` (magnitude row) |
 | NURBS surface patches | 33 surfaces | same; `docs/AUDIT_REPORT_20260810.md` ("17 components, 33 surfaces") |
-| Continuity grades | G0 / G1 / G2 (tolerances 0.1 mm / 1.0°) | `docs/ARCHITECTURE_DESIGN.md` §7 legend; `algorithm_model/surface_quality/` |
+| Continuity grades | G0 / G1 / G2 — mesh evaluation thresholds G1 < 5°, G2 < 2°; engineering checks judge seam by seam at G0 0.1 mm, G1 1.0° (no separate G2 tolerance) | `docs/ARCHITECTURE_DESIGN.md` §7 legend; `algorithm_model/surface_quality/` |
 | Bayesian default optimization space | 14 dimensions (normalized [0,1]) | `docs/bayes_optimization.md` §3; `docs/EVOLUTION_AI_paper.md` ("14-dim default space, GP, EI/UCB, sessions") |
 | Gaussian process kernel | isotropic RBF (ℓ=0.25) | `backend/app/bayes_optimizer.py`; Ch. 8 |
 | Acquisition functions | EI / UCB | `docs/bayes_optimization.md` |
-| Convergence threshold | 0.01 (dual criteria) | Ch. 8; `docs/bayes_optimization.md` |
+| Convergence stopping reference | EI minimum improvement 0.01 (`ei_xi`); plateau/convergence confirmed by session observation and human judgment — the code has no `converged` field; automatic dual-criterion convergence is a roadmap item | Ch. 8; `docs/bayes_optimization.md`; `backend/app/bayes_optimizer.py` |
+| Geometry export formats | 8 geometric formats (glb/gltf/stl/obj/iges/step/igs/stp) + JSON parameter export; primary: mesh→STL/GLB, NURBS→STEP/IGES; OBJ/GLTF/IGS/STP kept for compatibility | `backend/app/routes/export.py` (SUPPORTED_FORMATS); Ch. 5 |
 | Training network | compact MLP (48 hidden units) | `docs/EVOLUTION_AI_paper.md` |
 
 ## C.6 Brand Knowledge Base
@@ -116,4 +117,4 @@ The knowledge base carries brand/model parameters and design-language metadata, 
 
 ---
 
-**Grand verification**: 151 (route endpoints) + 2 (system endpoints) = **153**; 17 tables; 12 pages; 955 tests (205+388+362). All figures agree with `docs/ARCHITECTURE_DESIGN.md`, `docs/api_reference.md`, `docs/PRODUCT_SPEC.md`, and `docs/VALIDATION_REPORT_20260927.md` (historical scope).
+**Grand verification**: 152 (route endpoints) + 2 (system endpoints) = **154**; 17 tables; 12 pages; ~1,027 tests (200+411+416, measured 2026-10-25, per `docs/VALIDATION_REPORT_20261025.md`, SHA b42e51e4). All figures agree with `docs/ARCHITECTURE_DESIGN.md`, `docs/api_reference.md`, and `docs/PRODUCT_SPEC.md`. The former scope of 151 routes + 2 system = 153 and the 955-case figure (205/388/362) are historical snapshots, preserved and labeled rather than rewritten.

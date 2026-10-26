@@ -7,7 +7,7 @@
 
 A demo needs one path that works. A deliverable system must answer a different set of questions: who may call this, what goes in, what comes out, what state the system is left in after failure, and whether the tenth module added next quarter will silently break the conventions of the first nine. Once an interface surface grows past a handful of endpoints, the dominant risk shifts from "did we build the feature" to "did we keep the agreement."
 
-EVOLUTION AI carries a substantial surface: 19 route modules with 151 router endpoints, plus 2 system endpoints declared directly in `main.py`, for a total of 153 HTTP endpoints. Seventeen ORM tables hold persistent state. If every module invents its own field names, interprets status in its own way, and picks its own error codes, then 153 endpoints become 153 local dialects, and every frontend integration becomes an exercise in re-learning. Contract-first design is the discipline that collapses local dialect into a globally testable agreement.
+EVOLUTION AI carries a substantial surface: 19 route modules with 152 router endpoints, plus 2 system endpoints declared directly in `main.py`, for a total of 154 HTTP endpoints. Seventeen ORM tables hold persistent state. If every module invents its own field names, interprets status in its own way, and picks its own error codes, then 154 endpoints become 154 local dialects, and every frontend integration becomes an exercise in re-learning. Contract-first design is the discipline that collapses local dialect into a globally testable agreement.
 
 The proposition of this chapter is: **endpoints, data tables, and state machines precede implementation, and 100 percent field alignment is a hard constraint.** "Precede" is not a slogan about writing documents before code. It means the shape of the interface must be reviewable, testable, and regression-safe before any business logic is written.
 
@@ -21,19 +21,21 @@ Every endpoint has three layers of contract. The call contract defines method, p
 
 The backend uses snake_case and the frontend uses camelCase. These are naming habits of two languages, not two data models. The platform converts once, at the boundary: the `snakeToCamel` helper in the designer store normalizes underscored fields from the backend, and pages and components see a single naming convention afterward. The training-sample contract follows the same rule. The `feature_order` exported by a Bayesian session must match the training pipeline position by position; otherwise "the samples are trainable" is a wish rather than a property.
 
+> **When this does not apply**: during the evolution of a public API—when external consumers cannot upgrade in lockstep with the repository—single-point hard alignment yields to versioned contracts (v1 and v2 side by side); field freezing binds only within one version.
+
 ### Principle 3. State machines are explicit and error codes carry meaning
 
 State must not be inferred from a combination of booleans. A workflow may be pending, running, completed, or failed. A step may be pending, completed, or rejected. Workflow status is derived by aggregating step status, and there is no manual path for setting it. Failure must not be wrapped as `200 + {success:false}`. A 400 means business validation failed, 401 means credentials are missing or invalid, 404 means the resource does not exist, 405 means the method is not allowed, 409 means a state conflict, 422 means schema validation failed, and 503 means an optional capability is not ready. When each failure has exactly one exit, the caller can write deterministic recovery logic.
 
 ### Principle 4. Contracts must be executable and regression-tested
 
-A contract written only in prose drifts. A contract expressed in types and tests raises an alarm. Of the platform's 955 automated tests (205 algorithm, 388 backend, 362 frontend), the backend suite covers route contracts, parameter validation, and failure branches, while the frontend suite covers API modules and store-level field mapping. The contract is not a consensus reached in a review meeting; it is a gate that every commit must pass again.
+A contract written only in prose drifts. A contract expressed in types and tests raises an alarm. Of the platform's roughly 1,027 automated tests (200 algorithm, 411 backend, 416 frontend—as of 2026-10-25, per `docs/VALIDATION_REPORT_20261025.md`), the backend suite covers route contracts, parameter validation, and failure branches, while the frontend suite covers API modules and store-level field mapping. The contract is not a consensus reached in a review meeting; it is a gate that every commit must pass again.
 
-## 3. Case Study: How 153 Endpoints Speak One Language
+## 3. Case Study: How 154 Endpoints Speak One Language
 
-Start with the authentication contract. The 151 router endpoints fall into four tiers: 114 public, 9 optional-auth, 12 required-auth, and 16 admin. This is not an arbitrary tally; it is the structural result of "reads stay mostly open, writes converge to authentication, governance converges to admin." Guest mode lets unauthenticated requests through as guests, yet admin endpoints still demand admin-level dependencies. The same dependency-injection stack serves both open reading and high-privilege governance, so no route re-explains permissions on its own.
+Start with the authentication contract. The 152 router endpoints fall into four tiers: 114 public, 9 optional-auth, 12 required-auth, and 17 admin. This is not an arbitrary tally; it is the structural result of "reads stay mostly open, writes converge to authentication, governance converges to admin." Guest mode lets unauthenticated requests through as guests, yet admin endpoints still demand admin-level dependencies. The same dependency-injection stack serves both open reading and high-privilege governance, so no route re-explains permissions on its own.
 
-<figure class="doc-figure"><img src="../docs/images/en/api2-matrix.svg" alt="Matrix of 19 modules against four authentication levels"><figcaption><strong>Figure 6-1 | The matrix of nineteen modules by four authentication tiers</strong> How to read: the four columns are public, optional, required, and admin; each cell holds the number of endpoints of that module at that tier. Column totals are 114, 9, 12, and 16, summing to 151, cross-checked against row totals. The conclusion is that writes and governance are confined to higher tiers while reads stay open; the matrix turns "are permissions under control" into a checkable fact rather than endpoint-by-endpoint testimony.</figcaption></figure>
+<figure class="doc-figure"><img src="../docs/images/en/api2-matrix.svg" alt="Matrix of 19 modules against four authentication levels"><figcaption><strong>Figure 6-1 | The matrix of nineteen modules by four authentication tiers</strong> How to read: the four columns are public, optional, required, and admin; each cell holds the number of endpoints of that module at that tier. Column totals are 114, 9, 12, and 17, summing to 152, cross-checked against row totals. The conclusion is that writes and governance are confined to higher tiers while reads stay open; the matrix turns "are permissions under control" into a checkable fact rather than endpoint-by-endpoint testimony.</figcaption></figure>
 
 Next, the chain contract. The main chain from login to token-based training to workflow review spans four modules — auth, training, workflow, and project — covering 41 endpoints. The chain actually calls only 6 contracts, 14.6 percent. The remaining 35 endpoints are management and extension capabilities that the chain never triggers. The size of the interface surface need not scale with the complexity of the chain: with clear contract boundaries, a small chain can safely consume a large surface.
 
@@ -41,9 +43,14 @@ The Bayesian module shows a different contract density. It has only 7 endpoints,
 
 Brand DNA turns the contract into an exchangeable schema. `BrandDNASchema` pins version 1.0, requires `brand` and `on_brand_constraints` at the top level, allows only PASS, FAIL, NO_DATA, and N/A as verdicts, and converges rule types to zero, range, enum, and sealed. Most important is the semantics of NO_DATA: when something cannot be measured now, it is labeled as such and never presumed to pass. Here the contract constrains not just fields but honesty itself.
 
+**Cross-domain mapping.** The honesty semantics of contracts hold verbatim in language-model systems:
+
+- In this platform = querying the best before any observation returns 409, and Brand DNA labels what cannot be measured as NO_DATA rather than presuming a pass; in a RAG system = when retrieval finds no basis, the answer is "I don't know," not a fabrication. Empty states must have named exits—a contract constrains honesty, not just fields.
+- In this platform = an unready optional capability returns 503 with a reason; in a general-purpose agent = an unavailable tool is reported as unavailable, never answered with a forged success. Semantic error codes and "never fake success" are one contractual discipline.
+
 ## 4. Anti-Patterns and Their Costs
 
-**Anti-pattern 1: Improvised interface growth.** Write the page first, then add whatever endpoint it happens to need, naming fields for the convenience of the moment. The cost is that endpoints multiply faster than understanding; every new module integration means reading source to guess semantics, and 153 endpoints become 153 oral traditions.
+**Anti-pattern 1: Improvised interface growth.** Write the page first, then add whatever endpoint it happens to need, naming fields for the convenience of the moment. The cost is that endpoints multiply faster than understanding; every new module integration means reading source to guess semantics, and 154 endpoints become 154 oral traditions.
 
 **Anti-pattern 2: Dual-track fields.** snake_case on the backend, a re-invented camelCase on the frontend, mapping tables maintained on both sides. Nothing breaks at first; over time a field is inevitably changed on one side only. Such bugs throw no exception — they just make a chart quietly lose a series.
 

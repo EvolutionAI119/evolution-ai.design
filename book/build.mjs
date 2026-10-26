@@ -10,6 +10,7 @@ import MarkdownIt from 'markdown-it'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const CHAPTERS = [
+  ['00-framework-map',             { zh: '框架地图',                              en: 'Framework Map' }],
   ['01-ai-native-software',        { zh: '第 1 章 · AI 原生软件的定义与边界',      en: 'Ch.1 · Defining AI-Native Software' }],
   ['02-complex-giant-systems',     { zh: '第 2 章 · 开放的复杂巨系统',              en: 'Ch.2 · Open Complex Giant Systems' }],
   ['03-metasynthesis',             { zh: '第 3 章 · 从定性到定量：综合集成方法',     en: 'Ch.3 · Qualitative-to-Quantitative Metasynthesis' }],
@@ -20,7 +21,7 @@ const CHAPTERS = [
   ['08-bayesian-optimization',     { zh: '第 8 章 · 代理模型与贝叶斯优化',          en: 'Ch.8 · Surrogate Models & Bayesian Optimization' }],
   ['09-dl-llm-fusion',             { zh: '第 9 章 · 深度学习与 LLM 融合层',         en: 'Ch.9 · DL & LLM Fusion Layer' }],
   ['10-semantic-interfaces',       { zh: '第 10 章 · 语义接口：从纹理到品牌 DNA',   en: 'Ch.10 · Semantic Interfaces: Texture to Brand DNA' }],
-  ['11-testing-pyramid',           { zh: '第 11 章 · 测试金字塔与 955 例基线',      en: 'Ch.11 · Testing Pyramid & the 955 Baseline' }],
+  ['11-testing-pyramid',           { zh: '第 11 章 · 测试金字塔与 1000+ 例基线',     en: 'Ch.11 · Testing Pyramid & the 1000+ Baseline' }],
   ['12-observability-audit',       { zh: '第 12 章 · 可观测性与全链路审计',         en: 'Ch.12 · Observability & Full-Chain Audit' }],
   ['13-security-guardrails',       { zh: '第 13 章 · 安全围栏与游客模式',           en: 'Ch.13 · Security Guardrails & Guest Mode' }],
   ['14-build-deploy-release',      { zh: '第 14 章 · 构建、部署与发布',             en: 'Ch.14 · Build, Deploy & Release' }],
@@ -107,12 +108,23 @@ section.chapter figure.doc-figure img { max-width:100%; height:auto; display:blo
 section.chapter figcaption { margin-top:12px; font-size:13px; color:var(--mut); }
 section.chapter figcaption strong { color:var(--acc); }
 @media print {
-  body { background:#fff; color:#000; }
-  aside.toc { display:none; }
-  .layout { grid-template-columns:1fr; }
-  main { max-width:none; padding:24px; }
+  body { background:#fff !important; color:#000 !important; }
+  aside.toc { display:none !important; }
+  .layout { grid-template-columns:1fr !important; }
+  main { max-width:none !important; padding:24px !important; }
+  /* 白底强制可读：正文区内一切文字转纯黑，底色转浅灰 */
+  main, main * { color:#000 !important; background-color:transparent !important; border-color:#888 !important; text-shadow:none !important; }
+  main th { background:#e8e8e8 !important; }
+  main pre, main code, main blockquote { background:#f2f2f2 !important; }
+  main figure.doc-figure { background:#fff !important; border:1px solid #888 !important; }
+  /* 字号与行距：打印可读性优先 */
+  main p, main li, main td, main th, main blockquote { font-size:12pt !important; line-height:1.8 !important; }
+  main h1 { font-size:22pt !important; }
+  main h2 { font-size:16pt !important; }
+  main h3 { font-size:13pt !important; }
+  header.cover h1 { font-size:30pt !important; }
+  header.cover .sub { font-size:14pt !important; }
   section.chapter { page-break-before:always; }
-  section.chapter h1, section.chapter h2, section.chapter h3 { color:#000; }
 }
 @media (max-width:960px) { .layout { grid-template-columns:1fr; } aside.toc { position:static; height:auto; border-right:none; border-bottom:1px solid var(--line); } main { padding:24px; } }
 </style>

@@ -46,8 +46,8 @@
 
 ## D.5 本仓库文档（相对路径）
 
-27. [ARCHITECTURE_DESIGN.md](../docs/ARCHITECTURE_DESIGN.md) — 平台五层架构、19 路由模块、17 张 ORM 表与 955 例质量基线的权威出处。
-28. [api_reference.md](../docs/api_reference.md) — 153 个 HTTP 端点逐条明细。
+27. [ARCHITECTURE_DESIGN.md](../docs/ARCHITECTURE_DESIGN.md) — 平台五层架构、19 路由模块、17 张 ORM 表与测试质量基线的权威出处。
+28. [api_reference.md](../docs/api_reference.md) — 154 个 HTTP 端点逐条明细。
 29. [PRODUCT_SPEC.md](../docs/PRODUCT_SPEC.md) — 页面功能定义、平台能力矩阵与非功能性需求。
 30. [VALIDATION_REPORT_20260927.md](../docs/VALIDATION_REPORT_20260927.md) — 2026-09-27 时点 489 例历史基线与五项缺陷修复记录。
 31. [bayes_optimization.md](../docs/bayes_optimization.md) — 贝叶斯优化会话生命周期、EI/UCB 与 14 维默认空间。
@@ -56,3 +56,4 @@
 34. [methodology.md](../docs/methodology.md) — 平台方法论总则：参数即语言、薄壳编排与全链路可审计。
 35. [MODULE_INTEGRATION_FLOW.md](../docs/MODULE_INTEGRATION_FLOW.md) — 模块集成与数据流视图。
 36. [AUDIT_REPORT_20260810.md](../docs/AUDIT_REPORT_20260810.md) — 2026-08-10 一致性审计：17 组件、33 曲面与端点核对记录。
+37. [VALIDATION_REPORT_20261025.md](../docs/VALIDATION_REPORT_20261025.md) — **本书数字的单一事实源**：2026-10-25 三层测试实跑（算法 200 / 后端 411 / 前端 416）、19 路由模块 / 154 端点 / 17 表 / 12 页 / 8 格式的取数命令与 commit SHA。

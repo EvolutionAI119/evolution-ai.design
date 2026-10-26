@@ -41,6 +41,13 @@ The platform deliberately does not ship a QLoRA-style fine-tuning job runner, an
 
 <figure class="doc-figure"><img src="../docs/images/en/audit2-chart.svg" alt="LLM benchmark: three-stage improvement and failure roots"><figcaption><strong>Figure 9-2 | The LLM ten-question benchmark: 1/10 → 3/10 → 7/10, with failure roots</strong> How to read: the left panel measures the same ten questions three times; the right panel attributes the seven failures at the 30-percent stage, with the top two causes accounting for 72 percent — evidence that the bottleneck was data gaps, not model capacity. A benchmark matters not because the score looks good, but because every jump can say what was fixed and what remains.</figcaption></figure>
 
+**Cross-Domain Mapping.**
+
+- Here = missing capabilities degrade honestly (HTTP 503 without torch, semantic scoring declared unavailable without CLIP) and the caller labels it. In RAG = when retrieval finds no support, the answer is "I don't know" rather than a fluent invention.
+- Here = the LLM is an optional add-on; with it switched off, parametric modeling and export still work. In a general agent = the orchestration skeleton outlives any single model vendor, and swapping models does not change the tool contract.
+
+**Capability status.** The pure-NumPy geometry and Bayesian kernels are [Implemented · Test-Locked]; the deep-learning and LLM side is an optional add-on [Partially Implemented]—training returns 503 without torch, and semantic scoring declares itself unavailable without a downloaded CLIP model.
+
 ## 4. Anti-Patterns and Their Costs
 
 **Anti-pattern 1: Client-supplied upstream addresses.** Letting callers pass a base URL or arbitrary proxy target. The cost is an open SSRF gate, with the server reduced to an intranet scanner.

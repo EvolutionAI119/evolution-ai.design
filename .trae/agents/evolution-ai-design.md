@@ -61,7 +61,7 @@ tools: read, edit, terminal, websearch, preview
 
 ### 算法引擎
 
-- 核心几何在 algorithm_model，Cython 编译（setup_nurbs.py build_ext --inplace），关键运算 100–400× 加速
+- 核心几何在 algorithm_model，Cython 编译（setup_nurbs.py build_ext --inplace），关键运算加速：曲面求值约 70×（344ms→<5ms）、反射线评估约 34×（102ms→<3ms）
 - 连续性：G0/G1/G2 定义为权威口径；渲染图与质量评分须一致
 - 车身生成（car_generator）参数驱动；品牌知识（brand_knowledge：5 品牌 19 车，每车 14 规范参数 + 8 量化指标）
 - 曲面质量：反射线/曲率/容差量化，报告自动归档；CLIP 语义为可选降级能力（缺 transformers/torch 时自动纯几何）

@@ -6,11 +6,30 @@
 
 ---
 
+## B.0 AI 原生判定矩阵（AI-Native Determination Matrix）
+
+四条原则取自第 1 章实际表述：不确定性入架构、评估先于生成（评估可回归）、能力边界显式（诚实降级）、判断权留在人（建议与裁决分离）。每条拆成两条可观察判据。
+
+| 原则 | 可观察判据 | 是/否 |
+|---|---|---|
+| 不确定性入架构（原则一） | 架构图上找得到"模型不可用"这条线：失败有具名出口，返回码与文案确定 | ☐ 是 / ☐ 否 |
+| 不确定性入架构（原则一） | 输入分布、置信区间、失败模式、降级路径各有其位——有类型、有状态、有出口 | ☐ 是 / ☐ 否 |
+| 评估先于生成·评估可回归（原则二） | 每个生成能力都配评估函数：同一输入、同一口径，分数可复现 | ☐ 是 / ☐ 否 |
+| 评估先于生成·评估可回归（原则二） | 评估口径由工程共识编码而非模型自评，评分有资格进入评审 | ☐ 是 / ☐ 否 |
+| 能力边界显式·诚实降级（原则三） | 依赖缺失时返回"不可用"或显式降级，不用假数据填满界面 | ☐ 是 / ☐ 否 |
+| 能力边界显式·诚实降级（原则三） | 降级结果被标注，且降级结果不进入决策链 | ☐ 是 / ☐ 否 |
+| 判断权留在人·建议与裁决分离（原则四） | 机器只提供候选、证据与建议；价值判断与责任由人承担 | ☐ 是 / ☐ 否 |
+| 判断权留在人·建议与裁决分离（原则四） | 系统终点是可审计的"人已裁决"状态：具名人裁决 + 证据链可回溯 | ☐ 是 / ☐ 否 |
+
+用法说明：全部勾选才可自称 AI 原生；任一"否"即标出缺口。此表也是对外传播的一页钩子。
+
+---
+
 ## B.1 架构清单（Architecture Checklist）
 
 - [ ] 五层分层无跨层调用 —— 前端只经 `/api/v1`，算法层不 import 路由 —— `docs/ARCHITECTURE_DESIGN.md` §2–§4；`backend/app/routes/*.py` 只编排不求值
 - [ ] 薄壳编排成立 —— 路由函数只做校验、鉴权、编排，领域逻辑在 `backend/app/` 与 `algorithm_model/` —— `docs/ARCHITECTURE_DESIGN.md` §3.2
-- [ ] 算法内核可独立安装与测试 —— `algorithm_model/` 不依赖 FastAPI，pytest 独立运行 —— `python -m pytest tests/ -q`（algorithm_model 目录下，205 例全过）
+- [ ] 算法内核可独立安装与测试 —— `algorithm_model/` 不依赖 FastAPI，pytest 独立运行 —— `python -m pytest tests/ -q`（algorithm_model 目录下，200 例全过）
 - [ ] 契约先于实现冻结 —— 端点、表结构、状态机三处有文档且与代码一致 —— `docs/api_reference.md`、`docs/ARCHITECTURE_DESIGN.md` §5
 - [ ] 单一参数向量驱动四种表达 —— CarParams 22 维同时驱动网格/NURBS/质量/导出，无二次拟合 —— `algorithm_model/car_modeling/car_params.py`；`docs/PRODUCT_SPEC.md` §4.2
 - [ ] 状态只有一个真相源 —— 前端用 Pinia（auth/designer/project/ui），页面不复述几何逻辑 —— `src/stores/`；`docs/ARCHITECTURE_DESIGN.md` §2
@@ -22,17 +41,17 @@
 
 ## B.2 交付清单（Delivery Checklist）
 
-- [ ] 三层测试基线全绿 —— 算法 205 / 后端 388 / 前端 362，合计 955 例 —— `python -m pytest tests/ -q`；`python -m pytest -q`（backend）；`npx vitest run`
-- [ ] 一站式自检通过 —— test_all.py 五模块全过（不计入 955 求和） —— `python test_all.py`（algorithm_model 目录下）
+- [ ] 三层测试基线全绿 —— 算法 200 / 后端 411（408 通过 + 1 跳过 + 2 xfail）/ 前端 416，合计约 1027 例（统计日 2026-10-25，取自 VALIDATION_REPORT_20261025，SHA b42e51e4） —— `python -m pytest tests/ -q`；`python -m pytest -q`（backend）；`npx vitest run`
+- [ ] 一站式自检通过 —— test_all.py 五模块全过（不计入基线求和） —— `python test_all.py`（algorithm_model 目录下）
 - [ ] 跳过与预期失败如实标注 —— 1 跳过（RUN_REAL_LLM）+ 2 xfail 单独列示 —— `docs/ARCHITECTURE_DESIGN.md` §9
 - [ ] 前端构建产物可解释 —— `npm run build` 无告警，产物哈希命名 —— `package.json`；`backend/app/static/admin/assets/`
 - [ ] 部署拓扑可复现 —— docker-compose 必填环境变量有校验 —— `deploy/docker-compose.yml`；`deploy/.env.example`
 - [ ] 12 个前端页面路由可达 —— Hash 路由全表与文档一致 —— `docs/ARCHITECTURE_DESIGN.md` §2 路由表
-- [ ] 19 模块 151 端点明细可逐条核对 —— api_reference 与 ARCHITECTURE_DESIGN §3.1 计数一致 —— `docs/api_reference.md`
+- [ ] 19 模块 152 路由端点明细可逐条核对 —— api_reference 与 ARCHITECTURE_DESIGN §3.1 计数一致 —— `docs/api_reference.md`
 - [ ] 导入→改参→导出全链路可走通 —— import_export 11 端点会话全流程冒烟通过 —— `docs/PRODUCT_SPEC.md` §4.7
 - [ ] 贝叶斯会话全生命周期可用 —— create → suggest → observe → best/samples 闭环 —— `docs/bayes_optimization.md` §3；`backend/app/bayes_optimizer.py`
 - [ ] 品牌知识库可查询 —— 5 品牌 19 车型元数据装载与语义检索可用 —— `backend/config/brand_design_knowledge.json`；`src/config/carPresets.js`
-- [ ] 里程碑基线带日期与口径 —— 引用测试数字必须标注时点，不用旧快照替代当前基线 —— `docs/VALIDATION_REPORT_20260927.md`（历史 489 口径）；955 为 2026-10 后基线
+- [ ] 里程碑基线带日期与口径 —— 引用测试数字必须标注时点，不用旧快照替代当前基线 —— `docs/VALIDATION_REPORT_20260927.md`（历史 489 口径）；约 1027 例为 2026-10-25 基线（`docs/VALIDATION_REPORT_20261025.md`，SHA b42e51e4）
 - [ ] 发布说明与版本同步 —— README/CHANGELOG 与实际构建一致 —— 根 `README.md` 测试一节
 
 ## B.3 安全清单（Security Checklist）
@@ -52,8 +71,8 @@
 
 ## B.4 文档清单（Documentation Checklist）
 
-- [ ] 关键数字全库一致 —— 19 模块 / 153 端点 / 17 表 / 12 页面 / 955 测试在 ARCHITECTURE_DESIGN、PRODUCT_SPEC、README 间一致 —— `docs/ARCHITECTURE_DESIGN.md` §3.1 §5 §9；`docs/PRODUCT_SPEC.md` §5
-- [ ] 端点计数口径写明 —— 151 路由 + 2 系统 = 153，且 GET 75 / POST 63 / PUT 4 / DELETE 9 行列互校 —— `docs/ARCHITECTURE_DESIGN.md` §3.1
+- [ ] 关键数字全库一致 —— 19 模块 / 154 端点 / 17 表 / 12 页面 / 约 1027 测试在 ARCHITECTURE_DESIGN、PRODUCT_SPEC、README 间一致 —— `docs/ARCHITECTURE_DESIGN.md` §3.1 §5 §9；`docs/PRODUCT_SPEC.md` §5
+- [ ] 端点计数口径写明 —— 152 路由 + 2 系统 = 154，且 GET 76 / POST 63 / PUT 4 / DELETE 9 行列互校 —— `docs/ARCHITECTURE_DESIGN.md` §3.1
 - [ ] 历史数字保留并标注 —— 2026-09-27 的 489 与历史 118 口径注明时点，不删改旧报告 —— `docs/VALIDATION_REPORT_20260927.md`
 - [ ] 文档与源码同源核对 —— 无"文档漂移"：表格逐项可对应代码 —— `docs/ARCHITECTURE_DESIGN.md` §5 与 `backend/app/database.py`
 - [ ] 图表有读图指引 —— 每图 caption 含"读图/读法结论" —— `docs/ARCHITECTURE_DESIGN.md` 各 `<figcaption>`

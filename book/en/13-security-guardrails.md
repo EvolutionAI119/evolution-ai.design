@@ -35,6 +35,13 @@ SSRF is solved by eliminating choice. `llm_proxy.py` hard-codes the official end
 
 <figure class="doc-figure"><img src="../docs/images/en/october-csp-scope.svg" alt="CSP scoping: the /admin document admits unsafe-eval for vue-i18n compilation while the public API and main site stay strict"><figcaption><strong>Figure 13-2 ｜ CSP scoping: unsafe-eval admitted for /admin only, strict everywhere else</strong> How to read: the left column is the strict default zone (`/api/v1/*` and the main site, `script-src 'self'`); the right column is the dedicated relaxation for the `/admin` document (only the Function constructor, for vue-i18n compilation); the SecurityHeadersMiddleware in the middle selects the policy by request path. The lower part records where this boundary came from: the admin console rendered a blank page on first test (EvalError); the fix introduced the scoped policy, and a regression test now locks the scope.</figcaption></figure>
 
+**Cross-Domain Mapping.**
+
+- Here = four authentication tiers (public, optional, required, admin) are enforced in one dependency-injection layer, defaulting to deny. In RAG = document permissions must be filtered before retrieval, not scrubbed out of the answer afterwards.
+- Here = guest mode allows reads and blocks writes. In a general agent = tool allowlists are granted per session, and unauthorized tools report unavailability truthfully.
+
+**Capability status.** The four auth tiers, guest mode, and default-deny posture are [Implemented · Test-Locked] (152 routed endpoints split 114 / 9 / 12 / 17); threat modeling and key rotation are engineering discipline [Design Principle].
+
 ## 4. Anti-Patterns and Their Costs
 
 **Going live on a weak default secret.** SECRET_KEY keeps the development default, so JWT signing and user-key encryption fall together. The opposite of fail-fast is not "it boots" but "it runs naked in silence with a predictable secret".

@@ -38,8 +38,8 @@ This glossary collects the core terms used throughout the book, ordered in three
 | 26 | Brand DNA | 品牌 DNA | The parameterized and rule-based expression of a brand's design language, usable for On-Brand judgment | Ch. 10 |
 | 27 | Evidence on the wall | 证据上墙 | The deliberation practice of publicly presenting candidates with measured data for collective reading | Ch. 15 |
 | 28 | Acceptance line | 验收线 | The team's unified, non-negotiable pass bar for delivery | Ch. 17 |
-| 29 | Six roles | 六类角色 | The role spectrum of an AI-native team (general design, architecture, algorithm, engineering, quality, operations) | Ch. 17 |
-| 30 | Three rhythms | 三种节奏 | The team's working cadence: daily iteration, weekly review, milestone-level baseline refresh | Ch. 17 |
+| 29 | Six roles | 六类角色 | The role spectrum of an AI-native team: philosophy keeper, method engineer, chief architect, contract steward, quality engineer, validation lead — each guarding one class of document (philosophy, method, architecture, API, quality, validation) | Ch. 17 |
+| 30 | Three rhythms | 三种节奏 | Layered cadence, never cross-frequency: round-level (seconds to hours, machine self-loop), iteration (one to two weeks, team review), evolution (months to quarters, threshold and baseline revision) | Ch. 17 |
 
 ## A.2 Geometry & Algorithm Terms
 
@@ -49,7 +49,7 @@ This glossary collects the core terms used throughout the book, ordered in three
 | 32 | Class-A surface | A 级曲面 | The highest grade of visible surface, satisfying highlight reflection continuity requirements | Ch. 5 |
 | 33 | G0 continuity | G0 连续性 | Positional continuity: two surfaces coincide at the boundary | Ch. 5 |
 | 34 | G1 continuity | G1 连续性 | Tangent continuity: aligned normals at the boundary (tolerance 1.0°) | Ch. 5 |
-| 35 | G2 continuity | G2 连续性 | Curvature continuity: equal curvature at the boundary (0.1 mm-level inspection) | Ch. 5 |
+| 35 | G2 continuity | G2 连续性 | Curvature continuity: equal curvature values at the boundary (mesh-evaluation threshold G2 < 2°; engineering checks judge seam by seam at G0 0.1 mm + G1 1.0°, with no separate G2 tolerance) | Ch. 5 |
 | 36 | Control polygon | 控制多边形 | The polygon of control points that steers a NURBS curve's shape | Ch. 5 |
 | 37 | Control point | 控制顶点 | A vertex that determines B-spline/NURBS shape and generally does not lie on the surface | Ch. 5 |
 | 38 | Knot vector | 节点向量 | The non-decreasing parameter sequence defining a B-spline's segmentation | Ch. 5 |
@@ -64,13 +64,13 @@ This glossary collects the core terms used throughout the book, ordered in three
 | 47 | Simulated annealing | 模拟退火 | A stochastic optimizer that accepts worsening moves probabilistically to escape local optima | Ch. 5 |
 | 48 | Surrogate model | 代理模型 | A cheap approximation standing in for expensive ground-truth evaluation; Gaussian Process on this platform | Ch. 8 |
 | 49 | Gaussian Process (GP) | 高斯过程 | Non-parametric Bayesian regression yielding predictive mean and variance; isotropic RBF kernel (ℓ=0.25) here | Ch. 8 |
-| 50 | RBF kernel | RBF 核 | The squared-exponential kernel; similarity decays exponentially with distance | Ch. 8 |
+| 50 | RBF kernel | RBF 核（同义：平方指数核） | The squared-exponential (SE) kernel; similarity decays exponentially with distance. Same kernel, two names—do not mistake the aliases for two different kernels | Ch. 8 |
 | 51 | Acquisition function | 采集函数 | A scalar function over the surrogate that scores "the next point most worth evaluating" | Ch. 8 |
 | 52 | Expected Improvement (EI) | 期望改进 | An acquisition function: the expected improvement over the current best | Ch. 8 |
 | 53 | Upper Confidence Bound (UCB) | 置信上界 | An acquisition function: a weighted sum of mean and uncertainty, balancing exploration and exploitation | Ch. 8 |
 | 54 | Exploration–exploitation trade-off | 探索-利用平衡 | The trade-off between sampling unknown regions and refining near the incumbent best | Ch. 8 |
 | 55 | Bayesian Optimization (BO) | 贝叶斯优化 | The surrogate-plus-acquisition sequential decision framework for expensive black-box optimization | Ch. 8 |
-| 56 | Dual-criterion convergence | 双判据收敛 | Convergence requires both improvement magnitude and acquisition value below the 0.01 threshold | Ch. 8 |
+| 56 | Dual-criterion convergence (planned) | 双判据收敛（规划） | Planned criterion: score plateau cross-confirmed with the EI minimum improvement 0.01 (`ei_xi`); the current code has no `converged` field—the loop stops on the EI reference plus session observation and human judgment | Ch. 8 |
 | 57 | Warm start | 热启动 | Initializing a Bayesian session with existing observations instead of exploring from scratch | Ch. 8 |
 | 58 | Normalized styling vector | 归一化造型向量 | A vector mapped into [0,1] spanning the 14-dimensional default optimization space | Ch. 8 |
 | 59 | Semantic score | 语义评分 | Interpretable, regressable, auditable scoring of aesthetic dimensions from CLIP/rule features | Ch. 10 |
@@ -108,7 +108,7 @@ This glossary collects the core terms used throughout the book, ordered in three
 | 86 | End-to-End test (E2E) | 端到端测试 | Tests over complete user paths; the platform keeps only a few mainline chains | Ch. 11 |
 | 87 | Test pyramid | 测试金字塔 | The layered budget structure: unit — integration — component — E2E | Ch. 11 |
 | 88 | Expected failure (xfail) | 预期失败 | A test with a known cause, marked xfail and excluded from the pass count | Ch. 11 |
-| 89 | One-stop self-check (test_all.py) | 一站式自检 | The five-module assembly-runnability check under the algorithm directory; excluded from the 955 sum | Ch. 11 |
+| 89 | One-stop self-check (test_all.py) | 一站式自检 | The five-module assembly-runnability check under the algorithm directory; not counted in the test-baseline sum | Ch. 11 |
 | 90 | Knowledge graph | 知识图谱 | The help page's 3D node visualization of 12 documents across 4 logical layers | Ch. 16 |
 
 ---
