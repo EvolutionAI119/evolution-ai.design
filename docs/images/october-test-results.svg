@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="'Segoe UI','Microsoft YaHei',system-ui,sans-serif">
   <rect x="1" y="1" width="958" height="438" rx="14" fill="#0F1622" stroke="#1E2A3A"/>
   <rect x="24" y="18" width="12" height="12" rx="3" fill="#34D399"/>
-  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">测试规模与结果对比（2026-10-11 实跑）</text>
+  <text x="46" y="29" fill="#E2E8F0" font-size="16" font-weight="700">五类套件实跑对比（2026-10-11 实跑）</text>
   <text x="936" y="29" fill="#64748B" font-size="11" text-anchor="end">Test Results</text>
   <line x1="100" y1="340" x2="640" y2="340" stroke="#334155" stroke-width="1.2"/>
   <line x1="100" y1="340" x2="100" y2="70" stroke="#334155" stroke-width="1.2"/>
@@ -15,31 +15,33 @@
     <text x="92" y="124">300</text>
   </g>
   <text x="62" y="205" fill="#94A3B8" font-size="10.5" transform="rotate(-90 62 205)" text-anchor="middle">用例数（cases）</text>
-    <rect x="150" y="131.61111111111111" width="72" height="208.38888888888889" rx="6" fill="#38BDF8" opacity=".16"/>
+    <rect x="150" y="131.61111111111111" width="72" height="208.38888888888889" rx="6" fill="#38BDF8" opacity=".9"/>
     <rect x="150" y="131.61111111111111" width="72" height="208.38888888888889" rx="6" fill="none" stroke="#38BDF8" stroke-width="1.4"/>
     <text x="186" y="123.61111111111111" fill="#7DD3FC" font-size="15" font-weight="700" text-anchor="middle">341</text>
     <text x="186" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">后端集成</text>
-    <rect x="250" y="253.22222222222223" width="72" height="86.77777777777777" rx="6" fill="#34D399" opacity=".16"/>
+    <rect x="250" y="253.22222222222223" width="72" height="86.77777777777777" rx="6" fill="#34D399" opacity=".9"/>
     <rect x="250" y="253.22222222222223" width="72" height="86.77777777777777" rx="6" fill="none" stroke="#34D399" stroke-width="1.4"/>
     <text x="286" y="245.22222222222223" fill="#6EE7B7" font-size="15" font-weight="700" text-anchor="middle">142</text>
     <text x="286" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">前端组件</text>
-    <rect x="350" y="318" width="72" height="22" rx="6" fill="#A78BFA" opacity=".16"/>
-    <rect x="350" y="318" width="72" height="22" rx="6" fill="none" stroke="#A78BFA" stroke-width="1.4"/>
-    <text x="386" y="310" fill="#C4B5FD" font-size="15" font-weight="700" text-anchor="middle">12</text>
-    <text x="386" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">拓扑封闭</text>
-    <rect x="450" y="318" width="72" height="22" rx="6" fill="#FBBF24" opacity=".16"/>
-    <rect x="450" y="318" width="72" height="22" rx="6" fill="none" stroke="#FBBF24" stroke-width="1.4"/>
-    <text x="486" y="310" fill="#FCD34D" font-size="15" font-weight="700" text-anchor="middle">2</text>
-    <text x="486" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">游客模式</text>
-    <rect x="550" y="318" width="72" height="22" rx="6" fill="#F87171" opacity=".16"/>
-    <rect x="550" y="318" width="72" height="22" rx="6" fill="none" stroke="#F87171" stroke-width="1.4"/>
-    <text x="586" y="310" fill="#FCA5A5" font-size="15" font-weight="700" text-anchor="middle">3</text>
-    <text x="586" y="360" fill="#CBD5E1" font-size="12" font-weight="600" text-anchor="middle">独立后台</text>
-  <text x="150" y="385" fill="#64748B" font-size="9.5">注：拓扑封闭 12 / 游客模式 2 / 独立后台 3 的柱体按 ≥22px 最小高度渲染，柱顶标签为真实用例数</text>
+    <rect x="350" y="318" width="72" height="22" rx="6" fill="#64748B" opacity=".16"/>
+    <rect x="350" y="318" width="72" height="22" rx="6" fill="none" stroke="#64748B" stroke-width="1.4"/>
+    <text x="386" y="310" fill="#94A3B8" font-size="15" font-weight="700" text-anchor="middle">12</text>
+    <text x="386" y="360" fill="#94A3B8" font-size="12" font-weight="600" text-anchor="middle">拓扑封闭</text>
+    <rect x="450" y="318" width="72" height="22" rx="6" fill="#64748B" opacity=".16"/>
+    <rect x="450" y="318" width="72" height="22" rx="6" fill="none" stroke="#64748B" stroke-width="1.4"/>
+    <text x="486" y="310" fill="#94A3B8" font-size="15" font-weight="700" text-anchor="middle">2</text>
+    <text x="486" y="360" fill="#94A3B8" font-size="12" font-weight="600" text-anchor="middle">游客模式</text>
+    <rect x="550" y="318" width="72" height="22" rx="6" fill="#64748B" opacity=".16"/>
+    <rect x="550" y="318" width="72" height="22" rx="6" fill="none" stroke="#64748B" stroke-width="1.4"/>
+    <text x="586" y="310" fill="#94A3B8" font-size="15" font-weight="700" text-anchor="middle">3</text>
+    <text x="586" y="360" fill="#94A3B8" font-size="12" font-weight="600" text-anchor="middle">独立后台</text>
+  <text x="218" y="378" fill="#6EE7B7" font-size="10" font-weight="600" text-anchor="middle">计入 483</text>
+  <text x="486" y="378" fill="#64748B" font-size="10" font-weight="600" text-anchor="middle">专项 17 · 不计入 483</text>
+  <text x="150" y="394" fill="#64748B" font-size="9.5">注：专项三柱按 ≥22px 最小高度渲染，柱顶标签为真实用例数（12/2/3）</text>
   <g text-anchor="middle">
     <rect x="680" y="80" width="240" height="64" rx="10" fill="#0F241C" stroke="#34D399"/>
-    <text x="800" y="108" fill="#6EE7B7" font-size="17" font-weight="700">483 项零失败</text>
-    <text x="800" y="128" fill="#94A3B8" font-size="10.5">341 后端 + 142 前端 · 0 失败</text>
+    <text x="800" y="105" fill="#6EE7B7" font-size="15" font-weight="700">483 = 341 + 142 · 零失败</text>
+    <text x="800" y="124" fill="#94A3B8" font-size="10">专项另计 17：拓扑 12 · 游客 2 · 后台 3</text>
     <rect x="680" y="158" width="240" height="64" rx="10" fill="#0B101A" stroke="#1E2A3A"/>
     <text x="800" y="186" fill="#7DD3FC" font-size="13" font-weight="600">后端 341 pass / 1 skip / 2 xfail</text>
     <text x="800" y="206" fill="#64748B" font-size="10">skip=需真实LLM · xfail=SISA迁移管线</text>
