@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVOLUTION-AI.DESIGN 全量复盘与复现手册 · 2026-11-02</title>
+<style>
+  :root{
+    --bg:#070b14; --panel:#0d1526; --panel2:#11182a; --line:#1e2a44;
+    --text:#e6edf7; --muted:#8fa3bf; --gold:#d4af37; --cyan:#00c2d1;
+    --green:#39d98a; --red:#ff6b6b; --amber:#f2b84b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Microsoft YaHei","PingFang SC",Segoe UI,system-ui,sans-serif;
+    font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+  a{color:var(--cyan);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:Consolas,"Cascadia Mono",monospace;background:#0a1220;
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12.5px;color:#b9d7ff}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  header.hero{border-bottom:1px solid var(--line);
+    background:radial-gradient(1200px 500px at 20% -10%,rgba(0,194,209,.14),transparent 60%),
+               radial-gradient(900px 400px at 90% 0%,rgba(212,175,55,.10),transparent 60%),
+               #0a1120;padding:56px 0 40px}
+  .kicker{color:var(--gold);letter-spacing:.22em;font-size:12px;text-transform:uppercase}
+  h1{font-size:38px;line-height:1.25;margin:12px 0 10px;font-weight:800;letter-spacing:.01em}
+  h1 span{color:var(--gold)}
+  .sub{color:var(--muted);max-width:860px;font-size:15.5px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .pill{border:1px solid var(--line);background:#0b1322;border-radius:999px;
+    padding:5px 12px;font-size:12.5px;color:#b7c8df}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:34px}
+  .kpi{background:linear-gradient(180deg,#101a2e,#0b1220);border:1px solid var(--line);
+    border-radius:12px;padding:16px 16px 14px;position:relative;overflow:hidden}
+  .kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan)}
+  .kpi.g:before{background:var(--gold)} .kpi.a:before{background:var(--amber)}
+  .kpi .n{font-size:30px;font-weight:800;line-height:1.1;letter-spacing:.02em}
+  .kpi .l{color:var(--muted);font-size:12.5px;margin-top:6px}
+  .kpi .s{color:#6f84a1;font-size:11px;margin-top:3px}
+  nav.toc{position:sticky;top:0;z-index:40;background:rgba(7,11,20,.94);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav.toc .wrap{display:flex;gap:6px;overflow-x:auto;padding:10px 28px}
+  nav.toc a{color:#a9bbd3;font-size:12.5px;white-space:nowrap;padding:5px 10px;border-radius:6px}
+  nav.toc a:hover{background:#11182a;color:#fff;text-decoration:none}
+  section{padding:52px 0 10px;border-bottom:1px solid rgba(30,42,68,.55)}
+  h2{font-size:24px;margin:0 0 8px;font-weight:750}
+  h2 .no{color:var(--gold);font-family:Consolas,monospace;font-size:14px;margin-right:10px}
+  h3{font-size:17px;margin:30px 0 10px;color:#dbe6f5}
+  .lead{color:var(--muted);margin:0 0 22px;max-width:900px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 18px}
+  .card h4{margin:0 0 8px;font-size:15px}
+  .card p{margin:0;color:#b9c9de;font-size:13.5px}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);margin-right:6px}
+  .tag.ok{color:var(--green);border-color:rgba(57,217,138,.35);background:rgba(57,217,138,.08)}
+  .tag.warn{color:var(--amber);border-color:rgba(242,184,75,.35);background:rgba(242,184,75,.08)}
+  .tag.bad{color:var(--red);border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08)}
+  .concl{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0 8px}
+  .concl .card{border-top:3px solid var(--cyan)}
+  .concl .card:nth-child(2){border-top-color:var(--amber)}
+  .concl .card:nth-child(3){border-top-color:var(--gold)}
+  .concl b{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .concl strong{font-size:16px;line-height:1.5;display:block;margin-bottom:6px}
+  .timeline{position:relative;margin:18px 0 6px;padding-left:8px}
+  .tl-item{display:grid;grid-template-columns:142px 26px 1fr;gap:14px;padding:10px 0}
+  .tl-date{color:#9fb2ca;font-size:12.5px;font-family:Consolas,monospace;text-align:right;padding-top:10px}
+  .tl-axis{position:relative}
+  .tl-axis:before{content:"";position:absolute;left:11px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--cyan),#2b3b5c)}
+  .tl-dot{position:absolute;left:4px;top:14px;width:16px;height:16px;border-radius:50%;
+    background:#0b1322;border:2px solid var(--cyan);box-shadow:0 0 0 4px rgba(0,194,209,.08)}
+  .tl-item.gold .tl-dot{border-color:var(--gold)} .tl-item.warn .tl-dot{border-color:var(--amber)}
+  .tl-body{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 15px}
+  .tl-body h4{margin:0 0 4px;font-size:14.5px}
+  .tl-body p{margin:0;color:#a9bbd3;font-size:12.8px}
+  .tl-body .paths{margin-top:6px;font-size:11.5px;color:#7f93ad}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);border-radius:10px;overflow:hidden}
+  .tbl th{background:#121c30;color:#c9d8ec;font-weight:600;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .tbl td{padding:9px 12px;border-bottom:1px solid rgba(30,42,68,.6);color:#b9c9de;vertical-align:top}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tr:hover td{background:#101a2c}
+  .tbl .num{font-family:Consolas,monospace;color:#dce8f8}
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  .arch{margin:14px 0 6px;border:1px solid var(--line);border-radius:12px;background:#0a111e;overflow:hidden}
+  .arch svg{display:block;width:100%;height:auto}
+  pre{background:#0a1220;border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:Consolas,"Cascadia Mono",monospace;font-size:12.5px;line-height:1.65;color:#bfe0ff;margin:12px 0}
+  pre .c{color:#6f84a1}
+  .callout{border-left:3px solid var(--amber);background:rgba(242,184,75,.06);
+    padding:12px 16px;border-radius:0 8px 8px 0;color:#d8c8a6;font-size:13.5px;margin:16px 0}
+  .callout.red{border-left-color:var(--red);background:rgba(255,107,107,.06);color:#e8b4b4}
+  .callout.ok{border-left-color:var(--green);background:rgba(57,217,138,.06);color:#b1e7cb}
+  footer{padding:34px 0 56px;color:#6f84a1;font-size:12.5px}
+  .two-col{display:grid;grid-template-columns:1.05fr .95fr;gap:22px}
+  .note{font-size:12px;color:#6f84a1}
+  @media (max-width:980px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .concl,.grid3,.grid2,.two-col{grid-template-columns:1fr}
+    .tl-item{grid-template-columns:100px 22px 1fr}
+    h1{font-size:30px}
+  }
+  @media print{
+    body{background:#fff;color:#111}
+    nav.toc{display:none}
+    header.hero{background:#fff;border-bottom:2px solid #111}
+    .card,.tl-body,.kpi,.tbl{background:#fff;color:#111;border-color:#bbb}
+    .sub,.lead,.tl-body p,.kpi .l,.note{color:#333}
+    a{color:#0a4ea8}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">EVOLUTION-AI.DESIGN · 工程复盘 · 2026-11-02</div>
+    <h1>从 116 次提交到<span>可复现交付</span></h1>
+    <div class="sub">
+      本报告回答三个问题：平台现在处于什么阶段？最大的瓶颈是什么？如何用最短路径复现并继续开发？
+      证据来自 git 全量日志、目录抽样、文档精读与本次实跑（前端 771 用例全绿）。
+    </div>
+    <div class="meta">
+      <span class="pill">main HEAD <code>0ad4ede2</code> · 2026-10-28</span>
+      <span class="pill">gh-pages <code>99c91c70</code> · 2026-10-28</span>
+      <span class="pill">工作区 32 项未提交</span>
+      <span class="pill">未改动业务代码</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="n">116</div><div class="l">git 提交</div><div class="s">08:2 / 09:23 / 10:91</div></div>
+      <div class="kpi g"><div class="n">771</div><div class="l">前端测试通过</div><div class="s">19 文件 · 本次实跑</div></div>
+      <div class="kpi"><div class="n">154</div><div class="l">HTTP 端点</div><div class="s">19 路由模块 · 152+2</div></div>
+      <div class="kpi a"><div class="n">17</div><div class="l">ORM 数据表</div><div class="s">verify_facts 实跑</div></div>
+      <div class="kpi"><div class="n">2.7<span style="font-size:16px">GB</span></div><div class="l">运行数据资产</div><div class="s">data/ · 多为 gitignored</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#concl">结论</a>
+    <a href="#timeline">时间线</a>
+    <a href="#status">当前进展</a>
+    <a href="#arch">架构</a>
+    <a href="#method">方法论</a>
+    <a href="#assets">资产</a>
+    <a href="#repro">复现手册</a>
+    <a href="#plan">下一阶段</a>
+    <a href="#evidence">证据边界</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="concl">
+  <h2><span class="no">01</span>结论先行</h2>
+  <p class="lead">一句话：平台能力已经完整，但「最有价值的改动」还停在提交边界之外。当前第一优先级不是加功能，而是把交付边界收口。</p>
+
+  <div class="concl">
+    <div class="card">
+      <b>当前阶段</b>
+      <strong>v1.2 功能完备 + v1.3 内饰闭环，交付前夜</strong>
+      <p>六车型 2D/3D、NURBS/STEP、贝叶斯、LLM、飞行、品牌 DNA 均已具备；内饰布置 63 项验收通过，前端测试从 416 涨到 771。</p>
+    </div>
+    <div class="card">
+      <b>最大瓶颈</b>
+      <strong>32 项未提交变更 + 文档五套数字口径</strong>
+      <p>内饰/玻璃/2D 批次 1425 行新增未入库；README、架构文档、agent、验证报告互不一致，接手者无法判断可信口径。</p>
+    </div>
+    <div class="card">
+      <b>复现最短路径</b>
+      <strong>npm install → npm run dev → 打开 /#/designer</strong>
+      <p>前端内置 mock fallback，后端可选；最小环境变量 4 个；Redis / PostgreSQL / Docker / GPU / LLM Key 全部可跳过。</p>
+    </div>
+  </div>
+
+  <div class="callout red">
+    <strong>最高风险：</strong>工作区 9 项修改 + 23 项新增（内饰模块、横断面、运动学、验收文档）未进入任何分支。
+    一旦误清理或并行会话冲突，损失不可逆。建议立即开 <code>feat/interior-packaging</code> 分支提交并复跑 771。
+  </div>
+</section>
+
+<section id="timeline">
+  <h2><span class="no">02</span>开发过程与关键节点</h2>
+  <p class="lead">116 次提交呈「基座日 — 长尾修复」形态：09-27 一天铺满后端基座，10 月的 91 次提交则被 2D/3D 几何修复主导。以下为按阶段抽样的关键节点。</p>
+
+  <div class="timeline">
+    <div class="tl-item gold">
+      <div class="tl-date">2026-08-18</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 0 · 工程奠基</h4>
+        <p>先立法再写功能：补全骨架、完善 .gitignore、提交 19 款品牌车图测试基准；E2E 回归封装为可复用 CLI。</p>
+        <div class="paths">dd3e689a / 58ec8694 · tests/ · public/brands/</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-09-27</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 1 · 后端与算法基座（单日 10+ 提交）</h4>
+        <p>认证/微信登录、LLM 代理、训练后端、CAD 导入、贝叶斯 GP+EI/UCB、生产 SECRET_KEY fail-fast、架构/产品/API/论文文档、doc-code-audit 技能。</p>
+        <div class="paths">backend/app/routes/ · bayes_optimizer.py · docs/ARCHITECTURE_DESIGN.md</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">09-29 → 10-03</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 2 · 权限、社区与证据型功能</h4>
+        <p>RBAC 四级权限、管理后台、可验证影响证据、设计意图引擎；多工具协同协议 v1 与 LLM 密钥隔离。</p>
+        <div class="paths">COLLABORATION_PROTOCOL.md · routes/admin.py · routes/design_intent.py</div>
+      </div>
+    </div>
+    <div class="tl-item warn">
+      <div class="tl-date">09-29 → 10-11</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 3 · 安全、部署与账号体系封存</h4>
+        <p>限流、PostgreSQL/Alembic、Docker 非 root、CNAME/.nojekyll、Admin 独立构建；微信登录因 cpolar 随机域名 10003 无法自愈，整体下线为全站游客。</p>
+        <div class="paths">6040bac4 · c45d9ccc · deploy/ · vite.admin.config.js</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">09-27 → 10-28</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 4 · 知识库与双语文档体系</h4>
+        <p>双语文档骨架、16 张专业 SVG、五图原则（16 中 + 15 英）、学术论文双语、《AI 原生软件开发方法论》18 章 + 4 附录。</p>
+        <div class="paths">docs/images/（193 SVG） · book/README.md</div>
+      </div>
+    </div>
+    <div class="tl-item gold">
+      <div class="tl-date">10-07 → 10-25</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 5 · 2D/3D 造型单一真源重构（最长战线）</h4>
+        <p>NURBS 封闭化 → 比例语义统一（离地总高 = H）→ 玻璃拓扑纯函数化 + tumblehome → 轮拱包络/轮腔 → 车门侧窗联动 → 玻璃写实/G1 → bevel 与门洞收尾。</p>
+        <div class="paths">carProfile.js · carGlass.js · Car3D.vue · 自 1bfb91ef 至 b42e51e4</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-10-16</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 6 · 反重力飞行分支</h4>
+        <p>全车型 VTOL、无眩晕悬浮、360° 原地转向、能耗 HUD；对外声明为「受界工程估算模型」，公式与源码逐项核实。</p>
+        <div class="paths">flightPhysics.js · docs/flight_performance_report.md</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-date">2026-10-22</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 7 · 品牌 DNA 与安全围栏</h4>
+        <p>品牌 DNA 装载/On-Brand/2D 特征；与 SISA 完全隔离、机密 DNA 仅内存；三服务独立进程启动技能落地。</p>
+        <div class="paths">backend/app/brand_dna/ · .trae/skills/launch-services-detached/</div>
+      </div>
+    </div>
+    <div class="tl-item warn">
+      <div class="tl-date">10-29 → 11-02</div><div class="tl-axis"><span class="tl-dot"></span></div>
+      <div class="tl-body">
+        <h4>阶段 8 · 内饰布置与交付收口（工作区，未提交）</h4>
+        <p>H 点/座椅/IP/中控/门板/地毯/顶棚/安全带、A-A 横断面、滑轨有效行程、调角器/遮阳板/扶手盖运动学；63 项检查通过，本次前端 771 全绿。</p>
+        <div class="paths">carInteriorLayout.js · carInteriorKinematics.js · CarSection2D.vue · docs/2D_LAYOUT_VERIFICATION.md</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="status">
+  <h2><span class="no">03</span>当前进展</h2>
+  <p class="lead">下表均为本次实跑或脚本输出；不同来源冲突时以「命令 + 日期 + SHA」口径为准。</p>
+
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>能力域</th><th>现状</th><th>入口 / 证据</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>参数化 2D/3D</td><td>六车型侧视 + A-A 横断面 + Three.js 实时</td><td><code>src/views/Designer.vue</code> · Car2D/CarSection2D/Car3D</td><td><span class="tag ok">可运行</span></td></tr>
+        <tr><td>内饰布置</td><td>座椅/IP/中控/门板/地毯/顶棚/安全带 + 运动件扫掠</td><td><code>src/utils/carInteriorLayout.js</code> · <code>carInteriorKinematics.js</code></td><td><span class="tag warn">工作区未提交</span></td></tr>
+        <tr><td>NURBS + STEP</td><td>mesh / NURBS 双管线，8 类几何格式 + JSON</td><td><code>algorithm_model/api.py</code> · <code>routes/export.py</code></td><td><span class="tag ok">可运行</span></td></tr>
+        <tr><td>曲面质量</td><td>G0 0.1mm / G1 1.0°（视觉 5°）/ G2 判据</td><td><code>algorithm_model/surface_quality/</code></td><td><span class="tag ok">可运行</span></td></tr>
+        <tr><td>贝叶斯优化</td><td>RBF-GP + EI/UCB；脚本实测默认空间 15 维</td><td><code>backend/app/bayes_optimizer.py</code></td><td><span class="tag ok">可运行</span><span class="tag warn">无自动收敛</span></td></tr>
+        <tr><td>训练 / LLM</td><td>后台训练任务 + 7 提供商代理 + Ollama 本地专家</td><td><code>routes/training.py</code> · <code>routes/llm_proxy.py</code></td><td><span class="tag ok">可运行</span></td></tr>
+        <tr><td>品牌 DNA</td><td>5 品牌 19 车型知识库 + On-Brand 判定</td><td><code>backend/app/brand_dna/</code> · <code>backend/config/</code></td><td><span class="tag ok">已具备</span></td></tr>
+        <tr><td>飞行</td><td>VTOL + 飞控 + 性能报告（受界估算声明）</td><td><code>src/utils/flightPhysics.js</code> · <code>docs/flight_performance_report.md</code></td><td><span class="tag ok">已具备</span></td></tr>
+        <tr><td>部署</td><td>GitHub Pages + Docker 四服务 + cpolar</td><td><code>deploy/</code> · <code>.trae/skills/deploy-gh-pages/</code></td><td><span class="tag ok">已具备</span><span class="tag warn">本次未复验公网</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>事实基线冲突（最重要的治理发现）</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>事实</th><th>本次实测</th><th>冲突来源</th><th>处置</th></tr></thead>
+      <tbody>
+        <tr><td>前端测试</td><td class="num">771 / 19 文件</td><td>README 416；2D_LAYOUT 710/18；agent 123</td><td>以实跑为准</td></tr>
+        <tr><td>后端测试</td><td class="num">411 收集</td><td>agent 204；ARCHITECTURE 388</td><td>以 411 为准</td></tr>
+        <tr><td>算法测试</td><td class="num">200 收集</td><td>ARCHITECTURE 205；README 200</td><td>复跑后统一</td></tr>
+        <tr><td>HTTP 端点</td><td class="num">154（152+2）</td><td>ARCHITECTURE 153；agent 118</td><td>以 154 为准</td></tr>
+        <tr><td>路由模块</td><td class="num">19</td><td>agent 17</td><td>以 19 为准</td></tr>
+        <tr><td>ORM 表</td><td class="num">17</td><td>agent 13</td><td>以 17 为准</td></tr>
+        <tr><td>贝叶斯空间</td><td class="num">15 维</td><td>文档 14</td><td>二选一后同步</td></tr>
+        <tr><td>前端路由</td><td class="num">12</td><td>README 写 10 个 views</td><td>以 12 路由 / 15 视图为准</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    治理建议：把 <code>scripts/verify_facts.py</code> 与三层 pytest 输出作为唯一事实源，任何文档数字必须引用「命令 + 日期 + SHA」。
+  </div>
+
+  <h3>已知问题与待裁决</h3>
+  <div class="grid3">
+    <div class="card"><h4>R1 开门遮挡未确认关闭</h4><p>门洞已贯穿、悬浮缝条已修，剩余是外摆门板 + 无内饰暗腔。建议默认角 70°→82° / 门内板补面 / 最小座舱三选一，需用户裁决。</p></div>
+    <div class="card"><h4>R2 跨仓库 SISA 同口径</h4><p>car_body.build_closed_shell、feature_lines.build_wheel_arch、dimension_plan 拱半径仍待同批升级，否则口径重新漂移。</p></div>
+    <div class="card"><h4>R3 专利守卫子串误报</h4><p>中文双字关键词采用子串匹配，会命中普通几何注释；处置为改写措辞，不用 EVOAI_ALLOW_PUSH 绕过。</p></div>
+  </div>
+</section>
+
+<section id="arch">
+  <h2><span class="no">04</span>顶层架构</h2>
+  <p class="lead">五层结构，自上而下依赖；算法层可独立安装、独立测试，后端只做编排。当前最大单体风险是 <code>Car3D.vue</code>（1875 行 / 82KB）。</p>
+
+  <div class="arch">
+    <svg viewBox="0 0 1120 748" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="五层架构图">
+      <defs>
+        <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#12233d"/><stop offset="1" stop-color="#0d1728"/>
+        </linearGradient>
+        <marker id="arw" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto">
+          <path d="M0,0 L9,5 L0,10 Z" fill="#00c2d1"/>
+        </marker>
+      </defs>
+      <rect width="1120" height="748" fill="#0a111e"/>
+
+      <!-- L1 -->
+      <rect x="66" y="28" width="988" height="122" rx="10" fill="url(#lg1)" stroke="#24405f"/>
+      <rect x="66" y="28" width="4" height="122" fill="#00c2d1"/>
+      <text x="88" y="54" fill="#e6edf7" font-size="16" font-weight="700">L1 体验层 · Vue 3 + Vite 5 + Three.js</text>
+      <text x="88" y="76" fill="#8fa3bf" font-size="12.5">12 条 Hash 路由 · Pinia · i18n 双语 · mock fallback · 游客模式</text>
+      <g font-size="11.5" fill="#b9d7ff">
+        <rect x="88" y="90" width="120" height="24" rx="5" fill="#0c1b2e" stroke="#24405f"/><text x="99" y="106">Car2D 侧视</text>
+        <rect x="216" y="90" width="132" height="24" rx="5" fill="#0c1b2e" stroke="#24405f"/><text x="227" y="106">CarSection2D</text>
+        <rect x="356" y="90" width="112" height="24" rx="5" fill="#0c1b2e" stroke="#24405f"/><text x="367" y="106">Car3D</text>
+        <rect x="476" y="90" width="132" height="24" rx="5" fill="#0c1b2e" stroke="#24405f"/><text x="487" y="106">carProfile</text>
+        <rect x="616" y="90" width="112" height="24" rx="5" fill="#0c1b2e" stroke="#24405f"/><text x="627" y="106">carGlass</text>
+        <rect x="736" y="90" width="160" height="24" rx="5" fill="#0c1b2e" stroke="#24405f"/><text x="747" y="106">carInteriorLayout</text>
+        <rect x="904" y="90" width="128" height="24" rx="5" fill="#0c1b2e" stroke="#24405f"/><text x="915" y="106">flightPhysics</text>
+      </g>
+      <text x="88" y="136" fill="#6f84a1" font-size="11.5">单一真源工具层：2D 只做投影换算，3D 直接使用米值，任何消费端另立数值视为违规。</text>
+
+      <!-- arrow -->
+      <line x1="560" y1="150" x2="560" y2="170" stroke="#00c2d1" stroke-width="1.5" marker-end="url(#arw)"/>
+
+      <!-- L2 -->
+      <rect x="66" y="174" width="988" height="76" rx="10" fill="url(#lg1)" stroke="#24405f"/>
+      <rect x="66" y="174" width="4" height="76" fill="#7d8fa8"/>
+      <text x="88" y="200" fill="#e6edf7" font-size="16" font-weight="700">L2 接入层</text>
+      <text x="88" y="222" fill="#8fa3bf" font-size="12.5">开发：Vite Proxy /api/v1 → 127.0.0.1:8000；/api/ide → 外部 AI 网关</text>
+      <text x="88" y="240" fill="#8fa3bf" font-size="12.5">生产：Nginx 静态 dist + /api 反代 · cpolar HTTPS 隧道 · GitHub Pages 静态站</text>
+
+      <line x1="560" y1="250" x2="560" y2="270" stroke="#00c2d1" stroke-width="1.5" marker-end="url(#arw)"/>
+
+      <!-- L3 -->
+      <rect x="66" y="274" width="988" height="142" rx="10" fill="url(#lg1)" stroke="#24405f"/>
+      <rect x="66" y="274" width="4" height="142" fill="#d4af37"/>
+      <text x="88" y="300" fill="#e6edf7" font-size="16" font-weight="700">L3 编排层 · FastAPI + Pydantic v2</text>
+      <text x="88" y="322" fill="#8fa3bf" font-size="12.5">19 路由模块 / 154 端点（152+2）/ 17 ORM 表 · 薄壳编排，不重写算法</text>
+      <g font-size="11.5" fill="#dbe6f5">
+        <rect x="88" y="334" width="128" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="99" y="349">auth / admin</text>
+        <rect x="224" y="334" width="120" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="235" y="349">project / model</text>
+        <rect x="352" y="334" width="104" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="363" y="349">car / build</text>
+        <rect x="464" y="334" width="118" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="475" y="349">modify / export</text>
+        <rect x="590" y="334" width="118" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="601" y="349">quality / variant</text>
+        <rect x="716" y="334" width="112" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="727" y="349">workflow</text>
+        <rect x="836" y="334" width="96" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="847" y="349">training / ai</text>
+        <rect x="940" y="334" width="96" height="22" rx="5" fill="#1a2136" stroke="#3a4a68"/><text x="951" y="349">bayes 等</text>
+        <rect x="88" y="364" width="132" height="22" rx="5" fill="#142033" stroke="#3a4a68"/><text x="99" y="379">brand_dna / fence</text>
+        <rect x="228" y="364" width="150" height="22" rx="5" fill="#142033" stroke="#3a4a68"/><text x="239" y="379">car_generator / nurbs</text>
+        <rect x="386" y="364" width="150" height="22" rx="5" fill="#142033" stroke="#3a4a68"/><text x="397" y="379">cad_importer / texture</text>
+        <rect x="544" y="364" width="142" height="22" rx="5" fill="#142033" stroke="#3a4a68"/><text x="555" y="379">clip / session_store</text>
+        <rect x="694" y="364" width="150" height="22" rx="5" fill="#142033" stroke="#3a4a68"/><text x="705" y="379">security / rate_limit</text>
+      </g>
+      <text x="88" y="404" fill="#6f84a1" font-size="11.5">横切：JWT · 限流 · CORS/CSP · Fernet 密钥 · 游客模式 · 审计日志</text>
+
+      <line x1="560" y1="416" x2="560" y2="436" stroke="#00c2d1" stroke-width="1.5" marker-end="url(#arw)"/>
+
+      <!-- L4 -->
+      <rect x="66" y="440" width="988" height="156" rx="10" fill="url(#lg1)" stroke="#24405f"/>
+      <rect x="66" y="440" width="4" height="156" fill="#00c2d1"/>
+      <text x="88" y="466" fill="#e6edf7" font-size="16" font-weight="700">L4 算法层 · algorithm_model（独立可安装包）</text>
+      <text x="88" y="488" fill="#8fa3bf" font-size="12.5">统一入口 api.py：build_car / get_car_stats / evaluate_surface / optimize_surface / make_storyboard / render_storyboard / run_full_pipeline</text>
+      <g font-size="11.5">
+        <rect x="88" y="500" width="222" height="76" rx="7" fill="#0c1b2e" stroke="#2f4a6b"/>
+        <text x="100" y="520" fill="#dbe6f5" font-weight="700">car_modeling</text>
+        <text x="100" y="539" fill="#8fa3bf">22 维 CarParams · body/body_nurbs</text>
+        <text x="100" y="556" fill="#8fa3bf">glass / wheels / lights / assembler</text>
+        <rect x="322" y="500" width="222" height="76" rx="7" fill="#0c1b2e" stroke="#2f4a6b"/>
+        <text x="334" y="520" fill="#dbe6f5" font-weight="700">freeform</text>
+        <text x="334" y="539" fill="#8fa3bf">NURBS 核心 · 扫掠 · 圆角</text>
+        <text x="334" y="556" fill="#8fa3bf">STEP writer · Cython 加速</text>
+        <rect x="556" y="500" width="222" height="76" rx="7" fill="#0c1b2e" stroke="#2f4a6b"/>
+        <text x="568" y="520" fill="#dbe6f5" font-weight="700">surface_quality</text>
+        <text x="568" y="539" fill="#8fa3bf">G0/G1/G2 · 反射线</text>
+        <text x="568" y="556" fill="#8fa3bf">质量分级 · 光顺优化</text>
+        <rect x="790" y="500" width="242" height="76" rx="7" fill="#0c1b2e" stroke="#2f4a6b"/>
+        <text x="802" y="520" fill="#dbe6f5" font-weight="700">storyboard</text>
+        <text x="802" y="539" fill="#8fa3bf">分镜生成（模板）</text>
+        <text x="802" y="556" fill="#8fa3bf">Markdown / HTML 渲染</text>
+      </g>
+      <text x="88" y="590" fill="#6f84a1" font-size="11.5">约束：零框架依赖，可脱离 L1–L3 单独测试；参数直驱 NURBS，避免 mesh→NURBS 二次拟合误差。</text>
+
+      <line x1="560" y1="598" x2="560" y2="618" stroke="#00c2d1" stroke-width="1.5" marker-end="url(#arw)"/>
+
+      <!-- L5 -->
+      <rect x="66" y="622" width="988" height="104" rx="10" fill="url(#lg1)" stroke="#24405f"/>
+      <rect x="66" y="622" width="4" height="104" fill="#7d8fa8"/>
+      <text x="88" y="648" fill="#e6edf7" font-size="16" font-weight="700">L5 数据与基础设施</text>
+      <text x="88" y="670" fill="#8fa3bf" font-size="12.5">SQLite（开发）/ PostgreSQL（生产）/ Redis（会话，可选） · 17 张 ORM 表</text>
+      <text x="88" y="690" fill="#8fa3bf" font-size="12.5">文件：data/{models,exports,step,training,uploads} · public/brands · docs/images · 外部：LLM ×7 / Ollama / SISA</text>
+      <text x="88" y="712" fill="#6f84a1" font-size="11.5">关键风险：data/ ≈ 2.7GB 多为 gitignored；根目录 evolution_ai.db 1.07GB；跨仓库口径需同批同步。</text>
+    </svg>
+  </div>
+
+  <h3>关键数据流</h3>
+  <pre><span class="c">① 设计闭环</span>
+Designer(params) → carAPI.generate → car_generator（mesh + 数据）
+  → ModelFile 持久化（params_json / car_data_json）→ Car3D 实时渲染
+  → variantAPI 保存 / 对比 / 回滚
+
+<span class="c">② 导入 → 改参 → 导出</span>
+upload → cad_importer（失败降级点云）→ import_export 会话
+  → GET / PUT params → preview → export（8 类几何 + JSON）→ download
+
+<span class="c">③ 优化 → 训练</span>
+POST /bayes/sessions → suggest（GP + EI/UCB）→ 评分 → observe 迭代
+  → /samples 导出 → /ai/train 后台任务 → /ai/tasks 轮询
+
+<span class="c">④ 2D/3D 同源</span>
+carProfile / carInteriorLayout（米） → Car2D 投影（像素）/ CarSection2D 投影
+                                    → Car3D 直接建网格 → 零容差断言
+
+<span class="c">⑤ 发布</span>
+vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 比对</pre>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>扩展点</h4>
+      <p>新车型：carProfile 加档位 + carTypeParams 预设 + 玻璃/内饰表；新几何：纯函数 → 单测 → 2D/3D → SISA 同步；新端点：routes 模块 + schema + 测试；新技能：.trae/skills/&lt;name&gt;/SKILL.md。边界：不得新增第二套比例、不得组件内硬编码。</p>
+    </div>
+    <div class="card">
+      <h4>架构风险</h4>
+      <p>① 未提交真源批次（高）② Car3D.vue 单体 1875 行（高）③ 跨仓库口径漂移（高）④ 文档多口径（中高）⑤ 运行数据不可重建（中）⑥ 2C4G 生产内存（中）⑦ 视觉验证人工成本（中）。</p>
+    </div>
+  </div>
+</section>
+
+<section id="method">
+  <h2><span class="no">05</span>方法论</h2>
+  <p class="lead">这套方法不是口号，而是已经固化成机制：世界模型 = 单一真源参数世界；自迭代 = 记忆→约束→技能；持续优化 = 性能/体积/载荷/启动。</p>
+
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>原则</th><th>落地机制</th><th>证据</th></tr></thead>
+      <tbody>
+        <tr><td>世界模型</td><td>22 维 CarParams + 六车型比例表 + 轮拱包络 + 内饰锚点；所有视图都是同一模型的投影</td><td>carProfile / carInteriorLayout 单一真源</td></tr>
+        <tr><td>预测—验证—修正</td><td>先写纯函数与断言（预测），再跑测试/多机位（观测），偏差回写记忆（修正）</td><td>771 前端断言；FIX-01~FIX-12</td></tr>
+        <tr><td>自迭代</td><td>踩坑沉淀为 project_memory 硬约束；事故升级为 skill</td><td>206 行项目记忆；7 个仓库技能</td></tr>
+        <tr><td>持续优化</td><td>Cython 70×/34×；chunk 拆分；JSON 200KB 守卫；生产 fail-fast</td><td>记忆条目 + 架构文档</td></tr>
+        <tr><td>证据型交付</td><td>数字必须带命令+日期+SHA；发布必须公网 MD5 比对</td><td>VALIDATION_REPORT + deploy-gh-pages</td></tr>
+        <tr><td>单一运行时</td><td>全机一组服务，禁止按端口杀进程</td><td>COLLABORATION_PROTOCOL.md</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>新任务接入流程（8 步，可直接复用）</h3>
+  <pre><span class="c">① 读上下文</span>  project_memory 相关条目 + 协同协议 + 最近 git log
+<span class="c">② 确认运行时</span> netstat 查 5173/8000/4040；已运行则只编辑，不重启
+<span class="c">③ 确认基线</span>  git status --porcelain；npx vitest run（或相关子集）
+<span class="c">④ 定位真源</span>  问：这个量现在由谁算？找不到唯一入口 → 先建入口，不写第二套
+<span class="c">⑤ 拆任务</span>    TodoWrite；每步可验证；跨层改动列清 前端↔后端↔schema
+<span class="c">⑥ 实现</span>      纯函数优先；最小改动；不顺手重构；不引入新依赖
+<span class="c">⑦ 验证</span>      L1 单测 → L2 构建 → L3 生产预览实机 → L4 公网 MD5（仅发布）
+<span class="c">⑧ 沉淀</span>      踩坑写记忆；可复用流程升 skill；数字更新验证报告；再提交</pre>
+
+  <div class="grid2">
+    <div class="card">
+      <h4><span class="tag ok">保留</span></h4>
+      <p>单一真源 + 零依赖纯函数 + 单测锁契约；生产构建预览复验；发布全量同步 + 公网 MD5；记忆→约束→技能三级沉淀；协同协议；「零件缺失先查埋没」「表达基准用线不用体」。</p>
+    </div>
+    <div class="card">
+      <h4><span class="tag bad">淘汰 / 收敛</span></h4>
+      <p>一次性下载/诊断脚本入库；凭截图猜根因与无限重试浏览器；文档手写数字；渐减偏移/旧比例口径/面片二值玻璃分色；单体组件继续膨胀；多套事实口径并存。</p>
+    </div>
+  </div>
+</section>
+
+<section id="assets">
+  <h2><span class="no">06</span>资产全量梳理</h2>
+  <p class="lead">资产分四类：智能体、技能、数据集、工作流。缺失或仅有雏形的已显式标注。</p>
+
+  <h3>智能体（1 个正式定义）</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>资产</th><th>路径</th><th>用途</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>平台全栈专家 agent</td><td><code>.trae/agents/evolution-ai-design.md</code></td><td>本仓库开发/修复/架构/部署的角色定义（9243 字节）</td><td><span class="tag warn">已过期</span> 写 118 端点/17 路由/13 表/前端 123</td></tr>
+        <tr><td>宿主内置 Explore / general-purpose / Plan / browser_use</td><td>运行环境提供，不在仓库</td><td>探索、执行、规划、浏览器验证</td><td><span class="tag ok">可用</span></td></tr>
+        <tr><td>多 agent 编排</td><td>无仓库内编排文件</td><td>目前是单 agent + 宿主子代理的扁平结构</td><td><span class="tag warn">仅雏形</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>技能（7 个仓库技能）</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>技能</th><th>触发条件</th><th>用途</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>deploy-gh-pages</td><td>发布公网 / 更新站点 / 黑屏 404</td><td>dist 全量同步 gh-pages + MD5 校验</td><td><span class="tag ok">成熟</span></td></tr>
+        <tr><td>launch-services-detached</td><td>启动重启三服务 / 掉线 / cpolar 换域名</td><td>独立顶层进程拉起 5173/8000/4040</td><td><span class="tag ok">成熟</span></td></tr>
+        <tr><td>doc-code-audit</td><td>核对文档 / 一致性 / stale 数字 / 死链</td><td>文档↔源码一键核对</td><td><span class="tag ok">成熟</span></td></tr>
+        <tr><td>project-intro-deck</td><td>生成/更新项目介绍 PPT</td><td>中英双版 12 页，碰撞检测</td><td><span class="tag ok">成熟</span></td></tr>
+        <tr><td>threejs-automotive-preview-debugging</td><td>3D 高光/反射/破面/零件不可见</td><td>Car3D 渲染根因库</td><td><span class="tag warn">新增未跟踪</span></td></tr>
+        <tr><td>wheel-arch-envelope-sync</td><td>拱轮错位/穿壳/拱顶不足/EVO→SISA</td><td>跨平台轮拱包络同步</td><td><span class="tag warn">新增未跟踪</span></td></tr>
+        <tr><td>troubleshoot-i18n-deploy</td><td>中文界面英文内容/数字过期/公网白屏</td><td>三层事实源分层定位</td><td><span class="tag ok">已提交 0ad4ede2</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>数据集 / 训练集</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>资产</th><th>路径</th><th>规模</th><th>格式 / 用途</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>A 级曲面 QA 集</td><td><code>data/training/a_surface_quality_dataset.jsonl</code></td><td class="num">23 行 / 22.4KB</td><td>JSONL {prompt, completion} · 曲面 SOP 问答</td><td><span class="tag ok">已有</span><span class="tag warn">gitignored</span></td></tr>
+        <tr><td>NURBS 知识集</td><td><code>data/training/nurbs_surface_dataset.jsonl</code></td><td class="num">29 行 / 26.9KB</td><td>JSONL · NURBS/G1 概念与实现</td><td><span class="tag ok">已有</span><span class="tag warn">gitignored</span></td></tr>
+        <tr><td>增强 QLoRA 集</td><td><code>data/training/qlora_enhanced_dataset.jsonl</code></td><td class="num">63 行 / 48.1KB</td><td>JSONL · QLoRA 微调主数据</td><td><span class="tag ok">已有</span><span class="tag warn">gitignored</span></td></tr>
+        <tr><td>LoRA / 合并权重</td><td><code>data/training/nurbs-qwen-lora</code> · <code>merged</code></td><td class="num">5 safetensors ≈ 2.0GB</td><td>safetensors · 已训练模型</td><td><span class="tag ok">已有</span><span class="tag warn">本地</span></td></tr>
+        <tr><td>车型分类实验</td><td><code>data/training/cartype_mlp_task*.pt</code></td><td class="num">175 个 / 205MB</td><td>PyTorch · 实验产物</td><td><span class="tag ok">已有</span></td></tr>
+        <tr><td>品牌车型知识库</td><td><code>backend/config/brand_design_knowledge.json</code></td><td class="num">5 品牌 19 车型</td><td>JSON · 14 参数 + 8 指标 · 设计约束</td><td><span class="tag ok">随仓库</span></td></tr>
+        <tr><td>品牌车型图</td><td><code>public/brands/</code></td><td class="num">38 文件</td><td>JPG/PNG · 19 车型正侧视基准</td><td><span class="tag ok">随仓库</span></td></tr>
+        <tr><td>品牌 DNA 机密</td><td><code>backend/app/brand_dna/dnas/</code></td><td class="num">仅 demo_public 入库</td><td>JSON · On-Brand 判定</td><td><span class="tag warn">机密仅内存</span></td></tr>
+        <tr><td>生成/导出运行数据</td><td><code>data/{models,exports,step,uploads}</code></td><td class="num">≈654MB</td><td>GLB/STL/STEP/IGES</td><td><span class="tag warn">不入库</span></td></tr>
+        <tr><td>文档图库</td><td><code>docs/images/</code></td><td class="num">193 SVG</td><td>SVG · 五图原则</td><td><span class="tag ok">随仓库</span></td></tr>
+        <tr><td>SISA 参考包</td><td><code>shared_reference/</code></td><td class="num">4 文件</td><td>JSON/MD · 跨仓库尺寸闭合</td><td><span class="tag ok">随仓库</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    数据可复现缺口：<code>data/training</code> 2.3GB 全被 .gitignore，换机需 <code>scripts/train_qlora.py</code> 重新生成或手工拷贝；缺少 dataset card（来源/生成命令/SHA256）。
+  </div>
+
+  <h3>工作流</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>工作流</th><th>节点 / 端点</th><th>依赖</th><th>调用方式</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>后端工作流</td><td>create / list / get / update / delete / execute / steps / review / training-review（9）</td><td>workflows + workflow_steps 表</td><td><code>POST /api/v1/workflows</code> → <code>/{id}/execute</code></td><td><span class="tag ok">已有</span></td></tr>
+        <tr><td>设计意图</td><td>解析 → 参数变体 → 项目（3）</td><td>design_intent</td><td><code>POST /api/v1/design-intent/*</code></td><td><span class="tag ok">已有</span></td></tr>
+        <tr><td>导入→改参→导出</td><td>upload → parse → params → preview → export → download（11）</td><td>cad_importer + export</td><td><code>POST /api/v1/import-export/*</code></td><td><span class="tag ok">已有</span></td></tr>
+        <tr><td>贝叶斯→训练</td><td>session → suggest → observe → samples → train → poll</td><td>bayes + training</td><td>前端 bayesAPI + 轮询</td><td><span class="tag warn">无自动收敛</span></td></tr>
+        <tr><td>质量→交付</td><td>质量检查 → 报告 → 交付页</td><td>quality 9 端点 + QualityReport</td><td>/quality → /deliver</td><td><span class="tag ok">已有</span></td></tr>
+        <tr><td>算法一站式</td><td>build_car → evaluate → optimize → storyboard</td><td>algorithm_model 7 API</td><td><code>run_full_pipeline</code></td><td><span class="tag ok">已有</span></td></tr>
+        <tr><td>发布</td><td>vitest → build → dist 同步 → push → MD5</td><td>gh-pages 技能</td><td>技能脚本</td><td><span class="tag ok">成熟</span></td></tr>
+        <tr><td>内饰多级验证</td><td>L1 契约 → L2 布置 → L2b 断面 → L2c 纵向 → L2d 附件 → L2e 运动 → L3 人机 → L4 对齐 → L5 目视</td><td>3 个 interior spec</td><td><code>npx vitest run src/tests/carInterior*</code></td><td><span class="tag warn">工作区</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="repro">
+  <h2><span class="no">07</span>复现手册（最省时省消耗）</h2>
+  <p class="lead">目标：新机器 10 分钟内看到六车型 2D/3D；30 分钟内跑通三层测试。后端可选，重型依赖全部可跳过。</p>
+
+  <div class="two-col">
+    <div>
+      <h3>从零到跑起来</h3>
+      <pre><span class="c"># 1) 前端（唯一必需）</span>
+cd D:\API\Evolution-Ai.Design
+npm install
+npm run dev            <span class="c"># http://localhost:5173/#/designer</span>
+
+<span class="c"># 2) 后端（需要真实生成/训练/导出时）</span>
+cd backend
+pip install -r requirements.txt
+copy .env.example .env
+python start.py        <span class="c"># http://localhost:8000/docs</span>
+
+<span class="c"># 3) 三层测试</span>
+npx vitest run                                  <span class="c"># 771 / 19 文件</span>
+cd backend; python -m pytest tests -q           <span class="c"># 411 收集</span>
+cd ../algorithm_model; python -m pytest tests -q <span class="c"># 200 收集</span>
+
+<span class="c"># 4) 三服务常驻（推荐）</span>
+powershell -ExecutionPolicy Bypass -File `
+  .trae\skills\launch-services-detached\scripts\start_services.ps1</pre>
+      <div class="callout ok">
+        最小环境变量 4 个：<code>ENVIRONMENT</code> / <code>DEBUG</code> / <code>DATABASE_URL</code> / <code>SECRET_KEY</code>。
+        可跳过：PostgreSQL、Redis、Docker、GPU、Ollama、CLIP、微信、cpolar、LLM Key。
+      </div>
+      <h3>验证阶梯</h3>
+      <pre>L1 结构   python scripts/verify_facts.py      &lt;1s
+L2 单测   npx vitest run                      ~6s
+L2 后端   cd backend &amp;&amp; pytest tests -q        ~2min
+L2 算法   cd algorithm_model &amp;&amp; pytest tests -q ~5s
+L3 构建   npm run build                       ~30s
+L3 实机   npm run preview + 六车型目视         人工
+L4 发布   deploy-gh-pages 技能 + 公网 MD5      人工</pre>
+    </div>
+    <div>
+      <h3>常见故障快速排查</h3>
+      <div class="scroll">
+        <table class="tbl">
+          <thead><tr><th>症状</th><th>先查</th><th>处置</th></tr></thead>
+          <tbody>
+            <tr><td>前端起不来/端口占用</td><td>netstat :5173</td><td>stop_services.ps1，禁止按端口杀进程</td></tr>
+            <tr><td>API 全 404</td><td>:8000/docs</td><td>起后端或忽略（mock fallback）</td></tr>
+            <tr><td>公网白屏/黑屏</td><td>assets 请求 404</td><td>dist 全量同步 gh-pages</td></tr>
+            <tr><td>中文界面英文内容</td><td>UI 文案还是文档正文</td><td>按 troubleshoot 技能分层定位</td></tr>
+            <tr><td>车型图变纯色</td><td>L1 图请求</td><td>修降级链，仅瞬时重试</td></tr>
+            <tr><td>车门/轮毂浮出 12mm</td><td>deriveWheelFitment 入参</td><td>传真实半宽 bodyExtentZ</td></tr>
+            <tr><td>车顶白带/折痕</td><td>BODY_BEVEL_SIZE</td><td>固定常量 + 12mm bevel</td></tr>
+            <tr><td>轮拱穿模/黑洞</td><td>archLinerProfile</td><td>同形内嵌椭圆壳</td></tr>
+            <tr><td>座椅与中控重叠</td><td>A-A 断面</td><td>按 D 组判据修 rowSeatLayout</td></tr>
+            <tr><td>改参数不生效</td><td>后端进程启动时间</td><td>重启后端</td></tr>
+            <tr><td>测试数字不符</td><td>git status/diff</td><td>以实跑为准并更新报告</td></tr>
+            <tr><td>pre-push 被阻断</td><td>钩子命中词</td><td>改写措辞，不绕过守卫</td></tr>
+            <tr><td>浏览器仍是旧代码</td><td>dev HMR 缓存</td><td>生产 preview 新端口</td></tr>
+            <tr><td>SQLite locked</td><td>是否有长测试/训练</td><td>同一时刻只跑一个长批次</td></tr>
+            <tr><td>训练集缺失</td><td>data/training 是否存在</td><td>跑 train_qlora.py 或拷贝</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <h3>常用任务模板（标注可跳过环节）</h3>
+  <div class="grid3">
+    <div class="card">
+      <h4>T1 新增 Skill（3 步）</h4>
+      <p>建 <code>.trae/skills/&lt;name&gt;</code> → 写 SKILL.md（frontmatter 含 name/description 触发语）→ 用真实触发语自测。<br><b>可跳过：</b>README 导航、PDF 预览。</p>
+    </div>
+    <div class="card">
+      <h4>T2 新增 Agent（2 步）</h4>
+      <p>写 <code>.trae/agents/&lt;name&gt;.md</code>（角色/边界/流程/硬约束）→ 3 个典型任务试跑。<br><b>可跳过：</b>tools 精细化，先给最小集。</p>
+    </div>
+    <div class="card">
+      <h4>T3 接入数据集（4 步）</h4>
+      <p>JSONL 放 data/training → 登记 DATASETS → 1 epoch dry-run → 写 dataset card。<br><b>可跳过：</b>全量训练，先验格式。</p>
+    </div>
+    <div class="card">
+      <h4>T4 调整工作流（4 步）</h4>
+      <p>routes/workflow.py + schemas → 若加表走 Alembic → 测试 → 前端 api.js 同步。<br><b>可跳过：</b>Docker 重建。</p>
+    </div>
+    <div class="card">
+      <h4>T5 新增几何特征（5 步）</h4>
+      <p>纯函数 → 先写失败测试 → 2D 只投影/3D 用米值 → 六车型矩阵 + 生产 preview → 登记 SISA 同步。<br><b>可跳过：</b>后端 NURBS 联动（仅当参数需进后端）。</p>
+    </div>
+    <div class="card">
+      <h4>T6 发布公网（4 步）</h4>
+      <p>vitest → build → deploy-gh-pages 全量同步 → 公网 MD5 逐字节比对。<br><b>可跳过：</b>无，发布是刚性闭环。</p>
+    </div>
+  </div>
+</section>
+
+<section id="plan">
+  <h2><span class="no">08</span>下一阶段任务规划</h2>
+  <p class="lead">按里程碑拆解，优先级 P0 &gt; P1 &gt; P2；估算单位为人日。M1 的目标是「把已有价值变成可追溯资产」。</p>
+
+  <h3>M1 · 2026-11 · 交付边界收口</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>#</th><th>任务</th><th>优先级</th><th>依赖</th><th>工作量</th><th>验收标准</th><th>风险与应对</th></tr></thead>
+      <tbody>
+        <tr><td>M1-1</td><td>内饰/玻璃/2D 批次开分支提交 + CHANGELOG</td><td>P0</td><td>—</td><td>1</td><td>32 项入库；771 全绿；diff 可追溯</td><td>误提交调试文件 → 按 .gitignore 白名单逐文件 add</td></tr>
+        <tr><td>M1-2</td><td>统一事实基线（README/架构/agent/验证报告）</td><td>P0</td><td>M1-1</td><td>1.5</td><td>九项冲突全消除；数字带命令+日期+SHA</td><td>改动面大 → 以 verify_facts 输出批量替换</td></tr>
+        <tr><td>M1-3</td><td>公网复验 + 发布</td><td>P0</td><td>M1-1</td><td>0.5</td><td>MD5 一致；六车型实机 PASS</td><td>CDN 缓存 → 重试 + cache-busting</td></tr>
+        <tr><td>M1-4</td><td>开门遮挡 R1 裁决与实现</td><td>P1</td><td>—</td><td>1–3</td><td>用户确认关闭；三选一落地</td><td>方案分歧 → 先出 3 个对比截图</td></tr>
+        <tr><td>M1-5</td><td>Car3D.vue 拆分设计（不实施）</td><td>P1</td><td>M1-1</td><td>1</td><td>拆分清单 + 依赖图 + 回归方案</td><td>拆坏几何 → 先补渲染快照测试</td></tr>
+        <tr><td>M1-6</td><td>dataset card（来源/生成/SHA）</td><td>P2</td><td>—</td><td>0.5</td><td>data/README.md 可指导换机复现</td><td>大文件不入库 → 只写元数据</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>M2 · 2026-12 · 跨仓库一致性与可维护性</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>#</th><th>任务</th><th>优先级</th><th>依赖</th><th>工作量</th><th>验收标准</th><th>风险与应对</th></tr></thead>
+      <tbody>
+        <tr><td>M2-1</td><td>SISA 同口径同步三项</td><td>P0</td><td>M1-1</td><td>3–5</td><td>跨仓库交叉测试一致；拱心/拱半径零漂移</td><td>基线冲突 → 同批更新 + 交叉脚本</td></tr>
+        <tr><td>M2-2</td><td>文档门禁（verify_facts + doc-code-audit）</td><td>P1</td><td>M1-2</td><td>2</td><td>数字不一致时本地/CI 失败</td><td>误报 → 建白名单</td></tr>
+        <tr><td>M2-3</td><td>Car3D.vue 拆分实施</td><td>P1</td><td>M1-5</td><td>4–6</td><td>行数降 40%；渲染快照零差异</td><td>回归面大 → 分步提交，每步全绿</td></tr>
+        <tr><td>M2-4</td><td>玻璃 alphaMap 方案核验与落地</td><td>P2</td><td>—</td><td>2–4</td><td>边界无固定锯齿；截图对比</td><td>方案替换 → A/B 构建对比</td></tr>
+        <tr><td>M2-5</td><td>内饰 AABB → 曲面化</td><td>P2</td><td>M2-3</td><td>3–5</td><td>观感提升且尺寸同源</td><td>造型与布置冲突 → 冻结包络不变</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>M3 · 2027-01 · 工程化与复现效率</h3>
+  <div class="scroll">
+    <table class="tbl">
+      <thead><tr><th>#</th><th>任务</th><th>优先级</th><th>依赖</th><th>工作量</th><th>验收标准</th><th>风险与应对</th></tr></thead>
+      <tbody>
+        <tr><td>M3-1</td><td>一键复现脚本（doctor）</td><td>P1</td><td>M1-2</td><td>2</td><td>新机 10 分钟跑起来</td><td>平台差异 → 先 Windows 单栈</td></tr>
+        <tr><td>M3-2</td><td>测试分层提速</td><td>P2</td><td>M2-3</td><td>2</td><td>前端 &lt;3s，后端快例 &lt;30s</td><td>并行污染 → 隔离夹具</td></tr>
+        <tr><td>M3-3</td><td>生产可观测性</td><td>P2</td><td>—</td><td>3</td><td>失败可回溯请求/步骤</td><td>隐私 → 脱敏</td></tr>
+        <tr><td>M3-4</td><td>账号体系归档决策</td><td>P2</td><td>—</td><td>1</td><td>代码与文档一致</td><td>误删 → 先打 tag</td></tr>
+        <tr><td>M3-5</td><td>专利守卫词边界匹配</td><td>P2</td><td>—</td><td>1</td><td>不再误报普通几何注释</td><td>漏检 → 双跑对照</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>依赖关系</h3>
+  <pre>M1-1 ──┬── M1-2 ──┬── M2-2 ── M3-1
+       ├── M1-3   └── M3-3
+       ├── M1-5 ── M2-3 ──┬── M2-5
+       └── M2-1           └── M3-2
+M1-4（独立，需用户裁决）
+M1-6 / M2-4 / M3-4 / M3-5（独立）</pre>
+</section>
+
+<section id="evidence">
+  <h2><span class="no">09</span>证据边界</h2>
+  <div class="two-col">
+    <div>
+      <h3>本次实际执行</h3>
+      <div class="scroll">
+        <table class="tbl">
+          <thead><tr><th>核查</th><th>命令/方式</th><th>结果</th></tr></thead>
+          <tbody>
+            <tr><td>提交史</td><td><code>git log --date=short</code></td><td>116 提交；HEAD/gh-pages 已记录</td></tr>
+            <tr><td>工作区</td><td><code>git status --porcelain</code></td><td>32 项（9 M / 23 ??）</td></tr>
+            <tr><td>结构事实</td><td><code>python scripts/verify_facts.py</code></td><td>19 / 152+2 / 17 / 12 / 22 / 15</td></tr>
+            <tr><td>前端测试</td><td><code>npx vitest run</code></td><td>19 文件 / 771 通过</td></tr>
+            <tr><td>后端/算法</td><td><code>pytest --collect-only -q</code></td><td>411 / 200</td></tr>
+            <tr><td>数据规模</td><td>目录递归统计</td><td>data/ ≈ 2.7GB</td></tr>
+            <tr><td>服务状态</td><td><code>netstat</code> 过滤三端口</td><td>无监听</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <h3>未覆盖 / 不可判定</h3>
+      <div class="card">
+        <p>· 714 个导出文件与 175 个 .pt 未逐文件检查，仅统计规模。<br>
+        · 后端 411 例本次只收集未执行（上次执行口径见验证报告）。<br>
+        · 公网内容未在本次重新抓取比对。<br>
+        · SISA 仓库、Harness 保密项目不在本仓库范围，未探查。<br>
+        · docs/en 与 book/en 未逐篇比对，只抽查结构与数字口径。<br>
+        · 玻璃 alphaMap 是否已落地、SISA 同步是否完成，均为推断，已标注。</p>
+      </div>
+      <div class="callout">
+        所有文件引用均使用项目内相对路径；主报告见
+        <a href="README.md">README.md</a>，
+        项目根见 <a href="../../../README.md">根 README</a>。
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    EVO-RETRO-2026-1102 · 证据时点 2026-11-02 · main <code>0ad4ede2</code> · 仅新增报告文件，未改动业务代码。
+  </div>
+</footer>
+
+</body>
+</html>
