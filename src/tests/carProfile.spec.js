@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, roofFilletSet, LINE_RATIOS, filletCorner } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, roofFilletSet, LINE_RATIOS, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
 import { deriveCabinGlass, ROOF_FILLETS } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams } from '../config/carPresets.js'
 
@@ -481,5 +481,114 @@ describe('极端参数：约束仍保证拓扑合法', () => {
     const p = deriveCarProfile(params, 'pickup')
     expect(p.pickup).not.toBeNull()
     expect(p.rearWindowBottomX).toBe(p.pickup.cabWindowBottomX)
+  })
+})
+
+describe('deriveNurbsFrame：后端 NURBS 网格对齐到 carProfile 坐标系', () => {
+  const P = deriveCarProfile(carTypeParams.sedan, 'sedan')
+  const L = P.frontX - P.rearX
+  /** 构造 canonical 包围盒（X 自 0 递增、Y=车宽、Z=车高，单位 m） */
+  const canonicalBox = (opts = {}) => {
+    const { length = L, width = P.W, height = P.H, centeredZ = false } = opts
+    return {
+      min: { x: 0, y: 0, z: centeredZ ? -width / 2 : 0 },
+      max: { x: length, y: height, z: centeredZ ? width / 2 : width }
+    }
+  }
+
+  /** 套用返回的变换，验证某点落到期望位置（world = T·R·S·local） */
+  const applyFrame = (frame, p) => {
+    const x = frame.flip ? -p.x : p.x
+    return {
+      x: x * frame.scale + frame.position.x,
+      y: p.y * frame.scale + frame.position.y,
+      z: (frame.flip ? -p.z : p.z) * frame.scale + frame.position.z
+    }
+  }
+
+  it('长度一致（mm→m 正确）时不缩放，纯平移即可对齐', () => {
+    const f = deriveNurbsFrame(canonicalBox(), [], P)
+    expect(f.scale).toBe(1)
+    expect(f.flip).toBe(false)
+    expect(f.rotationY).toBe(0)
+    expect(f.position.y).toBeCloseTo(P.bodyBottomY, 9)
+    expect(f.position.z).toBeCloseTo(-P.W / 2, 9)   // 未居中网格：Z 平移后居中
+  })
+
+  it('车身前缘落到 P.frontX、底缘落到 P.bodyBottomY（套用变换后）', () => {
+    const box = canonicalBox()
+    const f = deriveNurbsFrame(box, [], P)
+    const front = applyFrame(f, { x: box.max.x, y: box.min.y, z: box.min.z })
+    expect(front.x).toBeCloseTo(P.frontX, 9)
+    expect(front.y).toBeCloseTo(P.bodyBottomY, 9)
+  })
+
+  it('X 自 0 起、未居中 → 平移后车尾落到 P.rearX', () => {
+    const box = canonicalBox()
+    const f = deriveNurbsFrame(box, [], P)
+    expect(applyFrame(f, { x: box.min.x, y: 0, z: 0 }).x).toBeCloseTo(P.rearX, 9)
+  })
+
+  it('已居中的网格：Z 平移为 0，不重复偏移', () => {
+    const box = canonicalBox({ centeredZ: true })
+    const f = deriveNurbsFrame(box, [], P)
+    expect(f.position.z).toBeCloseTo(0, 9)
+  })
+
+  it('车头判定：前悬小 → 不翻转；前悬大（canonical X+ 朝车尾）→ 180° 偏航', () => {
+    // 前悬 0.3 / 后悬 1.2（车头在 max.x）
+    const normal = canonicalBox()
+    const wheelXsPos = [normal.min.x + 1.2, normal.max.x - 0.3]
+    expect(deriveNurbsFrame(normal, wheelXsPos, P).flip).toBe(false)
+
+    // 反向：车头在 min.x（前悬 0.3 在 min 端，后悬 1.2 在 max 端）
+    const reversed = canonicalBox()
+    const wheelXsNeg = [reversed.min.x + 0.3, reversed.max.x - 1.2]
+    const f = deriveNurbsFrame(reversed, wheelXsNeg, P)
+    expect(f.flip).toBe(true)
+    expect(f.rotationY).toBe(Math.PI)
+    // 翻转后：原 min.x 端（车头）应落到 P.frontX
+    expect(applyFrame(f, { x: reversed.min.x, y: 0, z: 0 }).x).toBeCloseTo(P.frontX, 9)
+  })
+
+  it('轮位缺失时按 X+ 车头处理（不翻转）', () => {
+    expect(deriveNurbsFrame(canonicalBox(), [], P).flip).toBe(false)
+    expect(deriveNurbsFrame(canonicalBox(), [0.1], P).flip).toBe(false)
+  })
+
+  it('长度偏差 >5% 时等比修正，且钳位在 [0.8, 1.25] 防畸变', () => {
+    const shorter = deriveNurbsFrame(canonicalBox({ length: L * 0.9 }), [], P)
+    expect(shorter.scale).toBeCloseTo(L / (L * 0.9), 6)
+
+    // 偏差极小（2%）→ 不缩放
+    const tiny = deriveNurbsFrame(canonicalBox({ length: L * 0.98 }), [], P)
+    expect(tiny.scale).toBe(1)
+
+    // 极端（长度仅 1/3）→ 钳位 1.25
+    const extreme = deriveNurbsFrame(canonicalBox({ length: L / 3 }), [], P)
+    expect(extreme.scale).toBe(1.25)
+  })
+
+  it('缩放后车头前缘仍精确落到 P.frontX', () => {
+    const box = canonicalBox({ length: L * 0.9 })
+    const f = deriveNurbsFrame(box, [], P)
+    expect(applyFrame(f, { x: box.max.x, y: 0, z: 0 }).x).toBeCloseTo(P.frontX, 9)
+  })
+
+  it('空/缺失包围盒返回 null（调用方直接跳过对齐）', () => {
+    expect(deriveNurbsFrame(null, [], P)).toBeNull()
+    expect(deriveNurbsFrame({ min: { x: 0, y: 0, z: 0 } }, [], P)).toBeNull()
+  })
+
+  it.each(ALL_TYPES)('%s 对齐后车身完全落在车长范围内', (type) => {
+    const p = deriveCarProfile(carTypeParams[type], type)
+    const box = {
+      min: { x: 0, y: 0, z: 0 },
+      max: { x: p.frontX - p.rearX, y: p.H, z: p.W }
+    }
+    const f = deriveNurbsFrame(box, [], p)
+    expect(applyFrame(f, { x: box.min.x, y: 0, z: 0 }).x).toBeCloseTo(p.rearX, 6)
+    expect(applyFrame(f, { x: box.max.x, y: 0, z: 0 }).x).toBeCloseTo(p.frontX, 6)
+    expect(applyFrame(f, { x: 0, y: 0, z: box.max.z }).z).toBeCloseTo(p.W / 2, 6)
   })
 })

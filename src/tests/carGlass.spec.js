@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { deriveCarProfile, deriveDoorLayout, filletCorner, roofFilletSet } from '../utils/carProfile.js'
-import { bandGlassEndpoints, bandGlassSpine, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, buildDloStripRange, deriveDloPaneRanges, greenhouseInsetAt, shellHalfZAt, filletXAtY, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP } from '../utils/carGlass.js'
+import { bandGlassEndpoints, bandGlassSpine, deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStrip, buildDloStripRange, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, greenhouseInsetAt, shellHalfZAt, filletXAtY, pointInPolygon, insideBodyMaterial, ROOF_FILLETS, SIDE_GLASS_TILT, SIDE_GLASS_BARREL, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets.js'
 
 const ALL_TYPES = ['sedan', 'suv', 'coupe', 'sport', 'mpv', 'pickup']
@@ -661,6 +661,241 @@ describe('deriveDloPaneRanges 侧窗玻璃分片划分（Car3D 消费端纯函�
   })
 })
 
+describe('deriveDloApertures 侧窗玻璃洞口（真透明玻璃的车身挖洞，开门全空通透）', () => {
+  const fourDoor = { frontSeamX: 0.8, midSeamX: 0.0, rearSeamX: -0.9 }
+  // 典型 DLO 四边形 [底前, 顶前, 顶后, 底后]（A 柱斜边后收、C 柱斜边前收）
+  const dlo = [[0.95, 0.8], [0.55, 1.45], [-1.05, 1.45], [-1.25, 0.8]]
+
+  it('每片玻璃一个洞口，key 与分片一一对应', () => {
+    const panes = deriveDloPaneRanges(fourDoor)
+    const aps = deriveDloApertures(dlo, panes)
+    expect(aps.map((a) => a.key)).toEqual(panes.map((p) => p.key))
+    // 显式竖缝被 A 柱斜边截断的片多一个折点（竖缝段 + 斜边段），其余为四点多边形
+    for (const a of aps) expect([4, 5]).toContain(a.points.length)
+  })
+
+  it('洞口前缘逐段贴合玻璃覆盖界：显式竖缝高出 A 柱斜边处补折点（不戳出侧围）', () => {
+    const inset = 0.012
+    const panes = deriveDloPaneRanges(fourDoor)
+    const seamX = panes.find((p) => p.key === 'front').xFront
+    const front = deriveDloApertures(dlo, panes, inset).find((a) => a.key === 'front')
+    const yBot0 = dlo[0][1]
+    const span = dlo[1][1] - yBot0
+    const fxAt = (t) => dlo[0][0] + (dlo[1][0] - dlo[0][0]) * t
+    expect(front.points.length).toBe(5)
+    const [bottomFront, kink, topFront] = front.points
+    // 底前角贴竖缝（前门缝内让半个缝宽），折点与底前角同 X 且高度低于顶边
+    expect(bottomFront[0]).toBeCloseTo(seamX - inset, 12)
+    expect(kink[0]).toBeCloseTo(seamX - inset, 12)
+    const tKink = (kink[1] - yBot0) / span
+    expect(fxAt(tKink)).toBeCloseTo(seamX, 12)
+    // 顶前角贴 A 柱斜边内缩：不再保持竖缝 X（旧实现会戳出侧围轮廓）
+    const tTop = (topFront[1] - yBot0) / span
+    expect(topFront[0]).toBeCloseTo(fxAt(tTop) - inset, 12)
+    expect(topFront[0]).toBeLessThan(bottomFront[0])
+  })
+
+  it('洞口四缘较玻璃内缩 inset（关门玻璃叠压洞口 = 封闭）', () => {
+    const inset = 0.012
+    const panes = deriveDloPaneRanges(fourDoor)
+    const aps = deriveDloApertures(dlo, panes, inset)
+    const yBot0 = dlo[0][1]
+    const yTop0 = dlo[1][1]
+    for (let i = 0; i < aps.length; i++) {
+      const pts = aps[i].points
+      const xs = pts.map((q) => q[0])
+      const ys = pts.map((q) => q[1])
+      // 底缘上抬（玻璃下叠压）；顶缘下压或截顶（斜边片顶部有效宽不足时截顶仍密封）
+      expect(Math.min(...ys)).toBeCloseTo(yBot0 + inset, 12)
+      expect(Math.max(...ys)).toBeLessThanOrEqual(yTop0 - inset + 1e-12)
+      expect(Math.max(...ys)).toBeGreaterThan(yBot0 + inset + 0.02)
+      // 显式缝界片：洞口前缘在玻璃前缘之后、后缘在玻璃后缘之前（左右叠压）
+      if (panes[i].xFront !== null) expect(Math.max(...xs)).toBeCloseTo(panes[i].xFront - inset, 12)
+      if (panes[i].xRear !== null) expect(Math.min(...xs)).toBeCloseTo(panes[i].xRear + inset, 12)
+    }
+  })
+
+  it('相邻洞口之间保留车身色竖条（柱剪影：车身色顶部边界与玻璃清晰区分）', () => {
+    const aps = deriveDloApertures(dlo, deriveDloPaneRanges(fourDoor))
+    for (let i = 0; i + 1 < aps.length; i++) {
+      const rearI = Math.min(...aps[i].points.map((q) => q[0]))
+      const frontNext = Math.max(...aps[i + 1].points.map((q) => q[0]))
+      expect(rearI).toBeGreaterThan(frontNext)   // 洞口互不相交，竖条宽度 > 0
+    }
+  })
+
+  it('贴 DLO 缘的洞口边逐点随斜边内缩（每个高度都落在玻璃覆盖内 = 处处密封）', () => {
+    const inset = 0.012
+    const panes = deriveDloPaneRanges(fourDoor)
+    const aps = deriveDloApertures(dlo, panes, inset)
+    const yBot0 = dlo[0][1]
+    const span = dlo[1][1] - yBot0
+    const fxAt = (t) => dlo[0][0] + (dlo[1][0] - dlo[0][0]) * t
+    const rxAt = (t) => dlo[3][0] + (dlo[2][0] - dlo[3][0]) * t
+    // fixedFront 前缘随 A 柱斜边：两个前角 X = 该角高度处斜边 X − inset
+    const frontFixed = aps.find((a) => a.key === 'fixedFront')
+    for (const [x, y] of [frontFixed.points[0], frontFixed.points[1]]) {
+      const t = (y - yBot0) / span
+      expect(x).toBeCloseTo(fxAt(t) - inset, 12)
+    }
+    // fixedRear 后缘随 C 柱斜边：两个后角 X = 该角高度处斜边 X + min(inset, 6mm)
+    const rearFixed = aps.find((a) => a.key === 'fixedRear')
+    for (const [x, y] of [rearFixed.points[2], rearFixed.points[3]]) {
+      const t = (y - yBot0) / span
+      expect(x).toBeCloseTo(rxAt(t) + Math.min(inset, 0.006), 12)
+    }
+  })
+
+  it('退化守卫：DLO 高度不足时不挖洞（不产生拓扑破面）', () => {
+    const tiny = [[0.9, 0.8], [0.85, 0.815], [0.4, 0.815], [0.35, 0.8]]
+    expect(deriveDloApertures(tiny, deriveDloPaneRanges(fourDoor))).toEqual([])
+  })
+
+  it('六车型实参：门片洞口必存在（开门全空硬约束），洞口有效、底缘高于腰线、顶缘低于车顶', () => {
+    for (const type of ALL_TYPES) {
+      const P = deriveCarProfile(carTypeParams[type], type)
+      const cabin = deriveCabinGlass(P, { carType: type })
+      const dl = deriveDoorLayout(P, cabin, { carType: type })
+      const panes = deriveDloPaneRanges(dl)
+      const aps = deriveDloApertures(cabin.dlo, panes)
+      const keys = aps.map((a) => a.key)
+      // 硬约束：门片（随门开合的玻璃）必须有洞口——开门后原位全空通透；
+      // 固定片在极端斜置车型允许按退化守卫跳过（玻璃贴实体，不产生拓扑破面）
+      expect(keys, type).toContain('front')
+      if (panes.some((p) => p.key === 'rear')) expect(keys, type).toContain('rear')
+      expect(aps.length, type).toBeGreaterThanOrEqual(2)
+      for (const a of aps) {
+        const xs = a.points.map((q) => q[0])
+        const ys = a.points.map((q) => q[1])
+        expect(Math.max(...xs) - Math.min(...xs), `${type}:${a.key}`).toBeGreaterThanOrEqual(0.03)
+        expect(Math.min(...ys), `${type}:${a.key}`).toBeGreaterThan(P.beltLineY)
+        expect(Math.max(...ys), `${type}:${a.key}`).toBeLessThan(P.roofTopY)
+      }
+    }
+  })
+})
+
+describe('buildDoorAperturePolygon 车门合并洞口（开门门洞内无车身色横带）', () => {
+  const frontEdge = 0.8
+  const rearEdge = -0.9
+  const bottomY = 0.02
+  const shoulderY = 0.82
+  // 门片玻璃洞口四点（deriveDloApertures 同序：底前→顶前→顶后→底后）
+  const towerFront = [[0.76, shoulderY], [0.76, 1.4], [0.06, 1.4], [0.06, shoulderY]]
+  const towerRear = [[-0.06, shoulderY], [-0.06, 1.4], [-0.8, 1.4], [-0.8, shoulderY]]
+  const build = (panes = [towerFront, towerRear]) =>
+    buildDoorAperturePolygon({ frontEdge, rearEdge, bottomY, shoulderY, panes })
+
+  const segs = (pts) => pts.map((p, i) => [p, pts[(i + 1) % pts.length]])
+  const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+  const intersect = ([a, b], [c, d]) =>
+    Math.sign(cross(a, b, c)) * Math.sign(cross(a, b, d)) < 0 &&
+    Math.sign(cross(c, d, a)) * Math.sign(cross(c, d, b)) < 0
+  const expectSimple = (pts) => {
+    const es = segs(pts)
+    for (let i = 0; i < es.length; i++) {
+      for (let j = i + 1; j < es.length; j++) {
+        if ((i + 1) % es.length === j || (j + 1) % es.length === i) continue
+        expect(intersect(es[i], es[j]), `${i}-${j}`).toBe(false)
+      }
+    }
+  }
+
+  it('门洞与门片玻璃洞口合并为单一多边形：腰带处水平连通，无残留横带', () => {
+    const pts = build()
+    const atShoulder = pts.filter(([, y]) => Math.abs(y - shoulderY) < 1e-9)
+    // 肩线上含门洞前/后缘 + 两块塔楼的四条竖边 → 横贯门洞无断点
+    expect(atShoulder.length).toBeGreaterThanOrEqual(6)
+    expect(Math.max(...atShoulder.map((q) => q[0]))).toBeCloseTo(frontEdge, 12)
+    expect(Math.min(...atShoulder.map((q) => q[0]))).toBeCloseTo(rearEdge, 12)
+    // 横贯门洞全宽的水平边只允许出现在底边；旧实现（门洞 + 玻璃洞口两孔）
+    // 在腰带线还会多出一条全宽水平边 → 开门后即那条车身色横带
+    const bars = segs(pts).filter(([p, q]) => Math.abs(p[1] - q[1]) < 1e-9 &&
+      Math.min(p[0], q[0]) < rearEdge + 0.02 && Math.max(p[0], q[0]) > frontEdge - 0.02)
+    expect(bars.length).toBe(1)
+    expect(bars[0][0][1]).toBeCloseTo(bottomY, 12)
+    expectSimple(pts)
+  })
+
+  it('门片塔楼直通玻璃洞口顶边，塔楼之间（B 柱）止于肩线', () => {
+    const pts = build()
+    expect(Math.max(...pts.map((q) => q[1]))).toBeCloseTo(1.4, 12)
+    expect(pts.filter(([, y]) => y > shoulderY + 1e-9).length).toBe(4)
+  })
+
+  it('边界不越出门洞 X 范围，且多边形简单无自交', () => {
+    const pts = build()
+    for (const [x] of pts) {
+      expect(x).toBeGreaterThanOrEqual(rearEdge - 1e-12)
+      expect(x).toBeLessThanOrEqual(frontEdge + 1e-12)
+    }
+    expectSimple(pts)
+  })
+
+  it('无门片时退回纯门洞矩形（不产生破面）', () => {
+    expect(build([])).toEqual([
+      [rearEdge, bottomY], [frontEdge, bottomY], [frontEdge, shoulderY], [rearEdge, shoulderY]
+    ])
+  })
+
+  it('退化守卫：塔楼底不齐 / X 越界 / 塔楼重叠 → null（调用方退回矩形）', () => {
+    const notFlush = [[[0.76, shoulderY - 0.001], [0.76, 1.4], [0.06, 1.4], [0.06, shoulderY - 0.001]]]
+    expect(build(notFlush)).toBeNull()
+    const outside = [[[0.86, shoulderY], [0.9, 1.4], [0.06, 1.4], [0.06, shoulderY]]]
+    expect(build(outside)).toBeNull()
+    const overlapping = [
+      [[0.76, shoulderY], [0.76, 1.4], [-0.1, 1.4], [-0.1, shoulderY]],
+      [[0.0, shoulderY], [0.0, 1.4], [-0.8, 1.4], [-0.8, shoulderY]]
+    ]
+    expect(build(overlapping)).toBeNull()
+    expect(buildDoorAperturePolygon({ frontEdge: 0, rearEdge: 0, bottomY, shoulderY, panes: [] })).toBeNull()
+  })
+
+  it('塔楼带 A 柱斜边折点时按自身轮廓接入（不被 X 包围盒矩形化 → 顶前角不再戳出侧围）', () => {
+    const kinked = [[0.76, shoulderY], [0.76, 1.1], [0.4, 1.4], [-0.2, 1.4], [-0.2, shoulderY]]
+    const pts = buildDoorAperturePolygon({ frontEdge, rearEdge, bottomY, shoulderY, panes: [kinked] })
+    expect(pts).not.toBeNull()
+    // 折点原样保留
+    expect(pts.some(([x, y]) => Math.abs(y - 1.1) < 1e-9 && Math.abs(x - 0.76) < 1e-9)).toBe(true)
+    const topXs = pts.filter(([, y]) => Math.abs(y - 1.4) < 1e-9).map(([x]) => x)
+    expect(Math.max(...topXs)).toBeLessThan(0.76)
+    expectSimple(pts)
+  })
+
+  it('六车型实参：肩线 = 玻璃洞口底边，塔楼顶 = 玻璃洞口顶，且低于车顶', () => {
+    for (const type of ALL_TYPES) {
+      const P = deriveCarProfile(carTypeParams[type], type)
+      const cabin = deriveCabinGlass(P, { carType: type })
+      const dl = deriveDoorLayout(P, cabin, { carType: type })
+      const panes = deriveDloPaneRanges(dl)
+      const aps = deriveDloApertures(cabin.dlo, panes)
+      const doorKeys = new Set(panes.filter((p) => p.hingeKey).map((p) => p.key))
+      const towers = aps.filter((a) => doorKeys.has(a.key))
+      const front = dl.frontSeamX + 0.004
+      const rear = (dl.rearSeamX === null ? dl.midSeamX : dl.rearSeamX) - 0.004
+      const shoulder = cabin.dlo[0][1] + DLO_APERTURE_INSET
+      const pts = buildDoorAperturePolygon({
+        frontEdge: front, rearEdge: rear,
+        bottomY: P.bodyBottomY + 0.028, shoulderY: shoulder,
+        panes: towers.map((t) => t.points)
+      })
+      expect(pts, type).not.toBeNull()
+      expect(towers.length, type).toBeGreaterThan(0)
+      for (const t of towers) {
+        expect(Math.min(...t.points.map((q) => q[1])), `${type}:${t.key}`).toBeCloseTo(shoulder, 12)
+        for (const [x] of t.points) {
+          expect(x, `${type}:${t.key}`).toBeGreaterThan(rear)
+          expect(x, `${type}:${t.key}`).toBeLessThan(front)
+        }
+      }
+      const peak = Math.max(...pts.map((q) => q[1]))
+      expect(peak, type).toBeCloseTo(Math.max(...towers.flatMap((t) => t.points.map((q) => q[1]))), 12)
+      expect(peak, type).toBeLessThan(P.roofTopY)
+      expectSimple(pts)
+    }
+  })
+})
+
 describe('greenhouseInsetAt 车身 greenhouse 收窄（A/B/C 柱与车顶随玻璃角度联动）', () => {
   const F = { dloYBot: 0.8, dloYSpan: 0.4, tiltInsetZ: 0.1, barrelRad: (10 * Math.PI) / 180, barrelRadius: 0.9, dloZBase: 1.05 }
 
@@ -1090,5 +1325,45 @@ describe('六车型玻璃拓扑守卫（复刻 bodyShape 轮廓内点判定，�
     expect(g.pillar.botY).toBeGreaterThan(g.dlo[0][1])          // 底端在 DLO 底边之上
     expect(g.pillar.x).toBeLessThan(P.windshieldTopX)           // 55% 分段在 DLO 跨度内
     expect(g.pillar.x).toBeGreaterThan(g.dloTopRear)
+  })
+})
+
+describe('pointInPolygon / insideBodyMaterial 外皮与洞壁区分', () => {
+  // 4×4 方框（洞口位置不参与判据：洞口倒角环带仍在轮廓内，需改判内饰）
+  const outline = [[0, 0], [4, 0], [4, 4], [0, 4]]
+
+  it('内点 true、外点 false', () => {
+    expect(pointInPolygon(2, 2, outline)).toBe(true)
+    expect(pointInPolygon(5, 2, outline)).toBe(false)
+    expect(pointInPolygon(-0.1, 2, outline)).toBe(false)
+    expect(pointInPolygon(0.0, -0.5, outline)).toBe(false)
+  })
+
+  it('支持 THREE.Vector2 形状的顶点（{x,y}）', () => {
+    const poly = outline.map(([x, y]) => ({ x, y }))
+    expect(pointInPolygon(3.9, 3.9, poly)).toBe(true)
+    expect(pointInPolygon(4.5, 3.9, poly)).toBe(false)
+  })
+
+  it('insideBodyMaterial：轮廓内（含洞口区域）true；轮廓线上/轮廓外 false', () => {
+    expect(insideBodyMaterial(0, 2, outline)).toBe(false)          // 外轮廓线 → 外皮
+    expect(insideBodyMaterial(4, 2, outline)).toBe(false)          // 外轮廓线 → 外皮
+    expect(insideBodyMaterial(1.2, 2, outline)).toBe(true)         // 轮廓内（洞壁所在）
+    expect(insideBodyMaterial(2, 2, outline)).toBe(true)           // 洞口倒角环带仍在轮廓内
+    expect(insideBodyMaterial(2, 5, outline)).toBe(false)          // 轮廓外
+    expect(insideBodyMaterial(4.01, 2, outline)).toBe(false)       // 轮廓外（bevel 外扩带）
+  })
+
+  it('洞口轮廓不参与判定：洞口多边形内的点仍按「轮廓内」处理', () => {
+    // 洞口倒角环带落在洞口边界内侧，需保留洞壁内饰化能力，故 holes 不参与判据
+    expect(insideBodyMaterial(1.7, 2.2, outline)).toBe(true)
+    expect(insideBodyMaterial(2.3, 1.7, outline)).toBe(true)
+  })
+
+  it('多洞口不影响判定：只要在轮廓内即为车体壁', () => {
+    expect(insideBodyMaterial(0.4, 0.4, outline)).toBe(true)
+    expect(insideBodyMaterial(1.0, 1.0, outline)).toBe(true)
+    expect(insideBodyMaterial(0.1, 0.1, outline)).toBe(true)
+    expect(insideBodyMaterial(-0.5, 0.5, outline)).toBe(false)
   })
 })

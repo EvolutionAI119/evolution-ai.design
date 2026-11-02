@@ -37,6 +37,26 @@ export const WHEEL_ENVELOPE = {
   pickup: { jounce: 90, gapTop: 75, gapSide: 50, steerDeg: 34, flatten: 0.35 }
 }
 
+// 座椅布局车型表（与 LINE_RATIOS / WHEEL_ENVELOPE 同构，内饰件唯一来源）：
+//   rows        标准排数（1~3；sport 单排桶椅 / mpv 三排，其余两排）
+//   row2Split   第二排形式：bench=整体长椅(3座) / bucket=独立2座 / captain=船长椅2座 / none=无
+//   row3Count   第三排座椅数（0=无第三排）
+//   hPointFront 前排 H 点离地高度 mm（SAE H 点惯例：坐垫与靠背交点）
+//   hPointRear  第二排 H 点离地高度 mm（第三排沿用后排基准）
+//   trackLength 前排座椅滑轨前后行程 mm（电动调节预留行程）
+//   rowPitch    相邻两排 H 点的纵向间距 mm（内饰 createSeatRow 排位基准）
+// 校准基准：sedan≈E级 / suv≈Cayenne / coupe≈911 / sport≈488 / mpv≈V级 / pickup≈F-150
+// 说明：本表仅供内饰模块消费，外观（2D/3D）不读取，新增字段对外观零影响。
+// H 点为 SAE 惯例「坐垫面与靠背交点」，离地高度按实车坐姿校准（轿车 0.52 / SUV 0.64 / 跑车 0.37~0.46）。
+export const SEAT_LAYOUT = {
+  sedan:  { rows: 2, row2Split: 'bench',   row3Count: 0, hPointFront: 520, hPointRear: 530, trackLength: 240, rowPitch: 780 },
+  suv:    { rows: 2, row2Split: 'bench',   row3Count: 0, hPointFront: 640, hPointRear: 650, trackLength: 260, rowPitch: 800 },
+  coupe:  { rows: 2, row2Split: 'bucket',  row3Count: 0, hPointFront: 460, hPointRear: 470, trackLength: 220, rowPitch: 700 },
+  sport:  { rows: 1, row2Split: 'none',    row3Count: 0, hPointFront: 370, hPointRear: 0,   trackLength: 200, rowPitch: 780 },
+  mpv:    { rows: 3, row2Split: 'captain', row3Count: 2, hPointFront: 680, hPointRear: 690, trackLength: 280, rowPitch: 840 },
+  pickup: { rows: 2, row2Split: 'bench',   row3Count: 0, hPointFront: 660, hPointRear: 670, trackLength: 250, rowPitch: 800 }
+}
+
 /**
  * 轮拱开口包络椭圆（真实轮拱几何：开口处处避开「满舵转向 + 悬架跳动」轮胎包络）。
  *
@@ -199,6 +219,26 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
   const approachAngleDeg = num(p.approach_angle, defApproach)
   const departureAngleDeg = num(p.departure_angle, defDeparture)
 
+  // ---------- 12. 座舱座椅布局（内饰 IP/CONSOLE/DOOR PANELS/SEATS 的锚点真源） ----------
+  // 排数为整数 1~3；排数与配置强制自洽（无第二排则二/三排配置清零，无第三排则第三排清零），
+  // 杜绝「1 排车带第三排座椅」这类非法组合进入内饰生成链路。
+  const seatBase = SEAT_LAYOUT[carType] || SEAT_LAYOUT.sedan
+  const seatRows = Math.min(3, Math.max(1, Math.round(num(p.seat_rows, seatBase.rows))))
+  let seatRow2Split = String(p.seat_row2_split ?? seatBase.row2Split)
+  if (seatRows >= 2 && seatRow2Split === 'none') seatRow2Split = 'bench'
+  if (!['bench', 'bucket', 'captain', 'none'].includes(seatRow2Split)) seatRow2Split = seatBase.row2Split
+  if (seatRows < 2) seatRow2Split = 'none'
+  const row2Count = seatRows >= 2 ? (seatRow2Split === 'bench' ? 3 : 2) : 0
+  const row3Count = seatRows >= 3
+    ? Math.min(3, Math.max(2, Math.round(num(p.seat_row3_count, seatBase.row3Count))))
+    : 0
+  const seatHPointFront = num(p.seat_h_point_front, seatBase.hPointFront) / 1000
+  // 后排缺省：车型表未定义（如 sport 单排）时，按前排 +10mm 兜底，避免 H 点落到地面
+  const rearDefaultMm = seatBase.hPointRear || seatBase.hPointFront + 10
+  const seatHPointRear = seatRows >= 2 ? num(p.seat_h_point_rear, rearDefaultMm) / 1000 : 0
+  const seatTrackLength = num(p.seat_track_length, seatBase.trackLength) / 1000
+  const seatRowPitch = num(p.seat_row_pitch, seatBase.rowPitch) / 1000
+
   const P0 = {
     // 尺寸（m）
     W, H, WB, track, gc, hoodLen, wheelDia, wheelR, halfTrack, FO, RO,
@@ -220,6 +260,13 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     // 接近角 / 离去角（deg，布置设计基准，可被参数覆盖）
     approachAngleDeg, departureAngleDeg,
     defApproach, defDeparture,
+    // 座舱座椅布局（内饰件锚点；外观不消费，纯增量字段）
+    seatRows, seatRow2Split,
+    seatRowCounts: [2, row2Count, row3Count],
+    seatTotal: 2 + row2Count + row3Count,
+    seatHPointFront, seatHPointRear, seatTrackLength, seatRowPitch,
+    // 车型标识：内饰取数口需要与外观 deriveDoorLayout 同源判定双门车（carType 必须显式带入 P）
+    carType,
     // 车型专属
     pickup, rails, wing
   }
@@ -484,5 +531,51 @@ export function filletCorner(ax, ay, px, py, bx, by, r) {
     a: [px + (ax - px) * t, py + (ay - py) * t],
     ctrl: [px, py],
     b: [px + (bx - px) * u, py + (by - py) * u]
+  }
+}
+
+/**
+ * 后端 NURBS 网格 → carProfile 居中坐标系的刚体对齐参数（纯函数，无 Three.js 依赖）。
+ *
+ * 后端 canonical：X 自 0 递增、Y=车宽、Z=车高（mm）；
+ * 本平台坐标系：X 居中（X+ 车头）、Y=高、Z=宽、地面 Y=0（m）。
+ * 差异只有「平移 + 可能 180° 偏航 + 等比缩放」，不改任何比例 → 对齐后 P 系几何（座椅/仪表台等）
+ * 可与车身同父级共存。返回的变换作用于网格世界矩阵：world = T · R(y=rotationY) · S(scale)。
+ *
+ * @param {{min:{x:number,y:number,z:number}, max:{x:number,y:number,z:number}}} box 网格包围盒（米）
+ * @param {number[]} wheelXs 车轮 canonical X（米，可为空；用于判定车头朝向）
+ * @param {object} P deriveCarProfile 输出
+ * @returns {{scale:number, flip:boolean, rotationY:number, position:{x,y,z}}|null}
+ */
+export function deriveNurbsFrame(box, wheelXs, P) {
+  const min = box?.min
+  const max = box?.max
+  if (!min || !max) return null
+
+  const rawLength = max.x - min.x
+  const targetLength = P.frontX - P.rearX
+  // mm→m 已由调用方保证；仅当长度偏差 >5% 才视为单位/比例异常，做等比修正（钳位防畸变）
+  let scale = 1
+  if (rawLength > 1e-6 && Math.abs(rawLength - targetLength) / targetLength > 0.05) {
+    scale = Math.min(Math.max(targetLength / rawLength, 0.8), 1.25)
+  }
+
+  // 车头方向：前悬 < 后悬（默认 950 / 1110），据此识别 canonical X 朝向；轮位缺失时按 X+ 车头
+  const xs = Array.isArray(wheelXs) ? wheelXs.filter(Number.isFinite) : []
+  const flip = xs.length >= 2
+    ? (max.x - Math.max(...xs)) > (Math.min(...xs) - min.x)
+    : false
+
+  // 翻转后车头前缘 = -min.x，未翻转 = max.x；据此让车头前缘落 P.frontX、底缘落 P.bodyBottomY、Z 居中
+  const frontEdge = flip ? -min.x : max.x
+  return {
+    scale,
+    flip,
+    rotationY: flip ? Math.PI : 0,
+    position: {
+      x: P.frontX - frontEdge * scale,
+      y: P.bodyBottomY - min.y * scale,
+      z: (flip ? 1 : -1) * (min.z + max.z) * 0.5 * scale
+    }
   }
 }

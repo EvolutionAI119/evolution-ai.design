@@ -41,6 +41,13 @@ export const BODY_BEVEL_SIZE = 0.012
 export const GLASS_SURFACE_GAP = 0.001
 
 /**
+ * 车身玻璃洞口相对玻璃覆盖区的内缩量（米）：洞口四缘各内缩该尺寸，
+ * 关门时玻璃叠压洞口边缘 → 无漏缝（封闭）；开门后洞口保留完整孔洞。
+ * deriveDloApertures 默认值与本常量同源，Car3D 计算门洞肩线亦用它。
+ */
+export const DLO_APERTURE_INSET = 0.012
+
+/**
  * 侧玻璃倾角（tumblehome，度）：侧窗面顶部向车身中线内收的角度，决定前视车肩造型。
  * 2D 侧视图无法表达该维度，为 3D 专属参数；可用 carParams.side_glass_angle 显式覆盖。
  * 参考真车：911/488 ≈ 25°+（车肩窄），Cayenne ≈ 12°，V级 ≈ 10°，F-150 ≈ 8°（车肩宽）
@@ -182,6 +189,74 @@ export function bandGlassSpine(x1, y1, x2, y2, opts = {}) {
   const el = Math.hypot(ex, ey) || 1
   push(b[0] + (ex / el) * roofOverlap, b[1] + (ey / el) * roofOverlap, 0, 1)
   return pts
+}
+
+/**
+ * 点是否落在闭合多边形内部（even-odd 射线法）。
+ * 顶点可为 THREE.Vector2（{x,y}）或 [x,y] 数组；边界点按「不在内部」处理——
+ * 车身外轮廓上的外皮三角形必须保留车身色，不能算作实体内部。
+ * @param {number} x
+ * @param {number} y
+ * @param {Array<{x:number,y:number}|number[]>} poly 闭合多边形顶点
+ * @returns {boolean}
+ */
+export function pointInPolygon(x, y, poly) {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const p = poly[i]
+    const q = poly[j]
+    const xi = p.x !== undefined ? p.x : p[0]
+    const yi = p.y !== undefined ? p.y : p[1]
+    const xj = q.x !== undefined ? q.x : q[0]
+    const yj = q.y !== undefined ? q.y : q[1]
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+
+/**
+ * 点到多边形边界的最短距离（米）。
+ * @param {number} x
+ * @param {number} y
+ * @param {Array<{x:number,y:number}|number[]>} poly 闭合多边形顶点
+ * @returns {number}
+ */
+function polygonEdgeDistance(x, y, poly) {
+  let best = Infinity
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const p = poly[i]
+    const q = poly[j]
+    const xi = p.x !== undefined ? p.x : p[0]
+    const yi = p.y !== undefined ? p.y : p[1]
+    const xj = q.x !== undefined ? q.x : q[0]
+    const yj = q.y !== undefined ? q.y : q[1]
+    const ex = xj - xi
+    const ey = yj - yi
+    const l2 = ex * ex + ey * ey
+    const t = l2 > 0 ? Math.min(Math.max(((x - xi) * ex + (y - yi) * ey) / l2, 0), 1) : 0
+    const d = Math.hypot(x - (xi + ex * t), y - (yi + ey * t))
+    if (d < best) best = d
+  }
+  return best
+}
+
+/**
+ * 点是否属于车身内部的「洞口壁/洞口倒角环带」——用于洞壁内饰化。
+ *
+ * 车身整宽挤出且开倒角后，外皮侧壁位于轮廓线**外侧** BODY_BEVEL_SIZE 处，
+ * 而洞口隧道壁、洞口倒角环带位于轮廓内部；二者在 X-Y 上都会被洞口口径矩形圈住，
+ * 只看矩形无法区分（旧实现把车顶前缘/风挡边框一并染深，透视下呈黑色边带）。
+ * 本判据：严格在轮廓内部 → true；轮廓线上或轮廓外侧（外皮/倒角外扩带）→ false。
+ * 洞口多边形内的点不算「外侧」——洞口倒角环带恰落在洞口边界内侧，仍需改判内饰。
+ * @param {number} x
+ * @param {number} y
+ * @param {Array} outline 外轮廓多边形
+ * @param {number} [edgeTol] 轮廓线容差（米）
+ * @returns {boolean}
+ */
+export function insideBodyMaterial(x, y, outline, edgeTol = 0.001) {
+  if (polygonEdgeDistance(x, y, outline) <= edgeTol) return false
+  return pointInPolygon(x, y, outline)
 }
 
 /**
@@ -539,6 +614,138 @@ export function deriveDloPaneRanges(doorLayout, seamWidthMM = 8) {
     hingeKey: null
   })
   return panes
+}
+
+/**
+ * 侧窗分片玻璃「洞口」多边形（Car3D 车身挖洞纯函数，可单测）
+ *
+ * 玻璃要成为真透明件，车身侧围必须在玻璃覆盖区开出真实孔洞（挤出 holes 沿 Z
+ * 贯通左右侧壁）；关门时玻璃盖住洞口封闭，开门时门片玻璃随门外摆、原位置
+ * 留下全空通透的孔洞。本函数给每片玻璃生成对应的洞口多边形：
+ *   · 洞口整体内缩 inset（玻璃四缘各叠压 inset → 关门无漏缝 = 封闭）；
+ *   · 贴 DLO 缘的片（fixedFront/fixedRear 的 null 界）洞口边**随 A/C 柱斜边**，
+ *     与玻璃逐行 clamp 的覆盖界同形（buildDloStripRange 前/后缘逐行贴合斜边），
+ *     保证每个高度上洞口都落在玻璃覆盖之内；
+ *   · 斜边片呈上窄下宽：若顶部有效宽不足 minWidth，洞口顶边下裁到
+ *     有效宽 = minWidth 的高度（梯形截顶），仍保持处处密封；
+ *   · 相邻洞口之间保留车身色竖条 = A/B/C 柱剪影与车顶横梁（车身色顶部边界
+ *     与玻璃因此清晰区分，不再是玻璃贴在整片车身色壁上）。
+ * 退化守卫：底部有效宽已 < minWidth（极端参数）时跳过该片（不挖洞，玻璃贴实体，
+ * 不产生拓扑破面）。
+ *
+ * @param {number[][]} dlo 侧窗四角 [底前, 顶前, 顶后, 底后]（deriveCabinGlass.dlo）
+ * @param {Array<{ key:string, xFront:number|null, xRear:number|null }>} paneRanges
+ *        deriveDloPaneRanges 返回值（xFront/xRear 为玻璃竖直裁切界，null=贴 DLO 缘）
+ * @param {number} [inset=DLO_APERTURE_INSET] 洞口相对玻璃覆盖的内缩（米）
+ * @param {number} [minWidth=0.03] 洞口最小有效宽度（米），不足则截顶/跳过
+ * @returns {Array<{ key:string, points:number[][] }>} 洞口多边形 [[x,y]×4]
+ *          点序：底前→顶前→顶后→底后（供 THREE.Path 按序连线）
+ */
+export function deriveDloApertures(dlo, paneRanges, inset = DLO_APERTURE_INSET, minWidth = 0.03) {
+  const [bf, tf, tr, br] = dlo
+  const yBot0 = bf[1]
+  const yTop0 = tf[1]
+  const span = Math.max(yTop0 - yBot0, 1e-6)
+  const t0 = inset / span
+  const t1 = 1 - inset / span
+  if (t1 - t0 < 0.02) return []
+  const yAt = (t) => yBot0 + t * span
+  // DLO 前/后斜边在高度比例 t 处的 X（与 buildDloStripRange 行插值同公式）
+  const fxAt = (t) => bf[0] + (tf[0] - bf[0]) * t
+  const rxAt = (t) => br[0] + (tr[0] - br[0]) * t
+  const out = []
+  for (const pane of paneRanges) {
+    // 前/后覆盖界：显式缝界为竖直线；null 界随 DLO 斜边（玻璃逐行贴合）
+    const F = (t) => (pane.xFront == null ? fxAt(t) : pane.xFront)
+    // C 柱顶后角设计间隙仅 6mm（deriveCabinGlass 圆角修裁）：贴 C 柱斜边的
+    // 洞口后缘内缩取 6mm 上限，防止洞口顶后角戳出侧围轮廓（holes 越界会打破
+    // 挤出三角化）
+    const insetR = pane.xRear == null ? Math.min(inset, 0.006) : inset
+    const R = (t) => (pane.xRear == null ? rxAt(t) : pane.xRear)
+    // 玻璃前缘实为「竖缝 + A 柱斜边」两段：低于斜边交点处贴缝，高于交点贴斜边。
+    // 洞口前界必须同样逐段内缩——显式缝界若直通顶边，A 柱根部（dlo 顶边已高于
+    // 侧围轮廓处）会把洞口戳出车身外轮廓，挤出三角化随即在轮廓外生成洞壁，
+    // 从车外看就是风挡上方一块外凸的深色厚板。
+    const Feff = (t) => (pane.xFront == null ? fxAt(t) : Math.min(pane.xFront, fxAt(t)))
+    const widthAt = (t) => Feff(t) - inset - (R(t) + insetR)
+    if (widthAt(t0) < minWidth) continue          // 底部已退化：整片跳过
+    // 顶部有效宽不足时截顶（width 沿 t 线性 → 单调，直接线性插值求临界高度）
+    let tTop = t1
+    if (widthAt(t1) < minWidth) {
+      const w0 = widthAt(t0)
+      const w1 = widthAt(t1)
+      tTop = t0 + (t1 - t0) * ((w0 - minWidth) / (w0 - w1))
+    }
+    const points = [[Feff(t0) - inset, yAt(t0)]]
+    // 显式竖缝与 A 柱斜边的交点（位于洞口高度范围内时补折点，保持每段都内缩）：
+    // 交点处竖缝 X = 斜边 X，等同 fxAt(t) = pane.xFront
+    if (pane.xFront != null) {
+      const dx = tf[0] - bf[0]
+      if (Math.abs(dx) > 1e-9) {
+        const tKink = (pane.xFront - bf[0]) / dx
+        if (tKink > t0 + 1e-9 && tKink < tTop - 1e-9) {
+          points.push([pane.xFront - inset, yAt(tKink)])
+        }
+      }
+    }
+    points.push(
+      [Feff(tTop) - inset, yAt(tTop)],
+      [R(tTop) + insetR, yAt(tTop)],
+      [R(t0) + insetR, yAt(t0)]
+    )
+    out.push({ key: pane.key, points })
+  }
+  return out
+}
+
+/**
+ * 车门合并洞口多边形（Car3D 车身挖洞纯函数，可单测）
+ *
+ * 门洞（腰带线以下）与门片玻璃洞口（腰带线以上）各挖一个孔时，两者之间必然残留
+ * 一条 20~30mm 的车身色横带——开门后即门洞里横贯两侧的「腰带横条」，既遮挡
+ * 通透性，又让车身色越过了「只允许出现在车顶/柱」的视觉边界。本函数把二者合并成
+ * 一个简单多边形：肩线 shoulderY 处水平连通，两块门片玻璃洞口在肩上形成两个塔楼，
+ * 塔楼之间（B 柱位置）保持肩线高度，门洞其余部分仍是矩形。
+ * 退出条件：塔楼底边必须恰在肩线、X 范围严格落在门洞内且彼此不重叠，任一不满足
+ * 即返回 null（调用方退回纯门洞矩形，绝不产生自交 holes）。
+ *
+ * @param {object} o
+ * @param {number} o.frontEdge 门洞前缘 X（米，X+ 朝车头，数值较大）
+ * @param {number} o.rearEdge 门洞后缘 X（米，数值较小）
+ * @param {number} o.bottomY 门洞底缘 Y（米）
+ * @param {number} o.shoulderY 肩线 Y（米）= 玻璃洞口底边 Y（= DLO 底边 + 内缩量）
+ * @param {Array<number[][]>} [o.panes] 门片玻璃洞口四点多边形（deriveDloApertures.points）
+ * @returns {number[][]|null} 多边形顶点（底后→底前→肩线→塔楼…），首点不重复
+ */
+export function buildDoorAperturePolygon({ frontEdge, rearEdge, bottomY, shoulderY, panes = [] }) {
+  if (!(frontEdge > rearEdge) || !(shoulderY > bottomY)) return null
+  const EPS = 1e-6
+  const towers = []
+  for (const pts of panes) {
+    if (!pts || pts.length < 4) continue
+    const xs = pts.map((p) => p[0])
+    const ys = pts.map((p) => p[1])
+    const xMin = Math.min(...xs)
+    const xMax = Math.max(...xs)
+    const yBot = Math.min(...ys)
+    const yTop = Math.max(...ys)
+    if (Math.abs(yBot - shoulderY) > EPS) return null      // 塔楼底与肩线不齐：无法合并
+    if (xMin < rearEdge + EPS || xMax > frontEdge - EPS) return null
+    if (yTop <= shoulderY + EPS) return null               // 塔楼过矮：退化
+    towers.push({ xMin, xMax, yTop, points: pts })
+  }
+  towers.sort((a, b) => b.xMax - a.xMax)                   // 前缘→后缘，与走向一致
+  for (let i = 1; i < towers.length; i++) {
+    if (towers[i].xMax > towers[i - 1].xMin + EPS) return null   // 塔楼 X 重叠
+  }
+  const pts = [[rearEdge, bottomY], [frontEdge, bottomY], [frontEdge, shoulderY]]
+  // 塔楼按自身多边形轮廓接入（底前→前缘折点→顶前→顶后→底后），
+  // 保留 A 柱斜边折点——若按 X 包围盒还原成矩形，塔楼顶前角会再次戳出侧围轮廓
+  for (const t of towers) {
+    for (const p of t.points) pts.push([p[0], p[1]])
+  }
+  pts.push([rearEdge, shoulderY])
+  return pts
 }
 
 /**
