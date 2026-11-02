@@ -22,17 +22,19 @@
 |---|---|
 | 主线代码停在 2026-10-28 | `git log` HEAD = `0ad4ede2`；此后无新提交 |
 | 工作区有 32 项未提交变更（9 改 + 23 新增） | `git status --porcelain`：9 `M` + 23 `??`；diffstat 7 文件 +1425/−180 行 |
-| 内饰布置已形成完整闭环 | [2D_LAYOUT_VERIFICATION.md](../../2D_LAYOUT_VERIFICATION.md) v1.3（63 项检查全通过）；`CarSection2D.vue`、`carInteriorLayout.js`、`carInteriorKinematics.js` 均为未跟踪新文件 |
-| 前端测试基线已从 416 涨到 **771** | 本次实跑 `npx vitest run`：19 文件 / 771 通过 |
+| 内饰布置已形成完整闭环 | [2D_LAYOUT_VERIFICATION.md](../../2D_LAYOUT_VERIFICATION.md) v1.3（63 项检查全通过）；`CarSection2D.vue`、`carInteriorLayout.js`、`carInteriorKinematics.js` 已于 2026-11-02 入库 |
+| 前端测试基线已从 416 涨到 **783** | 本次实跑 `npx vitest run`：19 文件 / 783 通过 |
 | 后端与算法基线维持 | `pytest --collect-only`：后端 **411**、算法 **200**；本次未全量执行 |
 | 结构事实（脚本实跑） | 19 路由模块 / **154** 端点（152+2）/ 17 ORM 表 / 12 前端路由 / 22 维 CarParams |
 | 本地服务当前未运行 | 审计时 `netstat` 无 5173 / 8000 / 4040 监听 |
 | 公网最近发布 | `gh-pages` HEAD `99c91c70`（2026-10-28，修复黑屏 404）；本次未重新核验公网 |
 
+> 上表为复盘时点快照。M1 收敛后，32 项工作区变更已分 8 批入库，HEAD 与验证结果见 [VALIDATION_20261102.md](VALIDATION_20261102.md)；本节数字为当时证据，未再回写。
+
 ### 1.2 最大瓶颈（按影响排序）
 
-1. **价值最高的改动停留在未提交工作区**：内饰/玻璃/2D 三视图批次共 1425 行新增，一旦误清理或并行会话冲突，损失不可逆。这是当前第一风险，优先级高于任何新功能。
-2. **文档事实漂移已成系统性**：同一仓库内至少存在 5 套互相冲突的数字口径（详见 §2.4），接手者无法判断哪份可信。
+1. **价值最高的改动曾长期停留在未提交工作区**：内饰/玻璃/2D 三视图批次共 1425 行新增，已于 2026-11-02 分 8 批提交；后续应避免再次形成长批次滞留。
+2. **文档事实漂移已成系统性**：同一仓库内曾存在 5 套互相冲突的数字口径（详见 §3.4，已于 2026-11-02 收敛），接手者无法判断哪份可信。
 3. **跨仓库单一真源未闭合**：`carProfile.js` 的轮拱包络、玻璃分缝已同步到 SISA 一部分，但 `car_body.build_closed_shell`、`feature_lines.build_wheel_arch`、`dimension_plan` 拱半径仍在待同步清单（见 [project_memory](../../../.trae/documents/轮拱挖通_车门动画_角度把手参数化_20261022.md) 同批记录与 `wheel-arch-envelope-sync` 技能）。跨仓库口径漂移会抵消单仓库的全部同源努力。
 4. **几何质量仍依赖人工视觉判定**：3D 折痕/遮挡/浮出类问题必须多机位截图 + 生产构建复验，单次验证成本高；这类问题占近期提交的大头（10-21 至 10-25 共 10+ 修复提交）。
 5. **运行数据与代码不同源**：`data/` 2.7GB、训练权重 2.0GB 全在 `.gitignore` 外，换机复现需要重新生成或另行拷贝。
@@ -51,7 +53,7 @@ pip install -r requirements.txt
 python start.py        # http://localhost:8000/docs
 
 # 3) 验证（三个硬门禁）
-npx vitest run                    # 当前 771 / 19 文件
+npx vitest run                    # 当前 783 / 19 文件
 cd backend; python -m pytest tests -q      # 411 收集
 cd ../algorithm_model; python -m pytest tests -q   # 200 收集
 ```
@@ -185,7 +187,7 @@ cd ../algorithm_model; python -m pytest tests -q   # 200 收集
 | 10-31 | v1.3：滑轨有效行程限位 + 调角器/遮阳板/扶手盖运动学 | `src/utils/carInteriorKinematics.js`、`carSection2D.vue` | **未跟踪** |
 | 11-01 | 内饰模型展示与 IP 行李舱设计 | [docs/IP_CONSOLE_LUGGAGE_DESIGN.html](../../IP_CONSOLE_LUGGAGE_DESIGN.html) | **未跟踪** |
 | 11-02 | 2D 布置多级验证文档 v1.3 | [docs/2D_LAYOUT_VERIFICATION.md](../../2D_LAYOUT_VERIFICATION.md) | **未跟踪** |
-| 11-02 | 前端全量 771 测试通过（本次实跑） | 19 文件 / 771 | 已验证 |
+| 11-02 | 前端全量 783 测试通过（本次实跑） | 19 文件 / 783 | 已验证 |
 
 ### 2.3 关键决策台账（补充本报告新增项）
 
@@ -214,7 +216,7 @@ cd ../algorithm_model; python -m pytest tests -q   # 200 收集
 | 内饰布置 | 座椅/IP/中控/门板/地毯/顶棚/安全带 + 运动件扫掠 | [carInteriorLayout.js](../../../src/utils/carInteriorLayout.js)、[carInteriorKinematics.js](../../../src/utils/carInteriorKinematics.js) |
 | NURBS + STEP 工程输出 | 双管线（mesh / NURBS），8 类几何格式 | [algorithm_model/api.py](../../../algorithm_model/api.py)、[backend/app/routes/export.py](../../../backend/app/routes/export.py) |
 | 曲面质量 | G0 0.1mm / G1 1.0°（视觉 5°）/ G2 判据 | [algorithm_model/surface_quality](../../../algorithm_model/surface_quality) |
-| 贝叶斯优化 | RBF-GP + EI/UCB，15 维默认空间（脚本实测，文档仍写 14） | [backend/app/bayes_optimizer.py](../../../backend/app/bayes_optimizer.py) |
+| 贝叶斯优化 | RBF-GP + EI/UCB，14 维默认空间（代码复核） | [backend/app/bayes_optimizer.py](../../../backend/app/bayes_optimizer.py) |
 | 深度学习 / LLM | 训练任务后台化 + 7 提供商代理 + Ollama 本地专家 | [backend/app/routes/training.py](../../../backend/app/routes/training.py)、[backend/app/routes/llm_proxy.py](../../../backend/app/routes/llm_proxy.py) |
 | 品牌 DNA | 5 品牌 19 车型知识库 + On-Brand 判定 | [backend/config/brand_design_knowledge.json](../../../backend/config/brand_design_knowledge.json)、[backend/app/brand_dna](../../../backend/app/brand_dna) |
 | 反重力飞行 | VTOL + 飞控 + 性能报告（受界估算声明） | [src/utils/flightPhysics.js](../../../src/utils/flightPhysics.js) |
@@ -228,7 +230,7 @@ cd ../algorithm_model; python -m pytest tests -q   # 200 收集
 | 前端生产预览 | `npm run build && npm run preview` | 4173（默认） | **几何复验一律用生产预览**，避开 HMR 缓存 |
 | 后端 API | `cd backend && python start.py` | 8000 | `http://localhost:8000/docs` |
 | 三服务常驻 | `.trae/skills/launch-services-detached/scripts/start_services.ps1` | 5173/8000/4040 | `.devservices/runtime.json` |
-| 前端测试 | `npx vitest run` | — | 本次 19 文件 / 771 通过 |
+| 前端测试 | `npx vitest run` | — | 本次 19 文件 / 783 通过 |
 | 后端测试 | `cd backend && python -m pytest tests -q` | — | 411 收集 |
 | 算法测试 | `cd algorithm_model && python -m pytest tests -q` | — | 200 收集 |
 | 结构事实 | `python scripts/verify_facts.py` | — | 154 端点 / 17 表 / 12 路由 |
@@ -248,7 +250,7 @@ cd ../algorithm_model; python -m pytest tests -q   # 200 收集
 - 公网站点内容与 `gh-pages 99c91c70` 一致，但 CDN/缓存状态未重新验证。
 - SISA 侧三项同口径同步是否完成，本仓库无法判定；仅能从 `project_memory` 的「遗留同步清单」推断仍未闭环。
 - 玻璃分色 alphaMap + marching squares 方案是否已在代码落地，本次未逐行核验；文档称规范已确立。
-- 内饰验收 HTML 的存在说明曾通过验收，但其中「710/710」已被当前 771 覆盖，属历史口径。
+- 内饰验收 HTML 的存在说明曾通过验收，但其中「710/710」已被当前 783 覆盖，属历史口径。
 
 **待裁决 / 遗留**
 
@@ -263,17 +265,17 @@ cd ../algorithm_model; python -m pytest tests -q   # 200 收集
 
 ### 3.4 事实基线冲突表（本报告最重要的治理发现）
 
-| 事实 | 本次实测 | 冲突来源 | 处置 |
+| 事实 | 本次实测 | 冲突来源 | 处置（2026-11-02 已执行） |
 |---|---|---|---|
-| 前端测试 | **771 / 19 文件** | README 写 416；2D_LAYOUT 写 710/18；agent 写 123 | 以本次实跑为准，更新 README/验证报告 |
-| 后端测试 | **411 收集**（408+1skip+2xfail 为上次执行口径） | agent 写 204；ARCHITECTURE 写 388 | 以 411 为准 |
-| 算法测试 | **200 收集** | ARCHITECTURE 写 205；README 写 200 | 复跑后二选一 |
-| HTTP 端点 | **154**（152+2） | ARCHITECTURE 写 153；agent 写 118 | 以 154 为准 |
-| 路由模块 | **19** | agent 写 17；其余文档 19 | 以 19 为准 |
-| ORM 表 | **17** | agent 写 13；ARCHITECTURE 写 17 | 以 17 为准 |
-| 贝叶斯默认空间 | **15 维** | 文档写 14 | 二选一后同步 `bayes_optimization.md` |
-| 导出格式 | 脚本口径 **20**；README 写 8 几何 + JSON | 口径差异（别名/组合） | 文档注明「8 类几何 + JSON」 |
-| 前端路由 | **12** | README 写 10 个 views | 以 12 路由 / 15 视图文件为准 |
+| 前端测试 | **783 / 19 文件** | README 写 416；2D_LAYOUT 写 710/18；agent 写 123 | 已更新 README、2D_LAYOUT、agent |
+| 后端测试 | **411 收集**（408+1skip+2xfail 为上次执行口径） | agent 写 204；ARCHITECTURE 写 388 | 已更新 agent 与 ARCHITECTURE |
+| 算法测试 | **200 收集** | ARCHITECTURE 写 205；README 写 200 | 已更新 ARCHITECTURE |
+| HTTP 端点 | **154**（152+2） | ARCHITECTURE 写 153；agent 写 118 | 已更新 ARCHITECTURE 与 agent |
+| 路由模块 | **19** | agent 写 17；其余文档 19 | 已更新 agent |
+| ORM 表 | **17** | agent 写 13；ARCHITECTURE 写 17 | 已更新 agent |
+| 贝叶斯默认空间 | **14 维** | 脚本曾误报 15；文档写 14 | 已修正 `verify_facts.py` 的计数逻辑，文档 14 维持 |
+| 导出格式 | 脚本口径 **20**；README 写 8 几何 + JSON | 口径差异（别名/组合） | 保留两种表述：20 个格式标识 = 8 类几何 + JSON（含别名/组合） |
+| 前端路由 | **12** | README 写 10 个 views | 已更新 README 与 agent 为 12 路由 / 15 视图文件 |
 
 > 治理建议：把 `scripts/verify_facts.py` + 三层 pytest 输出作为唯一事实源，任何文档数字必须引用「命令 + 日期 + SHA」。
 
@@ -407,7 +409,7 @@ vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 �
 | 原则 | 落地机制 | 证据 |
 |---|---|---|
 | **世界模型** | 把「车」建成可计算的参数世界：22 维 CarParams + 六车型比例表 + 轮拱包络 + 内饰锚点；所有视图都是同一模型的投影 | `carProfile` / `carInteriorLayout` 单一真源；2D 只做投影换算 |
-| **预测—验证—修正** | 先写纯函数与断言（预测），再跑测试/多机位（观测），偏差回写记忆（修正） | 771 前端断言；FIX-01~FIX-12 记录 |
+| **预测—验证—修正** | 先写纯函数与断言（预测），再跑测试/多机位（观测），偏差回写记忆（修正） | 783 前端断言；FIX-01~FIX-12 记录 |
 | **自迭代** | 每次踩坑沉淀为 `project_memory` 硬约束/教训；事故升级为 skill | 206 行项目记忆；7 个仓库技能 |
 | **持续优化** | 性能（Cython 70×/34×）、体积（chunk 拆分）、载荷（200KB JSON 守卫）、启动（fail-fast） | 记忆条目 + 架构文档 |
 | **证据型交付** | 任何数字必须有命令、日期、SHA；发布必须公网 MD5 比对 | `VALIDATION_REPORT_20261025`；D8 |
@@ -465,11 +467,11 @@ vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 �
 
 | 资产 | 路径 | 用途 | 状态 |
 |---|---|---|---|
-| 平台全栈专家 agent | [.trae/agents/evolution-ai-design.md](../../../.trae/agents/evolution-ai-design.md) | 本仓库开发/修复/架构/部署的专属角色定义（9243 字节） | 已有；**内容部分过期**：写 118 端点 / 17 路由 / 13 表 / 前端基线 123，与现行 154 / 19 / 17 / 771 冲突 |
+| 平台全栈专家 agent | [.trae/agents/evolution-ai-design.md](../../../.trae/agents/evolution-ai-design.md) | 本仓库开发/修复/架构/部署的专属角色定义（9243 字节） | 已有；2026-11-02 已校准为 154 端点 / 19 路由 / 17 表 / 前端基线 783 |
 | 宿主内置 Explore / general-purpose / Plan / browser_use 等 | 由运行环境提供，不在仓库 | 探索、通用执行、规划、浏览器验证 | 可用，无需仓库文件 |
 | 子代理编排关系 | 无仓库内编排文件 | 目前是「单 agent + 宿主子代理」扁平结构 | 雏形；无多 agent 协作协议 |
 
-> 结论：智能体资产只有 1 个正式定义，且数字已漂移。**优先级：中**（不影响运行，影响接手者判断）。
+> 结论：智能体资产只有 1 个正式定义；统计数字已于 2026-11-02 校准。**优先级：中**（不影响运行，影响接手者判断）。
 
 ### 6.2 Skills（7 个仓库技能）
 
@@ -479,8 +481,8 @@ vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 �
 | `launch-services-detached` | 启动/重启三服务、服务掉线、cpolar 换域名 | 独立顶层进程拉起 5173/8000/4040 | [SKILL.md](../../../.trae/skills/launch-services-detached/SKILL.md) + 3 脚本 | 成熟 |
 | `doc-code-audit` | 核对文档、一致性、stale 数字、死链 | 文档↔源码一键核对 | [SKILL.md](../../../.trae/skills/doc-code-audit/SKILL.md) + `check_consistency.py` | 成熟，但本次未运行 |
 | `project-intro-deck` | 生成/更新项目介绍 PPT | 中英双版 12 页，碰撞检测 | [SKILL.md](../../../.trae/skills/project-intro-deck/SKILL.md) | 成熟 |
-| `threejs-automotive-preview-debugging` | 3D 高光/反射/破面/零件不可见/比例失调 | Car3D 渲染根因库 | [SKILL.md](../../../.trae/skills/threejs-automotive-preview-debugging/SKILL.md) | 新增（未跟踪） |
-| `wheel-arch-envelope-sync` | 拱轮错位/车轮穿壳/拱顶不足/EVO→SISA | 跨平台轮拱包络同步 | [SKILL.md](../../../.trae/skills/wheel-arch-envelope-sync/SKILL.md) | 新增（未跟踪） |
+| `threejs-automotive-preview-debugging` | 3D 高光/反射/破面/零件不可见/比例失调 | Car3D 渲染根因库 | [SKILL.md](../../../.trae/skills/threejs-automotive-preview-debugging/SKILL.md) | 新增（已入库 `5074259a`） |
+| `wheel-arch-envelope-sync` | 拱轮错位/车轮穿壳/拱顶不足/EVO→SISA | 跨平台轮拱包络同步 | [SKILL.md](../../../.trae/skills/wheel-arch-envelope-sync/SKILL.md) | 新增（已入库 `5074259a`） |
 | `troubleshoot-i18n-deploy` | 中文界面英文内容、文档数字过期、公网白屏 | 三层事实源分层定位 | [SKILL.md](../../../.trae/skills/troubleshoot-i18n-deploy/SKILL.md) | 新增（已提交 `0ad4ede2`） |
 
 另有宿主级技能（`TRAE-browseruse`、`TRAE-debugger`、`algorithm-debugging`、`skill-creator` 等）由运行环境提供，不在仓库内。
@@ -534,7 +536,7 @@ vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 �
 | 5 | 复制 `backend/.env.example` → `backend/.env` | 只需 4 个变量（见 §7.2） | 不可（后端） |
 | 6 | `python start.py` | 8000；`/docs` 可交互 | 只看前端可跳过 |
 | 7 | `cd algorithm_model && python -m pytest tests -q` | 200 用例，约数秒 | 不碰算法可跳过 |
-| 8 | `npx vitest run` | 771 用例，约 6 秒 | 不可（改前端必跑） |
+| 8 | `npx vitest run` | 783 用例，约 6 秒 | 不可（改前端必跑） |
 
 **推荐常驻方式**（避免命令宿主连带杀死服务）：
 
@@ -563,7 +565,7 @@ SECRET_KEY=evolution-ai-dev-secret-change-me-in-production-2026
 | 级别 | 命令 | 通过判据 | 成本 |
 |---|---|---|---|
 | L1 结构 | `python scripts/verify_facts.py` | 19 / 154 / 17 / 12 | <1s |
-| L2 单测 | `npx vitest run` | 19 文件 / 771 通过 | ~6s |
+| L2 单测 | `npx vitest run` | 19 文件 / 783 通过 | ~6s |
 | L2 后端 | `cd backend && python -m pytest tests -q` | 411 收集，全过（约 100s） | ~2min |
 | L2 算法 | `cd algorithm_model && python -m pytest tests -q` | 200 通过（约 5s） | ~5s |
 | L3 构建 | `npm run build` | dist 生成、无致命错误 | ~30s |
@@ -649,7 +651,7 @@ New-Item -ItemType Directory .trae\skills\<name>
 #### T6 发布公网（4 步）
 
 ```text
-1) npx vitest run（771 全绿）
+1) npx vitest run（783 全绿）
 2) npm run build
 3) 按 deploy-gh-pages 技能：dist 全量 → gh-pages worktree → push
 4) 公网 MD5 与本地逐字节比对；重试到 index.html 引用的 chunk 全可取
@@ -667,7 +669,7 @@ New-Item -ItemType Directory .trae\skills\<name>
 
 | # | 任务 | 优先级 | 依赖 | 工作量 | 验收标准 | 风险与应对 |
 |---|---|---|---|---|---|---|
-| M1-1 | 内饰/玻璃/2D 批次开分支提交 + 补 CHANGELOG | P0 | — | 1 | 32 项变更入库；771 全绿；diff 可追溯 | 误提交调试文件 → 按 `.gitignore` 白名单逐文件 add |
+| M1-1 | 内饰/玻璃/2D 批次开分支提交 + 补 CHANGELOG | P0 | — | 1 | 32 项变更入库；783 全绿；diff 可追溯 | 误提交调试文件 → 按 `.gitignore` 白名单逐文件 add |
 | M1-2 | 统一事实基线（README/ARCHITECTURE/agent/验证报告） | P0 | M1-1 | 1.5 | §3.4 九项冲突全部消除；数字均带命令+日期+SHA | 文档改动面大 → 以 verify_facts 输出为唯一来源批量替换 |
 | M1-3 | 公网复验 + 发布（若 M1-1 影响前端） | P0 | M1-1 | 0.5 | MD5 一致；六车型实机 PASS | CDN 缓存 → 重试 + cache-busting |
 | M1-4 | 开门遮挡 R1 裁决与实现 | P1 | — | 1–3 | 用户确认关闭；门洞/门板/内饰三选一落地 | 方案分歧 → 先出 3 个对比截图让用户裁决 |
@@ -724,7 +726,7 @@ M1-6 / M2-4 / M3-4 / M3-5（独立）
 | 提交史 | `git log --date=short --pretty=...` | 116 提交；HEAD/gh-pages 已记录 |
 | 工作区 | `git status --porcelain` | 32 项（9 M / 23 ??） |
 | 结构事实 | `python scripts/verify_facts.py` | 19 / 152+2 / 17 / 12 / 22 / 15 |
-| 前端测试 | `npx vitest run --reporter=dot` | 19 文件 / 771 通过 |
+| 前端测试 | `npx vitest run --reporter=dot` | 19 文件 / 783 通过 |
 | 后端/算法用例 | `pytest --collect-only -q` | 411 / 200 |
 | 数据规模 | 目录递归统计 | `data/` ≈ 2.7GB；training 2.3GB |
 | 服务状态 | `netstat` 过滤 5173/8000/4040 | 无监听 |
@@ -775,7 +777,7 @@ cd ../algorithm_model; python -m pytest tests --collect-only -q
 
 ## 11. 一页纸行动清单
 
-1. **今天**：把 32 项工作区变更提交到 `feat/interior-packaging`，跑 771 全绿；避免丢失。
+1. **今天**：把 32 项工作区变更提交到 `feat/interior-packaging`，跑 783 全绿；避免丢失。
 2. **本周**：用 `verify_facts.py` 输出统一 README / ARCHITECTURE / agent / 验证报告五处数字。
 3. **本周**：公网复验 `gh-pages 99c91c70`，确认内饰批次发布前后一致性。
 4. **本月**：用户裁决开门遮挡方案；登记 SISA 三项同步工单。

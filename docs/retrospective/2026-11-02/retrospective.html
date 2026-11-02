@@ -119,17 +119,17 @@
     <h1>从 116 次提交到<span>可复现交付</span></h1>
     <div class="sub">
       本报告回答三个问题：平台现在处于什么阶段？最大的瓶颈是什么？如何用最短路径复现并继续开发？
-      证据来自 git 全量日志、目录抽样、文档精读与本次实跑（前端 771 用例全绿）。
+      证据来自 git 全量日志、目录抽样、文档精读与本次实跑（前端 783 用例全绿）。
     </div>
     <div class="meta">
       <span class="pill">main HEAD <code>0ad4ede2</code> · 2026-10-28</span>
       <span class="pill">gh-pages <code>99c91c70</code> · 2026-10-28</span>
-      <span class="pill">工作区 32 项未提交</span>
+      <span class="pill">M1 已入库 32 项</span>
       <span class="pill">未改动业务代码</span>
     </div>
     <div class="kpis">
       <div class="kpi"><div class="n">116</div><div class="l">git 提交</div><div class="s">08:2 / 09:23 / 10:91</div></div>
-      <div class="kpi g"><div class="n">771</div><div class="l">前端测试通过</div><div class="s">19 文件 · 本次实跑</div></div>
+      <div class="kpi g"><div class="n">783</div><div class="l">前端测试通过</div><div class="s">19 文件 · 本次实跑</div></div>
       <div class="kpi"><div class="n">154</div><div class="l">HTTP 端点</div><div class="s">19 路由模块 · 152+2</div></div>
       <div class="kpi a"><div class="n">17</div><div class="l">ORM 数据表</div><div class="s">verify_facts 实跑</div></div>
       <div class="kpi"><div class="n">2.7<span style="font-size:16px">GB</span></div><div class="l">运行数据资产</div><div class="s">data/ · 多为 gitignored</div></div>
@@ -161,12 +161,12 @@
     <div class="card">
       <b>当前阶段</b>
       <strong>v1.2 功能完备 + v1.3 内饰闭环，交付前夜</strong>
-      <p>六车型 2D/3D、NURBS/STEP、贝叶斯、LLM、飞行、品牌 DNA 均已具备；内饰布置 63 项验收通过，前端测试从 416 涨到 771。</p>
+      <p>六车型 2D/3D、NURBS/STEP、贝叶斯、LLM、飞行、品牌 DNA 均已具备；内饰布置 63 项验收通过，前端测试从 416 涨到 783。</p>
     </div>
     <div class="card">
       <b>最大瓶颈</b>
-      <strong>32 项未提交变更 + 文档五套数字口径</strong>
-      <p>内饰/玻璃/2D 批次 1425 行新增未入库；README、架构文档、agent、验证报告互不一致，接手者无法判断可信口径。</p>
+      <strong>32 项变更已分 8 批入库；文档数字口径已收敛</strong>
+      <p>内饰/玻璃/2D 批次 1425 行新增已于 2026-11-02 分 8 批入库；README、架构文档、agent 与验证记录的数字口径已统一。</p>
     </div>
     <div class="card">
       <b>复现最短路径</b>
@@ -177,7 +177,7 @@
 
   <div class="callout red">
     <strong>最高风险：</strong>工作区 9 项修改 + 23 项新增（内饰模块、横断面、运动学、验收文档）未进入任何分支。
-    一旦误清理或并行会话冲突，损失不可逆。建议立即开 <code>feat/interior-packaging</code> 分支提交并复跑 771。
+    一旦误清理或并行会话冲突，损失不可逆。2026-11-02 已按逻辑分 8 批提交并复跑 783 全绿。
   </div>
 </section>
 
@@ -253,8 +253,8 @@
     <div class="tl-item warn">
       <div class="tl-date">10-29 → 11-02</div><div class="tl-axis"><span class="tl-dot"></span></div>
       <div class="tl-body">
-        <h4>阶段 8 · 内饰布置与交付收口（工作区，未提交）</h4>
-        <p>H 点/座椅/IP/中控/门板/地毯/顶棚/安全带、A-A 横断面、滑轨有效行程、调角器/遮阳板/扶手盖运动学；63 项检查通过，本次前端 771 全绿。</p>
+        <h4>阶段 8 · 内饰布置与交付收口（已入库 2026-11-02）</h4>
+        <p>H 点/座椅/IP/中控/门板/地毯/顶棚/安全带、A-A 横断面、滑轨有效行程、调角器/遮阳板/扶手盖运动学；63 项检查通过，本次前端 783 全绿。</p>
         <div class="paths">carInteriorLayout.js · carInteriorKinematics.js · CarSection2D.vue · docs/2D_LAYOUT_VERIFICATION.md</div>
       </div>
     </div>
@@ -270,10 +270,10 @@
       <thead><tr><th>能力域</th><th>现状</th><th>入口 / 证据</th><th>状态</th></tr></thead>
       <tbody>
         <tr><td>参数化 2D/3D</td><td>六车型侧视 + A-A 横断面 + Three.js 实时</td><td><code>src/views/Designer.vue</code> · Car2D/CarSection2D/Car3D</td><td><span class="tag ok">可运行</span></td></tr>
-        <tr><td>内饰布置</td><td>座椅/IP/中控/门板/地毯/顶棚/安全带 + 运动件扫掠</td><td><code>src/utils/carInteriorLayout.js</code> · <code>carInteriorKinematics.js</code></td><td><span class="tag warn">工作区未提交</span></td></tr>
+        <tr><td>内饰布置</td><td>座椅/IP/中控/门板/地毯/顶棚/安全带 + 运动件扫掠</td><td><code>src/utils/carInteriorLayout.js</code> · <code>carInteriorKinematics.js</code></td><td><span class="tag ok">已入库</span></td></tr>
         <tr><td>NURBS + STEP</td><td>mesh / NURBS 双管线，8 类几何格式 + JSON</td><td><code>algorithm_model/api.py</code> · <code>routes/export.py</code></td><td><span class="tag ok">可运行</span></td></tr>
         <tr><td>曲面质量</td><td>G0 0.1mm / G1 1.0°（视觉 5°）/ G2 判据</td><td><code>algorithm_model/surface_quality/</code></td><td><span class="tag ok">可运行</span></td></tr>
-        <tr><td>贝叶斯优化</td><td>RBF-GP + EI/UCB；脚本实测默认空间 15 维</td><td><code>backend/app/bayes_optimizer.py</code></td><td><span class="tag ok">可运行</span><span class="tag warn">无自动收敛</span></td></tr>
+        <tr><td>贝叶斯优化</td><td>RBF-GP + EI/UCB；默认空间 14 维（代码复核）</td><td><code>backend/app/bayes_optimizer.py</code></td><td><span class="tag ok">可运行</span><span class="tag warn">无自动收敛</span></td></tr>
         <tr><td>训练 / LLM</td><td>后台训练任务 + 7 提供商代理 + Ollama 本地专家</td><td><code>routes/training.py</code> · <code>routes/llm_proxy.py</code></td><td><span class="tag ok">可运行</span></td></tr>
         <tr><td>品牌 DNA</td><td>5 品牌 19 车型知识库 + On-Brand 判定</td><td><code>backend/app/brand_dna/</code> · <code>backend/config/</code></td><td><span class="tag ok">已具备</span></td></tr>
         <tr><td>飞行</td><td>VTOL + 飞控 + 性能报告（受界估算声明）</td><td><code>src/utils/flightPhysics.js</code> · <code>docs/flight_performance_report.md</code></td><td><span class="tag ok">已具备</span></td></tr>
@@ -287,13 +287,13 @@
     <table class="tbl">
       <thead><tr><th>事实</th><th>本次实测</th><th>冲突来源</th><th>处置</th></tr></thead>
       <tbody>
-        <tr><td>前端测试</td><td class="num">771 / 19 文件</td><td>README 416；2D_LAYOUT 710/18；agent 123</td><td>以实跑为准</td></tr>
+        <tr><td>前端测试</td><td class="num">783 / 19 文件</td><td>README 416；2D_LAYOUT 710/18；agent 123</td><td>以实跑为准</td></tr>
         <tr><td>后端测试</td><td class="num">411 收集</td><td>agent 204；ARCHITECTURE 388</td><td>以 411 为准</td></tr>
         <tr><td>算法测试</td><td class="num">200 收集</td><td>ARCHITECTURE 205；README 200</td><td>复跑后统一</td></tr>
         <tr><td>HTTP 端点</td><td class="num">154（152+2）</td><td>ARCHITECTURE 153；agent 118</td><td>以 154 为准</td></tr>
         <tr><td>路由模块</td><td class="num">19</td><td>agent 17</td><td>以 19 为准</td></tr>
         <tr><td>ORM 表</td><td class="num">17</td><td>agent 13</td><td>以 17 为准</td></tr>
-        <tr><td>贝叶斯空间</td><td class="num">15 维</td><td>文档 14</td><td>二选一后同步</td></tr>
+        <tr><td>贝叶斯空间</td><td class="num">14 维</td><td>脚本曾误报 15</td><td>已修正 verify_facts</td></tr>
         <tr><td>前端路由</td><td class="num">12</td><td>README 写 10 个 views</td><td>以 12 路由 / 15 视图为准</td></tr>
       </tbody>
     </table>
@@ -443,7 +443,7 @@ vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 �
     </div>
     <div class="card">
       <h4>架构风险</h4>
-      <p>① 未提交真源批次（高）② Car3D.vue 单体 1875 行（高）③ 跨仓库口径漂移（高）④ 文档多口径（中高）⑤ 运行数据不可重建（中）⑥ 2C4G 生产内存（中）⑦ 视觉验证人工成本（中）。</p>
+      <p>① 长批次返工（已收敛）② Car3D.vue 单体 1875 行（高）③ 跨仓库口径漂移（高）④ 文档多口径（已收敛）⑤ 运行数据不可重建（中）⑥ 2C4G 生产内存（中）⑦ 视觉验证人工成本（中）。</p>
     </div>
   </div>
 </section>
@@ -457,7 +457,7 @@ vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 �
       <thead><tr><th>原则</th><th>落地机制</th><th>证据</th></tr></thead>
       <tbody>
         <tr><td>世界模型</td><td>22 维 CarParams + 六车型比例表 + 轮拱包络 + 内饰锚点；所有视图都是同一模型的投影</td><td>carProfile / carInteriorLayout 单一真源</td></tr>
-        <tr><td>预测—验证—修正</td><td>先写纯函数与断言（预测），再跑测试/多机位（观测），偏差回写记忆（修正）</td><td>771 前端断言；FIX-01~FIX-12</td></tr>
+        <tr><td>预测—验证—修正</td><td>先写纯函数与断言（预测），再跑测试/多机位（观测），偏差回写记忆（修正）</td><td>783 前端断言；FIX-01~FIX-12</td></tr>
         <tr><td>自迭代</td><td>踩坑沉淀为 project_memory 硬约束；事故升级为 skill</td><td>206 行项目记忆；7 个仓库技能</td></tr>
         <tr><td>持续优化</td><td>Cython 70×/34×；chunk 拆分；JSON 200KB 守卫；生产 fail-fast</td><td>记忆条目 + 架构文档</td></tr>
         <tr><td>证据型交付</td><td>数字必须带命令+日期+SHA；发布必须公网 MD5 比对</td><td>VALIDATION_REPORT + deploy-gh-pages</td></tr>
@@ -513,8 +513,8 @@ vitest → build → dist 全量 → gh-pages worktree → push → 公网 MD5 �
         <tr><td>launch-services-detached</td><td>启动重启三服务 / 掉线 / cpolar 换域名</td><td>独立顶层进程拉起 5173/8000/4040</td><td><span class="tag ok">成熟</span></td></tr>
         <tr><td>doc-code-audit</td><td>核对文档 / 一致性 / stale 数字 / 死链</td><td>文档↔源码一键核对</td><td><span class="tag ok">成熟</span></td></tr>
         <tr><td>project-intro-deck</td><td>生成/更新项目介绍 PPT</td><td>中英双版 12 页，碰撞检测</td><td><span class="tag ok">成熟</span></td></tr>
-        <tr><td>threejs-automotive-preview-debugging</td><td>3D 高光/反射/破面/零件不可见</td><td>Car3D 渲染根因库</td><td><span class="tag warn">新增未跟踪</span></td></tr>
-        <tr><td>wheel-arch-envelope-sync</td><td>拱轮错位/穿壳/拱顶不足/EVO→SISA</td><td>跨平台轮拱包络同步</td><td><span class="tag warn">新增未跟踪</span></td></tr>
+        <tr><td>threejs-automotive-preview-debugging</td><td>3D 高光/反射/破面/零件不可见</td><td>Car3D 渲染根因库</td><td><span class="tag ok">已入库</span></td></tr>
+        <tr><td>wheel-arch-envelope-sync</td><td>拱轮错位/穿壳/拱顶不足/EVO→SISA</td><td>跨平台轮拱包络同步</td><td><span class="tag ok">已入库</span></td></tr>
         <tr><td>troubleshoot-i18n-deploy</td><td>中文界面英文内容/数字过期/公网白屏</td><td>三层事实源分层定位</td><td><span class="tag ok">已提交 0ad4ede2</span></td></tr>
       </tbody>
     </table>
@@ -580,7 +580,7 @@ copy .env.example .env
 python start.py        <span class="c"># http://localhost:8000/docs</span>
 
 <span class="c"># 3) 三层测试</span>
-npx vitest run                                  <span class="c"># 771 / 19 文件</span>
+npx vitest run                                  <span class="c"># 783 / 19 文件</span>
 cd backend; python -m pytest tests -q           <span class="c"># 411 收集</span>
 cd ../algorithm_model; python -m pytest tests -q <span class="c"># 200 收集</span>
 
@@ -665,7 +665,7 @@ L4 发布   deploy-gh-pages 技能 + 公网 MD5      人工</pre>
     <table class="tbl">
       <thead><tr><th>#</th><th>任务</th><th>优先级</th><th>依赖</th><th>工作量</th><th>验收标准</th><th>风险与应对</th></tr></thead>
       <tbody>
-        <tr><td>M1-1</td><td>内饰/玻璃/2D 批次开分支提交 + CHANGELOG</td><td>P0</td><td>—</td><td>1</td><td>32 项入库；771 全绿；diff 可追溯</td><td>误提交调试文件 → 按 .gitignore 白名单逐文件 add</td></tr>
+        <tr><td>M1-1</td><td>内饰/玻璃/2D 批次开分支提交 + CHANGELOG</td><td>P0</td><td>—</td><td>1</td><td>32 项入库；783 全绿；diff 可追溯</td><td>误提交调试文件 → 按 .gitignore 白名单逐文件 add</td></tr>
         <tr><td>M1-2</td><td>统一事实基线（README/架构/agent/验证报告）</td><td>P0</td><td>M1-1</td><td>1.5</td><td>九项冲突全消除；数字带命令+日期+SHA</td><td>改动面大 → 以 verify_facts 输出批量替换</td></tr>
         <tr><td>M1-3</td><td>公网复验 + 发布</td><td>P0</td><td>M1-1</td><td>0.5</td><td>MD5 一致；六车型实机 PASS</td><td>CDN 缓存 → 重试 + cache-busting</td></tr>
         <tr><td>M1-4</td><td>开门遮挡 R1 裁决与实现</td><td>P1</td><td>—</td><td>1–3</td><td>用户确认关闭；三选一落地</td><td>方案分歧 → 先出 3 个对比截图</td></tr>
@@ -723,8 +723,8 @@ M1-6 / M2-4 / M3-4 / M3-5（独立）</pre>
           <tbody>
             <tr><td>提交史</td><td><code>git log --date=short</code></td><td>116 提交；HEAD/gh-pages 已记录</td></tr>
             <tr><td>工作区</td><td><code>git status --porcelain</code></td><td>32 项（9 M / 23 ??）</td></tr>
-            <tr><td>结构事实</td><td><code>python scripts/verify_facts.py</code></td><td>19 / 152+2 / 17 / 12 / 22 / 15</td></tr>
-            <tr><td>前端测试</td><td><code>npx vitest run</code></td><td>19 文件 / 771 通过</td></tr>
+            <tr><td>结构事实</td><td><code>python scripts/verify_facts.py</code></td><td>19 / 152+2 / 17 / 12 / 22 / 14</td></tr>
+            <tr><td>前端测试</td><td><code>npx vitest run</code></td><td>19 文件 / 783 通过</td></tr>
             <tr><td>后端/算法</td><td><code>pytest --collect-only -q</code></td><td>411 / 200</td></tr>
             <tr><td>数据规模</td><td>目录递归统计</td><td>data/ ≈ 2.7GB</td></tr>
             <tr><td>服务状态</td><td><code>netstat</code> 过滤三端口</td><td>无监听</td></tr>

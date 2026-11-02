@@ -12,7 +12,7 @@ tools: read, edit, terminal, websearch, preview
 
 ## 一、平台全景
 
-六层架构：前端（Vue 3 + Vite）→ 网关（nginx）→ 后端（FastAPI，约 118 端点）→ 数据（PostgreSQL/SQLite + Redis）→ 算法（Cython NURBS 等）→ AI 服务（6 提供商 LLM 代理 + Ollama 本地知识）。
+六层架构：前端（Vue 3 + Vite）→ 网关（nginx）→ 后端（FastAPI，154 端点）→ 数据（PostgreSQL/SQLite + Redis）→ 算法（Cython NURBS 等）→ AI 服务（6 提供商 LLM 代理 + Ollama 本地知识）。
 
 两种部署：GitHub Pages 静态主站（evolution-ai.design）+ Docker 四服务自托管栈（nginx+backend+postgres+redis）。
 
@@ -20,11 +20,11 @@ tools: read, edit, terminal, websearch, preview
 
 | 区域 | 路径 | 要点 |
 |------|------|------|
-| 前端视图 | `src/views/` | 12 个：Dashboard, Designer, Projects, ProjectDetail, Demo, DeepLearning, Quality, Deliver, Admin, Account, Login, Help |
+| 前端视图 | `src/views/` | 15 个视图文件 / 12 条路由：Dashboard, Designer, DesignCopilot, Projects, ProjectDetail, DeepLearning, Quality, Deliver, Demo, Help, Community, Contact；另有 Account, Admin, Login 独立视图 |
 | 前端支撑 | `src/{components,composables,config,stores,utils}/` | i18n.js 中英双语；carPresets.js 车型预设；router 路由守卫 |
 | 后端入口 | `backend/app/main.py` | startup 自动 init_db()（故 Alembic 建表须先于服务启动） |
 | 后端配置 | `backend/app/config.py` | pydantic-settings；生产 SECRET_KEY/DEBUG fail-fast 校验 |
-| 后端路由 | `backend/app/routes/` | 17 模块：auth, admin, ai, llm_proxy, project, model, variant, car, build, modify, quality, texture, bayes, training, workflow, export, import_export |
+| 后端路由 | `backend/app/routes/` | 19 模块：auth, admin, ai, llm_proxy, project, model, variant, car, build, modify, quality, texture, bayes, training, workflow, export, import_export, design_intent, analytics |
 | 后端核心 | `backend/app/` | database, security, rate_limit, session_store, schemas；nurbs, car_generator, brand_knowledge, cad_importer, bayes_optimizer, texture_analyzer, clip_semantics |
 | 算法库 | `algorithm_model/` | car_modeling, freeform, surface_quality, storyboard, storyboard_viewer, examples |
 | 文档 | `docs/` | 14 份：whitepaper, EVOLUTION_AI_paper, PRODUCT_SPEC, ARCHITECTURE_DESIGN, design_philosophy, methodology, design_meta_theory, api_reference, bayes_optimization 等 |
@@ -53,7 +53,7 @@ tools: read, edit, terminal, websearch, preview
 
 ### 数据层
 
-- 13 张表（见 database.py）：users, projects, model_files, variants, workflows, workflow_steps, quality_reports, parameter_sets, parameter_records, api_keys, login_records, admin_audit_logs, training_tasks
+- 17 张表（见 database.py）：users, projects, model_files, model_variants, workflows, workflow_steps, quality_reports, parameter_sets, parameter_records, api_keys, login_records, admin_audit_logs, training_tasks, page_views, messages, external_references, notifications
 - DATABASE_URL 分支适配：SQLite 保持 check_same_thread；PostgreSQL 连接池 pool_size=10/max_overflow=20/pre_ping/recycle=3600
 - Alembic：配置在 backend/alembic/，URL 取 settings.DATABASE_URL；既有 SQLite 库用 `alembic stamp head` 补登记
 - 数据搬迁用 backend/scripts/migrate_sqlite_to_pg.py（按 FK 序、保留 ID、重置序列、幂等）
@@ -88,8 +88,8 @@ tools: read, edit, terminal, websearch, preview
 2. 涉及多步骤时用 TodoWrite 拆解；改动控制在必要范围，不做任务外重构
 3. 实施：先读后改，保持既有缩进与风格；跨层改动保持接口契约同步（前端调用 ↔ 后端路由 ↔ schema）
 4. 验证（强制门禁）：
-   - 后端：`backend` 目录 pytest 全量（基线 204，只增不减）
-   - 前端：vitest 全量（基线 123，只增不改绿）
+   - 后端：`backend` 目录 pytest 全量（基线 411，只增不减）
+   - 前端：vitest 全量（基线 783 / 19 文件，只增不改绿）
    - 前端视觉：必要时启动预览，浏览器实测交互与布局
    - Compose 改动：`docker compose config` 校验
 5. 修复后重跑相关测试确认，不留已知失败

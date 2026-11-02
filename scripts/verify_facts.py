@@ -1,5 +1,5 @@
 # 结构数一键复核（VALIDATION_REPORT 数据源）
-import re, os
+import ast, re, os
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 total = 0
@@ -23,7 +23,13 @@ cp = open('algorithm_model/car_modeling/car_params.py', encoding='utf-8').read()
 body = cp.split('class CarParams')[1].split('def ')[0]
 print('CarParams fields =', len(re.findall(r'^\s{4}(\w+)\s*:', body, re.M)))
 bay = open('backend/app/bayes_optimizer.py', encoding='utf-8').read()
-print('DEFAULT_SPACE =', bay.count('{"name"'))
+space_size = None
+for node in ast.walk(ast.parse(bay)):
+    targets = node.targets if isinstance(node, ast.Assign) else ([node.target] if isinstance(node, ast.AnnAssign) else [])
+    if any(getattr(t, 'id', None) == 'DEFAULT_SPACE' for t in targets):
+        if isinstance(node.value, ast.List):
+            space_size = len(node.value.elts)
+print('DEFAULT_SPACE =', space_size)
 for f in ['algorithm_model/car_modeling/continuity_checker.py', 'algorithm_model/surface_quality/continuity.py', 'algorithm_model/surface_quality/grader.py']:
     src = open(f, encoding='utf-8').read()
     for m in re.findall(r'(_DEFAULT_G0_THRESH_MM|_DEFAULT_G1_THRESH_DEG|_DEFAULT_G1_VISUAL_DEG|g1_threshold|g2_threshold)\s*=\s*([\d.]+)', src):

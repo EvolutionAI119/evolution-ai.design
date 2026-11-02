@@ -22,7 +22,7 @@
 | **前端** | ✅ 可运行 | Vue 3 + Vite 5 + Three.js + Element Plus + Pinia | **12 个路由页面**（含 Copilot/社区/联系），3D 实时渲染，i18n 双语，游客免登录 |
 | **后端** | ✅ 可运行 | FastAPI + SQLAlchemy 2.0 | **19 个路由模块 / 154 个端点（152 路由 + 2 系统）/ 17 张 ORM 表**；游客模式 GUEST_MODE；管理后台 `/admin` |
 | **算法层** | ✅ 可运行 | Python 3.11+ / NumPy / SciPy / Trimesh | NURBS 整车 + freeform + surface_quality + storyboard；**200 pytest + 自检 5 模块全过** |
-| **测试基线** | ✅ 全绿 | algorithm_model 200 / backend 411（408+1skip+2xfail）/ frontend 416 | 统计日 2026-10-25，详见 [VALIDATION_REPORT_20261025](docs/VALIDATION_REPORT_20261025.md) |
+| **测试基线** | ✅ 全绿 | algorithm_model 200 / backend 411（408+1skip+2xfail）/ frontend 783（19 文件） | 统计日 2026-11-02，命令见 [VALIDATION_20261102](docs/retrospective/2026-11-02/VALIDATION_20261102.md) |
 | **Mock Fallback** | ✅ 已集成 | - | backend 不可用时显示 mock 项目，页面不黑屏 |
 | **可选能力** | ✅ 真实降级 | PyTorch / Ollama / Redis / CLIP | 缺失时 503 或自动降级，绝不伪装成功 |
 | **部署** | ✅ Docker | Compose + Nginx + cpolar 隧道 | 见 [deploy/](deploy/) |
@@ -119,7 +119,7 @@ L5 基础设施  ─  SQLite + 文件存储；可选 Redis
 ```
 Evolution-Ai.Design/
 ├── src/                            ← Vue 3 前端源码
-│   ├── views/                      ← 10 个路由页面
+│   ├── views/                      ← 12 个路由页面（15 个视图文件）
 │   │   ├── Dashboard.vue           ← 首页总览
 │   │   ├── Designer.vue            ← AI 设计器 (参数+3D预览)
 │   │   ├── Projects.vue            ← 项目列表 (含 mock fallback)
@@ -235,7 +235,7 @@ _writer            已验证           body_ends(G1)       SOP 报告 / FreeCAD 
 - [汽车造型设计哲学](docs/design_philosophy.md) — 形·理·数，观察·约束·生成·演化，跨文明哲学根基
 - [设计元理论与自主知识体系](docs/design_meta_theory.md) — Love 九层框架、十维度知识体系、中国造型哲学（考工记/谢赫六法）
 - [贝叶斯优化模块使用文档](docs/bayes_optimization.md) — GP + EI/UCB 代理寻优容器，与训练模块联动
-- [平台验证报告 2026-09-27](docs/VALIDATION_REPORT_20260927.md) — 489 全绿、收敛与事实核对（历史口径）；当前基线见 [平台验证报告 2026-10-25](docs/VALIDATION_REPORT_20261025.md) — 算法 200 / 后端 411 / 前端 416（最新）
+- [平台验证报告 2026-09-27](docs/VALIDATION_REPORT_20260927.md) — 489 全绿、收敛与事实核对（历史口径）；当前基线见 [全量复盘验证记录 2026-11-02](docs/retrospective/2026-11-02/VALIDATION_20261102.md) — 算法 200 / 后端 411 / 前端 783（最新）
 - [审计报告 2026-08-10](docs/AUDIT_REPORT_20260810.md) — 历史审计基线
 - [平台测试报告 2026-08-11](docs/PLATFORM_TEST_REPORT_20260811.md) — 历史平台测试记录
 - [算法模型文档](algorithm_model/README.md) — 7 大 API + CLI 速查
