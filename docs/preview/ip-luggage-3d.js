@@ -19873,6 +19873,92 @@ void main() {
       return new _CylinderGeometry(data.radiusTop, data.radiusBottom, data.height, data.radialSegments, data.heightSegments, data.openEnded, data.thetaStart, data.thetaLength);
     }
   };
+  var _v0 = /* @__PURE__ */ new Vector3();
+  var _v1$1 = /* @__PURE__ */ new Vector3();
+  var _normal = /* @__PURE__ */ new Vector3();
+  var _triangle = /* @__PURE__ */ new Triangle();
+  var EdgesGeometry = class extends BufferGeometry {
+    constructor(geometry = null, thresholdAngle = 1) {
+      super();
+      this.type = "EdgesGeometry";
+      this.parameters = {
+        geometry,
+        thresholdAngle
+      };
+      if (geometry !== null) {
+        const precisionPoints = 4;
+        const precision = Math.pow(10, precisionPoints);
+        const thresholdDot = Math.cos(DEG2RAD * thresholdAngle);
+        const indexAttr = geometry.getIndex();
+        const positionAttr = geometry.getAttribute("position");
+        const indexCount = indexAttr ? indexAttr.count : positionAttr.count;
+        const indexArr = [0, 0, 0];
+        const vertKeys = ["a", "b", "c"];
+        const hashes = new Array(3);
+        const edgeData = {};
+        const vertices = [];
+        for (let i = 0; i < indexCount; i += 3) {
+          if (indexAttr) {
+            indexArr[0] = indexAttr.getX(i);
+            indexArr[1] = indexAttr.getX(i + 1);
+            indexArr[2] = indexAttr.getX(i + 2);
+          } else {
+            indexArr[0] = i;
+            indexArr[1] = i + 1;
+            indexArr[2] = i + 2;
+          }
+          const { a, b, c } = _triangle;
+          a.fromBufferAttribute(positionAttr, indexArr[0]);
+          b.fromBufferAttribute(positionAttr, indexArr[1]);
+          c.fromBufferAttribute(positionAttr, indexArr[2]);
+          _triangle.getNormal(_normal);
+          hashes[0] = `${Math.round(a.x * precision)},${Math.round(a.y * precision)},${Math.round(a.z * precision)}`;
+          hashes[1] = `${Math.round(b.x * precision)},${Math.round(b.y * precision)},${Math.round(b.z * precision)}`;
+          hashes[2] = `${Math.round(c.x * precision)},${Math.round(c.y * precision)},${Math.round(c.z * precision)}`;
+          if (hashes[0] === hashes[1] || hashes[1] === hashes[2] || hashes[2] === hashes[0]) {
+            continue;
+          }
+          for (let j = 0; j < 3; j++) {
+            const jNext = (j + 1) % 3;
+            const vecHash0 = hashes[j];
+            const vecHash1 = hashes[jNext];
+            const v0 = _triangle[vertKeys[j]];
+            const v1 = _triangle[vertKeys[jNext]];
+            const hash = `${vecHash0}_${vecHash1}`;
+            const reverseHash = `${vecHash1}_${vecHash0}`;
+            if (reverseHash in edgeData && edgeData[reverseHash]) {
+              if (_normal.dot(edgeData[reverseHash].normal) <= thresholdDot) {
+                vertices.push(v0.x, v0.y, v0.z);
+                vertices.push(v1.x, v1.y, v1.z);
+              }
+              edgeData[reverseHash] = null;
+            } else if (!(hash in edgeData)) {
+              edgeData[hash] = {
+                index0: indexArr[j],
+                index1: indexArr[jNext],
+                normal: _normal.clone()
+              };
+            }
+          }
+        }
+        for (const key in edgeData) {
+          if (edgeData[key]) {
+            const { index0, index1 } = edgeData[key];
+            _v0.fromBufferAttribute(positionAttr, index0);
+            _v1$1.fromBufferAttribute(positionAttr, index1);
+            vertices.push(_v0.x, _v0.y, _v0.z);
+            vertices.push(_v1$1.x, _v1$1.y, _v1$1.z);
+          }
+        }
+        this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+      }
+    }
+    copy(source) {
+      super.copy(source);
+      this.parameters = Object.assign({}, source.parameters);
+      return this;
+    }
+  };
   var Shape = class extends Path {
     constructor(points) {
       super(points);
@@ -24887,8 +24973,9 @@ void main() {
     const rim = new Mesh(new TorusGeometry(sw.r, 0.012, 16, 32), mat);
     plane.add(rim);
     for (const a of [0, Math.PI / 3, -Math.PI / 3]) {
-      const spoke = new Mesh(new BoxGeometry(8e-3, sw.r * 1.8, 8e-3), mat);
+      const spoke = new Mesh(new BoxGeometry(8e-3, sw.r, 8e-3), mat);
       spoke.rotation.z = a;
+      spoke.position.set(Math.sin(a) * sw.r / 2, Math.cos(a) * sw.r / 2, 0);
       plane.add(spoke);
     }
     const hub = new Mesh(new CylinderGeometry(0.032, 0.032, 0.05, 12), mat);
@@ -24965,12 +25052,40 @@ void main() {
   var grid = new GridHelper(12, 24, 2371648, 1448739);
   grid.position.y = 2e-3;
   scene.add(grid);
+  var screenTex = (() => {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 256;
+    const g = c.getContext("2d");
+    const bg = g.createLinearGradient(0, 0, 512, 256);
+    bg.addColorStop(0, "#071018");
+    bg.addColorStop(1, "#0b1a24");
+    g.fillStyle = bg;
+    g.fillRect(0, 0, 512, 256);
+    g.strokeStyle = "rgba(77,208,225,0.55)";
+    g.lineWidth = 2;
+    g.strokeRect(10, 10, 492, 236);
+    g.fillStyle = "rgba(77,208,225,0.16)";
+    g.fillRect(22, 22, 300, 120);
+    g.fillStyle = "rgba(255,255,255,0.55)";
+    for (let i = 0; i < 5; i++) g.fillRect(30, 34 + i * 20, 200 - i * 24, 5);
+    g.fillStyle = "rgba(77,208,225,0.85)";
+    for (let i = 0; i < 4; i++) g.fillRect(30, 152 + i * 18, 120, 8);
+    g.fillStyle = "rgba(255,177,77,0.75)";
+    g.fillRect(340, 30, 148, 58);
+    g.fillStyle = "rgba(255,255,255,0.30)";
+    g.fillRect(340, 100, 148, 22);
+    g.fillRect(340, 132, 148, 22);
+    g.fillRect(340, 164, 148, 22);
+    return new CanvasTexture(c);
+  })();
   var carGroup = null;
   var parts = {};
   var groups = { seats: [], trim: null, ip: null, luggage: null, steer: null };
   var lids = { front: { cur: 0, tgt: 0, max: -72 * DEG }, rear: { cur: 0, tgt: 0, max: 0 } };
   var labels = [];
   var info = {};
+  var seatsOverride = null;
   var autoTour = false;
   var tourIdx = 0;
   var tourClock = 0;
@@ -24978,7 +25093,7 @@ void main() {
   var lidClock = 0;
   var dispHi = false;
   var camGo = { active: false, p: new Vector3(), t: new Vector3(), fov: 42 };
-  var lidSkin = new MeshStandardMaterial({ color: 3116891, roughness: 0.42, metalness: 0.45 });
+  var lidSkin = new MeshStandardMaterial({ color: 3159613, roughness: 0.52, metalness: 0.5 });
   var rectCenter = (r) => ({ x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2, z: (r.z0 + r.z1) / 2 });
   var boxFromRect = (r, mat) => {
     const m = new Mesh(new BoxGeometry(Math.abs(r.x1 - r.x0), Math.abs(r.y1 - r.y0), Math.abs(r.z1 - r.z0)), mat);
@@ -25030,6 +25145,17 @@ void main() {
       parts[n].removeFromParent();
       delete parts[n];
     });
+    const dispMesh = parts["ip-display"];
+    if (dispMesh) {
+      dispMesh.material = new MeshStandardMaterial({
+        color: 329482,
+        roughness: 0.18,
+        metalness: 0.3,
+        emissive: 16777215,
+        emissiveMap: screenTex,
+        emissiveIntensity: 0.45
+      });
+    }
     const r = T.rear;
     const lidInner = parts["cargo-lid-inner"];
     if (lidInner) {
@@ -25050,6 +25176,15 @@ void main() {
       reparent(lid, hinge);
       parts.frontLidHinge = hinge;
       lids.front = { cur: 0, tgt: 0, max: -72 * DEG };
+    }
+    const edgeMat = new LineBasicMaterial({ color: 8360872, transparent: true, opacity: 0.34 });
+    for (const root of [ip, luggage]) {
+      root.traverse((o) => {
+        if (!o.isMesh || !o.geometry?.attributes?.position) return;
+        const line = new LineSegments(new EdgesGeometry(o.geometry, 30), edgeMat);
+        line.renderOrder = 3;
+        o.add(line);
+      });
     }
     accentA.position.set(T.frunk ? (T.frunk.x0 + T.frunk.x1) / 2 : P.frontX, T.frunk ? T.frunk.floorY + 0.18 : 0.9, 0);
     accentB.position.set((r.x0 + r.x1) / 2, r.floorY + 0.18, 0);
@@ -25135,7 +25270,7 @@ void main() {
     curView = v;
     const ipView = IP_VIEWS.includes(v);
     const lugView = LUG_VIEWS.includes(v);
-    const seatsOn = v === "side" || v === "top";
+    const seatsOn = seatsOverride ?? (v === "side" || v === "top");
     groups.seats.forEach((g) => g.visible = seatsOn);
     if (groups.ip) groups.ip.visible = !lugView;
     if (groups.luggage) groups.luggage.visible = !ipView;
@@ -25164,21 +25299,21 @@ void main() {
     const dp = rectCenter(C.display);
     const map = {
       // 座舱全景：副驾侧后排位置看向 IP/CONSOLE，同框悬浮屏 + 中控功能带 + 方向盘
-      cockpit: { p: [row1.x - 0.62, L.ip.topY + 0.24, 0.62], t: [dp.x - 0.06, dp.y - 0.1, 0], fov: 52 },
+      cockpit: { p: [row1.x - 0.78, L.ip.topY + 0.2, 1.02], t: [dp.x - 0.06, dp.y - 0.06, 0], fov: 52 },
       // 驾驶员视角：眼位（H 点上方 0.62m），看向中控屏中心，验证悬浮屏安装位置与视觉比例
-      driver: { p: [row1.x - 0.1, row1.hPointY + 0.62, L.steerWheel.z], t: [dp.x, dp.y - 0.02, 0], fov: 58 },
+      driver: { p: [row1.x - 0.1, row1.hPointY + 0.62, L.steerWheel.z], t: [rectCenter(C.cluster).x - 0.03, rectCenter(C.cluster).y - 0.02, rectCenter(C.cluster).z], fov: 50 },
       // 正侧视：车身侧面剖视，核对 IP 上下体分型线与 H 点高度关系
       side: { p: [0.02, 1.35, 4.6], t: [0.02, 0.72, 0], fov: 30 },
       // IP 前 3/4（副驾侧）特写：悬浮屏探出量、气囊盖板分型线、副驾出风口与手套箱
       front34: { p: [L.ip.rearX - 0.72, L.ip.topY + 0.1, 1.02], t: [dp.x - 0.05, dp.y - 0.04, 0.12], fov: 46 },
-      // 后 3/4：从车尾外侧看向后行李舱（含全开舱盖）
-      rear34: { p: [r.x0 - 1.95, r.topY + 0.82, 1.65], t: [rcx, r.floorY + 0.18, 0], fov: 44 },
+      // 后 3/4：从车尾外侧上方看向后行李舱（含全开舱盖，避免舱盖板挡视线）
+      rear34: { p: [r.x0 - 2.1, r.topY + 1.35, 2.05], t: [rcx, r.floorY + 0.2, 0], fov: 44 },
       // 俯视：核对前后舱在整车纵向上的位置与功能带序列
       top: { p: [0.06, 6.4, 0.35], t: [0.06, 0, 0.1], fov: 40 },
-      // 前舱特写（前行李舱全开）
-      frunk: fr ? { p: [fr.x1 + 0.92, fr.topY + 0.95, 1.02], t: [(fr.x0 + fr.x1) / 2, fr.floorY + 0.12, 0], fov: 46 } : { p: [P.frontX + 1.5, 1.55, 1.35], t: [P.frontX - 0.55, 0.62, 0], fov: 44 },
-      // 后舱特写（后行李舱全开）
-      cargo: { p: [r.x0 - 1.32, r.topY + 0.66, 1.18], t: [rcx, r.floorY + 0.12, 0], fov: 46 }
+      // 前舱特写（前行李舱全开：机舱盖在前缘上掀，相机自舱后上方俯视入舱）
+      frunk: fr ? { p: [fr.x0 - 0.6, fr.topY + 0.72, 0.78], t: [(fr.x0 + fr.x1) / 2, fr.floorY + 0.12, 0], fov: 48 } : { p: [P.frontX + 1.5, 1.55, 1.35], t: [P.frontX - 0.55, 0.62, 0], fov: 44 },
+      // 后舱特写（舱内视角：自尾门内侧看向舱内，展示衬板/锚钩/照明/门槛护板；开启舱盖在画面外上方）
+      cargo: { p: [r.x0 + 0.1, r.floorY + 0.74, 0.46], t: [rcx, r.floorY + 0.12, -0.12], fov: 58 }
     };
     return map[v] || map.side;
   }
@@ -25219,8 +25354,8 @@ void main() {
     const d = parts["ip-display"];
     if (!d) return;
     dispHi = on;
-    d.material.emissive = new Color(on ? 2872575 : 0);
-    d.material.emissiveIntensity = on ? 1.15 : 0;
+    d.material.emissive = new Color(16777215);
+    d.material.emissiveIntensity = on ? 0.9 : 0.45;
   }
   document.getElementById("tgDisplay").addEventListener("change", (e) => applyDisplayHighlight(e.target.checked));
   var airbagHiMat = new MeshStandardMaterial({ color: 16747068, roughness: 0.38, metalness: 0.06, emissive: 5644288, emissiveIntensity: 0.55 });
@@ -25337,7 +25472,7 @@ void main() {
       if (camera.position.distanceTo(camGo.p) < 4e-3) camGo.active = false;
     }
     if (dispHi && parts["ip-display"]) {
-      parts["ip-display"].material.emissiveIntensity = 0.95 + Math.sin(performance.now() / 320) * 0.35;
+      parts["ip-display"].material.emissiveIntensity = 0.78 + Math.sin(performance.now() / 320) * 0.18;
     }
     const w = canvas.clientWidth, h2 = canvas.clientHeight;
     if (canvas.width !== w || canvas.height !== h2) {
@@ -25356,6 +25491,7 @@ void main() {
     const view = q.get("view") || (document.getElementById("viewSel").value || "driver");
     document.getElementById("typeSel").value = type;
     document.getElementById("viewSel").value = view;
+    seatsOverride = q.get("seats") === "1" ? true : q.get("seats") === "0" ? false : null;
     buildCar(type);
     const lidRaw = q.get("lid");
     const lidFrac = lidRaw !== null ? Math.max(0, Math.min(1, parseFloat(lidRaw) || 0)) : q.get("lids") === "1" ? 1 : 0;
