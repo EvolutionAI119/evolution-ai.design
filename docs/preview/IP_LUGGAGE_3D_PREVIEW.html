@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP/CONSOLE × 行李舱内饰 · 专业级 3D 可视化预览 | EVOLUTION-AI.DESIGN</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0b0e13; color: #d7dde6; font-family: "Microsoft YaHei", "Segoe UI", sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  header { padding: 9px 18px 7px; border-bottom: 1px solid #1e2530; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; background: linear-gradient(90deg,#101620,#0b0e13 60%); }
+  header h1 { font-size: 15.5px; font-weight: 600; color: #f2f5f9; letter-spacing: .2px; }
+  header .sub { font-size: 11.5px; color: #7f8896; }
+  #bar { display: flex; gap: 14px; align-items: center; padding: 7px 18px; background: #10151c; border-bottom: 1px solid #1e2530; flex-wrap: wrap; font-size: 12.5px; }
+  #bar label { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  #bar select { background: #182029; color: #d7dde6; border: 1px solid #27303c; border-radius: 4px; padding: 3px 8px; font-size: 12.5px; }
+  #bar input[type="checkbox"] { accent-color: #4dd0e1; }
+  #bar button { background: #1d2836; color: #cfe3ef; border: 1px solid #2e3d50; border-radius: 4px; padding: 4px 10px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  #bar button:hover { background: #26364a; border-color: #3d5573; }
+  #bar button.rec { background: #5a1a1a; border-color: #8b2b2b; color: #ffd7d7; }
+  #info { padding: 5px 18px; font-size: 12.5px; color: #9fabb9; background: #090c11; border-bottom: 1px solid #1e2530; }
+  #info b { color: #ffd166; }
+  #stage { flex: 1; display: flex; min-height: 0; }
+  #view { flex: 1; width: 100%; display: block; }
+  #strip { display: flex; gap: 6px; padding: 6px 18px; background: #090c11; border-top: 1px solid #1e2530; overflow-x: auto; min-height: 96px; align-items: center; }
+  #strip:empty::after { content: "「六视角快照」将在此生成多角度渲染对比条"; color: #5c6675; font-size: 12px; }
+  .shot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .shot img { height: 68px; border: 1px solid #243040; border-radius: 3px; }
+  .shot span { font-size: 10.5px; color: #8b94a2; }
+  .sep { width: 1px; height: 16px; background: #27303c; }
+</style>
+</head>
+<body>
+<header>
+  <h1>IP/CONSOLE × 前/后行李舱内饰 · 专业级 3D 可视化预览</h1>
+  <span class="sub">悬浮屏安装位置与视觉比例 · 隐形气囊盖板隐藏式整合 · 前后舱完全开启结构匹配 · 几何与整车模型同一真源</span>
+</header>
+<div id="bar">
+  <label>车型
+    <select id="typeSel">
+      <option value="sedan" selected>轿车 SEDAN</option>
+      <option value="suv">SUV</option>
+      <option value="coupe">轿跑 COUPE</option>
+      <option value="sport">跑车 SPORT</option>
+      <option value="mpv">MPV</option>
+      <option value="pickup">皮卡 PICKUP</option>
+    </select>
+  </label>
+  <label>视角
+    <select id="viewSel">
+      <option value="cockpit">座舱全景</option>
+      <option value="driver" selected>驾驶员视角</option>
+      <option value="side">正侧视</option>
+      <option value="front34">前 3/4</option>
+      <option value="rear34">后 3/4</option>
+      <option value="top">俯视</option>
+      <option value="frunk">前舱特写</option>
+      <option value="cargo">后舱特写</option>
+    </select>
+  </label>
+  <span class="sep"></span>
+  <label><input type="checkbox" id="tgFront"> 前舱盖全开</label>
+  <label><input type="checkbox" id="tgRear"> 后舱盖全开</label>
+  <label><input type="checkbox" id="tgTour"> 自动巡演</label>
+  <label><input type="checkbox" id="tgCycle"> 开合循环</label>
+  <span class="sep"></span>
+  <label><input type="checkbox" id="tgDisplay"> 悬浮屏高亮</label>
+  <label><input type="checkbox" id="tgAirbag"> 气囊盖板显形</label>
+  <label><input type="checkbox" id="tgLabels" checked> 标注</label>
+  <span class="sep"></span>
+  <button id="shotBtn">六视角快照</button>
+  <button id="recBtn">● 录制演示片段</button>
+</div>
+<div id="info"></div>
+<div id="stage"><canvas id="view"></canvas></div>
+<div id="strip"></div>
+<script src="./ip-luggage-3d.js"></script>
+</body>
+</html>
