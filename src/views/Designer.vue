@@ -145,6 +145,10 @@
                 <div class="viewport-tab blue" :class="{ active: previewTab === '2d' }" @click="previewTab = '2d'">
                   {{ t('designer.view2d') }}
                 </div>
+                <!-- 右视图（A-A 横断面 Z-Y）：侧视里中控台被坐垫遮挡，只有横向投影能看到 -->
+                <div class="viewport-tab blue" :class="{ active: previewTab === 'section' }" @click="previewTab = 'section'">
+                  A-A
+                </div>
               </div>
             </div>
             <div class="viewport-container">
@@ -158,8 +162,11 @@
                 :nurbs-mesh="nurbsMeshData"
                 @update:view-angle="previewViewAngle = $event"
               />
-              <div v-else class="viewport-2d">
+              <div v-else-if="previewTab === '2d'" class="viewport-2d">
                 <Car2D :car-params="carParams" :car-type="carType" />
+              </div>
+              <div v-else class="viewport-section">
+                <CarSection2D :car-params="carParams" :car-type="carType" />
               </div>
             </div>
           </div>
@@ -690,6 +697,7 @@ import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import Car3D from '../components/Car3D.vue'
 import Car2D from '../components/Car2D.vue'
+import CarSection2D from '../components/CarSection2D.vue'
 import { carTypes, brands, bodyColors } from '../config/carPresets'
 import { carAPI, buildAPI, aiAPI } from '../api'
 import { useDesignerStore } from '../stores/designer'
@@ -2324,6 +2332,18 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--bg-primary);
+}
+
+/* A-A 横断面（右视图 Z-Y）：图形按可用高度缩放，读数在下方常驻 */
+.viewport-section {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  box-sizing: border-box;
   background: var(--bg-primary);
 }
 

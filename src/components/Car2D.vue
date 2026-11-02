@@ -15,6 +15,114 @@
         <!-- 闭合车身轮廓（含前后保险杠立面与轮拱开口） -->
         <path :d="silhouettePath" fill="rgba(74,222,128,0.06)" stroke="#4ade80" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
 
+        <!-- 内饰布置层（与 3D 同源 carInteriorLayout）：门板 / 地板 / 仪表台 / 座椅 / 中控 / 方向盘 + H 点 -->
+        <g v-if="interior2d" class="interior-layer">
+          <!-- 门板内表面（沿座舱段走向，含扶手带） -->
+          <rect
+            :x="interior2d.doorPanel.x" :y="interior2d.doorPanel.y"
+            :width="interior2d.doorPanel.w" :height="interior2d.doorPanel.h"
+            fill="rgba(148,163,184,0.08)" stroke="rgba(148,163,184,0.42)" stroke-width="1"
+            stroke-dasharray="4,3" vector-effect="non-scaling-stroke"
+          />
+          <line
+            :x1="interior2d.doorPanel.x" :y1="interior2d.doorPanel.armrestY"
+            :x2="interior2d.doorPanel.x + interior2d.doorPanel.w" :y2="interior2d.doorPanel.armrestY"
+            stroke="rgba(203,213,225,0.6)" stroke-width="2" vector-effect="non-scaling-stroke"
+          />
+
+          <!-- 座舱地板线（地板面高度由 carInteriorLayout.deriveFloorY 推导） -->
+          <line
+            :x1="interior2d.floor.x0" :y1="interior2d.floor.y"
+            :x2="interior2d.floor.x1" :y2="interior2d.floor.y"
+            stroke="rgba(148,163,184,0.55)" stroke-width="1.4" stroke-dasharray="6,3"
+            vector-effect="non-scaling-stroke"
+          />
+
+          <!-- 地毯面（地板 +10mm）与顶棚内表面（车顶 -20mm）：与 3D createInteriorTrim 同源 -->
+          <g v-if="interior2d.trim">
+            <rect
+              :x="interior2d.trim.carpet.x" :y="interior2d.trim.carpet.y"
+              :width="interior2d.trim.carpet.w" :height="Math.max(interior2d.trim.carpet.h, 1)"
+              fill="rgba(251,146,60,0.28)" stroke="rgba(251,146,60,0.6)" stroke-width="0.8"
+              vector-effect="non-scaling-stroke"
+            />
+            <line
+              :x1="interior2d.trim.headliner.x" :y1="interior2d.trim.headliner.y + interior2d.trim.headliner.h"
+              :x2="interior2d.trim.headliner.x + interior2d.trim.headliner.w" :y2="interior2d.trim.headliner.y + interior2d.trim.headliner.h"
+              stroke="rgba(203,213,225,0.5)" stroke-width="1.3" stroke-dasharray="9,4"
+              vector-effect="non-scaling-stroke"
+            />
+          </g>
+
+          <!-- 仪表台 IP -->
+          <rect
+            :x="interior2d.ip.x" :y="interior2d.ip.y" :width="interior2d.ip.w" :height="interior2d.ip.h"
+            fill="rgba(148,163,184,0.22)" stroke="#94a3b8" stroke-width="1.2"
+            vector-effect="non-scaling-stroke"
+          />
+          <text :x="interior2d.ipLabel.x" :y="interior2d.ipLabel.y" text-anchor="end" fill="#cbd5e1" font-family="Inter, sans-serif" font-size="9" font-weight="600">IP</text>
+
+          <!-- 座椅（每排一组：坐垫 / 靠背 / 头枕 + H 点） -->
+          <g v-for="s in interior2d.rows" :key="'seat' + s.row">
+            <rect
+              :x="s.cushion.x" :y="s.cushion.y" :width="s.cushion.w" :height="s.cushion.h"
+              fill="rgba(148,163,184,0.30)" stroke="#94a3b8" stroke-width="1.1"
+              vector-effect="non-scaling-stroke"
+            />
+            <path :d="s.backrest" fill="rgba(148,163,184,0.30)" stroke="#94a3b8" stroke-width="1.1" vector-effect="non-scaling-stroke" />
+            <path :d="s.headrest" fill="rgba(148,163,184,0.24)" stroke="#94a3b8" stroke-width="1.1" vector-effect="non-scaling-stroke" />
+            <circle :cx="s.hx" :cy="s.hy" r="2.6" fill="#fbbf24" stroke="rgba(0,0,0,0.6)" stroke-width="0.8" />
+            <text :x="s.hx + 5" :y="s.hy + 3.5" fill="#fbbf24" font-family="Inter, sans-serif" font-size="8" font-weight="600">H{{ s.row }}</text>
+          </g>
+
+          <!-- 安全带固定点：上固定点（B 柱 / 后侧柱）、下固定点（地板侧），与 3D 网格同坐标 -->
+          <g v-if="interior2d.trim" class="belt-layer">
+            <rect
+              v-for="b in interior2d.trim.belts" :key="b.key"
+              :x="b.x - (b.upper ? 2.6 : 2)" :y="b.y - (b.upper ? 1.6 : 2)"
+              :width="b.upper ? 5.2 : 4" :height="b.upper ? 3.2 : 4"
+              :fill="b.upper ? 'rgba(154,164,178,0.92)' : 'rgba(154,164,178,0.6)'"
+              stroke="rgba(15,18,24,0.85)" stroke-width="0.6" vector-effect="non-scaling-stroke"
+            />
+          </g>
+
+          <!-- 中控总成 CONSOLE（前排双座之间，半透明叠加在座椅之后以便读数） -->
+          <rect
+            :x="interior2d.console.x" :y="interior2d.console.y"
+            :width="interior2d.console.w" :height="interior2d.console.h"
+            fill="rgba(148,163,184,0.18)" stroke="rgba(148,163,184,0.85)" stroke-width="1"
+            vector-effect="non-scaling-stroke"
+          />
+          <text
+            :x="interior2d.consoleLabel.x" :y="interior2d.consoleLabel.y" text-anchor="middle"
+            fill="#94a3b8" font-family="Inter, sans-serif" font-size="7.5" font-weight="600"
+          >CONSOLE</text>
+
+          <!-- 后排中央低通道（连通前后排，100mm 高；不侵入两侧座椅 Z 区间） -->
+          <rect
+            v-if="interior2d.trim"
+            :x="interior2d.trim.tunnelRear.x" :y="interior2d.trim.tunnelRear.y"
+            :width="interior2d.trim.tunnelRear.w" :height="interior2d.trim.tunnelRear.h"
+            fill="rgba(148,163,184,0.16)" stroke="rgba(148,163,184,0.55)" stroke-width="0.8"
+            vector-effect="non-scaling-stroke"
+          />
+
+          <!-- 方向盘（锚点与 3D 圆环同源：steerWheel.x/y/r） -->
+          <circle
+            :cx="interior2d.wheel.cx" :cy="interior2d.wheel.cy" :r="interior2d.wheel.r"
+            fill="rgba(15,18,24,0.45)" stroke="#cbd5e1" stroke-width="1.4" vector-effect="non-scaling-stroke"
+          />
+
+          <!-- A-A 剖切线：横断面（Z-Y 右视图）的取图位置 = 过前排 H 点 -->
+          <line
+            :x1="interior2d.cut.x" :y1="interior2d.cut.y0" :x2="interior2d.cut.x" :y2="interior2d.cut.y1"
+            stroke="rgba(203,213,225,0.5)" stroke-width="1" stroke-dasharray="7,4"
+            vector-effect="non-scaling-stroke"
+          />
+          <text :x="interior2d.cut.x + 3" :y="interior2d.cut.y0 - 3" fill="rgba(203,213,225,0.8)" font-family="Inter, sans-serif" font-size="8" font-weight="700">A</text>
+          <text :x="interior2d.cut.x + 3" :y="interior2d.cut.y1 + 11" fill="rgba(203,213,225,0.8)" font-family="Inter, sans-serif" font-size="8" font-weight="700">A</text>
+        </g>
+
         <!-- 侧窗 DLO（四角锚点与 3D 玻璃同源 deriveCabinGlass）+ B 柱 -->
         <path :d="windowPath" fill="rgba(59,130,246,0.12)" stroke="#3b82f6" stroke-width="1.1" vector-effect="non-scaling-stroke" />
         <!-- 玻璃门缝：分缝线延伸进侧窗（与 3D 侧窗切片同坐标，开门时该片随门外摆） -->
@@ -115,6 +223,8 @@
 <script setup>
 import { computed } from 'vue'
 import { deriveCarProfile, deriveDoorLayout, bodySideOutline } from '../utils/carProfile.js'
+import { deriveInteriorLayout, deriveInteriorTrim } from '../utils/carInteriorLayout.js'
+import { createSideViewProjection } from '../utils/car2dProjection.js'
 import { deriveCabinGlass, ROOF_FILLETS } from '../utils/carGlass.js'
 
 const props = defineProps({
@@ -278,8 +388,10 @@ const rearCornerY2d = computed(() => groundY - s(profile.value.ramps.rear.corner
 // 与 Car3D bodyShape 逐指令同源：顶边 G1 圆角、底边轮拱 notch（真正挖通）、接近/离去角切角、
 // 皮卡驾驶室+货箱专属拓扑，全部无 2D 侧重复推导
 const pxPerM = computed(() => scale.value * 1000)
-const outX = (x) => (profile.value.frontX - x) * pxPerM.value
-const outY = (y) => groundY - y * pxPerM.value
+// 3D 米 → SVG 像素的唯一换算口（与 carInteriorLayout.spec.js 共用，保证 2D 可反解回 3D）
+const proj = computed(() => createSideViewProjection(profile.value, pxPerM.value, groundY))
+const outX = (x) => proj.value.toX(x)
+const outY = (y) => proj.value.toY(y)
 const silhouettePath = computed(() => {
   const parts = []
   for (const c of bodySideOutline(profile.value, props.carType, ROOF_FILLETS, profile.value.ramps)) {
@@ -299,6 +411,63 @@ const silhouettePath = computed(() => {
   }
   parts.push('Z')
   return parts.join(' ')
+})
+
+// ============ 内饰布置（2D 布置图）：与 3D 网格同源 carInteriorLayout ============
+// 所有锚点都由 deriveInteriorLayout(P) 输出（单位米），此处只做「米 → SVG」的同一套镜像/翻转换算，
+// 因此 2D 布置图与 3D 模型的 X/Y 完全一致（对齐断言见 carInteriorLayout.spec.js）。
+const interior2d = computed(() => {
+  const L = deriveInteriorLayout(profile.value)
+  if (!L) return null
+  const p = proj.value
+  const T = deriveInteriorTrim(profile.value)
+
+  return {
+    rows: L.rows.map((r) => ({
+      row: r.row,
+      cushion: p.rect(r.envelope.cushion.x0, r.envelope.cushion.x1, r.envelope.cushion.y0, r.envelope.cushion.y1),
+      backrest: p.poly(r.envelope.backrest.points),
+      headrest: p.poly(r.envelope.headrest.points),
+      hx: p.toX(r.x),
+      hy: p.toY(r.hPointY),
+      labelY: p.toY(r.envelope.topY) + 10
+    })),
+    ip: p.rect(L.ip.rearX, L.ip.frontX, L.ip.bottomY, L.ip.topY),
+    console: p.rect(L.console.rearX, L.console.frontX, L.console.bottomY, L.console.topY),
+    doorPanel: {
+      ...p.rect(L.doorPanel.x0, L.doorPanel.x1, L.doorPanel.y0, L.doorPanel.y1),
+      armrestY: p.toY(L.doorPanel.armrestY)
+    },
+    floor: {
+      y: p.toY(L.floorY),
+      x0: p.toX(L.doorPanel.x1),
+      x1: p.toX(L.doorPanel.x0)
+    },
+    // 剩余内饰件（与 3D createInteriorTrim 同一取数口 deriveInteriorTrim）
+    trim: T ? {
+      carpet: p.rect(T.carpet.x0, T.carpet.x1, T.carpet.y0, T.carpet.y1),
+      headliner: p.rect(T.headliner.x0, T.headliner.x1, T.headliner.y0, T.headliner.y1),
+      tunnelRear: p.rect(T.tunnel.rear.x0, T.tunnel.rear.x1, T.tunnel.rear.y0, T.tunnel.rear.y1),
+      belts: T.belts.map((b) => ({
+        key: `belt-${b.row}-${b.side}-${b.kind}`,
+        x: p.toX(b.x),
+        y: p.toY(b.y),
+        upper: b.kind === 'upper'
+      }))
+    } : null,
+    wheel: { cx: p.toX(L.steerWheel.x), cy: p.toY(L.steerWheel.y), r: L.steerWheel.r * p.pxPerM },
+    // A-A 剖切线：位置 = 前排 H 点（与 CarSection2D 的取图平面同一 X）
+    cut: {
+      x: p.toX(L.rows[0].x),
+      y0: p.toY(profile.value.roofTopY ?? profile.value.H),
+      y1: p.toY(0)
+    },
+    ipLabel: { x: p.toX(L.ip.rearX) - 4, y: p.toY(L.ip.topY) + 11 },
+    consoleLabel: {
+      x: (p.toX(L.console.rearX) + p.toX(L.console.frontX)) / 2,
+      y: p.toY(L.console.bottomY) - 3
+    }
+  }
 })
 
 // 腰带线：皮卡仅覆盖驾驶室段（货箱栏板顶线由轮廓表达），其余车型贯通至 C 柱底
