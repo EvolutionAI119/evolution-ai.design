@@ -1277,61 +1277,10 @@ class NURBSCarBodyGenerator:
             'n_unmeasurable': 0,
             'curvature': {},
         }
-        try:
-            from .iges_nurbs import NurbsSurface
-            from .nurbs_curvature import analyze_iges_surface
-        except Exception as exc:                       # 依赖不可用则如实说明
-            info['measured'] = False
-            info['measure_error'] = f"曲率管线不可用: {type(exc).__name__}: {exc}"
-            return info
-
-        n_ok = 0
-        for comp in components:
-            s = comp.get('surface')
-            if not s or 'control_points' not in s:
-                continue
-            name = comp.get('name') or comp.get('type') or '?'
-            try:
-                cps = np.array([[[p['x'], p['y'], p['z']] for p in row]
-                                for row in s['control_points']], dtype=float)
-                wts = np.array([[p.get('weight', 1.0) for p in row]
-                                for row in s['control_points']], dtype=float)
-                ns = NurbsSurface(
-                    surface_id=0, k1=cps.shape[0] - 1, k2=cps.shape[1] - 1,
-                    m1=int(s['degree_u']), m2=int(s['degree_v']),
-                    knots_u=np.asarray(s['knot_vector_u'], dtype=float),
-                    knots_v=np.asarray(s['knot_vector_v'], dtype=float),
-                    weights=wts.reshape(-1), control_points=cps,
-                    u_range=None, v_range=None,
-                    pd_line_start=0, pd_line_end=0, n_params=0)
-                r = analyze_iges_surface(ns, n_samples=n_samples,
-                                         do_corner_check=False)
-                if not r.get('ok'):
-                    info['n_unmeasurable'] += 1
-                    continue
-                k = r.get('k_abs_median') or 0.0
-                if k <= 1e-9:
-                    info['n_flat_surfaces'] += 1
-                info['curvature'][name] = {
-                    'k_abs_median': k,
-                    'r_median_mm': r.get('r_median_mm'),
-                    'is_singly_curved': r.get('is_singly_curved'),
-                }
-                n_ok += 1
-            except Exception as exc:
-                info['n_unmeasurable'] += 1
-                info.setdefault('measure_warnings', []).append(
-                    f"{name}: {type(exc).__name__}: {exc}")
-
-        info['n_measured'] = n_ok
-        # 据实判定：有平面或测不出 → 不能声称 G2
-        info['g2_continuous'] = bool(
-            n_ok > 0 and info['n_flat_surfaces'] == 0
-            and info['n_unmeasurable'] == 0)
-        info['note'] = (
-            'G2 声明依据：所有曲面均非平面且可测；'
-            '平面曲率恒为 0，无法与相邻曲面满足曲率比 1±0.2（SOP-A SURF-001 §5.2）'
-        )
+        # 曲率管线（iges_nurbs / nurbs_curvature）已迁至 SISA，平台端不再保留实现。
+        # 保留字段契约，如实报告不可测，避免残留跨仓库 import。
+        info['measured'] = False
+        info['measure_error'] = '曲率管线已迁至 SISA，平台端不提供测量'
         return info
 
     def export_car_data(self, output_path=None):
