@@ -107,10 +107,12 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, roofFilletSet } from '../utils/carProfile.js'
-import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, deriveDloPaneRanges, shellHalfZAt, bandGlassSpine, ROOF_FILLETS, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP } from '../utils/carGlass.js'
+import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
+import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, bandGlassSpine, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
+import { createSeatRow, createInteriorTrim, createIpConsole, createLuggageTrim, createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
+import { deriveInteriorLayout } from '../utils/carInteriorLayout.js'
 
 const { t } = useI18n()
 
@@ -136,8 +138,7 @@ const props = defineProps({
     default: false
   },
   // 车门是否处于打开位（外部可绑开门按钮状态）：
-  // true = 车身按 deriveDoorLayout 挖门洞，门板成为唯一覆盖几何（无重复侧壁）；
-  // false = 车身完整，门板贴合侧壁（关闭态无需挖洞）。
+  // 门洞常挖、门板为唯一门几何；本 prop 仅作外部状态同步入口，几何不受影响。
   doorOpened: {
     type: Boolean,
     default: false
@@ -158,6 +159,7 @@ const containerRef = ref(null)
 const wireframeMode = ref(props.wireframe)
 const autoRotate = ref(true)
 const currentView = ref(props.viewAngle)
+const isFullscreen = ref(false)
 
 const viewAngles = [
   { key: 'front', label: 'Front', icon: 'F' },
@@ -176,6 +178,9 @@ const currentViewLabel = computed(() => {
 })
 
 let scene, camera, renderer, carGroup
+// initScene 实际绑定事件的容器元素。onUnmounted 触发时 Vue 已清空模板 ref
+// （containerRef.value === null），卸载解绑必须用这个缓存引用，否则监听泄漏。
+let boundContainer = null
 
 // ---- 平稳垂直起降（VTOL）分支状态 ----
 // flightProgress ∈ [0,1]：0=地面，1=稳态悬浮；推进速率 = dt/liftDuration，
@@ -196,10 +201,9 @@ let doorSeams = []
 let doorProgress = 0
 const toggleDoor = () => { doorOpen.value = !doorOpen.value }
 
-// 开门状态下：车身按 deriveDoorLayout 挖门洞（门板成为覆盖洞口的唯一几何，
-// 不再与实体侧壁重复）；关门状态：车身完整，门板贴于侧壁外（常规关闭门缝观感）。
-// 挖洞/恢复在 updateCar 重建车身时生效，动画本身仍由 doorProgress 平滑驱动。
-watch(doorOpen, () => updateCar())
+// 门洞/玻璃洞口**常挖**（与门开合状态无关）：门板 + 门片玻璃是全车唯一的门几何——
+// 关门时门板/玻璃盖住洞口封闭，开门时随铰链外摆、原位留下全空通透孔洞。
+// 动画本身由 doorProgress 平滑驱动，开合不再触发车身重建。
 
 // ---- 反重力飞控：360° 原地转向 + 姿态微摆 ----
 // 偏航为累计角（无 wrap）：连续指令多圈累加，全自由度无限制；
@@ -306,13 +310,14 @@ const createNurbsCar = (mesh) => {
     const paintColor = (isPaint && props.carColor) || part.color || props.carColor
     const material = isGlass
       ? new THREE.MeshPhysicalMaterial({
-          color: part.color || '#87CEEB',
+          color: part.color || '#a8c4cc',
           transparent: true,
-          opacity: part.opacity ?? 0.5,
+          opacity: part.opacity ?? 0.25,
           metalness: 0,
-          roughness: 0.05,
-          envMapIntensity: 1.2,
+          roughness: 0.08,
+          envMapIntensity: 0.6,
           side: THREE.DoubleSide,
+          depthWrite: false,
           wireframe: wireframeMode.value
         })
       : new THREE.MeshPhysicalMaterial({
@@ -377,8 +382,14 @@ const createNurbsWheel = (w) => {
  * 逐面法线——侧围 / 车顶 / 倒角上因此出现一片片明暗不同的三角面（用户读作「亮色破面」），
  * 车顶薄倒角更会被切成一串高亮细条（读作「尖刺」）。
  * 这里按位置把法线焊接平均，只合并夹角小于阈值的面，腰线、轮拱等硬边仍是硬边。
+ *
+ * hardEdgesY：按高度钉死的硬边（米）。greenhouse 收窄在腰带线（DLO 底边）处存在
+ * 斜率拐点（tumblehome 8°~26°，小于上面的焊接阈值 32°）——若放任焊接平均，拐点两侧
+ * 法线渐变扫过，整条腰线在掠射角下渲染成一条宽泛的爆白亮带（白带异常）。真车腰线
+ * 是一条锐利折痕：高光收成一条细亮线、上下两块面各自均匀过渡（层次感）。本参数把
+ * 「三角形重心分居拐点高度两侧」的面对排除在焊接之外，拐点因此保持真正的硬边。
  */
-function smoothNormalsKeepHardEdges(geom, tol = 1e-4, angleDeg = 32) {
+function smoothNormalsKeepHardEdges(geom, tol = 1e-4, angleDeg = 32, hardEdgesY = null) {
   const pos = geom.attributes.position
   const arr = pos.array
   const n = pos.count
@@ -393,8 +404,9 @@ function smoothNormalsKeepHardEdges(geom, tol = 1e-4, angleDeg = 32) {
     if (b) b.push(i); else buckets.set(k, [i])
   }
 
-  // 逐三角形面法线（同一三角形的三个顶点共用）
+  // 逐三角形面法线（同一三角形的三个顶点共用）；同时记录面心高度供硬边跨侧判定
   const face = new Float32Array(n * 3)
+  const triCY = new Float32Array(n / 3)
   for (let t = 0; t < n; t += 3) {
     const o = t * 3
     const ux = arr[o + 3] - arr[o], uy = arr[o + 4] - arr[o + 1], uz = arr[o + 5] - arr[o + 2]
@@ -408,17 +420,27 @@ function smoothNormalsKeepHardEdges(geom, tol = 1e-4, angleDeg = 32) {
       const w = (t + j) * 3
       face[w] = nx; face[w + 1] = ny; face[w + 2] = nz
     }
+    triCY[t / 3] = (arr[o + 1] + arr[o + 4] + arr[o + 7]) / 3
   }
 
-  // 焊接平均：仅合并与自身面夹角小于阈值的相邻面
+  // 焊接平均：仅合并与自身面夹角小于阈值、且不与自身面分居硬边两侧的相邻面
   const out = new Float32Array(n * 3)
   for (let i = 0; i < n; i++) {
     const own = i * 3
     const f0x = face[own], f0y = face[own + 1], f0z = face[own + 2]
+    const ci = triCY[(i / 3) | 0]
     let sx = 0, sy = 0, sz = 0
     for (const j of buckets.get(keyOf(i))) {
       const q = j * 3
       if (face[q] * f0x + face[q + 1] * f0y + face[q + 2] * f0z < cosT) continue
+      if (hardEdgesY) {
+        const cj = triCY[(j / 3) | 0]
+        let straddle = false
+        for (const ye of hardEdgesY) {
+          if ((ci - ye) * (cj - ye) < 0) { straddle = true; break }
+        }
+        if (straddle) continue
+      }
       sx += face[q]; sy += face[q + 1]; sz += face[q + 2]
     }
     const len = Math.hypot(sx, sy, sz) || 1
@@ -428,32 +450,88 @@ function smoothNormalsKeepHardEdges(geom, tol = 1e-4, angleDeg = 32) {
 }
 
 /**
- * 门洞内壁材质分组（开门状态专用）
+ * 车身洞口内壁 + 风挡暗舱底材质分组
  *
- * 车身由侧围轮廓整宽挤出：门洞沿 Z 贯穿，洞口的四壁（底槛面 / 前后门框面）
- * 因此横贯整车宽度。开门后被看成大片车身色板——即「多余车身」。
- * 把三角形重心落在门洞矩形内、且不在外蒙皮端面（|z| 接近半车宽的倒角环带保留
- * 车身色作门框唇边）的三角形归入材质组 1，用深色内饰材质渲染，
- * 门洞内读作座舱内壁，车身色不再出现在门洞里。
+ * 车身由侧围轮廓整宽挤出：一切轮廓内 holes（门洞/侧窗分片洞口）沿 Z 贯穿，
+ * 洞壁因此横贯整车宽度；若保留车身色，洞口里会看到大片车漆板——即「多余车身」。
+ * 把三角形重心落在任一口径矩形内、且不在外蒙皮端面（|z| 接近半车宽的倒角环带
+ * 保留车身色作门框/窗框唇边）的三角形归入材质组 1，用深色内饰材质渲染，
+ * 洞内读作座舱内壁；柱条/车顶的外蒙皮保持车身色 → 车身色顶部边界与玻璃清晰区分。
+ *
+ * 风挡/后风挡斜面无法挖 Z 向洞（斜面是挤出侧壁而非端盖）：把斜面玻璃带覆盖的
+ * 中央区三角形改判为内饰深色（带平面法向朝上、|z| 在玻璃半宽内），
+ * 透过透明玻璃读到的是深色舱影而非车身色壁；A/C 柱区（玻璃半宽以外）保持车身色。
  *
  * @param {THREE.BufferGeometry} geom 车身挤出几何（非索引，就地重排）
- * @param {{x0:number,x1:number,y0:number,y1:number}} rect 门洞矩形（米）
+ * @param {Array<{x0:number,x1:number,y0:number,y1:number}>} rects 洞口矩形列表（米）
  * @param {number} zCap 外蒙皮端面保留带宽（|z| ≥ zCap 的三角形保持车身色）
+ * @param {Array<{x1,y1,x2,y2,bottomInset,topInset,halfWidth}>} [bands] 斜面玻璃带暗舱底
+ * @param {Function} [taperK] greenhouse 收窄比例（y）→ ratio（bands 的 |z| 判据用）
+ * @param {Function} [isBodyMaterial] (x,y)→bool：点是否在车身实体内（外轮廓内且不在洞口内）。
+ *   用于把「位置落在洞口口径矩形内」的外皮三角形（轮廓线上的车顶前缘/风挡边框）排除，
+ *   只改判真正横贯车宽的洞口隧道壁。
  * @returns {number} 归入内饰组的三角形数
  */
-function splitDoorApertureInterior(geom, rect, zCap) {
+function splitBodyAperturesInterior(geom, rects, zCap, bands = [], taperK = null, isBodyMaterial = null) {
   const pos = geom.attributes.position
   const arr = pos.array
   const nTri = pos.count / 3
   const exterior = []
   const interior = []
+  // 玻璃带平面单位法线：暗舱底只改判**与带平面平行**的三角形。旧判据「法向朝上
+  // ny>0.35」会连带把车顶前缘/COWL 等近水平面（ny≈1）也染成暗色，形成车顶黑边；
+  // 用与带面法线的点积（|dot|>0.9）可精确锁定斜面墙本身。
+  const bandNormals = bands.map((b) => {
+    const dx = b.x2 - b.x1
+    const dy = b.y2 - b.y1
+    const len = Math.hypot(dx, dy) || 1
+    return [dy / len, -dx / len]
+  })
   for (let i = 0; i < nTri; i++) {
     const o = i * 9
     const cx = (arr[o] + arr[o + 3] + arr[o + 6]) / 3
     const cy = (arr[o + 1] + arr[o + 4] + arr[o + 7]) / 3
     const cz = (arr[o + 2] + arr[o + 5] + arr[o + 8]) / 3
-    const inAperture = cx > rect.x0 && cx < rect.x1 && cy > rect.y0 && cy < rect.y1 && Math.abs(cz) < zCap
-    ;(inAperture ? interior : exterior).push(o)
+    let inside = false
+    if (Math.abs(cz) < zCap) {
+      for (const r of rects) {
+        if (cx > r.x0 && cx < r.x1 && cy > r.y0 && cy < r.y1) {
+          // 外皮（车顶前缘/引擎盖/门槛等轮廓线上的三角形）重心也在矩形内，
+          // 但它们属于外形，必须保留车身色；只有实体内部（洞口隧道壁）改判内饰。
+          if (!isBodyMaterial || isBodyMaterial(cx, cy)) inside = true
+          break
+        }
+      }
+    }
+    if (!inside && bands.length && taperK) {
+      // 面几何法线（位置叉积；判据只取朝向，无需顶点法线）
+      const e1x = arr[o + 3] - arr[o]; const e1y = arr[o + 4] - arr[o + 1]; const e1z = arr[o + 5] - arr[o + 2]
+      const e2x = arr[o + 6] - arr[o]; const e2y = arr[o + 7] - arr[o + 1]; const e2z = arr[o + 8] - arr[o + 2]
+      let nx = e1y * e2z - e1z * e2y
+      let ny = e1z * e2x - e1x * e2z
+      let nz = e1x * e2y - e1y * e2x
+      const nl = Math.hypot(nx, ny, nz) || 1
+      nx /= nl; ny /= nl; nz /= nl
+      // 斜面墙：非端盖（|nz|<0.5）且法线与带平面法线近乎平行（|dot|>0.9）
+      if (Math.abs(nz) < 0.5) {
+        for (let bi = 0; bi < bands.length; bi++) {
+          const b = bands[bi]
+          const bn = bandNormals[bi]
+          if (Math.abs(nx * bn[0] + ny * bn[1]) <= 0.9) continue
+          const dx = b.x2 - b.x1; const dy = b.y2 - b.y1
+          const len2 = dx * dx + dy * dy || 1e-12
+          const len = Math.sqrt(len2)
+          const t = ((cx - b.x1) * dx + (cy - b.y1) * dy) / len2
+          if (t < b.bottomInset / len || t > 1 - b.topInset / len) continue
+          const px = b.x1 + dx * t; const py = b.y1 + dy * t
+          if (Math.hypot(cx - px, cy - py) > 0.03) continue          // 斜面墙条带（含 bevel 外扩）
+          if (Math.abs(cz) > b.halfWidth * taperK(cy) - 0.004) continue // A/C 柱区留车身色
+          inside = true
+          break
+        }
+      }
+    }
+    ;(inside ? interior : exterior).push(o)
   }
   if (!interior.length) return 0
   const out = new Float32Array(arr.length)
@@ -470,9 +548,86 @@ function splitDoorApertureInterior(geom, rect, zCap) {
   return interior.length
 }
 
+/**
+ * 将后端 NURBS 网格对齐到 carProfile 的居中坐标系。
+ * 数学部分（平移/偏航/等比缩放）在 carProfile.deriveNurbsFrame 中，此处只负责落到 Three 变换上。
+ */
+const alignNurbsToProfile = (body, mesh, P) => {
+  body.updateMatrixWorld(true)
+  const box = new THREE.Box3().setFromObject(body)
+  if (box.isEmpty()) return { valid: false, scale: 1, flip: false }
+
+  const wheelXs = (mesh.wheels || []).map((w) => (w.position?.x || 0) * 0.001)
+  const frame = deriveNurbsFrame(
+    { min: { x: box.min.x, y: box.min.y, z: box.min.z },
+      max: { x: box.max.x, y: box.max.y, z: box.max.z } },
+    wheelXs,
+    P
+  )
+  if (!frame) return { valid: false, scale: 1, flip: false }
+
+  body.rotation.y = frame.rotationY
+  body.scale.setScalar(frame.scale)
+  body.position.set(frame.position.x, frame.position.y, frame.position.z)
+  body.updateMatrixWorld(true)
+  return { valid: true, scale: frame.scale, flip: frame.flip }
+}
+
+/**
+ * 门板内饰 + 扶手重挂到对应车门铰链。
+ *
+ * createInteriorTrim 产出的是世界坐标网格（BoxGeometry 居中、position = AABB 中心），
+ * 这里把 position 减去铰链轴（x / z，铰链 y=0），再挂为铰链子节点：
+ * 之后与门板/门玻璃同轴同角度旋转 → 开门时门板内饰与扶手随门一同摆出。
+ * 按网格名 `door-{trim|armrest}-{front|rear}-{left|right}` 与 doorHinges 的 { key, sign } 配对。
+ * NURBS 路径无门铰链（doorHinges 为空）→ 保持原位挂载。
+ */
+const attachDoorTrimToHinges = (trimGroup) => {
+  if (!doorHinges.length) return
+  // 遍历快照：reparent 会从 trimGroup 摘除子节点并改写 children
+  for (const mesh of [...trimGroup.children]) {
+    const m = /^door-(trim|armrest)-(front|rear)-(left|right)$/.exec(mesh.name)
+    if (!m) continue
+    const key = m[2]
+    const sign = m[3] === 'left' ? -1 : 1
+    const target = doorHinges.find((d) => d.key === key && d.sign === sign)
+    if (!target) continue
+    mesh.position.x -= target.hinge.position.x
+    mesh.position.z -= target.hinge.position.z
+    target.hinge.add(mesh)
+  }
+}
+
+/** 按 carProfile 座椅布局逐排生成内饰座椅并挂入父级（挤出路径与 NURBS 路径共用） */
+const addInteriorSeats = (parent, P) => {
+  const preset = resolveSeatPreset(props.carType, props.carParams)
+  for (let row = 1; row <= (P.seatRows || 1); row++) {
+    parent.add(createSeatRow(P, row, { materialVariant: preset }))
+  }
+  // 其余内饰件（门板内饰 / 中央通道 / 顶棚 / 地毯 / 安全带固定点）与座椅同一父级、同一坐标源
+  const trim = createInteriorTrim(P)
+  parent.add(trim)
+  attachDoorTrimToHinges(trim)
+  // IP/CONSOLE 功能模块 + 前/后行李舱内饰（deriveIpConsoleLayout / deriveLuggageLayout 同一真源）
+  parent.add(createIpConsole(P))
+  parent.add(createLuggageTrim(P))
+}
+
 const createCar = () => {
-  // 有后端真实网格时走高保真路径
-  if (props.nurbsMesh) return createNurbsCar(props.nurbsMesh)
+  // 每次重建先清空门铰链/门缝引用：NURBS 路径不建门，若残留上一台车的铰链会让
+  // 门板内饰误挂到已销毁的 Group。动画每帧读取的也是这里的引用，必须同源。
+  doorHinges = []
+  doorSeams = []
+  // 有后端真实网格时走高保真路径：车身先对齐到 carProfile 坐标系，再与内饰件同父级共存
+  if (props.nurbsMesh) {
+    const P = deriveCarProfile(props.carParams, props.carType)
+    const root = new THREE.Group()
+    const body = createNurbsCar(props.nurbsMesh)
+    alignNurbsToProfile(body, props.nurbsMesh, P)
+    root.add(body)
+    addInteriorSeats(root, P)
+    return root
+  }
   const group = new THREE.Group()
 
   // 侧围轮廓（米）：mm 推导与物理约束集中在纯函数，保证全车型拓扑合法
@@ -489,10 +644,15 @@ const createCar = () => {
 
   const bodyColor = new THREE.Color(props.carColor)
 
-  const bodyMat = new THREE.MeshStandardMaterial({
+  // 金属底漆 + 柔化清漆：底漆提供车身色层次，低峰值清漆保留连续高光。
+  // 避免高金属度/低粗糙度在机盖、腰线和尾盖的掠射角反射成一条爆白硬带。
+  const bodyMat = new THREE.MeshPhysicalMaterial({
     color: bodyColor,
-    metalness: 0.6,
-    roughness: 0.25,
+    metalness: 0.42,
+    roughness: 0.34,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.24,
+    envMapIntensity: 0.85,
     wireframe: wireframeMode.value
   })
 
@@ -517,6 +677,15 @@ const createCar = () => {
     color: 0xaaaaaa,
     metalness: 0.9,
     roughness: 0.2,
+    wireframe: wireframeMode.value
+  })
+
+  // 轮辋盘面（比辐条深一档的枪灰）：与亮银辐条/轮唇形成明暗层次，
+  // 否则同色材质会让辐条「消失」在盘面上，整轮仍读作一块平盘
+  const rimDiscMat = new THREE.MeshStandardMaterial({
+    color: 0x565b63,
+    metalness: 0.85,
+    roughness: 0.38,
     wireframe: wireframeMode.value
   })
 
@@ -546,6 +715,10 @@ const createCar = () => {
     carType: props.carType
   })
 
+  // 侧窗分片（A 柱前固定片/前门片/后门片/C 柱后固定片）：玻璃切片与玻璃洞口
+  // 共用同一份分片口径（carGlass 纯函数，可单测）；须在车身挖洞前定义
+  const paneRanges = deriveDloPaneRanges(dl, props.carParams?.door_seam_width ?? 8)
+
   // ---- 侧围外轮廓（2D/3D 唯一真源 bodySideOutline：顶边 G1 圆角 + 底边轮拱 notch + 接近/离去角切角）----
   // 轮拱做进外轮廓（非 holes 共线孔）→ bevel 沿轮廓走，拱底无残留车身色薄片，真正挖通
   let outlineCmds = bodySideOutline(P, props.carType, ROOF_FILLETS, P.ramps)
@@ -557,29 +730,74 @@ const createCar = () => {
   }
   bodyShape.closePath()
 
-  // 开门状态：在门区内开真实矩形洞（holes），门板成为覆盖洞口的唯一几何——
-  // 开门时侧壁不再与门板重复，物理空间唯一、无 z-fighting。
-  // 关闭状态不挖洞：门板薄板贴于完整侧壁外，即常规车关闭门缝的视觉。
+  // 门洞**常挖**（与开合状态无关）：门板是覆盖门洞的唯一几何——车门唯一一份，
+  // 关门盖住洞口封闭，开门外摆后原位全空。上下缘与门板留 2~8mm 叠压量保证封闭。
   // 注意：用 holes 而非压平轮廓，避免挤出 bevel 在压平区产生折叠/顶点爆炸。
-  let doorAperture = null
-  if (props.doorOpened || doorOpen.value) {
-    const doorRearEdge = (dl.rearSeamX === null ? dl.midSeamX : dl.rearSeamX) - 0.004
-    const doorFrontEdge = dl.frontSeamX + 0.004
-    const doorHoleBottom = bodyBottomY + 0.028
-    const doorHoleTop = beltLineY - 0.004
-    const hole = new THREE.Path()
-    hole.moveTo(doorRearEdge, doorHoleBottom)
-    hole.lineTo(doorFrontEdge, doorHoleBottom)
-    hole.lineTo(doorFrontEdge, doorHoleTop)
-    hole.lineTo(doorRearEdge, doorHoleTop)
-    hole.closePath()
-    bodyShape.holes.push(hole)
-    // 门洞矩形（供挤出后把洞口内壁改判为内饰材质，见 splitDoorApertureInterior）
-    doorAperture = {
-      x0: doorRearEdge - 0.008, x1: doorFrontEdge + 0.008,
-      y0: doorHoleBottom - 0.008, y1: doorHoleTop + 0.004
-    }
+  const doorRearEdge = (dl.rearSeamX === null ? dl.midSeamX : dl.rearSeamX) - 0.004
+  const doorFrontEdge = dl.frontSeamX + 0.004
+  const doorHoleBottom = bodyBottomY + 0.028
+  // 肩线 = 玻璃洞口底边（DLO 底边 + 内缩）：门洞必须与门片玻璃洞口**合并**为
+  // 单一多边形，否则两者之间残留一条 20mm 车身色腰带横条，开门后横贯门洞遮挡。
+  const shoulderY = cabin.dlo[0][1] + DLO_APERTURE_INSET
+
+  // 侧窗分片玻璃洞口**常挖**：玻璃因此成为真透明件（洞沿 Z 贯通左右侧壁）。
+  // 洞口较玻璃四缘内缩 12mm（关门玻璃叠压封闭）；相邻洞口间保留车身色竖条
+  // （A/B/C 柱剪影）与车顶横梁——车身色顶部边界与玻璃清晰区分。
+  // 开门时门片玻璃随铰链外摆，原车门玻璃位置即为全空通透孔洞，无任何遮挡物。
+  const glassApertures = deriveDloApertures(cabin.dlo, paneRanges)
+  const doorPaneKeys = new Set(paneRanges.filter((p) => p.hingeKey).map((p) => p.key))
+  const doorTowers = glassApertures.filter((ap) => doorPaneKeys.has(ap.key))
+  // 洞壁内饰化口径矩形（外扩 8mm 兜住洞壁边界三角形，见 splitBodyAperturesInterior）
+  const apertureRects = []
+  // A 柱前固定片 / C 柱后固定片：各自独立挖洞
+  for (const ap of glassApertures) {
+    if (doorPaneKeys.has(ap.key)) continue
+    const p = new THREE.Path()
+    p.moveTo(ap.points[0][0], ap.points[0][1])
+    for (let i = 1; i < ap.points.length; i++) p.lineTo(ap.points[i][0], ap.points[i][1])
+    p.closePath()
+    bodyShape.holes.push(p)
+    const xs = ap.points.map((q) => q[0])
+    const ys = ap.points.map((q) => q[1])
+    apertureRects.push({
+      x0: Math.min(...xs) - 0.008, x1: Math.max(...xs) + 0.008,
+      y0: Math.min(...ys) - 0.008, y1: Math.max(...ys) + 0.008
+    })
   }
+  // 门洞 + 门片玻璃洞口 → 单一简单多边形（腰带处不再有车身色横带）；
+  // 退化时退回纯门洞矩形（不产生自交 holes，玻璃仍覆盖实体车身）
+  const doorPoly = buildDoorAperturePolygon({
+    frontEdge: doorFrontEdge, rearEdge: doorRearEdge,
+    bottomY: doorHoleBottom, shoulderY,
+    panes: doorTowers.map((ap) => ap.points)
+  }) || [
+    [doorRearEdge, doorHoleBottom], [doorFrontEdge, doorHoleBottom],
+    [doorFrontEdge, shoulderY], [doorRearEdge, shoulderY]
+  ]
+  const doorHole = new THREE.Path()
+  doorHole.moveTo(doorPoly[0][0], doorPoly[0][1])
+  for (let i = 1; i < doorPoly.length; i++) doorHole.lineTo(doorPoly[i][0], doorPoly[i][1])
+  doorHole.closePath()
+  bodyShape.holes.push(doorHole)
+  // 口径矩形：门洞下半（到肩线）+ 每个门片塔楼各自 bbox——不能用合并多边形的
+  // 总 bbox，否则塔楼之间的 B 柱会被改判成深色内饰
+  apertureRects.push({
+    x0: doorRearEdge - 0.008, x1: doorFrontEdge + 0.008,
+    y0: doorHoleBottom - 0.008, y1: shoulderY + 0.004
+  })
+  for (const ap of doorTowers) {
+    const xs = ap.points.map((q) => q[0])
+    const ys = ap.points.map((q) => q[1])
+    apertureRects.push({
+      x0: Math.min(...xs) - 0.008, x1: Math.max(...xs) + 0.008,
+      y0: Math.min(...ys) - 0.008, y1: Math.max(...ys) + 0.008
+    })
+  }
+
+  // 外轮廓多边形：内外测试口径，供洞壁内饰化排除「外皮/倒角外扩带」三角形——
+  // 轮廓上的车顶前缘、风挡边框必须保留车身色（见下方判据）。
+  const outlinePts = bodyShape.extractPoints(16)
+  const isBodyMaterial = (x, y) => insideBodyMaterial(x, y, outlinePts.shape)
 
   // 车身挤出深度 = W − 2×bevel：three.js 的 bevel 在 Z 两端各扩展 bevelThickness，
   // 因此整车宽度 = depth + 2×bevelThickness = W（不被倒角撑大）。
@@ -615,18 +833,39 @@ const createCar = () => {
       pos.setZ(i, pos.getZ(i) * taperK(pos.getY(i)))
     }
     pos.needsUpdate = true
-    // 收窄后侧围端盖已成双曲面：必须按位置焊接求平滑法线，否则逐面法线烧出三角破面
-    smoothNormalsKeepHardEdges(geom)
+    // 收窄后侧围端盖已成双曲面：必须按位置焊接求平滑法线，否则逐面法线烧出三角破面；
+    // 腰带线（DLO 底边）钉为硬边——收窄拐点若被焊接平均扫过，腰线高光会晕染成一条
+    // 宽泛爆白的「白带」；硬边让高光收成一条锐利折线，上下板面各自均匀过渡。
+    smoothNormalsKeepHardEdges(geom, 1e-4, 32, [dloFrame.dloYBot])
   }
   applyGreenhouseTaper(bodyGeom)
 
-  // 开门状态：门洞四壁横贯整车宽度（holes 沿 Z 通透），整片车身色在门洞里外露。
-  // 把洞壁三角形改判为内饰材质组，|z| ≥ 外蒙皮端面处的倒角环带仍保留车身色作门框唇边。
-  let bodyMats = bodyMat
-  if (doorAperture) {
-    splitDoorApertureInterior(bodyGeom, doorAperture, bodyDepth / 2)
-    bodyMats = [bodyMat, interiorMat]
+  // 洞壁内饰化：门洞 + 全部侧窗分片洞口的洞壁（横贯车宽）改判深色内饰材质，
+  // |z| ≥ 外蒙皮端面的倒角环带保留车身色作门框/窗框唇边；风挡/后风挡斜面玻璃带
+  // 中央区改判暗舱底（A/C 柱区留车身色）——透明玻璃后读到的是舱影而非车漆壁。
+  // 车顶边框：风挡/后风挡玻璃顶边停在柱顶圆角切点下方 FRONT_GLASS_TOP_BORDER 处——
+  // 玻璃不包裹圆角、不搭上车顶；车顶圆角（车身色）本身即「车身色顶部边界」。
+  // 暗舱底（内饰深色）只改判到玻璃顶边：玻璃覆盖区读作舱影，玻璃以上全是车身色，
+  // 不再出现「玻璃上方一条宽深色厚板」的观感。
+  const FRONT_GLASS_TOP_BORDER = 0.004
+  const glassBands = [
+    { x1: cabin.windshield.x1, y1: cabin.windshield.y1,
+      x2: cabin.windshield.x2, y2: cabin.windshield.y2,
+      bottomInset: cabin.windshield.bottomInset + 0.01,
+      topInset: cabin.windshield.topInset + FRONT_GLASS_TOP_BORDER,
+      halfWidth: cabin.windshield.width / 2 }
+  ]
+  if (cabin.rearWindow) {
+    glassBands.push({
+      x1: cabin.rearWindow.x1, y1: cabin.rearWindow.y1,
+      x2: cabin.rearWindow.x2, y2: cabin.rearWindow.y2,
+      bottomInset: ROOF_FILLETS.cPillarBottom + 0.01,
+      topInset: cabin.rearWindow.topInset + FRONT_GLASS_TOP_BORDER,
+      halfWidth: cabin.rearWindow.width / 2
+    })
   }
+  splitBodyAperturesInterior(bodyGeom, apertureRects, bodyDepth / 2, glassBands, taperK, isBodyMaterial)
+  const bodyMats = [bodyMat, interiorMat]
 
   const bodyMesh = new THREE.Mesh(bodyGeom, bodyMats)
   bodyMesh.castShadow = true
@@ -647,20 +886,21 @@ const createCar = () => {
     group.add(bed)
   }
 
-  // ---- 座舱玻璃划分（与 2D Car2D windowPath 同源锚点：玻璃与车身两种状态） ----
-  // 前后风挡贴合拉伸体侧壁（壁面被 bevel 外扩 bodyThickness），侧窗贴合端盖外缘；
-  // 玻璃统一用独立透明材质与车身漆面区分；B 柱在 55% 分段处保留车身色立柱（与 2D pillarX 同源）
-  // 汽车玻璃写实材质：深色灰绿 tint（真车侧窗透光率 70% 级视觉），零环境反射——
-  // 杜绝浅蓝镜面化与风挡斜面 RoomEnvironment 菲涅尔发白（envMapIntensity=0）；
-  // 深色低透同时遮蔽对侧门缝黑条（移除透见的不合理门缝）。
+  // ---- 座舱玻璃划分（与 2D Car2D windowPath 同源锚点） ----
+  // 真透明玻璃：浅灰绿 tint、低不透明度和极低粗糙度（真车侧窗透光观感），
+  // 侧窗/风挡/后风挡覆盖区车身已开真实孔洞（侧窗）或改判暗舱底（斜面），
+  // 玻璃后读到的是座舱而非车身色壁；depthWrite=false 避免舱内玻璃面排序伪影。
+  // A/B/C 柱与车顶保持车身色（洞口间竖条 + 玻璃半宽以外斜面区），
+  // 车身色顶部边界与玻璃因此清晰区分。
   const glassMat = new THREE.MeshPhysicalMaterial({
-    color: 0x212c30,
+    color: 0xa8c4cc,
     transparent: true,
-    opacity: 0.70,
+    opacity: 0.25,
     metalness: 0,
-    roughness: 0.50,
-    envMapIntensity: 0.0,
+    roughness: 0.08,
+    envMapIntensity: 0.6,
     side: THREE.DoubleSide,
+    depthWrite: false,
     wireframe: wireframeMode.value
   })
 
@@ -694,19 +934,18 @@ const createCar = () => {
     group.add(m)
   }
 
-  // 车顶 G1 圆角集（与车身轮廓同一真源 roofFilletSet）：风挡顶/车顶后缘玻璃包裹用
-  const roofFillets = roofFilletSet(P, props.carType, ROOF_FILLETS)
-
-  // 前风挡：底缘 = COWL（bottomInset 下退避开 bevel 外扩角），顶缘包裹 A柱顶圆角并搭上车顶
+  // 前风挡：底缘 = COWL（bottomInset 下退避开 bevel 外扩角），顶缘停在 A 柱顶圆角
+  // 下方 FRONT_GLASS_TOP_BORDER 处——不包裹圆角、不搭上车顶：玻璃顶边始终低于车顶，
+  // 车身色车顶前缘完整可见（旧实现搭接车顶 20mm，在顶面烧出一道高光横带 = 穿模）。
   const ws = cabin.windshield
-  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width, ws.topInset, ws.bottomInset, roofFillets.front)
-  // 后风挡：顶缘包裹车顶后缘圆角（rear 圆角 a/b 与行进方向相反 → 交换传入）；
-  // 底缘下退 cPillarBottom 至 C 柱底圆角切点（玻璃不戳入尾部圆角，皮卡无后风挡）
+  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width,
+    ws.topInset + FRONT_GLASS_TOP_BORDER, ws.bottomInset)
+  // 后风挡：顶缘同样停在车顶后缘圆角下方（皮卡无后风挡）；
+  // 底缘下退 cPillarBottom 至 C 柱底圆角切点（玻璃不戳入尾部圆角）
   if (cabin.rearWindow) {
     const rw = cabin.rearWindow
-    const rf = roofFillets.rear
-    const rearFillet = rf ? { a: rf.b, ctrl: rf.ctrl, b: rf.a } : null
-    addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width, rw.topInset, ROOF_FILLETS.cPillarBottom, rearFillet)
+    addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width,
+      rw.topInset + FRONT_GLASS_TOP_BORDER, ROOF_FILLETS.cPillarBottom)
   }
 
   // 侧窗 DLO（左右各分片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
@@ -716,7 +955,6 @@ const createCar = () => {
   // 门片挂到对应车门铰链 Group（与门板同轴同角度），开门时玻璃随门一同外摆；
   // 分缝两侧各留半个缝宽间隙 → 玻璃上同样能看到门缝（与 2D 分缝线同坐标）。
   const DLO_ROWS = 16
-  const paneRanges = deriveDloPaneRanges(dl, props.carParams?.door_seam_width ?? 8)
   const doorGlass = []
   const addDloPane = (xFront, xRear, zSide, hingeKey) => {
     const positions = buildDloStripRange(cabin.dlo, dloFrame, DLO_ROWS, zSide, xFront, xRear)
@@ -750,6 +988,7 @@ const createCar = () => {
     group.add(pillar)
   }
 
+
   // ---- 底盘上升装置（6~8 台，deriveLiftDevices 同源）----
   // 只落前后轮腔之间的封闭地板区间，绝不侵入轮腔切口；风道口下沉 12mm（不构成额外最低点）
   const liftLayout = deriveLiftDevices(P, resolveFlightParams(props.carType, props.carParams).liftFans)
@@ -773,27 +1012,46 @@ const createCar = () => {
 
   const createWheel = (x, z) => {
     const wheelGroup = new THREE.Group()
-    
+    // 外侧方向：轮辋盘面/辐条必须装在朝向车外的一侧，否则整轮被轮胎端盖
+    // 遮成一块纯黑圆盘（侧视读作「无轮」黑洞）
+    const outboard = Math.sign(z) || 1
+
     const tireWidth = fit.tireW
-    const tireGeom = new THREE.CylinderGeometry(wheelR, wheelR, tireWidth, 24)
+    const tireGeom = new THREE.CylinderGeometry(wheelR, wheelR, tireWidth, 28)
     tireGeom.rotateX(Math.PI / 2)
     const tire = new THREE.Mesh(tireGeom, wheelMat)
     wheelGroup.add(tire)
 
-    const rimGeom = new THREE.CylinderGeometry(wheelR * 0.6, wheelR * 0.6, tireWidth * 0.9, 12)
+    // 轮辋盘：贴在外侧胎侧之外 6mm，半径 0.68R（露出胎侧黑边作胎壁）。
+    // 盘面用深一档的枪灰，辐条/轮唇用亮银——同色会把辐条吃掉，整轮仍是「平盘」
+    const rimR = wheelR * 0.68
+    const rimGeom = new THREE.CylinderGeometry(rimR, rimR, 0.02, 28)
     rimGeom.rotateX(Math.PI / 2)
-    const rim = new THREE.Mesh(rimGeom, rimMat)
+    const rim = new THREE.Mesh(rimGeom, rimDiscMat)
+    rim.position.z = outboard * (tireWidth / 2 - 0.004)
     wheelGroup.add(rim)
 
-    const hubGeom = new THREE.CylinderGeometry(wheelR * 0.2, wheelR * 0.2, tireWidth * 0.95, 8)
+    // 轮唇：轮辋外圈的亮银环，勾勒轮辋与胎壁的分界
+    const lipGeom = new THREE.TorusGeometry(rimR, 0.008, 8, 28)
+    const rimLip = new THREE.Mesh(lipGeom, rimMat)
+    rimLip.position.z = outboard * (tireWidth / 2 + 0.006)
+    wheelGroup.add(rimLip)
+
+    // 轮毂中心盖：亮银圆盘凸出于轮辋盘
+    const hubGeom = new THREE.CylinderGeometry(rimR * 0.30, rimR * 0.30, 0.016, 16)
     hubGeom.rotateX(Math.PI / 2)
     const hub = new THREE.Mesh(hubGeom, chromeMat)
+    hub.position.z = outboard * (tireWidth / 2 + 0.010)
     wheelGroup.add(hub)
 
+    // 辐条：5 根径向辐板，绕轮轴（Z）均布，压在轮辋盘外侧
+    const spokeLen = rimR * 0.9
     for (let i = 0; i < 5; i++) {
-      const spokeGeom = new THREE.BoxGeometry(wheelR * 0.5, 0.04, 0.06)
+      const spokeGeom = new THREE.BoxGeometry(rimR * 0.26, spokeLen, 0.014)
+      spokeGeom.translate(0, spokeLen / 2, 0)
       const spoke = new THREE.Mesh(spokeGeom, rimMat)
-      spoke.rotation.x = (i * Math.PI * 2) / 5
+      spoke.rotation.z = (i * Math.PI * 2) / 5
+      spoke.position.z = outboard * (tireWidth / 2 + 0.012)
       wheelGroup.add(spoke)
     }
 
@@ -836,32 +1094,8 @@ const createCar = () => {
   addArchLiner('front')
   addArchLiner('rear')
 
-  const steeringWheelGroup = new THREE.Group()
-  const swRadius = 0.15
-  const swGeom = new THREE.TorusGeometry(swRadius, 0.012, 16, 32)
-  const swMesh = new THREE.Mesh(swGeom, chromeMat)
-  swMesh.rotation.x = Math.PI / 2
-  steeringWheelGroup.add(swMesh)
-
-  const swSpoke1 = new THREE.Mesh(new THREE.BoxGeometry(0.008, swRadius * 1.8, 0.008), chromeMat)
-  steeringWheelGroup.add(swSpoke1)
-  const swSpoke2 = new THREE.Mesh(new THREE.BoxGeometry(0.008, swRadius * 1.8, 0.008), chromeMat)
-  swSpoke2.rotation.z = Math.PI / 3
-  steeringWheelGroup.add(swSpoke2)
-  const swSpoke3 = new THREE.Mesh(new THREE.BoxGeometry(0.008, swRadius * 1.8, 0.008), chromeMat)
-  swSpoke3.rotation.z = -Math.PI / 3
-  steeringWheelGroup.add(swSpoke3)
-
-  const steeringColumnGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.15, 8)
-  const steeringColumn = new THREE.Mesh(steeringColumnGeom, chromeMat)
-  steeringColumn.position.set(0, -swRadius - 0.075, 0)
-  steeringWheelGroup.add(steeringColumn)
-
-  const steeringWheelX = (windshieldTopX + hoodEndX) / 2
-  const steeringWheelY = beltLineY - 0.1
-  const steeringWheelZ = -halfTrack + 0.08
-  steeringWheelGroup.position.set(steeringWheelX, steeringWheelY, steeringWheelZ)
-  group.add(steeringWheelGroup)
+  // ---- 方向盘总成：共享 createSteeringWheel（含 SAE 22° 轮面倾角，与独立预览页同一真源）----
+  group.add(createSteeringWheel(P))
 
   // ---- 保险杠：贴前/后立面外表面（旧值埋在车身实体内不可见，已修正）----
   const bumperGeom = new THREE.BoxGeometry(0.05, 0.15, W - 0.10)
@@ -873,35 +1107,36 @@ const createCar = () => {
   rearBumper.position.set(rearX - 0.005, bodyBottomY + 0.075, 0)
   group.add(rearBumper)
 
-  // ---- 接近角/离去角构造线：接地点→车身立面底角（坡面 cornerY 由可调角度驱动）的琥珀色布置线 ----
-  const angleLineMat = new THREE.LineBasicMaterial({ color: 0xfbbf24 })
-  for (const zSide of [1, -1]) {
-    const zz = zSide * (fit.wall + 0.006)
-    group.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(frontWheelX, 0, zz), new THREE.Vector3(frontX, P.ramps.front.cornerY, zz)]),
-      angleLineMat))
-    group.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(rearWheelX, 0, zz), new THREE.Vector3(rearX, P.ramps.rear.cornerY, zz)]),
-      angleLineMat))
+  // ---- 前大灯：贴合前立面外表面 ----
+  // 前立面并非平面：轮廓在机盖高度处前凸到 frontX+0.02 附近，且挤出 bevel 再外扩
+  // BODY_BEVEL_SIZE。旧实现把灯盒中心放在 frontX（仅突出 25mm）→ 整颗灯埋在
+  // 前脸实体内部，前视完全看不到。此处按灯高处的轮廓前缘 + bevel 求真实立面 X，
+  // 灯罩只露 6mm，读作嵌入式灯组而非外挂方块。
+  const noseXAt = (y, halfRange = 0.06) => {
+    let maxX = frontX
+    for (const p of outlinePts.shape) {
+      if (Math.abs(p.y - y) <= halfRange && p.x > maxX) maxX = p.x
+    }
+    return maxX
   }
-
-  // ---- 前大灯：嵌于前立面（旧值 z=halfTrack-0.15 深埋车体内部，不可见）----
   const headlightMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: 0xffffcc,
     emissiveIntensity: 0.5,
     wireframe: wireframeMode.value
   })
-  const headlightGeom = new THREE.BoxGeometry(0.05, 0.10, 0.22)
   const hlY = Math.max(hoodLineY - 0.16, bodyBottomY + 0.16)
-  const hlZ = fit.wall - 0.18
+  // 灯组内移：外侧端不得越过前脸的倒角圆角，否则灯罩会从前脸棱角"穿出去"
+  // 在翼子板转角处露出一块白斑
+  const hlZ = fit.wall - 0.27
+  const lensT = 0.016
+  const headlightGeom = new THREE.BoxGeometry(lensT, 0.10, 0.24)
+  const hlX = noseXAt(hlY) + BODY_BEVEL_SIZE - lensT / 2 + 0.006
   const hl1 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl1.position.set(frontX, hlY, hlZ)
+  hl1.position.set(hlX, hlY, hlZ)
   group.add(hl1)
   const hl2 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl2.position.set(frontX, hlY, -hlZ)
+  hl2.position.set(hlX, hlY, -hlZ)
   group.add(hl2)
 
   // ---- 尾灯：嵌于后立面（与大灯同口径修正）----
@@ -924,10 +1159,12 @@ const createCar = () => {
   // 分缝线：前缝/B柱缝/后缝 竖向暗色薄槽（sill→腰带线）；门板：贴侧壁的薄面板挂到铰链 Group，
   // animate() 按 door_open_angle 缓动 rotation.y 开合，把手 parent 到对应门板随动。
   const seamMat = new THREE.MeshStandardMaterial({ color: 0x08080c, metalness: 0.3, roughness: 0.8, wireframe: wireframeMode.value })
-  const doorMat = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0.6, roughness: 0.28, wireframe: wireframeMode.value })
+  const doorMat = bodyMat   // 门板与车身共用同一车漆，避免腰线两侧高光/色差断裂
   const handleGeom = new THREE.BoxGeometry(0.14, 0.022, 0.02)
   const doorBottom = bodyBottomY + 0.02
-  const doorTop = beltLineY - 0.004
+  // 门板顶边 = 玻璃洞口肩线（而非腰带线）：合并门洞从门槛一直开到玻璃底，
+  // 门板必须同样覆盖到肩线，否则关门时腰带线到玻璃底之间留一条 24mm 横缝。
+  const doorTop = shoulderY
   const doorH = doorTop - doorBottom
   const seamW = (props.carParams?.door_seam_width ?? 8) / 1000
   doorHinges = []
@@ -943,10 +1180,12 @@ const createCar = () => {
   addSeam(dl.frontSeamX); addSeam(dl.midSeamX)
   if (dl.rearSeamX !== null) addSeam(dl.rearSeamX)
   // 门板 + 铰链（常规前铰：前门铰链在前缝、后门铰链在 B柱缝，均向后开）
+  // 门板宽度 = 缝到缝 − 4mm：门洞（缝到缝 − 8mm）四缘被门板叠压 2mm → 门板是全车
+  // 唯一门几何且关门严密封闭；门缝观感由门洞边缘内缩的深色洞壁读出（真车 shut line）。
   const mkDoor = (key, hingeX, leadX, trailX, handleX, zSide) => {
     const hinge = new THREE.Group()
     hinge.position.set(hingeX, 0, zSide * fit.wall)
-    const w = Math.max(Math.abs(trailX - leadX) - seamW, 0.05)   // X+ 朝车头：leading 边 X 更大，取绝对宽
+    const w = Math.max(Math.abs(trailX - leadX) - 0.004, 0.05)   // X+ 朝车头：leading 边 X 更大，取绝对宽
     const panel = new THREE.Mesh(new THREE.BoxGeometry(w, doorH, 0.012), doorMat)
     panel.position.set((leadX + trailX) / 2 - hingeX, doorBottom + doorH / 2, zSide * 0.006)
     panel.castShadow = true
@@ -970,39 +1209,140 @@ const createCar = () => {
     target.hinge.add(dg.mesh)
   }
 
+  // 凸面镜片圆角贴花：两片镜共用一张（disposeObject 统一随材质释放）
+  const mirrorGlassAlpha = (() => {
+    const c = document.createElement('canvas')
+    c.width = 256; c.height = 128
+    const ctx = c.getContext('2d')
+    ctx.fillStyle = '#000'
+    ctx.fillRect(0, 0, 256, 128)
+    ctx.fillStyle = '#fff'
+    ctx.beginPath()
+    ctx.roundRect(5, 5, 246, 118, 24)
+    ctx.fill()
+    return new THREE.CanvasTexture(c)
+  })()
+
   const createMirror = (zSide) => {
     const mirrorGroup = new THREE.Group()
+    // A 柱根部已随 greenhouse 内收，安装点必须取该高度的真实侧壁半宽，
+    // 不能仍用车身最大半宽，否则镜座与车身之间会出现悬空缝隙。
+    const mountY = hoodLineY + 0.03
+    const mountZ = shellHalfZAt(mountY, dloFrame, bodyExtentZ)
+    const armLength = 0.025
 
-    // 后视镜安装在 A 柱根部（发动机舱线高度），与车顶保持明确间距，
-    // 避免任何视角下镜壳与车顶视觉重叠而成为"杂乱物"
-    const armLength = 0.08
-    const armGeom = new THREE.CylinderGeometry(0.015, 0.02, armLength, 8)
+    const baseGeom = new THREE.SphereGeometry(0.025, 20, 12)
+    baseGeom.scale(1.15, 0.7, 0.35)
+    const base = new THREE.Mesh(baseGeom, bodyMat)
+    base.position.set(0, 0, zSide * (mountZ + 0.002))
+    mirrorGroup.add(base)
+
+    const armGeom = new THREE.CylinderGeometry(0.014, 0.011, armLength, 20)
     armGeom.rotateX(Math.PI / 2)
     const arm = new THREE.Mesh(armGeom, bodyMat)
-    arm.position.set(0, 0, zSide * (bodyExtentZ + armLength / 2))
+    arm.position.set(0, 0, zSide * (mountZ + armLength / 2))
     mirrorGroup.add(arm)
 
-    // 镜壳：宽度沿车长、深度沿 Z 向外凸出，呈真实后视镜形态（非薄片状）
-    const housingDepth = 0.11
-    const housingGeom = new THREE.BoxGeometry(0.16, 0.09, housingDepth)
-    const housingZ = bodyExtentZ + armLength + housingDepth / 2
+    // ---- 镜壳：球体雕刻的水滴形壳体（替代圆角盒） ----
+    // 旧圆角盒顶面接近平面，顶面高光沿整个平面摊成一条宽亮带。真实镜壳为
+    // 曲面壳：舷外渐缩（俯视水滴轮廓）+ 外端底部上挑（气动下切），顶面
+    // 高光随曲面法线连续滚转、沿弧面自然衰减——符合物理光照逻辑。
+    const housingLength = 0.12    // X：前→后
+    const housingHeight = 0.095   // Y：高
+    const housingDepth = 0.155    // Z：内→外
+    const flatStartX = -housingLength * 0.385  // 尾部拍扁起点
+    const flatKeep = 0.25                       // 拍扁保留率（越小越平）
+    const housingGeom = new THREE.SphereGeometry(1, 48, 32)
+    housingGeom.scale(housingLength / 2, housingHeight / 2, housingDepth / 2)
+    {
+      const pos = housingGeom.attributes.position
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i)
+        let y = pos.getY(i)
+        const zOut = pos.getZ(i) * zSide
+        const t = Math.min(Math.max(zOut / housingDepth + 0.5, 0), 1)  // 0 内端 → 1 外端
+        x *= 1 - 0.30 * t ** 1.6              // 俯视渐缩：外端收窄（水滴轮廓）
+        y *= 1 - 0.22 * t * t                 // 侧视渐缩：外端压低
+        if (y < 0) y += (housingHeight / 2) * 0.16 * t * t   // 外端底部上挑（气动下切）
+        if (x < flatStartX) x = flatStartX + (x - flatStartX) * flatKeep  // 尾部拍扁承托镜片
+        pos.setXYZ(i, x, y, pos.getZ(i))
+      }
+      pos.needsUpdate = true
+      // 索引球面：重算即得雕刻后的连续平滑法线（高光连续滚转的前提）
+      housingGeom.computeVertexNormals()
+    }
+    const housingZ = mountZ + armLength + housingDepth * 0.42
+    const housingY = 0.02
     const housing = new THREE.Mesh(housingGeom, bodyMat)
-    housing.position.set(0, 0.02, zSide * housingZ)
+    housing.position.set(0, housingY, zSide * housingZ)
     mirrorGroup.add(housing)
 
-    // 镜面：嵌入镜壳内侧，朝向驾驶员方向
-    const mirrorFaceGeom = new THREE.PlaneGeometry(0.13, 0.07)
-    const mirrorFace = new THREE.Mesh(mirrorFaceGeom, chromeMat)
-    mirrorFace.position.set(-0.05, 0.02, zSide * (housingZ - 0.006))
+    // 连接颈：从镜臂末端向上托住镜壳底，消除壳体悬空感
+    const neckGeom = new THREE.CylinderGeometry(0.009, 0.012, 0.038, 14)
+    const neck = new THREE.Mesh(neckGeom, bodyMat)
+    neck.position.set(0, housingY - 0.028, zSide * (mountZ + armLength - 0.002))
+    mirrorGroup.add(neck)
+
+    // 尾部实际拍扁面位置（镜片/密封圈贴附基准）
+    const rearTipX = flatStartX + (-housingLength / 2 - flatStartX) * flatKeep
+
+    const roundedFace = (width, height, radius) => {
+      const x = -width / 2
+      const y = -height / 2
+      const shape = new THREE.Shape()
+      shape.moveTo(x + radius, y)
+      shape.lineTo(x + width - radius, y)
+      shape.quadraticCurveTo(x + width, y, x + width, y + radius)
+      shape.lineTo(x + width, y + height - radius)
+      shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+      shape.lineTo(x + radius, y + height)
+      shape.quadraticCurveTo(x, y + height, x, y + height - radius)
+      shape.lineTo(x, y + radius)
+      shape.quadraticCurveTo(x, y, x + radius, y)
+      return new THREE.ShapeGeometry(shape, 8)
+    }
+
+    // 密封圈：深色圆角垫片，贴在拍扁尾面外侧，遮住镜片与壳体间的缝隙
+    const gasket = new THREE.Mesh(
+      roundedFace(0.118, 0.056, 0.012),
+      new THREE.MeshStandardMaterial({ color: 0x11141a, metalness: 0.1, roughness: 0.55, wireframe: wireframeMode.value })
+    )
+    gasket.rotation.y = -Math.PI / 2
+    gasket.position.set(rearTipX - 0.0006, housingY, zSide * housingZ)
+    mirrorGroup.add(gasket)
+
+    // ---- 凸面镜片：真车侧后视镜为凸面镜（扩大视野）。R=1.2m 球面矢高仅
+    // ~1.3mm，但足以把平面镜的整片眩光收敛为一个随视线移动的小亮点——
+    // 高光形态符合物理光照逻辑；圆角由 alphaMap 贴花裁切（亚像素边缘）。
+    const glassW = 0.108, glassH = 0.046, glassR = 1.2
+    const mirrorGeom = new THREE.PlaneGeometry(glassW, glassH, 28, 14)
+    {
+      const pos = mirrorGeom.attributes.position
+      for (let i = 0; i < pos.count; i++) {
+        const u = pos.getX(i), v = pos.getY(i)
+        const sag = glassR - Math.sqrt(Math.max(glassR * glassR - u * u - v * v, 1e-9))
+        pos.setZ(i, -sag)   // rotation.y=-90° 后中心向车尾（驾驶员）外凸
+      }
+      pos.needsUpdate = true
+      mirrorGeom.computeVertexNormals()
+    }
+    const mirrorFace = new THREE.Mesh(
+      mirrorGeom,
+      new THREE.MeshStandardMaterial({
+        color: 0xd7e2e8,
+        metalness: 1.0,
+        roughness: 0.12,
+        envMapIntensity: 1.0,
+        alphaMap: mirrorGlassAlpha,
+        alphaTest: 0.5,
+        wireframe: wireframeMode.value
+      })
+    )
     mirrorFace.rotation.y = -Math.PI / 2
+    mirrorFace.position.set(rearTipX - 0.0024, housingY, zSide * housingZ)
     mirrorGroup.add(mirrorFace)
 
-    // 安装点：A 柱根部、发动机舱肩部（紧贴车身侧面，不悬空、不挤车顶）
-    mirrorGroup.position.set(
-      hoodEndX + 0.02,
-      hoodLineY + 0.03,
-      0
-    )
+    mirrorGroup.position.set(hoodEndX + 0.02, mountY, 0)
     return mirrorGroup
   }
 
@@ -1036,6 +1376,11 @@ const createCar = () => {
     rail2.position.set(railSpec.xCenter, railSpec.y, -railSpec.z)
     group.add(rail2)
   }
+
+  // ---- 内饰座椅：按 carProfile 的座椅布局（seatRows / seatRowCounts / H 点 / 排距）逐排生成 ----
+  // 纯参数化几何、无贴图；由 createCar 统一构建 → 车型切换时随 updateCar() 整体重建。
+  // 玻璃为 depthWrite:false 透明件，座舱内座椅可从风挡/侧窗看到。
+  addInteriorSeats(group, P)
 
   return group
 }
@@ -1079,10 +1424,18 @@ const initScene = () => {
   renderer.toneMappingExposure = 1.0
   container.appendChild(renderer.domElement)
 
-  // PBR 环境反射：RoomEnvironment 经 PMREM 预处理，供车漆/金属反射
-  // （three 内置，无外部 hdr 资源依赖）
+  // PBR 环境反射：RoomEnvironment 经 PMREM 预处理，供车漆/金属反射。
+  // 默认发光板辐射值高达 17~100，近水平机盖/尾盖在掠射角会整片反成白带；
+  // 只降低发光板的镜面反射能量，保留室内漫反射与直接光，不改动车身法线。
+  const studio = new RoomEnvironment()
+  studio.traverse((object) => {
+    if (object.isMesh && object.material?.isMeshBasicMaterial) {
+      object.material.color.multiplyScalar(0.04)
+    }
+  })
   const pmrem = new THREE.PMREMGenerator(renderer)
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+  scene.environment = pmrem.fromScene(studio, 0.04).texture
+  studio.dispose()
   pmrem.dispose()
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.35)
@@ -1132,12 +1485,13 @@ const initScene = () => {
   })
   scene.add(carGroup)
 
+  boundContainer = container
   container.addEventListener('mousedown', onMouseDown)
   container.addEventListener('mousemove', onMouseMove)
   container.addEventListener('mouseup', onMouseUp)
   container.addEventListener('mouseleave', onMouseUp)
   container.addEventListener('wheel', onWheel)
-  container.addEventListener('contextmenu', (e) => e.preventDefault())
+  container.addEventListener('contextmenu', onContextMenu)   // 具名注册，卸载可解绑
   window.addEventListener('resize', onWindowResize)
 
   animate()
@@ -1167,6 +1521,8 @@ const onMouseMove = (e) => {
 }
 
 const onMouseUp = () => { isDragging = false }
+
+const onContextMenu = (e) => e.preventDefault()
 
 const onWheel = (e) => {
   e.preventDefault()
@@ -1373,6 +1729,7 @@ const resetView = () => {
 const toggleWireframe = () => {
   wireframeMode.value = !wireframeMode.value
   emit('update:wireframe', wireframeMode.value)
+  if (scene) scene.userData.__car3d__.wireframe = wireframeMode.value   // 多实例定位标记同步
   updateCar()
 }
 
@@ -1384,10 +1741,18 @@ const toggleFullscreen = () => {
   const container = containerRef.value
   if (!container) return
   if (!document.fullscreenElement) {
-    container.requestFullscreen()
+    container.requestFullscreen().then(() => { isFullscreen.value = true }).catch(() => {})
   } else {
-    document.exitFullscreen()
+    document.exitFullscreen().then(() => { isFullscreen.value = false }).catch(() => {})
   }
+}
+
+// 材质随附贴图（alphaMap 等 CanvasTexture）必须显式 dispose，否则内存泄漏
+const disposeMaterial = (m) => {
+  for (const slot of ['map', 'alphaMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) {
+    if (m[slot] && typeof m[slot].dispose === 'function') m[slot].dispose()
+  }
+  m.dispose()
 }
 
 const disposeObject = (obj) => {
@@ -1396,24 +1761,25 @@ const disposeObject = (obj) => {
     if (child.geometry) child.geometry.dispose()
     if (child.material) {
       if (Array.isArray(child.material)) {
-        child.material.forEach(m => m.dispose())
+        child.material.forEach(disposeMaterial)
       } else {
-        child.material.dispose()
+        disposeMaterial(child.material)
       }
     }
   })
   if (obj.geometry) obj.geometry.dispose()
   if (obj.material) {
     if (Array.isArray(obj.material)) {
-      obj.material.forEach(m => m.dispose())
+      obj.material.forEach(disposeMaterial)
     } else {
-      obj.material.dispose()
+      disposeMaterial(obj.material)
     }
   }
 }
 
 const updateCar = () => {
   if (!scene || !carGroup) return
+  scene.userData.__car3d__.nurbs = !!props.nurbsMesh   // 生成后 nurbs 标记同步，供多实例定位
   scene.remove(carGroup)
   disposeFlightFx()
   disposeObject(carGroup)
@@ -1463,19 +1829,25 @@ onMounted(() => {
 onUnmounted(() => {
   if (animationId) cancelAnimationFrame(animationId)
   disposeFlightFx()
-  const container = containerRef.value
-  if (container && renderer) {
-    container.removeEventListener('mousedown', onMouseDown)
-    container.removeEventListener('mousemove', onMouseMove)
-    container.removeEventListener('mouseup', onMouseUp)
-    container.removeEventListener('mouseleave', onMouseUp)
-    container.removeEventListener('wheel', onWheel)
-    window.removeEventListener('resize', onWindowResize)
+  // 模板 ref 此时已被 Vue 清空（containerRef.value === null），必须用缓存的
+  // boundContainer 解绑，否则每次卸载（Designer 右侧 v-if 切 2D）都泄漏监听。
+  if (boundContainer) {
+    boundContainer.removeEventListener('mousedown', onMouseDown)
+    boundContainer.removeEventListener('mousemove', onMouseMove)
+    boundContainer.removeEventListener('mouseup', onMouseUp)
+    boundContainer.removeEventListener('mouseleave', onMouseUp)
+    boundContainer.removeEventListener('wheel', onWheel)
+    boundContainer.removeEventListener('contextmenu', onContextMenu)
+    boundContainer = null
   }
+  window.removeEventListener('resize', onWindowResize)
   disposeObject(carGroup)
   if (typeof window !== 'undefined' && Array.isArray(window.__CAR3D_SCENES__)) {
-    const idx = window.__CAR3D_SCENES__.indexOf(scene)
-    if (idx >= 0) window.__CAR3D_SCENES__.splice(idx, 1)
+    const reg = window.__CAR3D_SCENES__
+    const idx = reg.indexOf(scene)
+    if (idx >= 0) reg.splice(idx, 1)
+    // 修正全局调试指针，避免继续指向已销毁场景
+    window.__THREE_SCENE__ = reg.length ? reg[reg.length - 1] : null
   }
   if (renderer) {
     renderer.dispose()
