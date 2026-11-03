@@ -1,0 +1,221 @@
+{
+  "version": "P0-2026-11-03",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "renderer": "Microsoft Edge headless (SwiftShader)",
+  "car": {
+    "type": "sedan",
+    "color": "#4ade80"
+  },
+  "camera": {
+    "front": "正交，dist=5（半视口高 3）",
+    "left": "正交，dist=5（半视口高 3）",
+    "iso45": "透视，rotation=(π/4, π/4)，dist=10",
+    "interior": "透视，open-door，默认 rotation=(0.4, 0.8)，dist=8"
+  },
+  "doorAngle": "默认 70°（carParams.door_open_angle）",
+  "shots": [
+    {
+      "name": "front-door0",
+      "note": "正视（正交） · 关门",
+      "view": "front",
+      "door": false,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 0,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.108
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.108
+        ]
+      }
+    },
+    {
+      "name": "front-door1",
+      "note": "正视（正交） · 开门 70°",
+      "view": "front",
+      "door": true,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 1.222,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.9
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.9
+        ]
+      }
+    },
+    {
+      "name": "left-door0",
+      "note": "左侧视（正交，驾驶员侧） · 关门",
+      "view": "left",
+      "door": false,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 0,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.108
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.108
+        ]
+      }
+    },
+    {
+      "name": "left-door1",
+      "note": "左侧视（正交，驾驶员侧） · 开门 70°",
+      "view": "left",
+      "door": true,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 1.222,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.9
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.9
+        ]
+      }
+    },
+    {
+      "name": "iso45-door0",
+      "note": "45° 等轴（透视） · 关门",
+      "view": "isometric",
+      "door": false,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 0,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.108
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.108
+        ]
+      }
+    },
+    {
+      "name": "iso45-door1",
+      "note": "45° 等轴（透视） · 开门 70°",
+      "view": "isometric",
+      "door": true,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 1.222,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.9
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.9
+        ]
+      }
+    },
+    {
+      "name": "interior-door0",
+      "note": "内饰观察位（透视 + 开门） · 关门",
+      "view": "perspective",
+      "door": false,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 0,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.108
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.108
+        ]
+      }
+    },
+    {
+      "name": "interior-door1",
+      "note": "内饰观察位（透视 + 开门） · 开门 70°",
+      "view": "perspective",
+      "door": true,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 197,
+      "triangles": 43124,
+      "hingeMaxY": 1.222,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.9
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.9
+        ]
+      }
+    }
+  ]
+}
