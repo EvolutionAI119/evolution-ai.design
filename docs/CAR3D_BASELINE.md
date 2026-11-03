@@ -47,6 +47,8 @@ node scripts/car3d_baseline_compare.mjs --cur docs/preview/car3d-baseline/_curre
 
 退出码 `0` 全通过、`1` 有差异、`2` 缺文件。差异图（`*.diff.png`）与 `_current/` 为临时产物，**不提交**。
 
+可重复性：相机与门位姿均通过 `scene.userData.__car3d__` 的 `setViewInstant` / `setDoor` 瞬时定位，不依赖帧率与缓动；连续两次采集比对 **8/8 通过、像素差 0.00%**（2026-11-03）。
+
 ## 3. 基线数值（sedan）
 
 - 网格数 197，三角面 43124（8 个分镜一致；开门只旋转铰链，不改变拓扑）。

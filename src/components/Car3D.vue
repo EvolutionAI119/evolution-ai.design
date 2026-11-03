@@ -1433,6 +1433,15 @@ const initScene = () => {
     targetDistance,
     ortho: isOrthoCamera
   })
+  // 瞬时定位到预设机位：相机缓动依赖帧数，截图采集需与帧率解耦
+  scene.userData.__car3d__.setViewInstant = (key) => {
+    setViewAngle(key)
+    currentRotation.x = targetRotation.x
+    currentRotation.y = targetRotation.y
+    currentDistance = targetDistance
+    currentPan.x = targetPan.x
+    currentPan.y = targetPan.y
+  }
 
   boundContainer = container
   container.addEventListener('mousedown', onMouseDown)

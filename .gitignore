@@ -279,3 +279,7 @@ scripts/_*/
 
 # 算法运行中间输出（可重新生成）
 algorithm_model/outputs/
+
+# Car3D 基线采集临时目录（重采集产物不入库）
+.tmp-car3d-*/
+

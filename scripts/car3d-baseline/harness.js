@@ -97,17 +97,9 @@ const run = async () => {
   document.querySelectorAll('.control-buttons .ctrl-btn')[2]
     ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
   await wait(200)
-  const viewBtn = [...document.querySelectorAll('.view-controls button')]
-    .find((b) => (b.getAttribute('aria-label') || '').toLowerCase() === view)
-  viewBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-  // 轮询相机缓动收敛（慢渲染下固定等待不可靠）
-  for (let i = 0; i < 80; i++) {
-    const st = window.__CAR3D_SCENES__?.[0]?.userData?.__car3d__?.viewState?.()
-    if (st && Math.abs(st.rotX - st.targetX) < 0.01 &&
-      Math.abs(st.rotY - st.targetY) < 0.01 &&
-      Math.abs(st.distance - st.targetDistance) < 0.02) break
-    await wait(100)
-  }
+  // 瞬时定位到预设机位（与帧率解耦），再留一帧让渲染落地
+  window.__CAR3D_SCENES__?.[0]?.userData?.__car3d__?.setViewInstant?.(view)
+  await wait(250)
   if (door) {
     // 瞬时摆到 70° 稳态：不依赖 rAF 计时，保证分镜可重复
     window.__CAR3D_SCENES__?.[0]?.userData?.__car3d__?.setDoor?.(true)
