@@ -106,7 +106,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { createScene } from '../three/scene/createScene.js'
 import { deriveCarProfile, deriveWheelFitment, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
 import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
@@ -921,92 +921,38 @@ const initScene = () => {
   const container = containerRef.value
   if (!container) return
   
-  const width = container.clientWidth
-  const height = container.clientHeight
-
-  scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x0a0a0f)
-  // 调试/验收钩子：暴露场景供浏览器端几何校验（只读引用，不影响渲染）。
-  // Designer 同页挂载多个 Car3D 实例（基础模型/实时预览），单一 __THREE_SCENE__
-  // 会被后挂载实例覆盖导致采错场景；__CAR3D_SCENES__ 数组注册全部存活实例，
-  // userData 标记视口特征（wireframe/nurbs）供采样端定位正确实例。
-  scene.userData.__car3d__ = { wireframe: wireframeMode.value, nurbs: !!props.nurbsMesh }
-  if (typeof window !== 'undefined') {
-    const reg = (window.__CAR3D_SCENES__ = window.__CAR3D_SCENES__ || [])
-    reg.push(scene)
-    window.__THREE_SCENE__ = scene
+  // 机位状态访问器：动画/视图状态仍由组件持有（P3 animate 批再迁），
+  // 这里只把读写入口交给 createScene；钩子签名、字段与挂载时机保持不变。
+  const viewControls = {
+    applyPreset: (key) => setViewAngle(key),
+    snap: () => {
+      currentRotation.x = targetRotation.x
+      currentRotation.y = targetRotation.y
+      currentDistance = targetDistance
+      currentPan.x = targetPan.x
+      currentPan.y = targetPan.y
+    },
+    setTargets: (pose) => {
+      if (typeof pose.rotX === 'number') targetRotation.x = pose.rotX
+      if (typeof pose.rotY === 'number') targetRotation.y = pose.rotY
+      if (typeof pose.distance === 'number') targetDistance = pose.distance
+      if (typeof pose.panX === 'number') targetPan.x = pose.panX
+      if (typeof pose.panY === 'number') targetPan.y = pose.panY
+    },
+    setOrtho: (ortho) => { isOrthoCamera = ortho }
   }
 
-  camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100)
-  camera.position.set(6, 3, 6)
-  camera.lookAt(0, 1, 0)
-
-  const aspect = width / height
-  const d = 5
-  orthoCamera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 0.1, 100)
-  orthoCamera.position.set(6, 3, 6)
-  orthoCamera.lookAt(0, 1, 0)
-
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-  renderer.setSize(width, height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-  renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.0
-  container.appendChild(renderer.domElement)
-
-  // PBR 环境反射：RoomEnvironment 经 PMREM 预处理，供车漆/金属反射。
-  // 默认发光板辐射值高达 17~100，近水平机盖/尾盖在掠射角会整片反成白带；
-  // 只降低发光板的镜面反射能量，保留室内漫反射与直接光，不改动车身法线。
-  const studio = new RoomEnvironment()
-  studio.traverse((object) => {
-    if (object.isMesh && object.material?.isMeshBasicMaterial) {
-      object.material.color.multiplyScalar(0.04)
-    }
+  // 场景基座（渲染器/相机/灯光/环境/地面/网格 + __car3d__ 注册）全部在 scene/createScene.js
+  const sceneApi = createScene({
+    container,
+    wireframe: wireframeMode.value,
+    nurbs: !!props.nurbsMesh,
+    viewControls
   })
-  const pmrem = new THREE.PMREMGenerator(renderer)
-  scene.environment = pmrem.fromScene(studio, 0.04).texture
-  studio.dispose()
-  pmrem.dispose()
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.35)
-  scene.add(ambientLight)
-
-  const mainLight = new THREE.DirectionalLight(0xffffff, 1.0)
-  mainLight.position.set(8, 12, 8)
-  mainLight.castShadow = true
-  mainLight.shadow.mapSize.width = 2048
-  mainLight.shadow.mapSize.height = 2048
-  mainLight.shadow.camera.near = 0.5
-  mainLight.shadow.camera.far = 50
-  mainLight.shadow.camera.left = -10
-  mainLight.shadow.camera.right = 10
-  mainLight.shadow.camera.top = 10
-  mainLight.shadow.camera.bottom = -10
-  scene.add(mainLight)
-
-  const fillLight = new THREE.DirectionalLight(0x88aaff, 0.3)
-  fillLight.position.set(-6, 4, -6)
-  scene.add(fillLight)
-
-  const rimLight = new THREE.DirectionalLight(0xffddaa, 0.25)
-  rimLight.position.set(0, 6, -10)
-  scene.add(rimLight)
-
-  const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x0f0f18,
-    metalness: 0.1,
-    roughness: 0.9
-  })
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), groundMat)
-  ground.rotation.x = -Math.PI / 2
-  ground.receiveShadow = true
-  scene.add(ground)
-
-  const gridHelper = new THREE.GridHelper(20, 20, 0x1e1e2e, 0x15151f)
-  gridHelper.position.y = 0.01
-  scene.add(gridHelper)
+  scene = sceneApi.scene
+  camera = sceneApi.camera
+  renderer = sceneApi.renderer
+  orthoCamera = sceneApi.orthoCamera
 
   carGroup = createCar()
   carGroup.traverse((child) => {
@@ -1017,7 +963,8 @@ const initScene = () => {
   })
   scene.add(carGroup)
 
-  // 视觉基线/调试钩子（只读状态 + 瞬时摆位）：不参与正常交互，供截图采集与几何校验
+  // 视觉基线/调试钩子：setDoor / viewState 依赖门铰链与动画状态，仍在 createCar 之后补挂；
+  // setViewInstant / setCameraPose 由 createScene 注册（字段与行为不变）
   scene.userData.__car3d__.setDoor = (open) => {
     doorOpen.value = open
     doorProgress = open ? 1 : 0
@@ -1034,29 +981,6 @@ const initScene = () => {
     targetDistance,
     ortho: isOrthoCamera
   })
-  // 瞬时定位到预设机位：相机缓动依赖帧数，截图采集需与帧率解耦
-  scene.userData.__car3d__.setViewInstant = (key) => {
-    setViewAngle(key)
-    currentRotation.x = targetRotation.x
-    currentRotation.y = targetRotation.y
-    currentDistance = targetDistance
-    currentPan.x = targetPan.x
-    currentPan.y = targetPan.y
-  }
-  // 任意机位瞬时定位（cockpit 等非预设机位）：同样与帧率/缓动解耦，仅采集端使用
-  scene.userData.__car3d__.setCameraPose = (pose = {}) => {
-    if (typeof pose.rotX === 'number') targetRotation.x = pose.rotX
-    if (typeof pose.rotY === 'number') targetRotation.y = pose.rotY
-    if (typeof pose.distance === 'number') targetDistance = pose.distance
-    if (typeof pose.panX === 'number') targetPan.x = pose.panX
-    if (typeof pose.panY === 'number') targetPan.y = pose.panY
-    isOrthoCamera = !!pose.ortho
-    currentRotation.x = targetRotation.x
-    currentRotation.y = targetRotation.y
-    currentDistance = targetDistance
-    currentPan.x = targetPan.x
-    currentPan.y = targetPan.y
-  }
 
   boundContainer = container
   container.addEventListener('mousedown', onMouseDown)
