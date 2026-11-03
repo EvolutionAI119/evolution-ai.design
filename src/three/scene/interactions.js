@@ -16,16 +16,15 @@
  *
  * @param {object} opts
  * @param {HTMLElement} opts.container 事件宿主与尺寸来源
- * @param {THREE.PerspectiveCamera} opts.camera
- * @param {THREE.OrthographicCamera} opts.orthoCamera
- * @param {THREE.WebGLRenderer} opts.renderer
+ * @param {object} opts.handle createScene 返回的 { camera, orthoCamera, renderer } 句柄
  * @param {object} opts.view 目标值访问器：
  *   { getRotation(): {x,y}, setRotation(x,y), getPan(): {x,y}, setPan(x,y),
  *     getDistance(): number, setDistance(v), setDragging(v) }
  *   `setDragging` 仅镜像拖拽状态给 animate 里的自动旋转暂停判断，不参与相机数值。
  * @returns {() => void} detach
  */
-export function attachInteractions({ container, camera, orthoCamera, renderer, view }) {
+export function attachInteractions({ container, handle, view }) {
+  const { camera, orthoCamera, renderer } = handle
   let isDragging = false
   let previousMousePosition = { x: 0, y: 0 }
 

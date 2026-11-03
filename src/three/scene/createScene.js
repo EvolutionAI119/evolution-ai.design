@@ -23,8 +23,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
  * @param {boolean} opts.nurbs NURBS 态标记（供多实例采样端定位）
  * @param {object} opts.viewControls 机位状态访问器（组件提供）：
  *   { applyPreset(key), snap(), setTargets(pose), setOrtho(bool) }
- * @returns {{ scene, camera, renderer, orthoCamera, setViewInstant, setCameraPose,
- *   setHooks, disposeScene }}
+ * @returns {{ scene, handle, setViewInstant, setCameraPose, setHooks, disposeScene }}
+ *   handle = { camera, orthoCamera, renderer }：调用方整体透传给 animator / interactions，
+ *   不再分别持有三个引用。
  */
 export function createScene({ container, wireframe = false, nurbs = false, viewControls }) {
   const width = container.clientWidth
@@ -157,8 +158,12 @@ export function createScene({ container, wireframe = false, nurbs = false, viewC
     scene.clear()
   }
 
+  // 相机/渲染器打包成一个 handle：composable 只持有 handle 并整体透传，
+  // 避免三处引用散落在编排层。
+  const handle = { camera, orthoCamera, renderer }
+
   return {
-    scene, camera, renderer, orthoCamera,
+    scene, handle,
     setViewInstant, setCameraPose, setHooks, disposeScene
   }
 }

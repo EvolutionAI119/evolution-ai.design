@@ -25,7 +25,10 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
   const autoRotate = ref(true)
   const currentView = ref(readProps().viewAngle)
 
-  let scene, camera, renderer, carGroup
+  let scene, carGroup
+  // createScene 返回的相机/渲染器句柄（{ camera, orthoCamera, renderer }）：
+  // composable 只持有这一份并整体透传给 animator / interactions。
+  let handle = null
   // createScene 返回的场景 API（setHooks / disposeScene）：调试钩子补挂与全局注册表摘除
   // 一律走该实例，composable 不再直接写 scene.userData 字段。
   let sceneApi = null
@@ -85,7 +88,6 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
   // 帧循环唯一实例（scene/animator.js）：持有相机 target/current 与 isDragging；
   // 每次 initScene 新建，未挂载时为 null，所有调用点都用可选链。
   let animator = null
-  let orthoCamera
 
   /**
    * 整车装配入口（P5 批次 3）：几何编排全部在 three/assembly/assembleCar.js，
@@ -140,14 +142,12 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
       viewControls
     })
     scene = sceneApi.scene
-    camera = sceneApi.camera
-    renderer = sceneApi.renderer
-    orthoCamera = sceneApi.orthoCamera
+    handle = sceneApi.handle
     // 特效实例与场景同作用域；ensure 仍由 animator 首帧调用（保持 noCastShadow 时序）
     flightFx = createFlightFx({ scene })
     // 帧循环唯一实例：carGroup / 铰链 / 场景状态一律走 getter，重建换对象后不会读到旧引用
     animator = createAnimator({
-      scene, camera, orthoCamera, renderer,
+      scene, handle,
       getCarGroup: () => carGroup,
       getDoorHinges: () => doorHinges,
       getDoorSeams: () => doorSeams,
@@ -181,9 +181,7 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
     // 传入的宿主是缓存的 boundContainer（卸载时 containerRef 已为空），detach 也解绑它。
     detachInteractions = attachInteractions({
       container: boundContainer,
-      camera,
-      orthoCamera,
-      renderer,
+      handle,
       view: {
         getRotation: animator.getRotation,
         setRotation: animator.setRotation,
@@ -226,13 +224,14 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
       if (preset.ortho) {
         // 容器尺寸由组件侧 containerRef 读取后传入；模块只负责纯函数换算
         const container = containerRef.value
-        if (container) {
+        if (container && handle) {
           const vp = orthoViewportSize(preset.dist, container.clientWidth, container.clientHeight)
-          orthoCamera.left = vp.left
-          orthoCamera.right = vp.right
-          orthoCamera.top = vp.top
-          orthoCamera.bottom = vp.bottom
-          orthoCamera.updateProjectionMatrix()
+          const ortho = handle.orthoCamera
+          ortho.left = vp.left
+          ortho.right = vp.right
+          ortho.top = vp.top
+          ortho.bottom = vp.bottom
+          ortho.updateProjectionMatrix()
         }
       }
     }
@@ -332,7 +331,7 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
       sceneApi.disposeScene()
       sceneApi = null
     }
-    renderer = null
+    handle = null
     scene = null
   })
 

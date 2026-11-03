@@ -25,13 +25,15 @@ import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
  * @returns {object} animator
  */
 export function createAnimator({
-  scene, camera, orthoCamera, renderer,
+  scene, handle,
   getCarGroup, getDoorHinges, getDoorSeams,
   getCarParams, getCarType, getLiftLayout,
   getAutoRotate, getCurrentView, getDoorOpen,
   getFlightEngaged, getFlightAvailable, getFlightFx,
   setYawTurning
 }) {
+  // 相机/渲染器由 createScene 打包的 handle 透传，模块内取用
+  const { camera, orthoCamera, renderer } = handle
   let rafId = null
   let isDragging = false
   let targetRotation = { x: 0.4, y: 0.8 }
