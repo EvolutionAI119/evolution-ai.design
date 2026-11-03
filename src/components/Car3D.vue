@@ -109,10 +109,10 @@ import * as THREE from 'three'
 import { createScene } from '../three/scene/createScene.js'
 import { attachInteractions } from '../three/scene/interactions.js'
 import { createFlightFx } from '../three/scene/flightFx.js'
+import { createAnimator } from '../three/scene/animator.js'
 import { deriveCarProfile, deriveWheelFitment, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
 import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, DLO_APERTURE_INSET } from '../utils/carGlass.js'
-import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
-  turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
+import { resolveFlightParams, flightControlEnvelope } from '../utils/flightPhysics.js'
 import { createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
 import { deriveInteriorLayout } from '../utils/carInteriorLayout.js'
 import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from '../three/geometry/smoothing.js'
@@ -194,15 +194,13 @@ let scene, camera, renderer, carGroup
 let boundContainer = null
 
 // ---- 平稳垂直起降（VTOL）分支状态 ----
-// flightProgress ∈ [0,1]：0=地面，1=稳态悬浮；推进速率 = dt/liftDuration，
-// 高度 = hoverAltitude × quinticSmoothstep(progress)（C² 连续，端点加速度为零）；
-// 全程纯垂直运动 + 相机零滚转 + 过阻尼呼吸（ζ≥1）→ 无眩晕
+// 数值状态（flightProgress / flightLastMs / flightYaw*）与帧循环一起在 scene/animator.js；
+// 组件只保留 UI 开关、能耗 HUD 与特效实例。飞行契约：高度 = hoverAltitude ×
+// quinticSmoothstep(progress)（C² 连续，端点加速度为零），全程纯垂直 + 零滚转。
 const flightEngaged = ref(false)
 const flightAvailable = computed(() => props.carParams?.enable_vtol !== false)
-let flightProgress = 0
-let flightLastMs = 0
 // VTOL 特效（升力环 + 地面能量场）持有权在 scene/flightFx.js：组件只保留实例与布局，
-// 不再保存 rings / groundGlow 镜像，animate 一律通过 flightFx.update 读写。
+// 不再保存 rings / groundGlow 镜像，animator 一律通过 flightFx.update 读写。
 let flightFx = null
 // createCar 里与 createLiftDucts 共用同一份 deriveLiftDevices 结果，flightFx.ensure 原样复用
 let currentLiftLayout = null
@@ -212,7 +210,6 @@ let currentLiftLayout = null
 const doorOpen = ref(false)
 let doorHinges = []
 let doorSeams = []
-let doorProgress = 0
 const toggleDoor = () => { doorOpen.value = !doorOpen.value }
 
 // 门洞/玻璃洞口**常挖**（与门开合状态无关）：门板 + 门片玻璃是全车唯一的门几何——
@@ -221,13 +218,9 @@ const toggleDoor = () => { doorOpen.value = !doorOpen.value }
 
 // ---- 反重力飞控：360° 原地转向 + 姿态微摆 ----
 // 偏航为累计角（无 wrap）：连续指令多圈累加，全自由度无限制；
-// 转向剖面 Δ·quintic(t/T) —— C² 端点归零（角速度/角加速度平滑起落，无卡顿无失稳）
+// 转向剖面 Δ·quintic(t/T) —— C² 端点归零（角速度/角加速度平滑起落，无卡顿无失稳）。
+// 累计角与转向进度在 scene/animator.js 内，组件只用 yawTurning 驱动按钮 busy 态。
 const yawTurning = ref(false)
-let flightYawCurrent = 0      // 当前累计偏航角（deg，落地后保留 → 原地掉头朝向生效）
-let flightYawFrom = 0
-let flightYawTarget = 0
-let flightYawProgress = 1     // 1 = 就绪（可接受新转向指令）
-let flightYawDuration = 1
 
 /** 能耗 HUD（悬停功率 + 续航倍数，公式与后端 flight_envelope 同源） */
 const flightEnergy = computed(() => {
@@ -245,22 +238,12 @@ const flightEnergy = computed(() => {
 /** 原地转向指令：Δ∈(-∞,∞) 累计；时长按峰值角速度 45°/s 舒适限动态计算 */
 const startTurn = (delta) => {
   if (yawTurning.value || !flightEngaged.value) return
-  flightYawFrom = flightYawTarget
-  flightYawTarget += delta
-  flightYawDuration = turnDurationSec(delta)
-  flightYawProgress = 0
-  yawTurning.value = true
+  animator?.startTurn(delta)   // yawTurning 由 animator 在起转/到位时回调置位与复位
 }
-let animationId = null
-let isDragging = false          // 由 interactions.js 通过 view.setDragging 镜像，animate 的自动旋转据此暂停
 let detachInteractions = null   // attachInteractions 返回的解绑函数
-let targetRotation = { x: 0.4, y: 0.8 }
-let currentRotation = { x: 0.4, y: 0.8 }
-let targetDistance = 8
-let currentDistance = 8
-let targetPan = { x: 0, y: 0 }
-let currentPan = { x: 0, y: 0 }
-let isOrthoCamera = false
+// 帧循环唯一实例（scene/animator.js）：持有相机 target/current 与 isDragging；
+// 每次 initScene 新建，未挂载时为 null，所有调用点都用可选链。
+let animator = null
 let orthoCamera
 
 // 视角预设：车长沿 X 轴（X+ 朝车头）。正交视角 dist 经 0.6 系数映射为半视口高度 d
@@ -810,7 +793,7 @@ const createCar = () => {
 
   // ---- 底盘上升装置（6~8 台，deriveLiftDevices 同源）----
   // 只落前后轮腔之间的封闭地板区间，绝不侵入轮腔切口；风道口下沉 12mm（不构成额外最低点）
-  // 布局在此算一次：悬停风扇环（ensureFlightFx）沿用同一份 deriveLiftDevices，避免环与风道错位
+  // 布局在此算一次：悬停风扇环（animator → flightFx.ensure）沿用同一份 deriveLiftDevices，避免环与风道错位
   const liftLayout = deriveLiftDevices(P, resolveFlightParams(props.carType, props.carParams).liftFans)
   currentLiftLayout = liftLayout
   createLiftDucts({ parent: group, liftLayout, ductMat, lipMat })
@@ -927,25 +910,13 @@ const initScene = () => {
   const container = containerRef.value
   if (!container) return
   
-  // 机位状态访问器：动画/视图状态仍由组件持有（P3 animate 批再迁），
-  // 这里只把读写入口交给 createScene；钩子签名、字段与挂载时机保持不变。
+  // 机位状态访问器：target/current 全部在 scene/animator.js 持有（P3 animate 批），
+  // 这里只转发；钩子签名、字段与挂载时机保持不变。
   const viewControls = {
     applyPreset: (key) => setViewAngle(key),
-    snap: () => {
-      currentRotation.x = targetRotation.x
-      currentRotation.y = targetRotation.y
-      currentDistance = targetDistance
-      currentPan.x = targetPan.x
-      currentPan.y = targetPan.y
-    },
-    setTargets: (pose) => {
-      if (typeof pose.rotX === 'number') targetRotation.x = pose.rotX
-      if (typeof pose.rotY === 'number') targetRotation.y = pose.rotY
-      if (typeof pose.distance === 'number') targetDistance = pose.distance
-      if (typeof pose.panX === 'number') targetPan.x = pose.panX
-      if (typeof pose.panY === 'number') targetPan.y = pose.panY
-    },
-    setOrtho: (ortho) => { isOrthoCamera = ortho }
+    snap: () => animator?.snap(),
+    setTargets: (pose) => animator?.setTargets(pose),
+    setOrtho: (ortho) => animator?.setOrtho(ortho)
   }
 
   // 场景基座（渲染器/相机/灯光/环境/地面/网格 + __car3d__ 注册）全部在 scene/createScene.js
@@ -959,8 +930,25 @@ const initScene = () => {
   camera = sceneApi.camera
   renderer = sceneApi.renderer
   orthoCamera = sceneApi.orthoCamera
-  // 特效实例与场景同作用域；ensure 仍由 animate 首帧调用（保持 noCastShadow 时序）
+  // 特效实例与场景同作用域；ensure 仍由 animator 首帧调用（保持 noCastShadow 时序）
   flightFx = createFlightFx({ scene })
+  // 帧循环唯一实例：carGroup / 铰链 / 场景状态一律走 getter，重建换对象后不会读到旧引用
+  animator = createAnimator({
+    scene, camera, orthoCamera, renderer,
+    getCarGroup: () => carGroup,
+    getDoorHinges: () => doorHinges,
+    getDoorSeams: () => doorSeams,
+    getCarParams: () => props.carParams,
+    getCarType: () => props.carType,
+    getLiftLayout: () => currentLiftLayout,
+    getAutoRotate: () => autoRotate.value,
+    getCurrentView: () => currentView.value,
+    getDoorOpen: () => doorOpen.value,
+    getFlightEngaged: () => flightEngaged.value,
+    getFlightAvailable: () => flightAvailable.value,
+    getFlightFx: () => flightFx,
+    setYawTurning: (v) => { yawTurning.value = v }
+  })
 
   carGroup = createCar()
   carGroup.traverse((child) => {
@@ -975,20 +963,9 @@ const initScene = () => {
   // setViewInstant / setCameraPose 由 createScene 注册（字段与行为不变）
   scene.userData.__car3d__.setDoor = (open) => {
     doorOpen.value = open
-    doorProgress = open ? 1 : 0
-    const openRad = ((props.carParams?.door_open_angle ?? 70) * Math.PI) / 180
-    for (const d of doorHinges) d.hinge.rotation.y = d.sign * openRad
-    for (const s of doorSeams) s.visible = !open
+    animator?.setDoorInstant(open)
   }
-  scene.userData.__car3d__.viewState = () => ({
-    rotX: currentRotation.x,
-    rotY: currentRotation.y,
-    targetX: targetRotation.x,
-    targetY: targetRotation.y,
-    distance: currentDistance,
-    targetDistance,
-    ortho: isOrthoCamera
-  })
+  scene.userData.__car3d__.viewState = () => animator.getState()
 
   boundContainer = container
   // 交互（拖拽/缩放/resize）在 scene/interactions.js：只写 target*，缓动留给 animate 批。
@@ -999,32 +976,25 @@ const initScene = () => {
     orthoCamera,
     renderer,
     view: {
-      getRotation: () => ({ x: targetRotation.x, y: targetRotation.y }),
-      setRotation: (x, y) => { targetRotation.x = x; targetRotation.y = y },
-      getPan: () => ({ x: targetPan.x, y: targetPan.y }),
-      setPan: (x, y) => { targetPan.x = x; targetPan.y = y },
-      getDistance: () => targetDistance,
-      setDistance: (v) => { targetDistance = v },
-      setDragging: (v) => { isDragging = v }
+      getRotation: animator.getRotation,
+      setRotation: animator.setRotation,
+      getPan: animator.getPan,
+      setPan: animator.setPan,
+      getDistance: animator.getDistance,
+      setDistance: animator.setDistance,
+      setDragging: animator.setDragging
     }
   })
 
-  animate()
+  animator.start()
 }
 
 // ---- VTOL 特效：升力风扇环（随车）+ 地面能量场（贴地衰减）----
 // 实现已迁至 scene/flightFx.js（P3）：持有权、建环常量、逐帧外观公式全部在模块内；
-// 这里只保留调用点，保证 updateCar / onUnmounted 的释放时序不变。
+// 这里只保留 dispose 调用点，保证 updateCar / onUnmounted 的释放时序不变
+// （ensure / update 由 animator 每帧调用）。
 const disposeFlightFx = () => {
   flightFx?.dispose()
-}
-
-const ensureFlightFx = () => {
-  flightFx?.ensure({
-    carGroup,
-    carParams: props.carParams,
-    liftLayout: currentLiftLayout
-  })
 }
 
 const toggleFlight = () => {
@@ -1032,83 +1002,8 @@ const toggleFlight = () => {
   flightEngaged.value = !flightEngaged.value
 }
 
-const animate = () => {
-  animationId = requestAnimationFrame(animate)
-
-  // ---- VTOL 飞行动画（无眩晕：C² 平滑起升 + 过阻尼悬浮呼吸 + 零滚转）----
-  const vnow = performance.now()
-  const vdt = flightLastMs ? Math.min((vnow - flightLastMs) / 1000, 0.05) : 0
-  flightLastMs = vnow
-  if (carGroup && flightAvailable.value) {
-    ensureFlightFx()
-    const fp = resolveFlightParams(props.carType, props.carParams)
-    const target = flightEngaged.value ? 1 : 0
-    if (flightProgress !== target) {
-      const step = vdt / Math.max(fp.liftDuration, 0.1)
-      flightProgress = target > flightProgress
-        ? Math.min(flightProgress + step, 1)
-        : Math.max(flightProgress - step, 0)
-    }
-    const lift = quinticSmoothstep(flightProgress)
-    // 悬浮呼吸：振幅随 lift² 衰减（地面为零），频率 < 0.2Hz 远离晕动敏感频段
-    const bob = hoverBobOffset(vnow / 1000, fp) * lift * lift
-    carGroup.position.y = (fp.hoverAltitude * lift + bob) / 1000
-    // ---- 反重力飞控：360° 原地转向（累计角无 wrap，C² 剖面无卡顿）----
-    if (flightYawProgress < 1) {
-      flightYawProgress = Math.min(1, flightYawProgress + vdt / Math.max(flightYawDuration, 0.1))
-      const eased = quinticSmoothstep(flightYawProgress)
-      flightYawCurrent = flightYawFrom + (flightYawTarget - flightYawFrom) * eased
-      if (flightYawProgress >= 1) {
-        flightYawCurrent = flightYawTarget
-        yawTurning.value = false
-      }
-    }
-    carGroup.rotation.y = flightYawCurrent * Math.PI / 180
-    // 姿态微摆（roll/pitch 双低频谱，峰值 ≤0.85°/ζ < ±2° 包络；振幅随 lift² 衰减）：
-    // 原地转向零向心加速度 → 零侧倾耦合，roll 与 yaw 解耦（全自由度姿态稳定）
-    const attRoll = attitudeSample(vnow / 1000, fp.darkMatterRatio) * lift * lift
-    const attPitch = attitudeSample(vnow / 1000 + 17.3, fp.darkMatterRatio) * lift * lift
-    carGroup.rotation.z = attRoll * Math.PI / 180
-    carGroup.rotation.x = attPitch * Math.PI / 180
-    // 特效：风扇环脉冲（蓝），地面能量场随高度衰减（绿）
-    flightFx?.update({ now: vnow, lift, progress: flightProgress })
-  }
-
-  // ---- 车门开合动画：doorProgress 缓动趋近目标，铰链绕竖直轴 rotation.y 开合（把手随门板）----
-  if (doorHinges.length) {
-    const dTarget = doorOpen.value ? 1 : 0
-    if (doorProgress !== dTarget) {
-      const step = vdt / 0.8
-      doorProgress = dTarget > doorProgress ? Math.min(doorProgress + step, 1) : Math.max(doorProgress - step, 0)
-    }
-    const openRad = ((props.carParams?.door_open_angle ?? 70) * Math.PI) / 180
-    const e = quinticSmoothstep(doorProgress) * openRad
-    for (const d of doorHinges) d.hinge.rotation.y = d.sign * e   // 正负号使门板向外摆（+Z 侧向 +Z、−Z 侧向 −Z）
-    // 门缝条属于「关门时的分缝观感」：门一开就与门板脱开、悬在洞口中央，
-    // 必须在 doorProgress 抬起后立即隐藏，只在完全关闭时显示。
-    const seamVisible = doorProgress < 0.02
-    for (const s of doorSeams) s.visible = seamVisible
-  }
-
-  if (autoRotate.value && !isDragging && currentView.value === 'perspective') {
-    targetRotation.y += 0.004
-  }
-
-  currentRotation.x += (targetRotation.x - currentRotation.x) * 0.08
-  currentRotation.y += (targetRotation.y - currentRotation.y) * 0.08
-  currentDistance += (targetDistance - currentDistance) * 0.08
-  currentPan.x += (targetPan.x - targetPan.x) * 0.08
-  currentPan.y += (targetPan.y - currentPan.y) * 0.08
-
-  const activeCamera = isOrthoCamera ? orthoCamera : camera
-
-  activeCamera.position.x = currentPan.x + Math.sin(currentRotation.y) * Math.cos(currentRotation.x) * currentDistance
-  activeCamera.position.y = currentPan.y + Math.sin(currentRotation.x) * currentDistance + 1
-  activeCamera.position.z = Math.cos(currentRotation.y) * Math.cos(currentRotation.x) * currentDistance
-  activeCamera.lookAt(currentPan.x, 1, currentPan.y)
-
-  renderer.render(scene, activeCamera)
-}
+// 帧循环已迁至 scene/animator.js（P3 animate 批）：相机 target/current 缓动、VTOL 升降与
+// 转向、车门开合、渲染全部在模块内；组件只保留 start/stop 句柄与状态 getter 注入。
 
 const setViewAngle = (view) => {
   currentView.value = view
@@ -1116,11 +1011,9 @@ const setViewAngle = (view) => {
   
   const preset = viewPresets[view]
   if (preset) {
-    targetRotation.x = preset.x
-    targetRotation.y = preset.y
-    targetDistance = preset.dist
-    isOrthoCamera = preset.ortho
-    
+    animator?.setTargets({ rotX: preset.x, rotY: preset.y, distance: preset.dist })
+    animator?.setOrtho(preset.ortho)
+
     if (preset.ortho) {
       const container = containerRef.value
       if (container) {
@@ -1139,11 +1032,9 @@ const setViewAngle = (view) => {
 }
 
 const resetView = () => {
-  targetRotation = { x: 0.4, y: 0.8 }
-  targetDistance = 8
-  targetPan = { x: 0, y: 0 }
+  animator?.setTargets({ rotX: 0.4, rotY: 0.8, distance: 8, panX: 0, panY: 0 })
   currentView.value = 'perspective'
-  isOrthoCamera = false
+  animator?.setOrtho(false)
   emit('update:viewAngle', 'perspective')
 }
 
@@ -1177,6 +1068,7 @@ const updateCar = () => {
   scene.remove(carGroup)
   disposeFlightFx()
   currentLiftLayout = null   // 旧布局随旧车失效，createCar 重新赋值后再被 flightFx.ensure 复用
+  animator?.resetTiming()    // 重建后重置帧间计时，首帧 vdt = 0
   disposeObject(carGroup)
   carGroup = null
   carGroup = createCar()
@@ -1222,7 +1114,11 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (animationId) cancelAnimationFrame(animationId)
+  // 卸载顺序：先停帧循环 → 再释放特效 → 最后解绑交互，禁止最后一帧用已释放对象渲染
+  if (animator) {
+    animator.stop()
+    animator = null
+  }
   disposeFlightFx()
   flightFx = null
   // 模板 ref 此时已被 Vue 清空（containerRef.value === null）；interactions.js 内部

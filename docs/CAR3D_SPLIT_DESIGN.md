@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 版本 | v1.1 · 2026-11-03（补实施进度） |
-| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1433 行 / 49 KB） |
+| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1329 行 / 43 KB） |
 | 目标 | 行数降 40% 以上；渲染结果零差异；纯函数可单测 |
 | 约束 | 每批只搬一个模块、行为不变；拆分前先补渲染基线；每步独立提交、全绿 |
 | 关联 | [ASSET_MANIFEST.md](ASSET_MANIFEST.md)、[2D_LAYOUT_VERIFICATION.md](2D_LAYOUT_VERIFICATION.md) |
@@ -117,9 +117,10 @@ scene/createScene.js ─> scene/{interactions,animate}.js ─> useCarScene.js
 | P3 | `scene/createScene.js`：场景基座 + `setViewInstant` / `setCameraPose` 钩子（`setDoor` / `viewState` 仍由组件在 createCar 后补挂） | 全量 833 测试；基线 10/10、像素 0.00%；两次采集 cockpit-door1 均 0.00%；机位 / bbox 0.00% |
 | P3 | `scene/interactions.js`：鼠标拖拽 / 滚轮 / contextmenu / resize（只写 `target*`，`detach()` 解绑缓存的 `boundContainer`） | 全量 833 测试；基线 10/10、像素 0.00%；iso45 / cockpit 均 0.00%；门开合 1.222 rad 不变 |
 | P3 | `scene/flightFx.js`：升力风扇环 + 地面能量场（持有权单实例；`ensure` 复用 createLiftDucts 同一份 `liftLayout`） | 全量 833 测试；基线 10/10、像素 0.00%；切车色 / 线框开关重建后环仍 6/6 出现，像素 0.00% |
+| P3 | `scene/animator.js`：帧循环（相机 target/current 缓动 + VTOL 升降/转向 + 车门开合 + 渲染；carGroup/铰链走每帧 getter） | 全量 833 测试；基线 10/10，两次采集均像素 0.00%；开门 1.2217 rad、悬停 carY 0.4053、左转 -90.00°、落地 0、drag/wheel clamp 命中 |
 
-P2 完成。P3 进度：`scene/createScene.js`、`scene/interactions.js`、`scene/flightFx.js` 已落地，剩余 `scene/animate.js` → P4 `composables/useCarScene.js` 接管编排。
+P2 完成，P3 完成（createScene / interactions / flightFx / animator 四模块落地）。剩余 P4：`composables/useCarScene.js` 接管编排。
 
 ## 8. 本轮结论
 
-P0 基线与 P1/P2/P3 已落地模块（`smoothing` / `dispose` / `doors` / `glass` / `seats` / `lightsBumpers` / `mirrors` / `wheels` / `materials` / `createScene` / `interactions` / `flightFx`）已收口，Car3D.vue 1875 → 1433 行（−24%）；剩余 P3 场景层（`animate`）与 P4 编排（`useCarScene`）。每批以 `npx vitest run` + `node scripts/car3d_baseline.mjs --out .tmp-car3d-current` + `node scripts/car3d_baseline_compare.mjs --cur .tmp-car3d-current` 为闸门，任何分镜像素差超 1% 先归因再决定修复或回滚。
+P0 基线与 P1/P2/P3 已落地模块（`smoothing` / `dispose` / `doors` / `glass` / `seats` / `lightsBumpers` / `mirrors` / `wheels` / `materials` / `createScene` / `interactions` / `flightFx` / `animator`）已收口，Car3D.vue 1875 → 1329 行（−29%）；剩余 P4 编排（`useCarScene`）。每批以 `npx vitest run` + `node scripts/car3d_baseline.mjs --out .tmp-car3d-current` + `node scripts/car3d_baseline_compare.mjs --cur .tmp-car3d-current` 为闸门，任何分镜像素差超 1% 先归因再决定修复或回滚。
