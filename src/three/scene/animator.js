@@ -64,7 +64,7 @@ export function createAnimator({
     const carGroup = getCarGroup()
     const fx = getFlightFx()
     if (carGroup && getFlightAvailable()) {
-      // 首帧建环（晚于 createCar 的 castShadow 遍历，保持 noCastShadow 时序）
+      // 首帧建环（晚于装配层 applyShadowFlags 遍历，保持 noCastShadow 时序）
       fx?.ensure({ carGroup, carParams: getCarParams(), liftLayout: getLiftLayout() })
       const fp = resolveFlightParams(getCarType(), getCarParams())
       const target = getFlightEngaged() ? 1 : 0

@@ -14,6 +14,23 @@ import { createMirrors } from '../parts/mirrors.js'
 import { createWheels, addArchLiners, createLiftDucts } from '../parts/wheels.js'
 
 /**
+ * 阴影约定唯一解释点（P6 收口）：`userData.noCastShadow` 的网格（玻璃 / 门内板 /
+ * 风道盘唇等）不投实心影，其余网格统一投影并接收阴影。
+ *
+ * 挤出路径与 NURBS 路径都在装配末尾走这一处，调用方（composable）不再重复 traverse。
+ * 与 `bodyMesh.castShadow` 同源：车身网格没有 noCastShadow 标记，因此结果恒为 true。
+ */
+function applyShadowFlags(group) {
+  group.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = !child.userData.noCastShadow
+      child.receiveShadow = true
+    }
+  })
+  return group
+}
+
+/**
  * 整车装配编排（P5 批次 3）：只做编排，不做 UI。
  *
  * 入参快照**只读**：不持有 ref/getter，构建期把车色与线框定成字符串/布尔；
@@ -45,6 +62,7 @@ export function assembleCar({ carParams, carType, carColor, wireframe, nurbsMesh
     alignNurbsToProfile(body, nurbsMesh, P)
     root.add(body)
     addInteriorSeats({ parent: root, P, preset: seatPreset, doorHinges })
+    applyShadowFlags(root)
     return { group: root, doorHinges, doorSeams, liftLayout: null }
   }
   const group = new THREE.Group()
@@ -295,5 +313,6 @@ export function assembleCar({ carParams, carType, carColor, wireframe, nurbsMesh
   // 玻璃为 depthWrite:false 透明件，座舱内座椅可从风挡/侧窗看到。
   addInteriorSeats({ parent: group, P, preset: seatPreset, doorHinges })
 
+  applyShadowFlags(group)
   return { group, doorHinges, doorSeams, liftLayout }
 }

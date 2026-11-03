@@ -161,12 +161,6 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
     })
 
     carGroup = createCar()
-    carGroup.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = !child.userData.noCastShadow   // 玻璃不投实心影
-        child.receiveShadow = true
-      }
-    })
     scene.add(carGroup)
 
     // 视觉基线/调试钩子：setDoor / viewState 依赖门铰链与动画状态，仍在 createCar 之后补挂；
@@ -271,12 +265,6 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
     disposeObject(carGroup)
     carGroup = null
     carGroup = createCar()
-    carGroup.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = !child.userData.noCastShadow   // 玻璃不投实心影
-        child.receiveShadow = true
-      }
-    })
     scene.add(carGroup)
   }
 

@@ -26,7 +26,7 @@ export function createFlightFx({ scene }) {
   let groundGlow = null
   let built = false
 
-  /** 建环 + 地面场；由 animate 首帧调用（晚于 createCar 的 castShadow 遍历） */
+  /** 建环 + 地面场；由 animate 首帧调用（晚于装配层 applyShadowFlags 遍历） */
   const ensure = ({ carGroup, carParams, liftLayout }) => {
     if (!scene || !carGroup || built || !liftLayout) return
     const ringMat = () => new THREE.MeshBasicMaterial({

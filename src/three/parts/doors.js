@@ -34,7 +34,7 @@ export function createDoorInnerPanel({ width, height, offsetX, bottomY, zSide, w
     color: 0x2a2d33, metalness: 0.08, roughness: 0.9, wireframe
   }))
   mesh.name = 'door-inner-trim'
-  mesh.userData.noCastShadow = true   // initScene 遍历时据此关掉投影
+  mesh.userData.noCastShadow = true   // 装配层 applyShadowFlags 遍历时据此关掉投影
   return mesh
 }
 
