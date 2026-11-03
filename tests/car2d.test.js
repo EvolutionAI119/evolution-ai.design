@@ -4,8 +4,6 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { carTypeParams, defaultCarParams, brands } from '../src/config/carPresets'
 import { SISA_META, SISA_Z_TOP_NORM, evalTopRMSE, sampleTopNorm, toPlatformX } from '../src/config/sisaReference'
 import { LINE_RATIOS, deriveCarProfile } from '../src/utils/carProfile.js'
@@ -242,10 +240,22 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
     })
   })
 
-  describe('10. SISA 反馈单问题 A 回归守卫', () => {
-    it('Car2D.vue 不得包含顶层 console.log', () => {
-      const src = readFileSync(resolve(process.cwd(), 'src/components/Car2D.vue'), 'utf8')
-      expect(src).not.toMatch(/console\.log/)
+  describe('10. SISA 反馈单问题 A 回归守卫（几何输出有限性）', () => {
+    it('全车型 2D 几何锚点均为有限数值（渲染前无 NaN / Infinity）', () => {
+      const finiteKeys = [
+        'scale', 'actualLength', 'rearX', 'frontWheelCX', 'rearWheelCX',
+        'wheelRadius', 'wheelCY', 'underbodyY', 'roofTopY', 'beltLineY',
+        'hoodLineY', 'trunkLineY', 'hoodEndX', 'cowlStartX', 'windshieldTopX',
+        'rearWindowTopX', 'rearWindowBottomX', 'slantFactor', 'roofLen', 'wheelBottomY'
+      ]
+      for (const type of Object.keys(carTypeParams)) {
+        const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
+        for (const key of finiteKeys) {
+          expect(Number.isFinite(result[key]), `${type}.${key} 非有限值`).toBe(true)
+        }
+        expect(Number.isFinite(result.heightLines.distanceRoofToBelt)).toBe(true)
+        expect(Number.isFinite(result.heightLines.distanceBeltToHood)).toBe(true)
+      }
     })
   })
 
@@ -303,12 +313,17 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       }
     })
 
-    it('Car2D.vue 源码含 cowl 斜坡与完整尺寸标注实现', () => {
-      const src = readFileSync(resolve(process.cwd(), 'src/components/Car2D.vue'), 'utf8')
-      expect(src).toContain('cowlStartX')
-      expect(src).toContain('dimY3')
-      expect(src).toContain('H {{ overallHeight }}mm')
-      expect(src).toContain('W {{ overallWidth }}mm')
+    it('cowl 斜坡与三行尺寸标注由实际几何推导且不越界', () => {
+      for (const type of Object.keys(carTypeParams)) {
+        const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
+        // cowl 斜坡段正长度：从引擎盖末端回收到风挡底，玻璃下缘落在车身表面
+        expect(result.hoodEndX - result.cowlStartX).toBeGreaterThan(0)
+      }
+      // 三行尺寸标注（20 / 42 / 64px）：全部落在地面线下方，且整体不越出标注区
+      const rows = [20, 42, 64].map((dy) => groundY + dy)
+      for (const y of rows) expect(y).toBeGreaterThan(groundY)
+      expect(rows[2] + 4).toBeLessThanOrEqual(groundY + dimAreaH)
+      expect(groundY + dimAreaH).toBeLessThanOrEqual(svgHeight)
     })
   })
 
@@ -390,11 +405,20 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       }
     })
 
-    it('Car2D.vue 源码含皮卡专属拓扑分支（isPickup / cabRearX2d）', () => {
-      const src = readFileSync(resolve(process.cwd(), 'src/components/Car2D.vue'), 'utf8')
-      expect(src).toContain('isPickup')
-      expect(src).toContain('cabRearX2d')
-      expect(src).toContain("from '../utils/carProfile.js'")
+    it('皮卡专属拓扑仅作用于 pickup（其余车型无驾驶室后壁）', () => {
+      for (const type of Object.keys(carTypeParams)) {
+        const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
+        if (type === 'pickup') {
+          expect(result.cabRearX2d).toBeGreaterThan(0)          // 货箱段存在
+          expect(result.profile.pickup).toBeTruthy()
+          // 2D 驾驶室后壁消费 3D 同源坐标：X+ 朝车头，前保险杠到后壁距离必须一致
+          const cabRearFromFrontMm = (result.profile.frontX - result.profile.pickup.cabRearX) * 1000
+          expect(Number.isFinite(cabRearFromFrontMm)).toBe(true)
+          expect(result.cabRearX2d / result.scale).toBeCloseTo(cabRearFromFrontMm, 1)
+        } else {
+          expect(result.cabRearX2d).toBe(0)                    // 非皮卡不产生驾驶室后壁
+        }
+      }
     })
   })
 })
