@@ -114,6 +114,7 @@ import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
 import { createSeatRow, createInteriorTrim, createIpConsole, createLuggageTrim, createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
 import { deriveInteriorLayout } from '../utils/carInteriorLayout.js'
 import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from '../three/geometry/smoothing.js'
+import { disposeObject } from '../three/dispose.js'
 
 const { t } = useI18n()
 
@@ -1706,34 +1707,7 @@ const toggleFullscreen = () => {
 }
 
 // 材质随附贴图（alphaMap 等 CanvasTexture）必须显式 dispose，否则内存泄漏
-const disposeMaterial = (m) => {
-  for (const slot of ['map', 'alphaMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) {
-    if (m[slot] && typeof m[slot].dispose === 'function') m[slot].dispose()
-  }
-  m.dispose()
-}
-
-const disposeObject = (obj) => {
-  if (!obj) return
-  obj.traverse((child) => {
-    if (child.geometry) child.geometry.dispose()
-    if (child.material) {
-      if (Array.isArray(child.material)) {
-        child.material.forEach(disposeMaterial)
-      } else {
-        disposeMaterial(child.material)
-      }
-    }
-  })
-  if (obj.geometry) obj.geometry.dispose()
-  if (obj.material) {
-    if (Array.isArray(obj.material)) {
-      obj.material.forEach(disposeMaterial)
-    } else {
-      disposeMaterial(obj.material)
-    }
-  }
-}
+// —— 实现已迁至 src/three/dispose.js（P1 拆分）
 
 const updateCar = () => {
   if (!scene || !carGroup) return
