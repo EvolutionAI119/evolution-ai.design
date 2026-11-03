@@ -40,7 +40,7 @@ const docsPlugin = {
       for (const name of fs.readdirSync(from)) {
         const s = path.join(from, name), d = path.join(to, name)
         if (fs.statSync(s).isDirectory()) copyDir(s, d)
-        else if (/\.(md|pdf|html|svg|png)$/i.test(name)) fs.copyFileSync(s, d)
+        else if (/\.(md|pdf|html|svg|png|mp4|xlsx|pptx|js|ttf|json)$/i.test(name)) fs.copyFileSync(s, d)
       }
     }
     copyDir(src, dst)
