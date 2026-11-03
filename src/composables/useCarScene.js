@@ -4,7 +4,8 @@ import { createScene } from '../three/scene/createScene.js'
 import { attachInteractions } from '../three/scene/interactions.js'
 import { createFlightFx } from '../three/scene/flightFx.js'
 import { createAnimator } from '../three/scene/animator.js'
-import { deriveCarProfile, deriveWheelFitment, bodySideOutline, deriveDoorLayout, deriveLiftDevices, deriveNurbsFrame } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, bodySideOutline, deriveDoorLayout, deriveLiftDevices } from '../utils/carProfile.js'
+import { createNurbsCar, alignNurbsToProfile } from '../three/assembly/nurbsCar.js'
 import { deriveCabinGlass, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, flightControlEnvelope } from '../utils/flightPhysics.js'
 import { createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
@@ -108,119 +109,6 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
   let orthoCamera
 
   /**
-   * 从后端 NURBS 采样网格构建高保真汽车（真实曲面，替代 ExtrudeGeometry 近似）
-   *
-   * 坐标映射：后端 canonical（X=车长, Y=车宽, Z=车高, mm）
-   *           → three（x=车长, y=高, z=宽, m）
-   */
-  const createNurbsCar = (mesh) => {
-    const props = readProps()
-    const group = new THREE.Group()
-    const M = 0.001
-
-    for (const part of mesh.parts || []) {
-      const pts = part.points
-      if (!pts || pts.length < 2 || !pts[0] || pts[0].length < 2) continue
-      const nu = pts.length
-      const nv = pts[0].length
-      const positions = new Float32Array(nu * nv * 3)
-      let k = 0
-      for (let i = 0; i < nu; i++) {
-        for (let j = 0; j < nv; j++) {
-          const p = pts[i][j]
-          positions[k++] = p[0] * M   // X 车长
-          positions[k++] = p[2] * M   // Z 车高 → three.y
-          positions[k++] = p[1] * M   // Y 车宽 → three.z
-        }
-      }
-      const indices = []
-      for (let i = 0; i < nu - 1; i++) {
-        for (let j = 0; j < nv - 1; j++) {
-          const a = i * nv + j
-          const b = i * nv + j + 1
-          const c = (i + 1) * nv + j
-          const d = (i + 1) * nv + j + 1
-          indices.push(a, b, c, b, d, c)
-        }
-      }
-      const geom = new THREE.BufferGeometry()
-      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-      geom.setIndex(indices)
-      geom.computeVertexNormals()   // 共享顶点 → 平滑法线
-
-      const isGlass = part.type === 'windshield' || part.type === 'rear_window'
-        || part.type === 'side_glass'
-      // 车漆件：BODY COLOR 面板选色优先（灯具/格栅/保险杠保留后端本色）
-      const PAINT_TYPES = new Set(['body_shell', 'hood', 'roof', 'trunk', 'door', 'fender'])
-      const isPaint = PAINT_TYPES.has(part.type)
-      const paintColor = (isPaint && props.carColor) || part.color || props.carColor
-      const material = isGlass
-        ? new THREE.MeshPhysicalMaterial({
-            color: part.color || '#a8c4cc',
-            transparent: true,
-            opacity: part.opacity ?? 0.25,
-            metalness: 0,
-            roughness: 0.08,
-            envMapIntensity: 0.6,
-            side: THREE.DoubleSide,
-            depthWrite: false,
-            wireframe: wireframeMode.value
-          })
-        : new THREE.MeshPhysicalMaterial({
-            color: paintColor,
-            metalness: 0.72,
-            roughness: 0.28,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.06,
-            envMapIntensity: 1.5,
-            side: THREE.DoubleSide,
-            wireframe: wireframeMode.value
-          })
-      const meshObj = new THREE.Mesh(geom, material)
-      meshObj.castShadow = true
-      meshObj.receiveShadow = true
-      group.add(meshObj)
-    }
-
-    for (const w of mesh.wheels || []) {
-      group.add(createNurbsWheel(w))
-    }
-    return group
-  }
-
-  /** 后端 wheel 部件 → three 轮子组（位置字典为 author 约定：y=高, z=宽） */
-  const createNurbsWheel = (w) => {
-    const M = 0.001
-    const g = new THREE.Group()
-    const r = w.radius * M
-    const width = (w.width || 200) * M
-
-    const tireGeom = new THREE.CylinderGeometry(r, r, width, 40)
-    tireGeom.rotateX(Math.PI / 2)
-    g.add(new THREE.Mesh(
-      tireGeom,
-      new THREE.MeshStandardMaterial({ color: 0x26262b, metalness: 0.1, roughness: 0.85 })))
-
-    // 轮毂/轮芯端面必须比胎面更宽才能外露（否则被轮胎实体完全包住）
-    const rimGeom = new THREE.CylinderGeometry(r * 0.62, r * 0.62, width * 1.08, 24)
-    rimGeom.rotateX(Math.PI / 2)
-    g.add(new THREE.Mesh(
-      rimGeom,
-      new THREE.MeshStandardMaterial({ color: 0xb8bdc4, metalness: 0.95, roughness: 0.2 })))
-
-    const hubGeom = new THREE.CylinderGeometry(r * 0.18, r * 0.18, width * 1.16, 12)
-    hubGeom.rotateX(Math.PI / 2)
-    g.add(new THREE.Mesh(
-      hubGeom,
-      new THREE.MeshStandardMaterial({ color: 0xd8dadd, metalness: 1.0, roughness: 0.15 })))
-
-    const pos = w.position || {}
-    g.position.set((pos.x || 0) * M, (pos.y || 0) * M, (pos.z || 0) * M)
-    g.traverse((o) => { if (o.isMesh) o.castShadow = true })
-    return g
-  }
-
-  /**
    * 车身洞口内壁 + 风挡暗舱底材质分组
    *
    * 车身由侧围轮廓整宽挤出：一切轮廓内 holes（门洞/侧窗分片洞口）沿 Z 贯穿，
@@ -320,31 +208,6 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
   }
 
   /**
-   * 将后端 NURBS 网格对齐到 carProfile 的居中坐标系。
-   * 数学部分（平移/偏航/等比缩放）在 carProfile.deriveNurbsFrame 中，此处只负责落到 Three 变换上。
-   */
-  const alignNurbsToProfile = (body, mesh, P) => {
-    body.updateMatrixWorld(true)
-    const box = new THREE.Box3().setFromObject(body)
-    if (box.isEmpty()) return { valid: false, scale: 1, flip: false }
-
-    const wheelXs = (mesh.wheels || []).map((w) => (w.position?.x || 0) * 0.001)
-    const frame = deriveNurbsFrame(
-      { min: { x: box.min.x, y: box.min.y, z: box.min.z },
-        max: { x: box.max.x, y: box.max.y, z: box.max.z } },
-      wheelXs,
-      P
-    )
-    if (!frame) return { valid: false, scale: 1, flip: false }
-
-    body.rotation.y = frame.rotationY
-    body.scale.setScalar(frame.scale)
-    body.position.set(frame.position.x, frame.position.y, frame.position.z)
-    body.updateMatrixWorld(true)
-    return { valid: true, scale: frame.scale, flip: frame.flip }
-  }
-
-  /**
    * 内饰座椅 + 舱内附件装配：几何与挂载全部在 three/interior/seats.js（P2 拆分）。
    * 调用时序是契约——必须在 createDoorRig 之后，否则门板内饰拿不到铰链、开门时不跟动。
    */
@@ -356,13 +219,18 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
     doorSeams = []
     // 座椅材质预设由调用方解析（内饰模块不读 props）
     const seatPreset = resolveSeatPreset(props.carType, props.carParams)
-    // 有后端真实网格时走高保真路径：车身先对齐到 carProfile 坐标系，再与内饰件同父级共存
+    // 有后端真实网格时走高保真路径：车身先对齐到 carProfile 坐标系，再与内饰件同父级共存。
+    // NURBS 路径不建门、不建升力装置：门引用清空、liftLayout 显式 null（flightFx.ensure 不建环）。
     if (props.nurbsMesh) {
       const P = deriveCarProfile(props.carParams, props.carType)
       const root = new THREE.Group()
-      const body = createNurbsCar(props.nurbsMesh)
+      const body = createNurbsCar(props.nurbsMesh, {
+        carColor: props.carColor,
+        wireframe: wireframeMode.value
+      })
       alignNurbsToProfile(body, props.nurbsMesh, P)
       root.add(body)
+      currentLiftLayout = null
       addInteriorSeats({ parent: root, P, preset: seatPreset, doorHinges })
       return root
     }
