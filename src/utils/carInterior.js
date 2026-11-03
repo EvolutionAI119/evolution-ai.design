@@ -497,7 +497,8 @@ export function createSteeringWheel(P) {
   for (const a of [0, Math.PI * 2 / 3, -Math.PI * 2 / 3]) {
     const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.008, sw.r, 0.008), mat)
     spoke.rotation.z = a
-    spoke.position.set(Math.sin(a) * sw.r / 2, Math.cos(a) * sw.r / 2, 0)
+    // rotation.z = a 将局部 +Y 映射为世界 (-sin a, cos a)：辐条沿该方向偏移才与轮毂/轮圈共线
+    spoke.position.set(-Math.sin(a) * sw.r / 2, Math.cos(a) * sw.r / 2, 0)
     plane.add(spoke)
   }
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.05, 12), mat)

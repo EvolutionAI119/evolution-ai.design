@@ -24975,7 +24975,7 @@ void main() {
     for (const a of [0, Math.PI * 2 / 3, -Math.PI * 2 / 3]) {
       const spoke = new Mesh(new BoxGeometry(8e-3, sw.r, 8e-3), mat);
       spoke.rotation.z = a;
-      spoke.position.set(Math.sin(a) * sw.r / 2, Math.cos(a) * sw.r / 2, 0);
+      spoke.position.set(-Math.sin(a) * sw.r / 2, Math.cos(a) * sw.r / 2, 0);
       plane.add(spoke);
     }
     const hub = new Mesh(new CylinderGeometry(0.032, 0.032, 0.05, 12), mat);
