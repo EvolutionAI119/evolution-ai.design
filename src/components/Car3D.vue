@@ -108,6 +108,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { createScene } from '../three/scene/createScene.js'
 import { attachInteractions } from '../three/scene/interactions.js'
+import { createFlightFx } from '../three/scene/flightFx.js'
 import { deriveCarProfile, deriveWheelFitment, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
 import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
@@ -200,8 +201,11 @@ const flightEngaged = ref(false)
 const flightAvailable = computed(() => props.carParams?.enable_vtol !== false)
 let flightProgress = 0
 let flightLastMs = 0
-let flightRings = []          // 升力风扇环（carGroup 子对象，随车升降）
-let flightGroundGlow = null   // 地面能量场（scene 子对象，随高度衰减）
+// VTOL 特效（升力环 + 地面能量场）持有权在 scene/flightFx.js：组件只保留实例与布局，
+// 不再保存 rings / groundGlow 镜像，animate 一律通过 flightFx.update 读写。
+let flightFx = null
+// createCar 里与 createLiftDucts 共用同一份 deriveLiftDevices 结果，flightFx.ensure 原样复用
+let currentLiftLayout = null
 
 // ---- 车门打开动画状态 ----
 // doorOpen 开关；doorProgress ∈ [0,1] 缓动趋近目标；doorHinges 由 createCar 重建
@@ -808,6 +812,7 @@ const createCar = () => {
   // 只落前后轮腔之间的封闭地板区间，绝不侵入轮腔切口；风道口下沉 12mm（不构成额外最低点）
   // 布局在此算一次：悬停风扇环（ensureFlightFx）沿用同一份 deriveLiftDevices，避免环与风道错位
   const liftLayout = deriveLiftDevices(P, resolveFlightParams(props.carType, props.carParams).liftFans)
+  currentLiftLayout = liftLayout
   createLiftDucts({ parent: group, liftLayout, ductMat, lipMat })
 
   // ---- 四轮：胎 + 轮辋盘 + 轮唇 + 轮毂盖 + 5 辐条（几何在 parts/wheels.js）----
@@ -954,6 +959,8 @@ const initScene = () => {
   camera = sceneApi.camera
   renderer = sceneApi.renderer
   orthoCamera = sceneApi.orthoCamera
+  // 特效实例与场景同作用域；ensure 仍由 animate 首帧调用（保持 noCastShadow 时序）
+  flightFx = createFlightFx({ scene })
 
   carGroup = createCar()
   carGroup.traverse((child) => {
@@ -1006,45 +1013,18 @@ const initScene = () => {
 }
 
 // ---- VTOL 特效：升力风扇环（随车）+ 地面能量场（贴地衰减）----
+// 实现已迁至 scene/flightFx.js（P3）：持有权、建环常量、逐帧外观公式全部在模块内；
+// 这里只保留调用点，保证 updateCar / onUnmounted 的释放时序不变。
 const disposeFlightFx = () => {
-  if (flightGroundGlow) {
-    scene.remove(flightGroundGlow)
-    disposeObject(flightGroundGlow)
-    flightGroundGlow = null
-  }
-  flightRings = []   // 环为 carGroup 子对象，随 carGroup 一起被 dispose
+  flightFx?.dispose()
 }
 
 const ensureFlightFx = () => {
-  if (!scene || !carGroup || flightRings.length) return
-  const fp = resolveFlightParams(props.carType, props.carParams)
-  const P = deriveCarProfile(props.carParams, props.carType)
-  const ringMat = () => new THREE.MeshBasicMaterial({
-    color: 0x38bdf8, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false
+  flightFx?.ensure({
+    carGroup,
+    carParams: props.carParams,
+    liftLayout: currentLiftLayout
   })
-  // 升力环与底盘上升装置同坐标（装置本体在 createCar 中常显，环仅飞行时可见）
-  const lift = deriveLiftDevices(P, fp.liftFans)
-  for (const d of lift.devices) {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(d.r * 0.86, 0.016, 10, 40), ringMat())
-    ring.rotation.x = Math.PI / 2
-    ring.position.set(d.x, lift.y - 0.03, d.z)
-    ring.userData.noCastShadow = true
-    ring.visible = false
-    carGroup.add(ring)
-    flightRings.push(ring)
-  }
-  // 地面能量场：半径随车长缩放，绿色翡翠（品牌主色），悬浮越高越弱
-  const glowR = Math.max(2.0, (props.carParams.overall_length || 4800) / 1000 * 0.42)
-  const glowGeo = new THREE.CircleGeometry(glowR, 48)
-  flightGroundGlow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({
-    color: 0x10b981, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false
-  }))
-  flightGroundGlow.rotation.x = -Math.PI / 2
-  flightGroundGlow.position.y = 0.02
-  flightGroundGlow.visible = false
-  scene.add(flightGroundGlow)
 }
 
 const toggleFlight = () => {
@@ -1091,21 +1071,7 @@ const animate = () => {
     carGroup.rotation.z = attRoll * Math.PI / 180
     carGroup.rotation.x = attPitch * Math.PI / 180
     // 特效：风扇环脉冲（蓝），地面能量场随高度衰减（绿）
-    const pulse = 0.5 + 0.5 * Math.sin(vnow / 1000 * Math.PI * 2 * 0.8)
-    const ringOn = flightProgress > 0.001
-    for (const r of flightRings) {
-      r.visible = ringOn
-      r.material.opacity = ringOn ? 0.55 * (0.35 + 0.65 * pulse) * (0.3 + 0.7 * lift) : 0
-      const s = 1 + 0.10 * pulse
-      r.scale.set(s, s, 1)
-    }
-    if (flightGroundGlow) {
-      flightGroundGlow.visible = ringOn
-      flightGroundGlow.material.opacity = ringOn
-        ? 0.22 * (1 - 0.72 * lift) * (0.4 + 0.6 * pulse) : 0
-      const gs = 1 + 0.35 * (1 - lift)
-      flightGroundGlow.scale.set(gs, gs, 1)
-    }
+    flightFx?.update({ now: vnow, lift, progress: flightProgress })
   }
 
   // ---- 车门开合动画：doorProgress 缓动趋近目标，铰链绕竖直轴 rotation.y 开合（把手随门板）----
@@ -1210,6 +1176,7 @@ const updateCar = () => {
   scene.userData.__car3d__.nurbs = !!props.nurbsMesh   // 生成后 nurbs 标记同步，供多实例定位
   scene.remove(carGroup)
   disposeFlightFx()
+  currentLiftLayout = null   // 旧布局随旧车失效，createCar 重新赋值后再被 flightFx.ensure 复用
   disposeObject(carGroup)
   carGroup = null
   carGroup = createCar()
@@ -1257,6 +1224,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (animationId) cancelAnimationFrame(animationId)
   disposeFlightFx()
+  flightFx = null
   // 模板 ref 此时已被 Vue 清空（containerRef.value === null）；interactions.js 内部
   // 用 initScene 时缓存的 container 解绑，所以这里只需调用 detach，不再碰 containerRef。
   if (detachInteractions) {
