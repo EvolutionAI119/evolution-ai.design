@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 版本 | v1.1 · 2026-11-03（补实施进度） |
-| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1577 行 / 67 KB） |
+| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1518 行 / 65 KB） |
 | 目标 | 行数降 40% 以上；渲染结果零差异；纯函数可单测 |
 | 约束 | 每批只搬一个模块、行为不变；拆分前先补渲染基线；每步独立提交、全绿 |
 | 关联 | [ASSET_MANIFEST.md](ASSET_MANIFEST.md)、[2D_LAYOUT_VERIFICATION.md](2D_LAYOUT_VERIFICATION.md) |
@@ -112,12 +112,10 @@ scene/createScene.js ─> scene/{interactions,animate}.js ─> useCarScene.js
 | P2 | `interior/seats.js`：`addInteriorSeats` / `attachDoorTrimToHinges`（注入 doorHinges、preset 由调用方传入） | 全量 829 测试；基线 10/10、像素 0.00%；cockpit 门态分镜 0.00% |
 | P2 | `parts/lightsBumpers.js`：保险杠 / 前大灯 / 尾灯（坐标常量逐字保留，尾灯复用头灯 `hlZ`） | 全量 829 测试；基线 10/10、像素 0.00%；front / left / bbox 均 0.00% |
 | P2 | `parts/mirrors.js`：镜壳 / 连接颈 / 密封圈 / 凸面镜片（`zSide` 显式贯穿、贴花纹理左右共用） | 全量 829 测试；基线 10/10、像素 0.00%；left / iso45 / bbox 均 0.00% |
+| P2 | `parts/wheels.js`：四轮 / 轮腔衬 / 升力风道盘唇（材质注入，`flightRings` 仍由组件驱动） | 全量 829 测试 + flightPhysics 35 用例；基线 10/10、像素 0.00%；left / iso45 / bbox 均 0.00% |
 
-P2 剩余模块按「耦合面从小到大」推进，每批单独提交：
-
-1. `parts/wheels.js`：车轮/轮腔衬/升力装置，VTOL 状态耦合最重，放最后；
-2. `materials.js` 收口：统一材质与复用缓存（与上述各批共享实例）。
+P2 剩余：`materials.js` 收口（统一材质与构建内复用缓存）。
 
 ## 8. 本轮结论
 
-P0 基线与 P1/P2（`smoothing` / `dispose` / `doors` / `glass` / `seats` / `lightsBumpers` / `mirrors`）已落地；剩余按第 7 节顺序推进，每批以 `npx vitest run` + `node scripts/car3d_baseline.mjs --out .tmp-car3d-current` + `node scripts/car3d_baseline_compare.mjs --cur .tmp-car3d-current` 为闸门，任何分镜像素差超 1% 先归因再决定修复或回滚。
+P0 基线与 P1/P2（`smoothing` / `dispose` / `doors` / `glass` / `seats` / `lightsBumpers` / `mirrors` / `wheels`）已落地，Car3D.vue 1875 → 1518 行；剩余 `materials.js` 收口与 P3 场景层（`createScene` / `interactions` / `flightFx` / `animate`）。每批以 `npx vitest run` + `node scripts/car3d_baseline.mjs --out .tmp-car3d-current` + `node scripts/car3d_baseline_compare.mjs --cur .tmp-car3d-current` 为闸门，任何分镜像素差超 1% 先归因再决定修复或回滚。

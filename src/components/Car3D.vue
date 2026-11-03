@@ -107,7 +107,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
+import { deriveCarProfile, deriveWheelFitment, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
 import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
@@ -120,6 +120,7 @@ import { addBandGlass, addDloPane } from '../three/parts/glass.js'
 import { addInteriorSeats } from '../three/interior/seats.js'
 import { createLightsBumpers } from '../three/parts/lightsBumpers.js'
 import { createMirrors } from '../three/parts/mirrors.js'
+import { createWheels, addArchLiners, createLiftDucts } from '../three/parts/wheels.js'
 
 const { t } = useI18n()
 
@@ -862,6 +863,7 @@ const createCar = () => {
 
   // ---- 底盘上升装置（6~8 台，deriveLiftDevices 同源）----
   // 只落前后轮腔之间的封闭地板区间，绝不侵入轮腔切口；风道口下沉 12mm（不构成额外最低点）
+  // 布局在此算一次：悬停风扇环（ensureFlightFx）沿用同一份 deriveLiftDevices，避免环与风道错位
   const liftLayout = deriveLiftDevices(P, resolveFlightParams(props.carType, props.carParams).liftFans)
   const ductMat = new THREE.MeshStandardMaterial({
     color: 0x14161c, metalness: 0.6, roughness: 0.4, wireframe: wireframeMode.value
@@ -869,73 +871,23 @@ const createCar = () => {
   const lipMat = new THREE.MeshStandardMaterial({
     color: 0xb8bcc4, metalness: 1.0, roughness: 0.15, wireframe: wireframeMode.value
   })
-  for (const d of liftLayout.devices) {
-    const duct = new THREE.Mesh(new THREE.CylinderGeometry(d.r, d.r * 1.04, 0.02, 28), ductMat)
-    duct.position.set(d.x, liftLayout.y, d.z)
-    duct.userData.noCastShadow = true
-    group.add(duct)
-    const lip = new THREE.Mesh(new THREE.TorusGeometry(d.r * 0.99, 0.009, 8, 28), lipMat)
-    lip.rotation.x = Math.PI / 2
-    lip.position.set(d.x, liftLayout.y - 0.01, d.z)
-    lip.userData.noCastShadow = true
-    group.add(lip)
-  }
+  createLiftDucts({ parent: group, liftLayout, ductMat, lipMat })
 
-  const createWheel = (x, z) => {
-    const wheelGroup = new THREE.Group()
-    // 外侧方向：轮辋盘面/辐条必须装在朝向车外的一侧，否则整轮被轮胎端盖
-    // 遮成一块纯黑圆盘（侧视读作「无轮」黑洞）
-    const outboard = Math.sign(z) || 1
-
-    const tireWidth = fit.tireW
-    const tireGeom = new THREE.CylinderGeometry(wheelR, wheelR, tireWidth, 28)
-    tireGeom.rotateX(Math.PI / 2)
-    const tire = new THREE.Mesh(tireGeom, wheelMat)
-    wheelGroup.add(tire)
-
-    // 轮辋盘：贴在外侧胎侧之外 6mm，半径 0.68R（露出胎侧黑边作胎壁）。
-    // 盘面用深一档的枪灰，辐条/轮唇用亮银——同色会把辐条吃掉，整轮仍是「平盘」
-    const rimR = wheelR * 0.68
-    const rimGeom = new THREE.CylinderGeometry(rimR, rimR, 0.02, 28)
-    rimGeom.rotateX(Math.PI / 2)
-    const rim = new THREE.Mesh(rimGeom, rimDiscMat)
-    rim.position.z = outboard * (tireWidth / 2 - 0.004)
-    wheelGroup.add(rim)
-
-    // 轮唇：轮辋外圈的亮银环，勾勒轮辋与胎壁的分界
-    const lipGeom = new THREE.TorusGeometry(rimR, 0.008, 8, 28)
-    const rimLip = new THREE.Mesh(lipGeom, rimMat)
-    rimLip.position.z = outboard * (tireWidth / 2 + 0.006)
-    wheelGroup.add(rimLip)
-
-    // 轮毂中心盖：亮银圆盘凸出于轮辋盘
-    const hubGeom = new THREE.CylinderGeometry(rimR * 0.30, rimR * 0.30, 0.016, 16)
-    hubGeom.rotateX(Math.PI / 2)
-    const hub = new THREE.Mesh(hubGeom, chromeMat)
-    hub.position.z = outboard * (tireWidth / 2 + 0.010)
-    wheelGroup.add(hub)
-
-    // 辐条：5 根径向辐板，绕轮轴（Z）均布，压在轮辋盘外侧
-    const spokeLen = rimR * 0.9
-    for (let i = 0; i < 5; i++) {
-      const spokeGeom = new THREE.BoxGeometry(rimR * 0.26, spokeLen, 0.014)
-      spokeGeom.translate(0, spokeLen / 2, 0)
-      const spoke = new THREE.Mesh(spokeGeom, rimMat)
-      spoke.rotation.z = (i * Math.PI * 2) / 5
-      spoke.position.z = outboard * (tireWidth / 2 + 0.012)
-      wheelGroup.add(spoke)
-    }
-
-    wheelGroup.position.set(x, wheelR, z)
-    return wheelGroup
-  }
-
+  // ---- 四轮：胎 + 轮辋盘 + 轮唇 + 轮毂盖 + 5 辐条（几何在 parts/wheels.js）----
+  // 材质由本例程创建后传入（chromeMat 与门把手共用，模块内不得重建）
   const wheelZ = fit.wheelZ
-
-  group.add(createWheel(frontWheelX, wheelZ))
-  group.add(createWheel(frontWheelX, -wheelZ))
-  group.add(createWheel(rearWheelX, wheelZ))
-  group.add(createWheel(rearWheelX, -wheelZ))
+  createWheels({
+    parent: group,
+    frontX: frontWheelX,
+    rearX: rearWheelX,
+    wheelZ,
+    wheelR,
+    tireW: fit.tireW,
+    wheelMat,
+    rimDiscMat,
+    rimMat,
+    chromeMat
+  })
 
   // ---- 轮腔内衬：与拱口同形的内嵌椭圆拱壳（半椭圆上缘 + 竖直唇落至底板）----
   // 圆形筒对椭圆拱口必然四周互穿（前后壁/顶部戳出 = 拓扑破面），改用 archLinerProfile
@@ -944,26 +896,7 @@ const createCar = () => {
     color: 0x101014, metalness: 0.2, roughness: 0.95, side: THREE.DoubleSide,
     wireframe: wireframeMode.value
   })
-  const addArchLiner = (side) => {
-    const prof = archLinerProfile(P, side, 0.012)
-    const L = bodyExtentZ
-    const positions = []
-    for (const [x, y] of prof) positions.push(x, y, -L, x, y, L)
-    const indices = []
-    for (let i = 0; i < prof.length - 1; i++) {
-      const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1
-      indices.push(a, b, c, b, d, c)
-    }
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
-    g.setIndex(indices)
-    g.computeVertexNormals()
-    const liner = new THREE.Mesh(g, linerMat)
-    liner.receiveShadow = true
-    group.add(liner)
-  }
-  addArchLiner('front')
-  addArchLiner('rear')
+  addArchLiners({ parent: group, P, bodyExtentZ, material: linerMat })
 
   // ---- 方向盘总成：共享 createSteeringWheel（含 SAE 22° 轮面倾角，与独立预览页同一真源）----
   group.add(createSteeringWheel(P))
