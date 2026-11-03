@@ -12,6 +12,9 @@ const door = q.get('door') === '1'
 const type = q.get('type') || 'sedan'
 const width = Number(q.get('w') || 1280)
 const height = Number(q.get('h') || 800)
+// 材质回归用（P2 materials 收口）：默认值与正式基线一致，不传参时行为不变
+const color = q.get('color') || '#4ade80'
+const wire = q.get('wire') === '1'
 // 非预设机位（cockpit）：{rotX, rotY, distance, panX, panY}，由采集脚本按分镜传入
 const pose = q.get('pose') ? JSON.parse(q.get('pose')) : null
 
@@ -23,8 +26,9 @@ const app = createApp({
   render: () => h(Car3D, {
     carParams: { ...carTypeParams[type] },
     carType: type,
-    carColor: '#4ade80',
-    viewAngle: view
+    carColor: color,
+    viewAngle: view,
+    wireframe: wire
   })
 })
 app.use(i18n)

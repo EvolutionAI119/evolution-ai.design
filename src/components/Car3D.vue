@@ -121,6 +121,7 @@ import { addInteriorSeats } from '../three/interior/seats.js'
 import { createLightsBumpers } from '../three/parts/lightsBumpers.js'
 import { createMirrors } from '../three/parts/mirrors.js'
 import { createWheels, addArchLiners, createLiftDucts } from '../three/parts/wheels.js'
+import { createMaterialSet } from '../three/materials.js'
 
 const { t } = useI18n()
 
@@ -541,59 +542,12 @@ const createCar = () => {
     pickup, rails: railSpec, wing: wingSpec
   } = P
 
-  const bodyColor = new THREE.Color(props.carColor)
-
-  // 金属底漆 + 柔化清漆：底漆提供车身色层次，低峰值清漆保留连续高光。
-  // 避免高金属度/低粗糙度在机盖、腰线和尾盖的掠射角反射成一条爆白硬带。
-  const bodyMat = new THREE.MeshPhysicalMaterial({
-    color: bodyColor,
-    metalness: 0.42,
-    roughness: 0.34,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.24,
-    envMapIntensity: 0.85,
-    wireframe: wireframeMode.value
-  })
-
-  // 门洞内壁材质（开门状态）：深色内饰面，替代洞壁上的车身色 → 门洞里读作座舱，
-  // 不再是一块横贯车宽的车身色板。DoubleSide 兜住洞壁朝向差异。
-  const interiorMat = new THREE.MeshStandardMaterial({
-    color: 0x1b1d22,
-    metalness: 0.2,
-    roughness: 0.9,
-    side: THREE.DoubleSide,
-    wireframe: wireframeMode.value
-  })
-
-  const wheelMat = new THREE.MeshStandardMaterial({
-    color: 0x1a1a1f,
-    metalness: 0.3,
-    roughness: 0.8,
-    wireframe: wireframeMode.value
-  })
-
-  const rimMat = new THREE.MeshStandardMaterial({
-    color: 0xaaaaaa,
-    metalness: 0.9,
-    roughness: 0.2,
-    wireframe: wireframeMode.value
-  })
-
-  // 轮辋盘面（比辐条深一档的枪灰）：与亮银辐条/轮唇形成明暗层次，
-  // 否则同色材质会让辐条「消失」在盘面上，整轮仍读作一块平盘
-  const rimDiscMat = new THREE.MeshStandardMaterial({
-    color: 0x565b63,
-    metalness: 0.85,
-    roughness: 0.38,
-    wireframe: wireframeMode.value
-  })
-
-  const chromeMat = new THREE.MeshStandardMaterial({
-    color: 0xcccccc,
-    metalness: 1.0,
-    roughness: 0.1,
-    wireframe: wireframeMode.value
-  })
+  // 材质集合：构建内工厂，每次 createCar 新建（车色/线框变化都走 updateCar 重建）
+  const {
+    bodyMat, interiorMat, bodyMats, glassMat,
+    wheelMat, rimMat, rimDiscMat, chromeMat,
+    ductMat, lipMat, linerMat
+  } = createMaterialSet({ carColor: props.carColor, wireframe: wireframeMode.value })
 
   const bodyShape = new THREE.Shape()
 
@@ -766,7 +720,6 @@ const createCar = () => {
     })
   }
   splitBodyAperturesInterior(bodyGeom, apertureRects, bodyDepth / 2, glassBands, taperK, isBodyMaterial)
-  const bodyMats = [bodyMat, interiorMat]
 
   const bodyMesh = new THREE.Mesh(bodyGeom, bodyMats)
   bodyMesh.castShadow = true
@@ -793,17 +746,6 @@ const createCar = () => {
   // 玻璃后读到的是座舱而非车身色壁；depthWrite=false 避免舱内玻璃面排序伪影。
   // A/B/C 柱与车顶保持车身色（洞口间竖条 + 玻璃半宽以外斜面区），
   // 车身色顶部边界与玻璃因此清晰区分。
-  const glassMat = new THREE.MeshPhysicalMaterial({
-    color: 0xa8c4cc,
-    transparent: true,
-    opacity: 0.25,
-    metalness: 0,
-    roughness: 0.08,
-    envMapIntensity: 0.6,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-    wireframe: wireframeMode.value
-  })
 
   // 斜面玻璃带：脊柱线由 carGlass.bandGlassSpine 生成（可单测）——含车顶 G1 圆角包裹
   // 采样与顶面搭接，玻璃随车身同一圆角弯曲（几何在 parts/glass.js，P2 拆分）。
@@ -865,12 +807,6 @@ const createCar = () => {
   // 只落前后轮腔之间的封闭地板区间，绝不侵入轮腔切口；风道口下沉 12mm（不构成额外最低点）
   // 布局在此算一次：悬停风扇环（ensureFlightFx）沿用同一份 deriveLiftDevices，避免环与风道错位
   const liftLayout = deriveLiftDevices(P, resolveFlightParams(props.carType, props.carParams).liftFans)
-  const ductMat = new THREE.MeshStandardMaterial({
-    color: 0x14161c, metalness: 0.6, roughness: 0.4, wireframe: wireframeMode.value
-  })
-  const lipMat = new THREE.MeshStandardMaterial({
-    color: 0xb8bcc4, metalness: 1.0, roughness: 0.15, wireframe: wireframeMode.value
-  })
   createLiftDucts({ parent: group, liftLayout, ductMat, lipMat })
 
   // ---- 四轮：胎 + 轮辋盘 + 轮唇 + 轮毂盖 + 5 辐条（几何在 parts/wheels.js）----
@@ -892,10 +828,6 @@ const createCar = () => {
   // ---- 轮腔内衬：与拱口同形的内嵌椭圆拱壳（半椭圆上缘 + 竖直唇落至底板）----
   // 圆形筒对椭圆拱口必然四周互穿（前后壁/顶部戳出 = 拓扑破面），改用 archLinerProfile
   // 纯函数生成的拱形开壳，整体内缩 12mm 严格位于空腔内，横跨全宽挡住对侧亮色 bevel
-  const linerMat = new THREE.MeshStandardMaterial({
-    color: 0x101014, metalness: 0.2, roughness: 0.95, side: THREE.DoubleSide,
-    wireframe: wireframeMode.value
-  })
   addArchLiners({ parent: group, P, bodyExtentZ, material: linerMat })
 
   // ---- 方向盘总成：共享 createSteeringWheel（含 SAE 22° 轮面倾角，与独立预览页同一真源）----
