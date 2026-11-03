@@ -108,7 +108,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
-import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP, DLO_APERTURE_INSET } from '../utils/carGlass.js'
+import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
 import { createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
@@ -118,6 +118,7 @@ import { disposeObject } from '../three/dispose.js'
 import { createDoorRig } from '../three/parts/doors.js'
 import { addBandGlass, addDloPane } from '../three/parts/glass.js'
 import { addInteriorSeats } from '../three/interior/seats.js'
+import { createLightsBumpers } from '../three/parts/lightsBumpers.js'
 
 const { t } = useI18n()
 
@@ -966,63 +967,22 @@ const createCar = () => {
   // ---- 方向盘总成：共享 createSteeringWheel（含 SAE 22° 轮面倾角，与独立预览页同一真源）----
   group.add(createSteeringWheel(P))
 
-  // ---- 保险杠：贴前/后立面外表面（旧值埋在车身实体内不可见，已修正）----
-  const bumperGeom = new THREE.BoxGeometry(0.05, 0.15, W - 0.10)
-  const frontBumper = new THREE.Mesh(bumperGeom, bodyMat)
-  frontBumper.position.set(frontX + 0.005, bodyBottomY + 0.075, 0)
-  group.add(frontBumper)
-
-  const rearBumper = new THREE.Mesh(bumperGeom, bodyMat)
-  rearBumper.position.set(rearX - 0.005, bodyBottomY + 0.075, 0)
-  group.add(rearBumper)
-
-  // ---- 前大灯：贴合前立面外表面 ----
-  // 前立面并非平面：轮廓在机盖高度处前凸到 frontX+0.02 附近，且挤出 bevel 再外扩
-  // BODY_BEVEL_SIZE。旧实现把灯盒中心放在 frontX（仅突出 25mm）→ 整颗灯埋在
-  // 前脸实体内部，前视完全看不到。此处按灯高处的轮廓前缘 + bevel 求真实立面 X，
-  // 灯罩只露 6mm，读作嵌入式灯组而非外挂方块。
-  const noseXAt = (y, halfRange = 0.06) => {
-    let maxX = frontX
-    for (const p of outlinePts.shape) {
-      if (Math.abs(p.y - y) <= halfRange && p.x > maxX) maxX = p.x
-    }
-    return maxX
-  }
-  const headlightMat = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    emissive: 0xffffcc,
-    emissiveIntensity: 0.5,
+  // ---- 保险杠 + 前大灯 + 尾灯：贴前/后立面外表面（几何在 parts/lightsBumpers.js）----
+  // 坐标常量（±5mm 保险杠外沿、灯组贴面 6mm 露出、尾灯复用头灯 hlZ）逐字保留，
+  // 添加顺序与拆分前一致：车身之后、createDoorRig 之前。
+  createLightsBumpers({
+    parent: group,
+    W,
+    frontX,
+    rearX,
+    bodyBottomY,
+    hoodLineY,
+    trunkLineY,
+    wall: fit.wall,
+    outlineShape: outlinePts.shape,
+    bodyMat,
     wireframe: wireframeMode.value
   })
-  const hlY = Math.max(hoodLineY - 0.16, bodyBottomY + 0.16)
-  // 灯组内移：外侧端不得越过前脸的倒角圆角，否则灯罩会从前脸棱角"穿出去"
-  // 在翼子板转角处露出一块白斑
-  const hlZ = fit.wall - 0.27
-  const lensT = 0.016
-  const headlightGeom = new THREE.BoxGeometry(lensT, 0.10, 0.24)
-  const hlX = noseXAt(hlY) + BODY_BEVEL_SIZE - lensT / 2 + 0.006
-  const hl1 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl1.position.set(hlX, hlY, hlZ)
-  group.add(hl1)
-  const hl2 = new THREE.Mesh(headlightGeom, headlightMat)
-  hl2.position.set(hlX, hlY, -hlZ)
-  group.add(hl2)
-
-  // ---- 尾灯：嵌于后立面（与大灯同口径修正）----
-  const taillightMat = new THREE.MeshStandardMaterial({
-    color: 0xff0000,
-    emissive: 0xff0000,
-    emissiveIntensity: 0.4,
-    wireframe: wireframeMode.value
-  })
-  const taillightGeom = new THREE.BoxGeometry(0.04, 0.10, 0.20)
-  const tlY = Math.max(trunkLineY - 0.18, bodyBottomY + 0.16)
-  const tl1 = new THREE.Mesh(taillightGeom, taillightMat)
-  tl1.position.set(rearX, tlY, hlZ)
-  group.add(tl1)
-  const tl2 = new THREE.Mesh(taillightGeom, taillightMat)
-  tl2.position.set(rearX, tlY, -hlZ)
-  group.add(tl2)
 
   // ---- 车门分缝线 + 门板（可绕前铰链打开）+ 门把手（随门板运动）----
   // 几何组装整体在 parts/doors.js（P2 拆分）：此处只传真源坐标与共用材质实例，
