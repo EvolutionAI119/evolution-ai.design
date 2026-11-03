@@ -492,9 +492,12 @@ export function createSteeringWheel(P) {
 
   const rim = new THREE.Mesh(new THREE.TorusGeometry(sw.r, 0.012, 16, 32), mat)
   plane.add(rim)
-  for (const a of [0, Math.PI / 3, -Math.PI / 3]) {
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.008, sw.r * 1.8, 0.008), mat)
+  // 三辐（Y 形：12 / 4 / 8 点钟）：每根辐条半长 r、自轮毂沿辐向偏移 r/2 至轮圈，
+  // 用「单向半辐」而非整条横杆，避免同一根杆被读成两根辐（六辐错觉）
+  for (const a of [0, Math.PI * 2 / 3, -Math.PI * 2 / 3]) {
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.008, sw.r, 0.008), mat)
     spoke.rotation.z = a
+    spoke.position.set(Math.sin(a) * sw.r / 2, Math.cos(a) * sw.r / 2, 0)
     plane.add(spoke)
   }
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.05, 12), mat)

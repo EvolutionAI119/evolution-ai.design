@@ -50,7 +50,7 @@ export const INTERIOR_GEOM = {
   // ---- 中控总成 CONSOLE ----
   consoleHeight: 0.30,   // 中控台扶手面距地板高度
   consoleFrontOverlap: 0.10, // 中控台前伸进入仪表台下方的量
-  consoleRearGapToFrontSeat: 0.30, // 中控台后端相对前排 H 点的后缩
+  consoleRearGapToFrontSeat: 0.20, // 中控台后端相对前排 H 点的后缩（A-2 整改：0.30→0.20，释放扶手盖长度至 ≥0.20m，座垫前缘余量仍有 0.14m）
   consoleMinHeight: 0.15, // 中控台最小高度（低于此无法布置扶手/储物）
   consoleBelowHPoint: 0.04, // 扶手面低于坐垫面的量（保证驾驶员侧向肘部不顶撞）
 
@@ -380,7 +380,7 @@ export function deriveInteriorLayout(P) {
 
   // ---- 中控总成 CONSOLE：自仪表台后缘前伸 100mm 起，向前排 H 点后方收尾 ----
   const consoleFrontX = ipRearX + G.consoleFrontOverlap
-  const consoleRearX = Math.max(consoleFrontX - 0.40, front.x - G.consoleRearGapToFrontSeat)
+  const consoleRearX = Math.max(consoleFrontX - 0.50, front.x - G.consoleRearGapToFrontSeat) // 台面长上限 0.50（A-2 整改：0.40→0.50，扶手盖 ≥0.20m）
   const consoleTopY = Math.min(front.hPointY - G.consoleBelowHPoint, floorY + G.consoleHeight)
   const consoleBottomY = floorY
 

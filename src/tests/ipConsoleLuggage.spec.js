@@ -66,8 +66,8 @@ describe('IP/CONSOLE 功能模块布置 — 六车型', () => {
     expect(wirelessPad.x1).toBeLessThanOrEqual(L.console.frontX + 1e-9)
     expect(armrestLid.x0).toBeGreaterThanOrEqual(L.console.rearX - 1e-9)
     expect(C.metrics.consoleModulesLength).toBeLessThanOrEqual(C.metrics.consoleLength + 1e-9)
-    // 扶手盖长度下限（实车扶手盖 ≥100mm）
-    expect(armrestLid.x1 - armrestLid.x0).toBeGreaterThanOrEqual(0.10 - 1e-9)
+    // 扶手盖长度下限（A-2 整改：≥200mm，保证肘部支撑与储物腔；台面长上限已扩至 0.50m）
+    expect(armrestLid.x1 - armrestLid.x0).toBeGreaterThanOrEqual(0.20 - 1e-9)
     // 双杯托 Z 向并排、沉台于台面之下
     expect(cups[0].z0).toBeGreaterThan(0)
     expect(cups[1].z1).toBeLessThan(0)

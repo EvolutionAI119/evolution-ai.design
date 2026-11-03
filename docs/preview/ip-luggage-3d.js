@@ -23802,8 +23802,8 @@ void main() {
     // 中控台扶手面距地板高度
     consoleFrontOverlap: 0.1,
     // 中控台前伸进入仪表台下方的量
-    consoleRearGapToFrontSeat: 0.3,
-    // 中控台后端相对前排 H 点的后缩
+    consoleRearGapToFrontSeat: 0.2,
+    // 中控台后端相对前排 H 点的后缩（A-2 整改：0.30→0.20，释放扶手盖长度至 ≥0.20m，座垫前缘余量仍有 0.14m）
     consoleMinHeight: 0.15,
     // 中控台最小高度（低于此无法布置扶手/储物）
     consoleBelowHPoint: 0.04,
@@ -24100,7 +24100,7 @@ void main() {
     const ipTopY = (P.beltLineY ?? P.H * 0.68) - G.ipTopInset;
     const ipBottomY = Math.min(front.hPointY + G.ipBottomAboveHPoint, ipTopY - G.ipMinHeight);
     const consoleFrontX = ipRearX + G.consoleFrontOverlap;
-    const consoleRearX = Math.max(consoleFrontX - 0.4, front.x - G.consoleRearGapToFrontSeat);
+    const consoleRearX = Math.max(consoleFrontX - 0.5, front.x - G.consoleRearGapToFrontSeat);
     const consoleTopY = Math.min(front.hPointY - G.consoleBelowHPoint, floorY + G.consoleHeight);
     const consoleBottomY = floorY;
     const cabinFrontX = (P.hoodEndX ?? P.frontX) - 0.08;
@@ -24972,7 +24972,7 @@ void main() {
     group.add(plane);
     const rim = new Mesh(new TorusGeometry(sw.r, 0.012, 16, 32), mat);
     plane.add(rim);
-    for (const a of [0, Math.PI / 3, -Math.PI / 3]) {
+    for (const a of [0, Math.PI * 2 / 3, -Math.PI * 2 / 3]) {
       const spoke = new Mesh(new BoxGeometry(8e-3, sw.r, 8e-3), mat);
       spoke.rotation.z = a;
       spoke.position.set(Math.sin(a) * sw.r / 2, Math.cos(a) * sw.r / 2, 0);
@@ -25010,7 +25010,7 @@ void main() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
   controls.maxPolarAngle = Math.PI * 0.52;
-  scene.add(new HemisphereLight(13623551, 658705, 0.7));
+  scene.add(new HemisphereLight(13623551, 658705, 1.05));
   var keyLight = new DirectionalLight(16777215, 2.4);
   keyLight.position.set(3.2, 5.4, 3.6);
   keyLight.castShadow = true;
@@ -25027,9 +25027,6 @@ void main() {
   var rimLight = new DirectionalLight(5693640, 0.9);
   rimLight.position.set(-1.2, 1.4, -5);
   scene.add(rimLight);
-  var accentA = new PointLight(2872575, 6, 4, 2);
-  var accentB = new PointLight(16757837, 5, 4, 2);
-  scene.add(accentA, accentB);
   var groundTex = (() => {
     const c = document.createElement("canvas");
     c.width = c.height = 256;
@@ -25141,7 +25138,7 @@ void main() {
         o.receiveShadow = true;
       }
     });
-    Object.keys(parts).filter((n) => /^door-(trim|armrest)/.test(n)).forEach((n) => {
+    Object.keys(parts).filter((n) => /^door-(trim|armrest)/.test(n) || /^seatbelt-/.test(n)).forEach((n) => {
       parts[n].removeFromParent();
       delete parts[n];
     });
@@ -25186,8 +25183,19 @@ void main() {
         o.add(line);
       });
     }
-    accentA.position.set(T.frunk ? (T.frunk.x0 + T.frunk.x1) / 2 : P.frontX, T.frunk ? T.frunk.floorY + 0.18 : 0.9, 0);
-    accentB.position.set((r.x0 + r.x1) / 2, r.floorY + 0.18, 0);
+    luggage.traverse((o) => {
+      if (o.isMesh && o.material && "envMapIntensity" in o.material) o.material.envMapIntensity = 1;
+    });
+    for (const n of ["cargo-lamp", "frunk-lamp"]) {
+      const m = parts[n];
+      if (m) m.material = new MeshStandardMaterial({
+        color: 16777215,
+        roughness: 0.28,
+        metalness: 0,
+        emissive: 16773590,
+        emissiveIntensity: 1.2
+      });
+    }
     buildLabels(type);
     updateInfo();
     applyDisplayHighlight(false);
@@ -25242,12 +25250,14 @@ void main() {
       items.push([`\u524D\u884C\u674E\u8231 ${f.volumeL}L`, { x: (f.x0 + f.x1) / 2, y: f.topY + 0.3, z: 0 }, "#a5d6a7", "lug"]);
       items.push(["LED \u8231\u706F \u226550lx", { ...f.lamp, y: f.lamp.y + 0.1 }, void 0, "lug"]);
       items.push(["\u673A\u76D6\u9501\u6263", { ...f.latch, y: f.latch.y + 0.1 }, void 0, "lug"]);
+      items.push(["\u673A\u76D6 \u4E0A\u6380 72\xB0\uFF08\u5168\u5F00\uFF09", { x: f.x1, y: f.topY + 0.34, z: 0 }, "#a5d6a7", "lug"]);
     }
     const r = T.rear;
     const typeName = { trunk: "\u5C01\u95ED\u5F0F\u884C\u674E\u8231", wagon: "\u65C5\u884C\u5F0F\u8D27\u8231", "pickup-bed": "\u76AE\u5361\u8D27\u7BB1" }[r.type];
     items.push([`${typeName} ${r.volumeL}L`, { x: (r.x0 + r.x1) / 2, y: r.topY + 0.3, z: 0 }, "#a5d6a7", "lug"]);
     items.push(["\u8367\u5149\u5E94\u6025\u62C9\u624B", { x: r.releaseHandle.x - 0.08, y: r.releaseHandle.y + 0.14, z: r.releaseHandle.z + 0.12 }, "#ffb74d", "lug"]);
     items.push(["\u7CFB\u7559\u951A\u94A9 \u2265400N", { x: r.hooks[0].x, y: r.hooks[0].y + 0.1, z: r.hooks[0].z }, void 0, "lug"]);
+    items.push(r.type === "pickup-bed" ? ["\u5C3E\u95E8 \u4E0B\u7FFB 90\xB0\uFF08\u5168\u5F00\uFF09", { x: r.x0 - 0.42, y: r.floorY + 0.12, z: 0 }, "#a5d6a7", "lug"] : ["\u540E\u8231\u76D6 \u4E0A\u6380 100\xB0\uFF08\u5168\u5F00\uFF09", { x: r.x0 - 0.4, y: r.aperture.topY + 0.14, z: 0 }, "#a5d6a7", "lug"]);
     if (r.underfloorWell) items.push(["\u5730\u677F\u4E0B\u50A8\u7269\u4E95", { x: (r.underfloorWell.x0 + r.underfloorWell.x1) / 2, y: r.underfloorWell.y0 + 0.04, z: 0 }, void 0, "lug"]);
     if (r.archBoxes.length) items.push([`\u8F6E\u62F1\u9970\u76D2\uFF5C\u62F1\u95F4\u51C0\u5BBD ${Math.round(r.widthBetweenArches * 1e3)}mm`, { x: (r.archBoxes[0].x0 + r.archBoxes[0].x1) / 2, y: r.archBoxes[0].y1 + 0.12, z: 0 }, "#4dd0e1", "lug"]);
     items.push(["\u95E8\u69DB\u91D1\u5C5E\u62A4\u677F", { x: r.sillPlate.x0, y: r.sillPlate.y1 + 0.12, z: 0 }, void 0, "lug"]);
@@ -25273,7 +25283,12 @@ void main() {
     const seatsOn = seatsOverride ?? (v === "side" || v === "top");
     groups.seats.forEach((g) => g.visible = seatsOn);
     if (groups.ip) groups.ip.visible = !lugView;
-    if (groups.luggage) groups.luggage.visible = !ipView;
+    if (groups.luggage) {
+      groups.luggage.visible = !ipView;
+      groups.luggage.traverse((o) => {
+        if (o.isMesh && /^(cargo-side-liner-right|cargo-arch-box-right)$/.test(o.name)) o.visible = v !== "side";
+      });
+    }
     if (groups.steer) groups.steer.visible = !lugView;
     const hl = parts.headliner;
     if (hl) hl.visible = false;
@@ -25300,18 +25315,33 @@ void main() {
     const map = {
       // 座舱全景：副驾侧后排位置看向 IP/CONSOLE，同框悬浮屏 + 中控功能带 + 方向盘
       cockpit: { p: [row1.x - 0.78, L.ip.topY + 0.2, 1.02], t: [dp.x - 0.06, dp.y - 0.06, 0], fov: 52 },
-      // 驾驶员视角：眼位（H 点上方 0.62m），看向中控屏中心，验证悬浮屏安装位置与视觉比例
-      driver: { p: [row1.x - 0.1, row1.hPointY + 0.62, L.steerWheel.z], t: [rectCenter(C.cluster).x - 0.03, rectCenter(C.cluster).y - 0.02, rectCenter(C.cluster).z], fov: 50 },
-      // 正侧视：车身侧面剖视，核对 IP 上下体分型线与 H 点高度关系
-      side: { p: [0.02, 1.35, 4.6], t: [0.02, 0.72, 0], fov: 30 },
+      // 驾驶员视角：眼位（H 点上方 0.66m、后于轮面 0.26m），同框方向盘 / 组合仪表 / 悬浮屏，
+      // 用于核对悬浮屏安装位置与视觉比例（屏面与轮圈互不遮挡）
+      driver: {
+        p: [row1.x - 0.26, row1.hPointY + 0.66, L.steerWheel.z + 0.16],
+        t: [
+          (rectCenter(C.cluster).x + rectCenter(C.display).x) / 2,
+          (rectCenter(C.cluster).y + rectCenter(C.display).y) / 2,
+          (rectCenter(C.cluster).z + rectCenter(C.display).z) / 2
+        ],
+        fov: 58
+      },
+      // 正侧视：自副驾侧剖视（近侧衬板已隐藏），取景对准 IP 与首排 H 点，
+      // 核对 IP 上下体分型线与 H 点高度关系
+      side: { p: [(L.ip.rearX + row1.x) / 2, 1.5, 3.2], t: [(L.ip.rearX + row1.x) / 2, 0.9, 0], fov: 32 },
       // IP 前 3/4（副驾侧）特写：悬浮屏探出量、气囊盖板分型线、副驾出风口与手套箱
       front34: { p: [L.ip.rearX - 0.72, L.ip.topY + 0.1, 1.02], t: [dp.x - 0.05, dp.y - 0.04, 0.12], fov: 46 },
-      // 后 3/4：从车尾外侧上方看向后行李舱（含全开舱盖，避免舱盖板挡视线）
-      rear34: { p: [r.x0 - 2.1, r.topY + 1.35, 2.05], t: [rcx, r.floorY + 0.2, 0], fov: 44 },
+      // 后 3/4：低位尾侧看向后行李舱开口（相机低于全开舱盖水平面，避免舱盖板遮挡舱内）
+      rear34: { p: [r.x0 - 2.3, r.floorY + 1.05, 1.55], t: [rcx + 0.05, r.floorY + 0.35, 0], fov: 48 },
       // 俯视：核对前后舱在整车纵向上的位置与功能带序列
       top: { p: [0.06, 6.4, 0.35], t: [0.06, 0, 0.1], fov: 40 },
       // 前舱特写（前行李舱全开：机舱盖在前缘上掀，相机自舱后上方俯视入舱）
-      frunk: fr ? { p: [fr.x0 - 0.6, fr.topY + 0.72, 0.78], t: [(fr.x0 + fr.x1) / 2, fr.floorY + 0.12, 0], fov: 48 } : { p: [P.frontX + 1.5, 1.55, 1.35], t: [P.frontX - 0.55, 0.62, 0], fov: 44 },
+      frunk: fr ? {
+        // 前舱全开：相机自舱后上方、接近水平看入舱口，使「上掀机盖 + 舱口」同框
+        p: [fr.x0 - 0.95, fr.topY + 0.75, 1.15],
+        t: [(fr.x0 + fr.x1) / 2, fr.topY - 0.02, 0],
+        fov: 52
+      } : { p: [P.frontX + 1.5, 1.55, 1.35], t: [P.frontX - 0.55, 0.62, 0], fov: 44 },
       // 后舱特写（舱内视角：自尾门内侧看向舱内，展示衬板/锚钩/照明/门槛护板；开启舱盖在画面外上方）
       cargo: { p: [r.x0 + 0.1, r.floorY + 0.74, 0.46], t: [rcx, r.floorY + 0.12, -0.12], fov: 58 }
     };

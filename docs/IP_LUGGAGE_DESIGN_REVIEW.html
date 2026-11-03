@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>内饰零件设计方案 合规性与品质评审报告 | EVOLUTION-AI.DESIGN</title>
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#111720; --line:#1f2937; --line2:#2b3a4d;
+    --text:#dbe3ec; --dim:#8fa0b3; --cyan:#4dd0e1; --green:#35d399; --amber:#ffb44d; --red:#ff6b6b;
+    --mono:"Cascadia Mono","Consolas","SFMono-Regular",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","Segoe UI",sans-serif;line-height:1.62;padding:0 0 60px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 26px}
+  header{padding:34px 0 26px;border-bottom:1px solid var(--line);
+    background:radial-gradient(900px 260px at 12% 0%,rgba(77,208,225,.10),transparent 65%),linear-gradient(180deg,#0e141c,#0a0d12)}
+  .kicker{font-size:12px;letter-spacing:.22em;color:var(--cyan);text-transform:uppercase}
+  h1{font-size:27px;font-weight:650;margin:8px 0 6px;color:#f3f7fb}
+  .sub{color:var(--dim);font-size:13.5px}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .chip{font-size:12px;color:#a9b7c6;border:1px solid var(--line2);background:#0d141c;border-radius:999px;padding:3px 11px}
+  .chip b{color:var(--cyan);font-weight:600}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 4px}
+  .stat{background:linear-gradient(180deg,#121a24,#0d131a);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .stat .v{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--cyan);line-height:1.2}
+  .stat .v.g{color:var(--green)} .stat .v.a{color:var(--amber)} .stat .v.r{color:var(--red)}
+  .stat .k{font-size:12.5px;color:var(--dim);margin-top:3px}
+  h2{font-size:18px;margin:40px 0 12px;padding-left:11px;border-left:3px solid var(--cyan);color:#eaf2f8}
+  h2 .n{font-family:var(--mono);color:var(--cyan);font-size:13px;margin-right:8px}
+  p{font-size:13.5px;color:#b9c5d3;margin:8px 0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:10px 0}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0 6px}
+  th{font-size:11.5px;color:#9db0c3;text-align:left;padding:9px 8px;border-bottom:1px solid var(--line2);background:#0d141b;white-space:nowrap}
+  td{padding:8px;border-bottom:1px solid #17202b;font-size:12.5px;color:#cfd9e4;vertical-align:top}
+  td.id{font-family:var(--mono);white-space:nowrap;color:var(--cyan)}
+  tr:nth-child(even) td{background:#0d1219}
+  .pass{color:var(--green);font-weight:700}
+  .warn{color:var(--amber);font-weight:700}
+  .bad{color:var(--red);font-weight:700}
+  .verdict{display:inline-block;font-size:12px;font-weight:700;border-radius:4px;padding:2px 10px}
+  .verdict.ok{background:#0e1d18;color:#57e2ae;border:1px solid #1f6b4f}
+  .verdict.cond{background:#1d160c;color:#ffc571;border:1px solid #7a5320}
+  .verdict.nc{background:#221014;color:#ff8f8f;border:1px solid #7a2b2b}
+  .sev{font-family:var(--mono);font-size:11px;border-radius:4px;padding:1px 7px;border:1px solid #2b3a4d;white-space:nowrap}
+  .sev.nc{color:#ff8f8f;border-color:#7a2b2b;background:#221014}
+  .sev.risk{color:#ffc571;border-color:#7a5320;background:#1d160c}
+  .sev.obs{color:#8fc7ff;border-color:#2b4a6b;background:#0d1622}
+  .sev.gap{color:#c9a7f5;border-color:#4d3573;background:#171022}
+  .note{border-left:3px solid var(--amber);background:#151109;padding:11px 15px;border-radius:0 8px 8px 0;font-size:13px;color:#e5c999;margin:12px 0}
+  .ok-note{border-left-color:var(--green);background:#0d1713;color:#a9e7c8}
+  .bad-note{border-left-color:var(--red);background:#1c1010;color:#f0b9b9}
+  ul{margin:6px 0 4px 20px}
+  li{font-size:13px;color:#b9c5d3;margin:5px 0}
+  .foot{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:#6f8199}
+  a{color:#4dd0e1}
+  @media (max-width:820px){.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="kicker">Interior Design · Compliance &amp; Quality Review</div>
+    <h1>内饰零件设计方案 合规性与品质评审报告</h1>
+    <div class="sub">评审对象：IP/CONSOLE 细化设计 + 前/后行李舱内饰方案（v1.1）及其整车三维同步模型 · 六车型</div>
+    <div class="meta">
+      <span class="chip">评审日期 <b>2026-11-03</b></span>
+      <span class="chip">评审基线 <b>IP_CONSOLE_LUGGAGE_DESIGN v1.1</b></span>
+      <span class="chip">数据真源 <b>deriveIpConsoleLayout / deriveLuggageLayout</b></span>
+      <span class="chip">回归基线 <b>783 项测试 PASS</b></span>
+      <span class="chip">干涉基线 <b>24/24 运动副 PASS</b></span>
+    </div>
+    <div style="font-size:12.5px;color:#8fa0b3;margin-top:14px">
+      配套交付物：
+      <a href="IP_CONSOLE_LUGGAGE_DESIGN.html">设计方案</a> ·
+      <a href="IP_LUGGAGE_INTERFERENCE_REPORT.html">干涉检查报告</a> ·
+      <a href="preview/IP_LUGGAGE_3D_PREVIEW.html">3D 可视化预览</a> ·
+      <a href="preview/IP_LUGGAGE_VIEWS.png">多角度渲染拼图</a> ·
+      <a href="preview/IP_LUGGAGE_CLIP.mp4">开合演示片段</a> ·
+      <a href="SUPPLIER_RFQ_IP_LUGGAGE.xlsx">供应商询价清单</a> ·
+      <a href="ERGONOMICS_VERIFICATION_REPORT.html">人机工程验证与修正方案</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v g">4 / 5</div><div class="k">评审维度通过（拓扑/人机/风格/材质）</div></div>
+      <div class="stat"><div class="v r">4</div><div class="k">不符合项（全部集中于法规符合性）</div></div>
+      <div class="stat"><div class="v a">7</div><div class="k">优化建议项</div></div>
+      <div class="stat"><div class="v">4</div><div class="k">验证缺口（需下阶段试验/分析闭环）</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<h2><span class="n">00</span>评审结论总览</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>维度</th><th>结论</th><th>不符合项</th><th>建议项</th><th>验证缺口</th><th>核心依据</th></tr></thead>
+    <tbody>
+      <tr><td>1 · 拓扑装配校验</td><td><span class="verdict ok">通过</span></td><td>0</td><td>2</td><td>1</td><td>方案件↔网格件双向一一对应（12 位精度，六车型回归断言）；24/24 运动副全行程无干涉</td></tr>
+      <tr><td>2 · 人机工程验证</td><td><span class="verdict cond">通过（带条件）</span></td><td>0</td><td>2</td><td>2</td><td>六车型手伸距/仪表视认高/装载高 24 项指标全过；MPV 余量 ≤3%</td></tr>
+      <tr><td>3 · 法规符合性审查</td><td><span class="verdict nc">部分符合</span></td><td class="bad">4</td><td>1</td><td>1</td><td>阻燃等级 / VOC·雾化 / 内部凸出物圆角 / 安全标识四项强制要求未在规格中规定</td></tr>
+      <tr><td>4 · 设计风格评估</td><td><span class="verdict ok">通过</span></td><td>0</td><td>1</td><td>0</td><td>悬浮屏 + 隐形气囊盖板 + 分段 IP 符合现代豪华设计语言；缺车型分级材质</td></tr>
+      <tr><td>5 · 材质与舒适性核查</td><td><span class="verdict cond">通过（带条件）</span></td><td>0</td><td>1</td><td>0</td><td>材质选型与工况匹配；发泡物性/座椅面料规格未规定</td></tr>
+    </tbody>
+  </table>
+  <p class="note" style="margin-bottom:0"><b>总体结论：有条件通过。</b>方案几何布置、装配拓扑与人机指标达到概念冻结标准，可进入工程化阶段；<b>4 项法规不符合项（C-1~C-4）必须在工程冻结前关闭</b>——均为规格书补充条款，不涉及几何返工；7 项建议项与 4 项验证缺口按 §6 计划闭环。</p>
+</div>
+
+<h2><span class="n">01</span>拓扑装配校验 <span class="verdict ok">通过</span></h2>
+<p>校验对象为六车型 IP 14 件 + CONSOLE 5~6 件 + 后舱 9~13 件 + 前舱 0~9 件的完整装配体。装配逻辑采用「单一真源链 → 参数化网格」，无人工摆件：</p>
+<ul>
+  <li><b>装配完整性</b>：交付方案零件清单与三维网格双向一一对应（件名互查、中心/宽高深 12 位小数一致），六车型全部通过回归断言——「无遗漏、无错位」由测试保证而非目检；</li>
+  <li><b>定位准确性</b>：全部零件锚定 H 点 / IP / console / 舱体真源坐标，无第二套数值；中控功能带前→后单调有序（无线充→换挡→杯托→扶手盖）且不越出台面，有断言锁定；</li>
+  <li><b>运动装配</b>：扶手盖铰链与运动学扫掠模型同锚点，0→75° 全行程与 IP/顶棚零干涉；调角器/遮阳板 24 副全行程 PASS（详见干涉报告）；</li>
+  <li><b>装配流程可行性</b>：IP 上/下体分件、功能模块面装、行李舱衬板分件（地板/侧围/前壁/盖内板/门槛护板）均按实车装配顺序分件，无嵌套互锁。</li>
+</ul>
+<div class="panel">
+  <table>
+    <thead><tr><th>编号</th><th>级别</th><th>问题描述</th><th>优化建议</th></tr></thead>
+    <tbody>
+      <tr><td class="id">A-1</td><td><span class="sev obs">建议</span></td><td>悬浮式中控屏为单臂悬挑安装（探出 60 mm，单臂宽 80 mm），当前仅几何表达，未校核悬臂刚度</td><td>工程化阶段补双臂或背部支架方案，并按整车振动谱做屏体抖动/异响 CAE 校核</td></tr>
+      <tr><td class="id">A-2</td><td><span class="sev obs">建议</span></td><td>扶手盖实长 105 mm（真源上限 320 mm），肘部支撑面积与扶手箱容积偏小</td><td>压缩功能带占位（杯托与换挡基座集成）或 console 后延，目标扶手盖长 ≥200 mm</td></tr>
+      <tr><td class="id">A-3</td><td><span class="sev gap">验证缺口</span></td><td>设计文档 §4.1 五项要求（锚钩 ≥400 N、照度 ≥50 lux、拉手 ≤50 N、拖拽 100 次、疲劳 5 万次）为文字要求，未固化为自动断言</td><td>纳入供应商 PPAP 验证计划与来料检验规范，询价清单中已列对应件，需补试验方法引用</td></tr>
+      <tr><td class="id">A-4</td><td><span class="sev obs">建议</span></td><td>副驾气囊盖板与 IP 上体同材质分件表达，弱化撕裂线未几何建模</td><td>工程阶段定义弱化线残余厚度参数与爆破验证（低温 -35℃ 展开为关键工况）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2><span class="n">02</span>人机工程验证 <span class="verdict cond">通过（带条件）</span></h2>
+<p>六车型 24 项人机指标全部由真源解算并固化为断言，实测值全部落于分级目标内：屏手伸 515~827 mm、换挡手伸 430~755 mm、组合仪表中心高出 H 点 346~476 mm（区间 250~600）、装载门槛高 250~570 mm（区间 200~950）。方向盘轮面倾角 22°（SAE 20~25° 区间），坐垫面-地板高差受 0.22~0.34 m 约束防「蹲坐」。</p>
+<div class="panel">
+  <table>
+    <thead><tr><th>编号</th><th>级别</th><th>问题描述</th><th>优化建议</th></tr></thead>
+    <tbody>
+      <tr><td class="id">B-1</td><td><span class="sev risk">风险</span></td><td>MPV 手伸距接近上限：屏 827/850 mm（余量 23 mm）、换挡 755/780 mm（余量 25 mm），占用率 ≥97%，任何后续布置微调都会越限</td><td>按设计文档 §6 既定措施闭环：中控屏向驾驶员侧倾 8°，换挡模块备选怀挡（IP 下沿集成），下轮 HMI 评审冻结</td></tr>
+      <tr><td class="id">B-2</td><td><span class="sev gap">验证缺口</span></td><td>组合仪表视认依赖「上沿贴 IP 顶」规则 + 渲染目检：SEDAN 轮缘顶 Y≈0.94 与仪表下沿 0.823 存在理论重叠区，低坐姿/高轮位置下可能遮挡仪表下部</td><td>引入 SAE J941 眼椭圆遮罩分析（5/50/95 分位），断言「仪表关键显示区在轮缘遮罩之外」</td></tr>
+      <tr><td class="id">B-3</td><td><span class="sev gap">验证缺口</span></td><td>人机验证为几何规则法，无 SAE J826 百分位人体/头部空间校核；后排头部空间未纳入断言</td><td>补充 95 分位男性头部包络与顶棚内衬间隙断言（含后三排车型）</td></tr>
+      <tr><td class="id">B-4</td><td><span class="sev obs">建议</span></td><td>头枕有效高度需换算校核：模型头枕顶 ≈ H 点 +0.825 m，与 GB 11550 头枕高度要求的符合性需按 R 点基准正式换算</td><td>在 §4 人机验证表中增加头枕有效高度行并固化为断言</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2><span class="n">03</span>法规符合性审查 <span class="verdict nc">部分符合（4 项不符合）</span></h2>
+<p class="note bad-note">以下 4 项为强制法规/标准项，当前材质规格表与模型未覆盖，<b>判定为不符合项</b>。均为规格条款补充，不涉及几何返工，但必须在工程冻结（数据发布）前关闭。</p>
+<div class="panel">
+  <table>
+    <thead><tr><th>编号</th><th>级别</th><th>法规/标准</th><th>不符合项描述</th><th>整改要求</th></tr></thead>
+    <tbody>
+      <tr><td class="id">C-1</td><td><span class="sev nc">不符合</span></td><td>GB 8410《汽车内饰材料的燃烧特性》</td><td>材质规格表（设计文档 §3）未规定任何阻燃等级/燃烧速率；IP 搪塑表皮、PU 发泡、座椅面套、PET 地毯、PP 蜂窝衬板全部涉及</td><td>§3 表增加「阻燃」列：全部内饰材料燃烧速率 ≤100 mm/min，注明阻燃牌号，供应商提供 GB 8410 检测报告</td></tr>
+      <tr><td class="id">C-2</td><td><span class="sev nc">不符合</span></td><td>GB/T 27630《乘用车内空气质量评价指南》+ 雾化/气味规范</td><td>未规定 VOC 8 项限值、气味等级与雾化值；搪塑 PVC+PU 发泡、静电植绒胶、TPE 背胶为高风险散发源</td><td>§3 表增加 VOC/气味（VDA 270 ≥3.5 级目标）/雾化（DIN 75201）限值；背胶改热熔胶或水性胶工艺</td></tr>
+      <tr><td class="id">C-3</td><td><span class="sev nc">不符合</span></td><td>GB 11552《乘用车内部凸出物》（参照 ECE R21）</td><td>内部凸出物圆角（R≥2.5/3.2 mm）与头碰吸能要求未规定；概念模型为锐边盒体，IP 前面板、中控饰板边沿、出风口叶片处于头部碰撞区</td><td>工程化数据发布前定义 DTS 圆角规范与头碰吸能区（HIC 目标），出风口叶片、换挡基座边沿逐一过 R 角检查</td></tr>
+      <tr><td class="id">C-4</td><td><span class="sev nc">不符合</span></td><td>气囊标识 / GB 27887 配套标识</td><td>副驾 AIRBAG 标识、遮阳板气囊警示标签、ISOFIX 儿童座椅标识未纳入模型与规格</td><td>在 IP/CONSOLE 模块清单中补充标识件（位置/内容/耐久），遮阳板总成增加警示标签槽</td></tr>
+    </tbody>
+  </table>
+</div>
+<p><b>已符合/已覆盖项</b>：舱内应急拉手荧光可视 + 解锁力 ≤50 N（对标行李舱防误困最佳实践）；舱灯 IP54；装载门槛防踢刮；安全带固定点接口位置已按腰带线 +60 mm/内缩 55 mm 建模（强度校核属车身结构范畴，本方案接口合规）。</p>
+<div class="panel">
+  <table>
+    <thead><tr><th>编号</th><th>级别</th><th>问题描述</th><th>优化建议</th></tr></thead>
+    <tbody>
+      <tr><td class="id">C-5</td><td><span class="sev obs">建议</span></td><td>禁用物质（GB/T 30512 / ELV：铅、汞、镉、六价铬、PBB、PBDE）符合性未写入询价条款</td><td>在供应商询价清单（SUPPLIER_RFQ_IP_LUGGAGE.xlsx）中补「材料符合性声明 + IMDS 提交」要求</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2><span class="n">04</span>设计风格评估 <span class="verdict ok">通过</span></h2>
+<ul>
+  <li><b>设计语言一致性</b>：悬浮式中控屏（探出 60 mm，去厚重视觉体量）、隐形气囊盖板（与 IP 顶齐平分型线）、IP 上/下体 55% 分型、功能带按操作频次排序——符合当前豪华车型「轻薄 IP + 悬浮 HMI + 隐藏式安全件」主流手法；</li>
+  <li><b>视觉质感</b>：深色体系与座椅材质预设共享色彩/光泽区间，搪塑哑光表皮 + 钢琴黑 IMD + 缎面镀铬饰圈的三级材质对比逻辑清晰；</li>
+  <li><b>阶段限制说明</b>：参数化盒体几何为概念阶段体量表达，不代表最终 A 面；本维度评审对象为比例/布置/材质策略，非曲面质量。</li>
+</ul>
+<div class="panel">
+  <table>
+    <thead><tr><th>编号</th><th>级别</th><th>问题描述</th><th>优化建议</th></tr></thead>
+    <tbody>
+      <tr><td class="id">D-1</td><td><span class="sev obs">建议</span></td><td>IP/CONSOLE 与行李舱材质无车型分级（仅座椅有 executive/standard/sport 预设），豪华车型差异化不足；钢琴黑 IMD 存在指纹/发丝划痕风险</td><td>executive 级增补木纹饰板/真皮包覆选项，sport 级增补 Alcantara/碳纤维选项；高配 IMD 改哑光 AG 饰板（保留 UV 硬涂层）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2><span class="n">05</span>材质与舒适性核查 <span class="verdict cond">通过（带条件）</span></h2>
+<ul>
+  <li><b>选型合理性</b>：IP 上体搪塑 PVC+PU 发泡（软触）、下体 PP+EPDM-T20（-30℃ 低温冲击）、出风口 PA66+GF30（耐热）、行李舱 PP 蜂窝板+PET 毡（马丁代尔 ≥20000）、门槛 304 拉丝/PP+GF（50 kg 拖拽）——材质与工况匹配；</li>
+  <li><b>接触舒适性</b>：扶手盖 TPO+PU 发泡软包、门扶手面低于坐垫面 80 mm、中控扶手面低于坐垫面 40 mm——侧向肘部自然下垂高度，姿态设计合理；坐垫进深 0.50 m、靠背后倾按车型 17~21° 分级，落于舒适区间；</li>
+  <li><b>储物实用性</b>：地板下储物井（净高 ≥200 mm 自动开设）、系留锚钩×4、储物网锚点、SUV 拱间净宽 1326 mm——空间利用率设计到位。</li>
+</ul>
+<div class="panel">
+  <table>
+    <thead><tr><th>编号</th><th>级别</th><th>问题描述</th><th>优化建议</th></tr></thead>
+    <tbody>
+      <tr><td class="id">E-1</td><td><span class="sev obs">建议</span></td><td>座椅发泡硬度/密度、面套耐磨与透气规格未规定；坐垫进深 0.50 m 全系统一，sport/executive 无腿托选项；§3 材质表范围仅 IP/CONSOLE/行李舱，未覆盖座舱地毯/顶棚/座椅面套</td><td>下一轮补齐整车材质规格表（含座椅泡沫 ILD/密度、面套马丁代尔/透气率），sport/executive 增加坐垫腿托与侧翼调节</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2><span class="n">06</span>不符合项关闭计划与验证缺口闭环</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>编号</th><th>关闭动作</th><th>责任环节</th><th>关闭判据</th></tr></thead>
+    <tbody>
+      <tr><td class="id">C-1</td><td>§3 材质表补阻燃列，全部材料 ≤100 mm/min</td><td>材料工程 + 供应商报告</td><td>GB 8410 检测报告齐套</td></tr>
+      <tr><td class="id">C-2</td><td>补 VOC/气味/雾化限值，高风险胶工艺替换</td><td>材料工程 + 工艺</td><td>GB/T 27630 8 项 + VDA 270 + DIN 75201 全过</td></tr>
+      <tr><td class="id">C-3</td><td>DTS 圆角规范 + 头碰吸能区定义</td><td>工程设计 + CAE</td><td>GB 11552 头碰区 R 角检查表全过</td></tr>
+      <tr><td class="id">C-4</td><td>标识件纳入模块清单与 3D 占位</td><td>工程设计</td><td>AIRBAG/警示/ISOFIX 标识位置冻结</td></tr>
+      <tr><td class="id">B-1</td><td>MPV 屏倾角 8° / 怀挡方案评审冻结</td><td>HMI 评审</td><td>手伸距余量恢复 ≥50 mm</td></tr>
+      <tr><td class="id">A-3</td><td>§4.1 五项要求纳入 PPAP 计划</td><td>供应商质量</td><td>试验报告齐套</td></tr>
+      <tr><td class="id">A-1</td><td class="pass">已闭环（2026-11-03）：双臂支架方案 + 刚度断言 6 项</td><td>工程设计</td><td class="pass">PASS（ERGONOMICS_VERIFICATION_REPORT §01）</td></tr>
+      <tr><td class="id">A-2</td><td class="pass">已闭环（2026-11-03）：扶手盖 105→205 mm，干涉重跑 24/24</td><td>总布置</td><td class="pass">PASS（同报告 §02）</td></tr>
+      <tr><td class="id">B-2</td><td class="pass">已闭环（2026-11-03）：J941 眼椭圆遮罩断言 6 项</td><td>总布置</td><td class="pass">PASS（同报告 §03）</td></tr>
+      <tr><td class="id">B-3</td><td class="pass">已闭环（2026-11-03）：三体型头部空间断言 13 项</td><td>总布置</td><td class="pass">PASS（同报告 §04）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="foot">
+  评审基线：IP_CONSOLE_LUGGAGE_DESIGN v1.2（808 项测试 PASS）· IP_LUGGAGE_INTERFERENCE_REPORT（24/24 PASS）· ERGONOMICS_VERIFICATION_REPORT（A-1/A-2/B-2/B-3 已闭环）· 真源：deriveIpConsoleLayout / deriveLuggageLayout / carErgoVerification · 本报告所有数值均可由 src/tests 复算。
+</div>
+</div>
+</body>
+</html>

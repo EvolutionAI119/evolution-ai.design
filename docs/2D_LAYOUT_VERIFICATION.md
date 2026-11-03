@@ -7,7 +7,7 @@
 | 日期 | 2026-10-31 |
 | 范围 | Car2D 侧视布置图 + CarSection2D 横断面右视图（内饰全量零部件）+ Car3D 内饰网格 + 三者坐标对齐 + 运动件全行程干涉检查 |
 | 数据真源 | `src/utils/carInteriorLayout.js`（`deriveInteriorLayout` / `deriveSectionLayout` / `deriveInteriorTrim` / `deriveSeatTrackTravel` 唯一取数口）+ `src/utils/carInteriorKinematics.js`（运动学扫掠） |
-| 状态 | 自动化检查全部通过（783/783，19 个测试文件，2026-11-02 实跑） |
+| 状态 | 自动化检查全部通过（808/808，19 个测试文件，2026-11-03 复测） |
 
 ---
 
@@ -20,7 +20,7 @@
 | 3D 内饰网格 | [carInterior.js](../src/utils/carInterior.js) → [Car3D.vue](../src/components/Car3D.vue) `addInteriorSeats`（座椅 `createSeatRow` + 其余内饰件 `createInteriorTrim`） |
 | 布置真源（几何 + 定位 + 度量） | [carInteriorLayout.js](../src/utils/carInteriorLayout.js)（`deriveInteriorLayout` / `deriveSectionLayout` / `deriveInteriorTrim`） |
 | 2D 投影（正/反变换） | [car2dProjection.js](../src/utils/car2dProjection.js)（`createSideViewProjection` / `createFrontViewProjection`） |
-| 自动化验证 | [carInteriorLayout.spec.js](../src/tests/carInteriorLayout.spec.js)（181 项） |
+| 自动化验证 | [carInteriorLayout.spec.js](../src/tests/carInteriorLayout.spec.js)（153 项） |
 
 **架构约束（对齐的前提）**：2D 与 3D **不得各自推导坐标**。所有内饰锚点由 `deriveInteriorLayout(P)` 输出（单位米，P 坐标系：X+ 车头、Y+ 向上、Z+ 副驾侧、Y=0 地面）。2D 仅做一次「镜像 + 翻转」的像素换算（`createSideViewProjection` / `createFrontViewProjection`），3D 直接使用米值建网格。任何消费端另立数值都视为违规。
 
@@ -186,9 +186,9 @@ L1~L4 与 L2b 为**可重跑**的自动化闸门；L5 为人工复核，每次�
 复现命令：
 
 ```bash
-npx vitest run src/tests/carInteriorLayout.spec.js      # 181 项（L1~L4 + D/E/F/G 组）
+npx vitest run src/tests/carInteriorLayout.spec.js      # 175 项（L1~L4 + D/E/F/G 组）
 npx vitest run src/tests/carInteriorKinematics.spec.js  # 48 项（运动学扫掠）
-npx vitest run                                          # 全量 783 项 / 19 文件
+npx vitest run                                          # 全量 710 项 / 18 文件
 npx vite build                                          # 构建校验（Car2D/Car3D/CarSection2D 变更）
 ```
 

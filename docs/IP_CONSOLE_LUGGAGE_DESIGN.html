@@ -36,9 +36,21 @@
 <header>
   <h1>IP / CONSOLE 与前后行李舱内饰设计方案</h1>
   <div class="meta">
-    版本 v1.0 · 生成日期 2026-11-01 · 数据源：<code>deriveIpConsoleLayout()</code> / <code>deriveLuggageLayout()</code>（src/utils/carInteriorLayout.js）
-    · 3D 实现：<code>createIpConsole()</code> / <code>createLuggageTrim()</code>（src/utils/carInterior.js）
-    · 验证：<code>src/tests/ipConsoleLuggage.spec.js</code>（55 项断言全过，全量 765/765 PASS）
+    版本 v1.2 · 生成日期 2026-11-03 · 数据源：<code>deriveIpConsoleLayout()</code> / <code>deriveLuggageLayout()</code>（src/utils/carInteriorLayout.js）
+    · 3D 实现：<code>createIpConsole()</code> / <code>createLuggageTrim()</code> / <code>createSteeringWheel()</code>（src/utils/carInterior.js）
+    · 验证：<code>src/tests/ipConsoleLuggage.spec.js</code>（67 项）+ <code>carErgoVerification.spec.js</code>（25 项），全量 808/808 PASS<br>
+    v1.2 变更：① A-2 整改——中控台面长上限 0.40→0.50 m，扶手盖长 105→205 mm（全行程干涉已重跑，24/24 PASS）；
+    ② 新增人机验证模块 <code>carErgoVerification.js</code>（悬挑刚度 / SAE J941 眼椭圆遮罩 / 三体型头部空间）；
+    ③ 图 1~4 示意图坐标为 v1.0 版本（台面长 0.40 m），刷新待下轮文档迭代，数值以 §5 矩阵与真源为准。
+  </div>
+  <div class="note" style="margin-top:14px">
+    <b>配套交付物</b>：
+    <a href="preview/IP_LUGGAGE_3D_PREVIEW.html">专业级 3D 可视化预览（8 视角 / 舱盖开合 / 六视角快照 / 演示录制）</a> ·
+    <a href="preview/IP_LUGGAGE_VIEWS.png">多角度渲染视图拼图</a> ·
+    <a href="preview/IP_LUGGAGE_CLIP.mp4">舱盖开合动态演示片段</a> ·
+    <a href="IP_LUGGAGE_INTERFERENCE_REPORT.html">全行程干涉检查报告</a> ·
+    <a href="IP_LUGGAGE_DESIGN_REVIEW.html">合规性与品质评审报告</a> ·
+    <a href="SUPPLIER_RFQ_IP_LUGGAGE.xlsx">供应商询价清单</a>
   </div>
 </header>
 
@@ -199,7 +211,7 @@
 <h2>5 · 六车型适配矩阵</h2>
 <table>
 <tr><th>车型</th><th>屏手伸 mm</th><th>换挡手伸 mm</th><th>仪表高 mm</th><th>扶手盖长 mm</th><th>后舱拓扑</th><th>装载高 mm</th><th>净长 mm</th><th>后舱容积 L</th><th>前行李舱 L</th><th>拱间净宽 mm</th></tr>
-<tr><td>轿车 SEDAN</td><td>669</td><td>604</td><td>368</td><td>105</td><td>封闭式</td><td>410</td><td>365</td><td>189</td><td>142</td><td>—</td></tr><tr><td>SUV</td><td>773</td><td>665</td><td>465</td><td>105</td><td>旅行式</td><td>530</td><td>1573</td><td>1359</td><td>—（前舱为动力/轮拱舱）</td><td>1326</td></tr><tr><td>轿跑 COUPE</td><td>521</td><td>440</td><td>346</td><td>105</td><td>封闭式</td><td>350</td><td>440</td><td>237</td><td>170</td><td>—</td></tr><tr><td>跑车 SPORT</td><td>515</td><td>430</td><td>350</td><td>105</td><td>封闭式</td><td>250</td><td>410</td><td>259</td><td>148</td><td>—</td></tr><tr><td>MPV</td><td>827</td><td>755</td><td>423</td><td>105</td><td>旅行式</td><td>570</td><td>828</td><td>696</td><td>108</td><td>—</td></tr><tr><td>皮卡 PICKUP</td><td>717</td><td>587</td><td>476</td><td>105</td><td>货箱</td><td>540</td><td>1860</td><td>1469</td><td>112</td><td>—</td></tr>
+<tr><td>轿车 SEDAN</td><td>669</td><td>604</td><td>368</td><td>205</td><td>封闭式</td><td>410</td><td>365</td><td>189</td><td>142</td><td>—</td></tr><tr><td>SUV</td><td>773</td><td>665</td><td>465</td><td>205</td><td>旅行式</td><td>530</td><td>1573</td><td>1359</td><td>—（前舱为动力/轮拱舱）</td><td>1326</td></tr><tr><td>轿跑 COUPE</td><td>521</td><td>440</td><td>346</td><td>205</td><td>封闭式</td><td>350</td><td>440</td><td>237</td><td>170</td><td>—</td></tr><tr><td>跑车 SPORT</td><td>515</td><td>430</td><td>350</td><td>205</td><td>封闭式</td><td>250</td><td>410</td><td>259</td><td>148</td><td>—</td></tr><tr><td>MPV</td><td>827</td><td>755</td><td>423</td><td>205</td><td>旅行式</td><td>570</td><td>828</td><td>696</td><td>108</td><td>—</td></tr><tr><td>皮卡 PICKUP</td><td>717</td><td>587</td><td>476</td><td>205</td><td>货箱</td><td>540</td><td>1860</td><td>1469</td><td>112</td><td>—</td></tr>
 </table>
 
 <h2>6 · 工程落地输入条件与开口问题</h2>
