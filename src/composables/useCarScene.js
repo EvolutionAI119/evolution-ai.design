@@ -6,7 +6,6 @@ import { createAnimator } from '../three/scene/animator.js'
 import { viewPresets, orthoViewportSize } from '../three/scene/viewPresets.js'
 import { assembleCar } from '../three/assembly/assembleCar.js'
 import { resolveFlightParams, flightControlEnvelope } from '../utils/flightPhysics.js'
-import { disposeObject } from '../three/dispose.js'
 
 /**
  * 场景编排 composable（P4 拆分）：接管 createCar / initScene / updateCar / 生命周期 / watch。
@@ -324,13 +323,13 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
       detachInteractions = null
     }
     boundContainer = null
-    disposeObject(carGroup)
-    // 场景销毁收进 createScene.disposeScene：注册表摘除 → __THREE_SCENE__ 修正 →
-    // renderer dispose/loseContext/画布移除 → scene.clear
+    // 统一销毁（一次调用）：disposeScene 内先 disposeObject(carGroup)，再摘注册表 →
+    // 修正 __THREE_SCENE__ → renderer dispose/loseContext/画布移除 → scene.clear
     if (sceneApi) {
-      sceneApi.disposeScene()
+      sceneApi.disposeScene({ carGroup })
       sceneApi = null
     }
+    carGroup = null
     handle = null
     scene = null
   })

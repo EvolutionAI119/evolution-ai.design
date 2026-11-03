@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+import { disposeObject } from '../dispose.js'
 
 /**
  * 场景基座（P3 拆分：原 Car3D.vue initScene 的渲染器/相机/灯光/环境段）
@@ -14,8 +15,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
  * `scene.userData.__car3d__ = { wireframe, nurbs, setViewInstant, setCameraPose, ... }`
  * —— 本模块负责创建对象、两个与机位相关的函数，并提供 `setHooks` 供调用方补挂
  * `setDoor` / `viewState`（挂载时机仍是 createCar 之后，字段名不变）。
- * 场景销毁（注册表摘除 / renderer 释放 / 画布移除 / scene 清空）统一走 `disposeScene`，
- * 调用方不再直接触碰全局调试钩子。
+ * 场景销毁（车组释放 / 注册表摘除 / renderer 释放 / 画布移除 / scene 清空）统一走
+ * `disposeScene({ carGroup })`，调用方不再直接触碰全局调试钩子或手动 dispose 车组。
  *
  * @param {object} opts
  * @param {HTMLElement} opts.container 渲染画布挂载点（同时用于取宽高）
@@ -138,11 +139,16 @@ export function createScene({ container, wireframe = false, nurbs = false, viewC
   }
 
   /**
-   * 场景销毁：摘除全局实例注册表 → 修正 __THREE_SCENE__ 指针 → 释放 renderer
-   * （含 WEBGL_lose_context）→ 移除画布 → 清空场景。
-   * 调用方负责在此之前停帧循环、释放车组/特效与交互解绑。
+   * 场景销毁（一次调用）：释放车组 → 摘除全局实例注册表 → 修正 __THREE_SCENE__ 指针
+   * → 释放 renderer（含 WEBGL_lose_context）→ 移除画布 → 清空场景。
+   * 调用方负责在此之前停帧循环、释放特效与交互解绑。
+   *
+   * @param {object} [opts]
+   * @param {THREE.Object3D} [opts.carGroup] 当前车组（含几何/材质/贴图），在 scene.clear() 前释放
    */
-  const disposeScene = () => {
+  const disposeScene = ({ carGroup } = {}) => {
+    // 车组必须先于 scene.clear() 释放：disposeObject 需要遍历仍挂在场景中的子树
+    if (carGroup) disposeObject(carGroup)
     if (typeof window !== 'undefined' && Array.isArray(window.__CAR3D_SCENES__)) {
       const reg = window.__CAR3D_SCENES__
       const idx = reg.indexOf(scene)
