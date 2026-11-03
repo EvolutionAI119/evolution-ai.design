@@ -350,18 +350,19 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       }
     })
 
-    it('侧围轮廓 G1 圆角/cowl/轮拱 notch 收敛到 carProfile.bodySideOutline 单一真源，Car3D 消费之', () => {
+    it('侧围轮廓 G1 圆角/cowl/轮拱 notch 收敛到 carProfile.bodySideOutline 单一真源，useCarScene 消费之', () => {
       const prof = readFileSync(resolve(process.cwd(), 'src/utils/carProfile.js'), 'utf8')
-      const car3d = readFileSync(resolve(process.cwd(), 'src/components/Car3D.vue'), 'utf8')
+      // P4：createCar 已从 Car3D.vue 迁入 composables/useCarScene.js，消费点随之迁移
+      const carScene = readFileSync(resolve(process.cwd(), 'src/composables/useCarScene.js'), 'utf8')
       // 轮廓真源在 carProfile.js：三处 G1 圆角 + cowl 斜坡 + 底边轮拱 notch
       expect(prof).toContain('export function bodySideOutline')
       expect(prof).toContain('filletCorner')
       expect(prof).toContain('cowlStartX')
       expect(prof).toContain('hoodEndX, beltLineY')
       expect(prof).toContain('archNotch')
-      // Car3D 不再内联构建轮廓，改为消费 bodySideOutline（2D/3D 同源）；
+      // 不再内联构建轮廓，改为消费 bodySideOutline（2D/3D 同源）；
       // 开门状态允许通过 holes 在门区开真实门洞（门板成为唯一覆盖几何）
-      expect(car3d).toContain('bodySideOutline(')
+      expect(carScene).toContain('bodySideOutline(')
     })
 
     it('Car2D.vue 源码含皮卡专属拓扑分支（isPickup / cabRearX2d）', () => {
