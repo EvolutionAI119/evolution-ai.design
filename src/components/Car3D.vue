@@ -107,6 +107,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { createScene } from '../three/scene/createScene.js'
+import { attachInteractions } from '../three/scene/interactions.js'
 import { deriveCarProfile, deriveWheelFitment, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
 import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
@@ -247,8 +248,8 @@ const startTurn = (delta) => {
   yawTurning.value = true
 }
 let animationId = null
-let isDragging = false
-let previousMousePosition = { x: 0, y: 0 }
+let isDragging = false          // 由 interactions.js 通过 view.setDragging 镜像，animate 的自动旋转据此暂停
+let detachInteractions = null   // attachInteractions 返回的解绑函数
 let targetRotation = { x: 0.4, y: 0.8 }
 let currentRotation = { x: 0.4, y: 0.8 }
 let targetDistance = 8
@@ -983,68 +984,25 @@ const initScene = () => {
   })
 
   boundContainer = container
-  container.addEventListener('mousedown', onMouseDown)
-  container.addEventListener('mousemove', onMouseMove)
-  container.addEventListener('mouseup', onMouseUp)
-  container.addEventListener('mouseleave', onMouseUp)
-  container.addEventListener('wheel', onWheel)
-  container.addEventListener('contextmenu', onContextMenu)   // 具名注册，卸载可解绑
-  window.addEventListener('resize', onWindowResize)
+  // 交互（拖拽/缩放/resize）在 scene/interactions.js：只写 target*，缓动留给 animate 批。
+  // 传入的宿主是缓存的 boundContainer（卸载时 containerRef 已为空），detach 也解绑它。
+  detachInteractions = attachInteractions({
+    container: boundContainer,
+    camera,
+    orthoCamera,
+    renderer,
+    view: {
+      getRotation: () => ({ x: targetRotation.x, y: targetRotation.y }),
+      setRotation: (x, y) => { targetRotation.x = x; targetRotation.y = y },
+      getPan: () => ({ x: targetPan.x, y: targetPan.y }),
+      setPan: (x, y) => { targetPan.x = x; targetPan.y = y },
+      getDistance: () => targetDistance,
+      setDistance: (v) => { targetDistance = v },
+      setDragging: (v) => { isDragging = v }
+    }
+  })
 
   animate()
-}
-
-const onMouseDown = (e) => {
-  isDragging = true
-  previousMousePosition = { x: e.clientX, y: e.clientY }
-}
-
-const onMouseMove = (e) => {
-  if (!isDragging) return
-  const dx = e.clientX - previousMousePosition.x
-  const dy = e.clientY - previousMousePosition.y
-  previousMousePosition = { x: e.clientX, y: e.clientY }
-
-  if (e.button === 2) {
-    targetPan.x -= dx * 0.01
-    targetPan.y += dy * 0.01
-    targetPan.x = Math.max(-3, Math.min(3, targetPan.x))
-    targetPan.y = Math.max(-2, Math.min(2, targetPan.y))
-  } else if (e.button === 0) {
-    targetRotation.y += dx * 0.01
-    targetRotation.x += dy * 0.008
-    targetRotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, targetRotation.x))
-  }
-}
-
-const onMouseUp = () => { isDragging = false }
-
-const onContextMenu = (e) => e.preventDefault()
-
-const onWheel = (e) => {
-  e.preventDefault()
-  targetDistance += e.deltaY * 0.008
-  targetDistance = Math.max(3, Math.min(20, targetDistance))
-}
-
-const onWindowResize = () => {
-  const container = containerRef.value
-  if (!container || !renderer) return
-  const w = container.clientWidth
-  const h = container.clientHeight
-  
-  camera.aspect = w / h
-  camera.updateProjectionMatrix()
-  
-  const aspect = w / h
-  const d = 5
-  orthoCamera.left = -d * aspect
-  orthoCamera.right = d * aspect
-  orthoCamera.top = d
-  orthoCamera.bottom = -d
-  orthoCamera.updateProjectionMatrix()
-  
-  renderer.setSize(w, h)
 }
 
 // ---- VTOL 特效：升力风扇环（随车）+ 地面能量场（贴地衰减）----
@@ -1299,18 +1257,13 @@ onMounted(() => {
 onUnmounted(() => {
   if (animationId) cancelAnimationFrame(animationId)
   disposeFlightFx()
-  // 模板 ref 此时已被 Vue 清空（containerRef.value === null），必须用缓存的
-  // boundContainer 解绑，否则每次卸载（Designer 右侧 v-if 切 2D）都泄漏监听。
-  if (boundContainer) {
-    boundContainer.removeEventListener('mousedown', onMouseDown)
-    boundContainer.removeEventListener('mousemove', onMouseMove)
-    boundContainer.removeEventListener('mouseup', onMouseUp)
-    boundContainer.removeEventListener('mouseleave', onMouseUp)
-    boundContainer.removeEventListener('wheel', onWheel)
-    boundContainer.removeEventListener('contextmenu', onContextMenu)
-    boundContainer = null
+  // 模板 ref 此时已被 Vue 清空（containerRef.value === null）；interactions.js 内部
+  // 用 initScene 时缓存的 container 解绑，所以这里只需调用 detach，不再碰 containerRef。
+  if (detachInteractions) {
+    detachInteractions()
+    detachInteractions = null
   }
-  window.removeEventListener('resize', onWindowResize)
+  boundContainer = null
   disposeObject(carGroup)
   if (typeof window !== 'undefined' && Array.isArray(window.__CAR3D_SCENES__)) {
     const reg = window.__CAR3D_SCENES__
