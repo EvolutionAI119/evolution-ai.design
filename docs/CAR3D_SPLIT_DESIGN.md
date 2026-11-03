@@ -2,8 +2,8 @@
 
 | 项 | 内容 |
 |---|---|
-| 版本 | v1.2 · 2026-11-04（P4 useCarScene 落地） |
-| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（383 行 / 10.4 KB）+ [src/composables/useCarScene.js](../src/composables/useCarScene.js)（1016 行 / 46.6 KB） |
+| 版本 | v1.3 · 2026-11-04（P5 createCar 拆分三批落地） |
+| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（383 行 / 10.4 KB）+ [src/composables/useCarScene.js](../src/composables/useCarScene.js)（388 行 / 15.2 KB）+ [src/three/assembly/assembleCar.js](../src/three/assembly/assembleCar.js)（299 行） |
 | 目标 | 行数降 40% 以上；渲染结果零差异；纯函数可单测 |
 | 约束 | 每批只搬一个模块、行为不变；拆分前先补渲染基线；每步独立提交、全绿 |
 | 关联 | [ASSET_MANIFEST.md](ASSET_MANIFEST.md)、[2D_LAYOUT_VERIFICATION.md](2D_LAYOUT_VERIFICATION.md) |
@@ -28,7 +28,9 @@ Car3D 单体同时承担：NURBS 网格构建、车身开洞、玻璃分缝、�
 |---|---|---|---|
 | `src/three/materials.js` | `paintColor`、玻璃/橡胶/镀铬材质 | 统一材质与复用缓存 | 无 |
 | `src/three/geometry/smoothing.js` | `smoothNormalsKeepHardEdges`（392–474） | 法线平滑纯函数 | 无 |
-| `src/three/geometry/bodyShell.js` | `splitBodyAperturesInterior`（475–554）、`alignNurbsToProfile`（555–601）、`applyGreenhouseTaper`（830–888）、侧围轮廓（722–829） | 车身壳、开洞、锥化 | smoothing、profile |
+| `src/three/geometry/bodyShell.js` | `splitBodyAperturesInterior`、`applyGreenhouseTaper`、侧围轮廓/洞口/挤出 | 车身壳、开洞、锥化 | smoothing、profile、glass 常量 |
+| `src/three/assembly/nurbsCar.js` | `createNurbsCar` / `createNurbsWheel` / `alignNurbsToProfile` | NURBS 高保真路径（不建门/升力） | profile、materials |
+| `src/three/assembly/assembleCar.js` | `createCar` 全部零件编排 | 整车装配（入参快照、返回引用） | parts、geometry、materials |
 | `src/three/parts/glass.js` | `addBandGlass`（915–958）、`addDloPane`（959–991） | DLO 分缝与窗片 | carGlass、materials |
 | `src/three/parts/wheels.js` | `createNurbsWheel`（346–391）、`createWheel`（1013–1068）、`addArchLiner`（1069–1096）、升力装置（992–1012） | 车轮、轮腔衬、升力件 | profile、materials |
 | `src/three/parts/lightsBumpers.js` | 保险杠（1100–1114）、前大灯（1110–1141）、尾灯（1142–1157） | 灯与保险杠贴合外表面 | profile、materials |
@@ -119,9 +121,12 @@ scene/createScene.js ─> scene/{interactions,animate}.js ─> useCarScene.js
 | P3 | `scene/flightFx.js`：升力风扇环 + 地面能量场（持有权单实例；`ensure` 复用 createLiftDucts 同一份 `liftLayout`） | 全量 833 测试；基线 10/10、像素 0.00%；切车色 / 线框开关重建后环仍 6/6 出现，像素 0.00% |
 | P3 | `scene/animator.js`：帧循环（相机 target/current 缓动 + VTOL 升降/转向 + 车门开合 + 渲染；carGroup/铰链走每帧 getter） | 全量 833 测试；基线 10/10，两次采集均像素 0.00%；开门 1.2217 rad、悬停 carY 0.4053、左转 -90.00°、落地 0、drag/wheel clamp 命中 |
 | P4 | `composables/useCarScene.js`：createCar / initScene / updateCar / 生命周期 / watch 编排（唯一 onMounted/onUnmounted；props 走只读 getter、emit 走回调） | 全量 833 测试；基线 10/10 ×2 轮均 0.00%（cockpit 两轮互比 0 px）；切色 `#ff0000`→车漆材质命中、线框开关复原 0.00%；开门 1.2217 rad / 关门 0；悬停 carY 0.4536、左转 -90.00°、落地 0；切 viewAngle 车组引用不变（不重建） |
+| P5-1 | `three/assembly/nurbsCar.js`：`createNurbsCar` / `createNurbsWheel` / `alignNurbsToProfile` 独立成模块（与挤出路径不共享状态；NURBS 不建门、liftLayout 显式 null） | 全量 833 测试；基线 10/10、像素 0.00%；201 / 43268、hinge 1.222 |
+| P5-2 | `three/geometry/bodyShell.js`：侧围轮廓 + 洞口 + 挤出 + `applyGreenhouseTaper` + `splitBodyAperturesInterior`；洞口/锥化常量（`ROOF_FILLETS` / `BODY_BEVEL_SIZE` / `DLO_APERTURE_INSET`）仍在模块内直接取 carGlass，并导出 `FRONT_GLASS_TOP_BORDER` | 全量 833 测试；基线 10/10、像素 0.00%；201 / 43268、hinge 1.222 |
+| P5-3 | `three/assembly/assembleCar.js`：createCar 只做编排（入参快照 `{ carParams, carType, carColor, wireframe, nurbsMesh }`，返回 `{ group, doorHinges, doorSeams, liftLayout }`），composable 同步写回三处引用；`tests/car2d.test.js` 源码扫描断言换成行为断言（装配契约 + 193 Mesh） | 全量 833 测试；基线 10/10、像素 0.00%；201 / 43268、hinge 1.222 |
 
-P4 完成：`composables/useCarScene.js` 接管编排，Car3D.vue 只留模板 + props + 纯 UI 态（`isFullscreen` / `toggleFullscreen`）。后续可继续把 `createCar` 几何装配从 composable 再抽成 `three/assembly/*`（非本轮范围）。
+P4 完成：`composables/useCarScene.js` 接管编排，Car3D.vue 只留模板 + props + 纯 UI 态（`isFullscreen` / `toggleFullscreen`）。P5 三批把 `createCar` 几何装配再从 composable 抽成 `three/assembly/*` 与 `three/geometry/bodyShell.js`： `useCarScene` 1016 → 388 行（−628，−61.8%），`createCar` 只剩「传快照 → 同步写回 → 返回车组」。
 
 ## 8. 本轮结论
 
-P0 基线与 P1~P4 已落地模块（`smoothing` / `dispose` / `doors` / `glass` / `seats` / `lightsBumpers` / `mirrors` / `wheels` / `materials` / `createScene` / `interactions` / `flightFx` / `animator` / `useCarScene`）已收口，Car3D.vue 1875 → 383 行（−79.6%，目标 40% 已超额）；剩余可选的 P5：把 `createCar` 几何装配从 `useCarScene` 再抽成 `three/assembly`。每批以 `npx vitest run` + `node scripts/car3d_baseline.mjs --out .tmp-car3d-current` + `node scripts/car3d_baseline_compare.mjs --cur .tmp-car3d-current` 为闸门，任何分镜像素差超 1% 先归因再决定修复或回滚。
+P0 基线与 P1~P5 已落地模块（`smoothing` / `dispose` / `doors` / `glass` / `seats` / `lightsBumpers` / `mirrors` / `wheels` / `materials` / `createScene` / `interactions` / `flightFx` / `animator` / `useCarScene` / `nurbsCar` / `bodyShell` / `assembleCar`）已收口：Car3D.vue 1875 → 383 行（−79.6%），`useCarScene` 1016 → 388 行（−61.8%），装配体 299 行独立于编排层。依赖保持单向 `Car3D.vue → useCarScene → assembleCar → parts/geometry → 真源`，assembly 层不 import composable。每批以 `npx vitest run` + `node scripts/car3d_baseline.mjs --out .tmp-car3d-current` + `node scripts/car3d_baseline_compare.mjs --cur .tmp-car3d-current` 为闸门，任何分镜像素差超 1% 先归因再决定修复或回滚。
