@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fix 12 Failed - Candidates</title>
+<style>
+body{background:#0f0f1e;color:#eee;font-family:sans-serif;margin:0;padding:20px}
+h1{text-align:center;margin-bottom:10px}
+.note{text-align:center;color:#aaa;margin-bottom:20px;font-size:13px}
+.car-block{background:#16213e;border-radius:8px;padding:12px;margin-bottom:15px}
+.car-block h2{margin:0 0 10px 0;color:#e94560;font-size:16px;border-bottom:1px solid #333;padding-bottom:5px}
+.candidates{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.cand{background:#000;border-radius:4px;overflow:hidden;position:relative}
+.cand img{width:100%;height:150px;object-fit:contain;background:#222;display:block}
+.cand .meta{padding:4px 6px;font-size:11px;color:#aaa;background:#1a1a2e}
+.cand .meta .fname{color:#7ec8e3}
+</style>
+</head>
+<body>
+<h1>12个不合格车型 - 候选图选择</h1>
+<div class="note">从每个车型的候选中选择一张：正侧视90° + 纯净背景 + 车型正确。如果没有合格的，标注"无合格"。</div>
+<div id="root"></div>
+<script>
+const FAILED = [
+  ["rolls-royce","ghost","Rolls-Royce Ghost"],
+  ["rolls-royce","cullinan","Rolls-Royce Cullinan"],
+  ["bentley","continental-gt","Bentley Continental GT"],
+  ["bentley","continental-gtc","Bentley Continental GTC"],
+  ["bentley","flying-spur","Bentley Flying Spur"],
+  ["bentley","bentayga","Bentley Bentayga"],
+  ["bugatti","chiron","Bugatti Chiron"],
+  ["bugatti","veyron","Bugatti Veyron"],
+  ["bugatti","divo","Bugatti Divo"],
+  ["porsche","taycan","Porsche Taycan"],
+  ["ferrari","sf90","Ferrari SF90"],
+  ["ferrari","f8-tributo","Ferrari F8 Tributo"]
+];
+async function checkExists(url){
+  try{ const r = await fetch(url,{method:'HEAD'}); return r.ok; }catch(e){ return false; }
+}
+async function build(){
+  const root = document.getElementById('root');
+  for (const [brand,model,title] of FAILED){
+    const block = document.createElement('div');
+    block.className = 'car-block';
+    block.innerHTML = `<h2>${title} (${brand}/${model})</h2>`;
+    const grid = document.createElement('div');
+    grid.className = 'candidates';
+    for (let i=1;i<=25;i++){
+      const fname = `cand_${String(i).padStart(2,'0')}.jpg`;
+      const url = `/_candidates_v13/${brand}/${model}/${fname}`;
+      const exists = await checkExists(url);
+      if (!exists) continue;
+      const cand = document.createElement('div');
+      cand.className = 'cand';
+      cand.innerHTML = `<img src="${url}" loading="lazy" onerror="this.parentElement.style.display='none'"><div class="meta"><span class="fname">${fname}</span></div>`;
+      grid.appendChild(cand);
+    }
+    block.appendChild(grid);
+    root.appendChild(block);
+  }
+}
+build();
+</script>
+</body>
+</html>

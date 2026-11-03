@@ -28,7 +28,7 @@
 │            /api/v1 → FastAPI(8000)；公网经 cpolar HTTPS 隧道  │
 ├──────────────────────────────────────────────────────────────┤
 │ L3 后端服务层  FastAPI 0.104 + Pydantic v2                    │
-│            19 个路由模块 / 153 个端点（含 2 个系统端点）；薄壳编排  │
+│            19 个路由模块 / 154 个端点（含 2 个系统端点）；薄壳编排  │
 ├──────────────────────────────────────────────────────────────┤
 │ L4 算法层  algorithm_model（独立可安装包）                     │
 │            NURBS 整车建模 / freeform 自由曲面 /               │
@@ -86,7 +86,7 @@
 
 后端根：`backend/`，应用入口 `app/main.py`（`create_app()` 装配），启动脚本 `start.py`。
 
-### 3.1 路由模块（19 个模块共 151 个端点：148 个 `@router` + `keys_router` 3 个；`main.py` 另有 2 个系统端点，合计 **153 个 HTTP 端点**）
+### 3.1 路由模块（19 个模块共 152 个端点：149 个 `@router` + `keys_router` 3 个；`main.py` 另有 2 个系统端点，合计 **154 个 HTTP 端点**）
 
 | 模块文件 | 最终路径前缀 | 端点数 | 职责 |
 |---|---|---:|---|
@@ -107,14 +107,14 @@
 | llm_proxy.py | `/api/v1/llm` | 4 | 多 LLM 提供商统一代理 |
 | design_intent.py | `/api/v1/design-intent` | 3 | 自然语言设计意图解析与变体 |
 | analytics.py | `/api/v1/analytics` | 21 | 埋点统计、社区留言/引用线索、通知中心、数据导出 |
-| admin.py | `/api/v1/admin` | 7 | 管理后台：用户/登录记录/审计/错误日志 |
+| admin.py | `/api/v1/admin` | 8 | 管理后台：用户/登录记录/审计/错误日志 |
 | auth.py | `/api/v1/auth`、`/api/v1/api-keys` | 12 | 注册/登录/微信授权（9）、API Key 管理（3） |
 
 逐端点明细见 [api_reference.md](api_reference.md)。
 
 <figure class="doc-figure">
   <img src="docs/images/arch2-matrix.svg" alt="19 个路由模块与 HTTP 方法的热力矩阵" loading="lazy">
-  <figcaption><strong>图 3-1 ｜ 19 个路由模块 × HTTP 方法的热力矩阵</strong>读图：行是 19 个模块、列是 GET/POST/PUT/DELETE，格内数字为该组合的端点数，颜色越深表示越集中；右侧列合计 GET 75、POST 63、PUT 4、DELETE 9，总计 151，与行合计逐行互校。读法结论：analytics 与 training 以 GET 为主（11/21、9/15），modify 以 POST 为主（8/15），PUT 仅出现在少数状态更新端点。</figcaption>
+  <figcaption><strong>图 3-1 ｜ 19 个路由模块 × HTTP 方法的热力矩阵</strong>读图：行是 19 个模块、列是 GET/POST/PUT/DELETE，格内数字为该组合的端点数，颜色越深表示越集中；右侧列合计 GET 76、POST 63、PUT 4、DELETE 9，总计 152，与行合计逐行互校。读法结论：analytics 与 training 以 GET 为主（11/21、9/15），modify 以 POST 为主（8/15），PUT 仅出现在少数状态更新端点。</figcaption>
 </figure>
 
 ### 3.2 领域模块（`backend/app/`）
@@ -263,10 +263,10 @@ Login → /auth/methods 探测能力
 
 | 测试套件 | 用例数 | 结果 |
 |---|---:|---|
-| algorithm_model pytest（tests/） | 205 | 全过 |
+| algorithm_model pytest（tests/） | 200 | 全过 |
 | algorithm_model 一站式自检（test_all.py） | 5 大模块 | 全过 |
-| backend pytest（tests/） | 388（1 跳过、2 xfailed） | 全过 |
-| frontend vitest | 362 | 全过 |
-| **合计** | **955+** | **全绿** |
+| backend pytest（tests/） | 411（408 passed + 1 skipped + 2 xfailed） | 全过 |
+| frontend vitest | 783（19 文件） | 全过 |
+| **合计** | **1394** | **全绿**（2026-11-02 实测） |
 
 运行方式见根 README「测试」一节。

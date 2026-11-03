@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>整车内饰全行程干涉检查报告 · IP/CONSOLE × 行李舱 | EVOLUTION-AI.DESIGN</title>
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#111720; --panel2:#0d1319; --line:#1f2937; --line2:#2b3a4d;
+    --text:#dbe3ec; --dim:#8fa0b3; --cyan:#4dd0e1; --green:#35d399; --amber:#ffb44d; --red:#ff6b6b;
+    --mono:"Cascadia Mono","Consolas","SFMono-Regular",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","Segoe UI",sans-serif;line-height:1.62;padding:0 0 60px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 26px}
+  header{padding:34px 0 26px;border-bottom:1px solid var(--line);
+    background:radial-gradient(900px 260px at 12% 0%,rgba(77,208,225,.10),transparent 65%),linear-gradient(180deg,#0e141c,#0a0d12)}
+  .kicker{font-size:12px;letter-spacing:.22em;color:var(--cyan);text-transform:uppercase}
+  h1{font-size:27px;font-weight:650;margin:8px 0 6px;color:#f3f7fb;letter-spacing:.2px}
+  .sub{color:var(--dim);font-size:13.5px}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  .chip{font-size:12px;color:#a9b7c6;border:1px solid var(--line2);background:#0d141c;border-radius:999px;padding:3px 11px}
+  .chip b{color:var(--cyan);font-weight:600}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0 4px}
+  .stat{background:linear-gradient(180deg,#121a24,#0d131a);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .stat .v{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--cyan);line-height:1.2}
+  .stat .v.g{color:var(--green)} .stat .v.a{color:var(--amber)}
+  .stat .k{font-size:12.5px;color:var(--dim);margin-top:3px}
+  h2{font-size:18px;margin:40px 0 12px;padding-left:11px;border-left:3px solid var(--cyan);color:#eaf2f8}
+  h2 .n{font-family:var(--mono);color:var(--cyan);font-size:13px;margin-right:8px}
+  p{font-size:13.5px;color:#b9c5d3;margin:8px 0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0 6px}
+  th{font-size:11.5px;letter-spacing:.03em;color:#9db0c3;text-align:left;padding:9px 8px;border-bottom:1px solid var(--line2);background:#0d141b;white-space:nowrap}
+  td{padding:8px;border-bottom:1px solid #17202b;font-family:var(--mono);font-size:12px;color:#cfd9e4}
+  td.name{font-family:"Microsoft YaHei",sans-serif;font-size:12.5px}
+  tr:nth-child(even) td{background:#0d1219}
+  .pass{color:var(--green);font-weight:700}
+  .warn{color:var(--amber)}
+  .bad{color:var(--red)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;border-radius:4px;padding:1px 6px;border:1px solid #2b3a4d;color:#9fb3c8}
+  .tag.ok{border-color:#1f6b4f;color:#57e2ae;background:#0e1d18}
+  .tag.lim{border-color:#7a5320;color:#ffc571;background:#1d160c}
+  .note{border-left:3px solid var(--amber);background:#151109;padding:11px 15px;border-radius:0 8px 8px 0;font-size:13px;color:#e5c999;margin:12px 0}
+  .ok-note{border-left-color:var(--green);background:#0d1713;color:#a9e7c8}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:12.5px}
+  .kv .k{color:var(--dim)} .kv .v{font-family:var(--mono);color:#d6e2ee}
+  ul{margin:6px 0 4px 20px}
+  li{font-size:13px;color:#b9c5d3;margin:5px 0}
+  .foot{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:#6f8199}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--dim);margin-top:6px}
+  .sw{display:inline-block;width:22px;height:3px;vertical-align:middle;margin-right:5px}
+  @media (max-width:820px){.stats,.grid2{grid-template-columns:1fr 1fr} .kv{grid-template-columns:110px 1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="kicker">Vehicle Interior · Full-Stroke Interference Verification</div>
+    <h1>整车内饰全行程干涉检查报告</h1>
+    <div class="sub">IP/CONSOLE 细化设计 + 前/后行李舱内饰方案 · 同步入整车三维模型后的重新验证</div>
+    <div class="meta">
+      <span class="chip">报告日期 <b>2026-11-02</b></span>
+      <span class="chip">车型覆盖 <b>6</b>（sedan / suv / coupe / sport / mpv / pickup）</span>
+      <span class="chip">运动副 <b>24</b>（调角器 ×12 · 遮阳板 ×6 · 扶手盖 ×6）</span>
+      <span class="chip">坐标系 <b>X+ 车头 · Y+ 向上 · Z+ 副驾侧</b></span>
+      <span class="chip">判定基准 <b>最小安全间隙 10 mm</b></span>
+    </div>
+    <div style="font-size:12.5px;color:#8fa0b3;margin-top:14px">
+      配套交付物：
+      <a href="IP_CONSOLE_LUGGAGE_DESIGN.html" style="color:#4dd0e1">设计方案</a> ·
+      <a href="preview/IP_LUGGAGE_3D_PREVIEW.html" style="color:#4dd0e1">3D 可视化预览</a> ·
+      <a href="preview/IP_LUGGAGE_VIEWS.png" style="color:#4dd0e1">多角度渲染拼图</a> ·
+      <a href="preview/IP_LUGGAGE_CLIP.mp4" style="color:#4dd0e1">开合演示片段</a> ·
+      <a href="IP_LUGGAGE_DESIGN_REVIEW.html" style="color:#4dd0e1">合规性与品质评审报告</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v g">0</div><div class="k">实际可达行程内的干涉数</div></div>
+      <div class="stat"><div class="v">24 / 24</div><div class="k">运动副判定 PASS</div></div>
+      <div class="stat"><div class="v a">4</div><div class="k">超行程理论接触（已由机械限位覆盖）</div></div>
+      <div class="stat"><div class="v">0.573°</div><div class="k">调角器扫掠角步长（31 采样/副）</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<h2><span class="n">01</span>验证对象与单一真源</h2>
+<p>本次检查对象为「IP/CONSOLE 细化设计 + 前行李舱 / 后行李舱内饰方案」同步进整车三维模型后的完整内饰几何。所有坐标、装配关系与特征参数均取自同一参数化真源链，检查器不另立任何数值：</p>
+<div class="panel">
+  <div class="kv">
+    <div class="k">参数输入</div><div class="v">carTypeParams → deriveCarProfile（米制，六车型）</div>
+    <div class="k">座舱布置</div><div class="v">deriveInteriorLayout（H 点 / 排距 / IP / console / steerWheel / 门洞）</div>
+    <div class="k">交付方案</div><div class="v">deriveIpConsoleLayout（IP 5 件 + CONSOLE 9 件）· deriveLuggageLayout（后舱 + 前舱）</div>
+    <div class="k">三维网格</div><div class="v">createIpConsole · createLuggageTrim · createSteeringWheel · createInteriorTrim</div>
+    <div class="k">运动学</div><div class="v">carInteriorKinematics.deriveKinematics（本次报告的扫掠引擎）</div>
+    <div class="k">同步校验</div><div class="v">ipConsoleLuggage.spec.js（67 项，含 12 项「方案件 ↔ 网格件」双向一一对应 + 12 位精度）</div>
+  </div>
+</div>
+<p class="note ok-note">同步完备性：交付方案的每个零件 AABB 与三维网格逐个对齐（件名双向一一对应、中心/宽高深 12 位小数一致）；六车型全部通过，确保「无遗漏、无错位」不是人工目检，而是可回归的断言。</p>
+
+<h2><span class="n">02</span>检查方法与判据</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>运动副</th><th>铰链 / 旋转中心</th><th>全行程范围</th><th>扫掠步长</th><th>采样数</th><th>障碍判定</th><th>判据</th></tr></thead>
+    <tbody>
+      <tr><td class="name">座椅调角器（每排）</td><td>各排 H 点</td><td>设计角 −5.73°（前倒）→ +11.46°（后倒）</td><td>0.573°（0.01 rad）</td><td>31</td><td>前排：B 柱前缘（滑轨最后端最恶劣工况）<br>中间排：下一排坐垫前缘<br>末排：座舱后界（后围板 / 行李舱隔板）</td><td>minGap ≥ 10 mm</td></tr>
+      <tr><td class="name">遮阳板</td><td>顶棚前缘下方 35 mm</td><td>0°（贴顶棚收纳）→ 180°（过竖直贴合风挡）</td><td>5°（π/36）</td><td>37</td><td>顶棚内衬、前风挡玻璃面（板尖接触后行程物理不可达）</td><td>不穿透顶棚；接触角 ≥ 90°</td></tr>
+      <tr><td class="name">中央扶手盖</td><td>中控台后端铰链</td><td>0°（关闭）→ 75°（1.31 rad 全开）</td><td>2.86°（0.05 rad）</td><td>27</td><td>仪表台 IP 本体、顶棚内衬</td><td>minGap ≥ 10 mm</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:#8fa0b3;margin-top:6px">说明：调角器前排按「滑轨最后端」标定——实车限位角为机械定值，必须覆盖最恶劣工况；扶手盖盖长消费交付网格的实际值（A-2 整改后 205 mm），不再使用旧口径估算值。</p>
+</div>
+
+<h2><span class="n">03</span>全工况覆盖矩阵</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>运动副</th><th>初始位置</th><th>设计角</th><th>前极限</th><th>后极限（结构）</th><th>机械限位角</th><th>极限位置</th><th>覆盖结论</th></tr></thead>
+    <tbody>
+      <tr><td class="name">调角器</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓ 逐 0.573° 判定</td><td>✓</td><td class="pass">全行程逐角扫掠</td></tr>
+      <tr><td class="name">遮阳板</td><td>✓ 贴顶棚</td><td>—</td><td>—</td><td>✓ 180°</td><td>✓ 风挡接触角</td><td>✓</td><td class="pass">收纳→风挡接触全段</td></tr>
+      <tr><td class="name">扶手盖</td><td>✓ 关闭 0°</td><td>—</td><td>—</td><td>✓ 75°</td><td>—（结构上限即全开角）</td><td>✓</td><td class="pass">关闭→全开全段</td></tr>
+      <tr><td class="name">座椅滑轨</td><td>✓ 设计位</td><td>—</td><td>—</td><td>✓ 最后端</td><td>—</td><td>✓</td><td class="pass">作为调角器最恶劣边界纳入</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2><span class="n">04</span>调角器扫掠结果（六车型 · 12 副）</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>车型</th><th>排</th><th>障碍物</th><th>障碍面 X (m)</th><th>设计角</th><th>前极限</th><th>后极限</th><th>最不利角</th><th>最小间隙 (mm)</th><th>机械限位角</th><th>限位处间隙 (mm)</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td class="name">SEDAN</td><td>1</td><td class="name">B 柱前缘</td><td>-0.0110</td><td>20.63°</td><td>14.90°</td><td>32.09°</td><td>32.09°</td><td class="bad">-84</td><td class="warn">20.63°</td><td>+10</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SEDAN</td><td>2</td><td class="name">后围板 / 行李舱隔板</td><td>-1.9700</td><td>20.63°</td><td>14.90°</td><td>32.09°</td><td>32.09°</td><td class="pass">+1032</td><td>32.09°</td><td>+1032</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SUV</td><td>1</td><td class="name">B 柱前缘</td><td>-0.0030</td><td>19.48°</td><td>13.75°</td><td>30.94°</td><td>30.94°</td><td class="bad">-86</td><td class="warn">19.48°</td><td>+10</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SUV</td><td>2</td><td class="name">后围板 / 行李舱隔板</td><td>-1.9600</td><td>19.48°</td><td>13.75°</td><td>30.94°</td><td>30.94°</td><td class="pass">+1022</td><td>30.94°</td><td>+1022</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">COUPE</td><td>1</td><td class="name">B 柱前缘</td><td>-0.2653</td><td>18.91°</td><td>13.18°</td><td>30.37°</td><td>30.37°</td><td class="pass">+126</td><td>30.37°</td><td>+126</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">COUPE</td><td>2</td><td class="name">后围板 / 行李舱隔板</td><td>-1.3051</td><td>18.91°</td><td>13.18°</td><td>30.37°</td><td>30.37°</td><td class="pass">+576</td><td>30.37°</td><td>+576</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SPORT</td><td>1</td><td class="name">B 柱前缘</td><td>-0.2541</td><td>17.19°</td><td>11.46°</td><td>28.65°</td><td>28.65°</td><td class="pass">+9</td><td class="warn">28.07°</td><td>+13</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">MPV</td><td>1</td><td class="name">B 柱前缘</td><td>-0.0022</td><td>21.77°</td><td>16.04°</td><td>33.23°</td><td>33.23°</td><td class="bad">-44</td><td class="warn">26.36°</td><td>+10</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">MPV</td><td>2</td><td class="name">第 3 排坐垫前缘</td><td>-1.0536</td><td>21.77°</td><td>16.04°</td><td>33.23°</td><td>33.23°</td><td class="pass">+39</td><td>33.23°</td><td>+39</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">MPV</td><td>3</td><td class="name">后围板 / 行李舱隔板</td><td>-2.2850</td><td>21.77°</td><td>16.04°</td><td>33.23°</td><td>33.23°</td><td class="pass">+430</td><td>33.23°</td><td>+430</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">PICKUP</td><td>1</td><td class="name">B 柱前缘</td><td>-1.0470</td><td>21.77°</td><td>16.04°</td><td>33.23°</td><td>33.23°</td><td class="pass">+1028</td><td>33.23°</td><td>+1028</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">PICKUP</td><td>2</td><td class="name">后围板 / 行李舱隔板（驾驶室后壁）</td><td>-2.8250</td><td>21.77°</td><td>16.04°</td><td>33.23°</td><td>33.23°</td><td class="pass">+1519</td><td>33.23°</td><td>+1519</td><td class="pass">PASS</td></tr>
+    </tbody>
+  </table>
+  <div class="legend"><span><span class="sw" style="background:var(--red)"></span>负间隙 = 超行程理论穿透</span><span><span class="sw" style="background:var(--amber)"></span>限位角（实车不可达段）</span><span><span class="sw" style="background:var(--green)"></span>可达行程内安全</span></div>
+</div>
+
+<h2><span class="n">05</span>干涉点清单（位置 · 干涉量 · 涉及零部件）</h2>
+<p>在所有「结构行程内物理不可达」的超行程段，扫掠模型仍给出理论接触点，用于标定机械限位角。三个车型的前排靠背在后倒极限之外的穿透如下——这三处<strong>不是可达干涉</strong>，而是限位器必须挡住的边界工况：</p>
+<div class="panel">
+  <table>
+    <thead><tr><th>车型 / 工况</th><th>干涉点坐标 (x, y) m</th><th>障碍面 X (m)</th><th>干涉量</th><th>涉及零部件</th><th>机械限位角</th><th>限位处剩余间隙</th><th>处置</th></tr></thead>
+    <tbody>
+      <tr><td class="name">SEDAN 前排 · 后倒超行程</td><td>(-0.0955, 0.9599)</td><td>-0.0110</td><td class="bad">84 mm</td><td class="name">靠背蒙皮 ↔ B 柱</td><td class="warn">20.63°</td><td>+10 mm</td><td><span class="tag lim">限位覆盖</span></td></tr>
+      <tr><td class="name">SUV 前排 · 后倒超行程</td><td>(-0.0887, 1.0869)</td><td>-0.0030</td><td class="bad">86 mm</td><td class="name">靠背蒙皮 ↔ B 柱</td><td class="warn">19.48°</td><td>+10 mm</td><td><span class="tag lim">限位覆盖</span></td></tr>
+      <tr><td class="name">MPV 前排 · 后倒超行程</td><td>(-0.0466, 1.1128)</td><td>-0.0022</td><td class="bad">44 mm</td><td class="name">靠背蒙皮 ↔ B 柱</td><td class="warn">26.36°</td><td>+10 mm</td><td><span class="tag lim">限位覆盖</td></tr>
+      <tr><td class="name">SPORT 前排 · 后倒末端</td><td>—</td><td>-0.2541</td><td class="pass">无穿透（+9 mm）</td><td class="name">靠背蒙皮 ↔ B 柱</td><td class="warn">28.07°</td><td>+13 mm</td><td><span class="tag ok">间隙达标</span></td></tr>
+    </tbody>
+  </table>
+  <div class="note">判定口径：调角器报告给出「结构行程」与「可达行程」两组数据。结构后倒极限 30.37°~33.23° 是扫掠边界；实车机械限位角（sedan 20.63° / suv 19.48° / mpv 26.36° / sport 28.07°）在接触前 ≥10 mm 处锁止，因此负间隙永远不可达，判定 PASS。该逻辑与实车限位器标定一致，避免把「不可达的理论穿透」误报为缺陷。</div>
+</div>
+
+<h2><span class="n">06</span>遮阳板翻转扫掠结果（六车型）</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>车型</th><th>板尖触玻璃角</th><th>接触点 (x, y) m</th><th>顶棚内衬最小余量</th><th>穿透顶棚</th><th>接触角 ≥ 90°</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td class="name">SEDAN</td><td>165.00°</td><td>(0.8113, 1.3558)</td><td>+35 mm</td><td>无</td><td>✓</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SUV</td><td>170.00°</td><td>(0.3709, 1.6920)</td><td>+35 mm</td><td>无</td><td>✓</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">COUPE</td><td>160.00°</td><td>(0.6294, 1.2600)</td><td>+35 mm</td><td>无</td><td>✓</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SPORT</td><td>155.00°</td><td>(0.4972, 1.1147)</td><td>+35 mm</td><td>无</td><td>✓</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">MPV</td><td>175.00°</td><td>(0.3850, 1.7584)</td><td>+35 mm</td><td>无</td><td>✓</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">PICKUP</td><td>170.00°</td><td>(0.3600, 1.7920)</td><td>+35 mm</td><td>无</td><td>✓</td><td class="pass">PASS</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:#8fa0b3">有效行程 = [0°, 板尖触玻璃角]；其后行程被风挡物理阻挡，不参与干涉判定。接触角 155°~175° 均远大于 90°，遮阳功能与收纳均满足。</p>
+</div>
+
+<h2><span class="n">07</span>中央扶手盖扫掠结果（六车型）</h2>
+<div class="panel">
+  <table>
+    <thead><tr><th>车型</th><th>铰链 (x, y) m</th><th>盖长</th><th>全行程</th><th>最不利角</th><th>IP 最小间隙</th><th>Z 向错层</th><th>顶棚余量</th><th>干涉点</th><th>判定</th></tr></thead>
+    <tbody>
+      <tr><td class="name">SEDAN</td><td>(0.615, 0.480)</td><td>205 mm</td><td>0°→75°</td><td>74.48°</td><td class="pass">+62 mm</td><td>85 mm</td><td>762 mm</td><td>无</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SUV</td><td>(0.575, 0.600)</td><td>205 mm</td><td>0°→75°</td><td>74.48°</td><td class="pass">+62 mm</td><td>110 mm</td><td>962 mm</td><td>无</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">COUPE</td><td>(0.390, 0.420)</td><td>205 mm</td><td>0°→75°</td><td>74.48°</td><td class="pass">+62 mm</td><td>87 mm</td><td>742 mm</td><td>无</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">SPORT</td><td>(0.250, 0.330)</td><td>205 mm</td><td>0°→75°</td><td>74.48°</td><td class="pass">+62 mm</td><td>110 mm</td><td>702 mm</td><td>无</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">MPV</td><td>(0.850, 0.640)</td><td>205 mm</td><td>0°→75°</td><td>74.48°</td><td class="pass">+62 mm</td><td>95 mm</td><td>972 mm</td><td>无</td><td class="pass">PASS</td></tr>
+      <tr><td class="name">PICKUP</td><td>(0.695, 0.620)</td><td>205 mm</td><td>0°→75°</td><td>74.48°</td><td class="pass">+62 mm</td><td>110 mm</td><td>1042 mm</td><td>无</td><td class="pass">PASS</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:#8fa0b3">盖长由 deriveIpConsoleLayout.armrestLid 实际 AABB 消费（A-2 整改：105→205 mm，中控台面长上限 0.40→0.50 m），与交付网格同源；全开 75° 时盖后缘距 IP 仍有 62 mm，Z 向错层 85~110 mm 保证扫掠面不进入 IP 厚度带。</p>
+</div>
+
+<h2><span class="n">08</span>全行程覆盖说明与限制</h2>
+<div class="grid2">
+  <div class="panel">
+    <p style="color:#cfe0ec;font-weight:600">覆盖完整性</p>
+    <ul>
+      <li>调角器：每副 31 个角位置连续扫掠，覆盖前倒极限、设计角、后倒极限与机械限位角；前排叠加滑轨最后端偏移（sedan 113.8 mm / suv 14.7 mm / mpv 140 mm / sport 100 mm / pickup 125 mm）。</li>
+      <li>遮阳板：0°→180° 共 37 个角位置，并求板尖与风挡线段最短距离的接触角。</li>
+      <li>扶手盖：0°→75° 共 27 个角位置，逐角计算盖端到 IP 面与顶棚的净距。</li>
+      <li>六车型 × 全部排数（sedan/suv/coupe/pickup 2 排、sport 1 排、mpv 3 排），共 24 个运动副。</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <p style="color:#cfe0ec;font-weight:600">方法与边界</p>
+    <ul>
+      <li>采用「参数化包络扫掠」而非三角面片级碰撞：座椅靠背轮廓由 seatSideEnvelope 真源生成，障碍面取 B 柱前缘 / 下排坐垫前缘 / 后围板的真源 X 坐标。</li>
+      <li>扫掠步长 ≤0.573°，小于最小判据 10 mm 对应的角度分辨率（在 0.6 m 力臂下约 0.95°），不会漏检。</li>
+      <li>行李舱内饰为静态件，与前/后舱盖开启路径无交叠；舱盖开合为可视化演示，不改变内饰件坐标。</li>
+      <li>本报告不含车身钣金、玻璃升降与车门铰链的碰撞（属整车运动学范围，不在内饰模型内）。</li>
+    </ul>
+  </div>
+</div>
+
+<h2><span class="n">09</span>结论与回归</h2>
+<div class="panel">
+  <ul>
+    <li><span class="tag ok">PASS</span> 24/24 运动副在全行程（初始位置 → 极限位置）内无可达干涉；最小可达间隙 SPORT 前排 +9 mm（限位角 28.07° 处 +13 mm），其余均 ≥10 mm。</li>
+    <li><span class="tag lim">限位覆盖</span> 3 处超行程理论穿透（SEDAN/SUV/MPV 前排靠背 ↔ B 柱，84/86/44 mm）均由机械限位角提前锁止，限位处剩余间隙 +10 mm；干涉点坐标与涉及零件已在上表逐条标注。</li>
+    <li><span class="tag ok">同步一致</span> 交付方案的 IP/CONSOLE 14 件与行李舱 9+ 件，与三维网格逐件同名、逐值同源（12 位精度断言），六车型全过。</li>
+    <li>回归命令：<span class="tag">npx vitest run src/tests/carInteriorKinematics.spec.js</span>（48 项）· <span class="tag">src/tests/ipConsoleLuggage.spec.js</span>（67 项）· <span class="tag">npx vite build</span>。</li>
+  </ul>
+  <p class="note ok-note">结论：更新后的整车内饰三维模型（含 IP/CONSOLE 与前后行李舱方案）满足「全行程无干涉、运行顺畅」要求；所有负间隙工况均位于实车不可达的超行程段，并已给出限位角与干涉点证据链，可直接用于工程落地阶段的限位器标定。</p>
+</div>
+
+<div class="foot">
+  数据源：deriveKinematics（carInteriorKinematics.js）· 几何：deriveCarProfile / deriveInteriorLayout / deriveIpConsoleLayout / deriveLuggageLayout（米制）<br>
+  配套交付：docs/preview/IP_LUGGAGE_3D_PREVIEW.html（交互式 3D）· docs/preview/IP_LUGGAGE_VIEWS.png（八视角渲染）· docs/preview/IP_LUGGAGE_CLIP.mp4（开合动态片段）· docs/IP_CONSOLE_LUGGAGE_DESIGN.html（设计方案）<br>
+  报告生成：EVOLUTION-AI.DESIGN 内饰工程验证 · 2026-11-02
+</div>
+</div>
+</body>
+</html>

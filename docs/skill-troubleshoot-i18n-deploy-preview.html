@@ -1,0 +1,136 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>troubleshoot-i18n-deploy · SKILL 预览</title><style>body{max-width:860px;margin:40px auto;padding:0 24px;font-family:"Segoe UI","Microsoft YaHei",sans-serif;color:#1a1a1a;line-height:1.75}h1{border-bottom:2px solid #4F6BED;padding-bottom:8px}h2{border-bottom:1px solid #ddd;padding-bottom:4px;margin-top:36px}table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;font-size:14px}th{background:#f2f4f8}code{background:#f4f4f4;padding:2px 6px;border-radius:4px;font-family:Consolas,monospace;font-size:13px}pre{background:#2d2d2d;color:#f8f8f2;padding:16px;border-radius:8px;overflow-x:auto}pre code{background:none;color:inherit;padding:0}blockquote{border-left:4px solid #4F6BED;margin:0;padding:4px 16px;background:#f7f9ff;color:#444}</style></head><body><h1>双语内容错位与部署黑屏：标准化排查训练手册</h1>
+<blockquote>
+<p>本素材提炼自真实案例：用户反馈&quot;学术论文中文界面显示英文&quot;→ 修复后又出现&quot;公网黑屏&quot;。全程共经历 <strong>3 次用户反馈</strong> 才闭环，根本原因是排查停在了错误的层。学完本手册后应能一轮定位。</p>
+</blockquote>
+<h2>一、问题场景</h2>
+<p>本项目的文档与站点有 <strong>三层独立的事实源</strong>，症状相同但根因在不同层：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>位置</th>
+<th>服务对象</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L1 源文件</td>
+<td><code>docs/&lt;name&gt;.md</code>（中文）、<code>docs/en/&lt;name&gt;.md</code>（英文）</td>
+<td>磁盘事实</td>
+</tr>
+<tr>
+<td>L2 构建产物</td>
+<td><code>dist/docs/**</code>（npm run build 时由 docsPlugin 复制）</td>
+<td>本地 dist / 预览</td>
+</tr>
+<tr>
+<td>L3 部署产物</td>
+<td>远端 <code>gh-pages</code> 分支（工作树 <code>D:\ghp-deploy-tmp</code>）</td>
+<td>公网 <a href="https://evolution-ai.design">https://evolution-ai.design</a></td>
+</tr>
+</tbody>
+</table>
+<p>语言路由规则（Help.vue）：中文界面取 <code>docs/&lt;file&gt;</code>，英文界面取 <code>docs/en/&lt;file&gt;</code>。</p>
+<p>两类典型症状：</p>
+<ul>
+<li><strong>A. 语言错位</strong>：中文界面点了文档节点，正文却是英文（或数字是旧口径）</li>
+<li><strong>B. 部署黑屏</strong>：公网页面全黑，控制台 JS/CSS 404</li>
+</ul>
+<h2>二、判断标准（分层定位法）</h2>
+<p><strong>核心原则：不要假设根因，从 L1 到 L3 逐层探测，每层 30 秒内可证伪。</strong></p>
+<pre><code class="language-powershell"># L1 磁盘源文件：语言对不对？数字新不新？
+Get-Content docs/EVOLUTION_AI_paper.md -TotalCount 2     # 中文应含&quot;贝叶斯&quot;
+Select-String docs/EVOLUTION_AI_paper.md -Pattern '153|955'   # 应无旧数字
+
+# L2 本地构建产物（若用户看的是 dist/预览）
+Get-Content dist/docs/EVOLUTION_AI_paper.md -TotalCount 2
+
+# L3 部署分支：gh-pages 上的内容才是公网真相
+git show origin/gh-pages:docs/EVOLUTION_AI_paper.md | Select-Object -First 2
+
+# L3 公网实测（必须加 ?_cb= 缓存破坏参数，否则测的是 CDN 缓存！）
+$cb = Get-Date -UFormat %s
+Invoke-WebRequest &quot;https://evolution-ai.design/docs/EVOLUTION_AI_paper.md?_cb=$cb&quot; -UseBasicParsing
+</code></pre>
+<p><strong>判定矩阵</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>L1 源文件</th>
+<th>L3 gh-pages</th>
+<th>公网实测</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>错</td>
+<td>—</td>
+<td>—</td>
+<td>源内容问题，修文档</td>
+</tr>
+<tr>
+<td>对</td>
+<td>错/旧</td>
+<td>错/旧</td>
+<td><strong>部署过期</strong>，需同步 gh-pages（最常见）</td>
+</tr>
+<tr>
+<td>对</td>
+<td>对</td>
+<td>错</td>
+<td>CDN 缓存，加 <code>?_cb=</code> 重测即可排除</td>
+</tr>
+<tr>
+<td>对</td>
+<td>对</td>
+<td>对</td>
+<td>用户浏览器缓存，让其 Ctrl+Shift+R</td>
+</tr>
+</tbody>
+</table>
+<p>黑屏专属判定：抓公网 <code>index.html</code> 里引用的所有 <code>assets/*.js|css</code>，逐一 HEAD：</p>
+<ul>
+<li>任一 <strong>404</strong> → gh-pages 的 assets 与 index.html 不同步（漏同步）</li>
+<li>全部 200 → 前端运行时报错，转浏览器控制台排查</li>
+</ul>
+<h2>三、操作流程</h2>
+<h3>症状 A：语言错位 / 数字过期</h3>
+<ol>
+<li>按判定矩阵定位故障层。</li>
+<li>源文件错 → 修正内容（双语文件要<strong>成对修改</strong>：<code>docs/</code> 与 <code>docs/en/</code> 同步改），内嵌 SVG 图表另算（<code>docs/images/</code> 中英两份）。</li>
+<li>改完跑 <code>npm run build</code> 刷新 dist。</li>
+<li>部署：见「deploy-gh-pages」skill——<strong>全量同步 dist/*，不许只挑目录</strong>。</li>
+<li>验证（见第四节）。</li>
+</ol>
+<h3>症状 B：部署黑屏</h3>
+<ol>
+<li>抓公网 index.html 资产引用 → 找 404 文件。</li>
+<li>对比本地 <code>dist/assets/</code> 与 <code>git -C D:\ghp-deploy-tmp ls-files assets/</code> 的文件名清单。</li>
+<li>缺失即同步：<code>Copy-Item dist\* D:\ghp-deploy-tmp -Recurse -Force</code>，然后 <code>git -C D:\ghp-deploy-tmp add -A</code>（必须 <code>-A</code>，否则旧哈希资产残留、新资产可能漏）。</li>
+<li>提交推送：<code>deploy: &lt;说明&gt; (main &lt;sha&gt;)</code> → <code>git push origin gh-pages</code>。</li>
+<li>等 30–60 秒（GitHub Pages 发布延迟），带 <code>?_cb=</code> 复验全部资产 200。</li>
+</ol>
+<h2>四、验证方法（验收标准，缺一不可）</h2>
+<pre><code class="language-powershell">$cb = Get-Date -UFormat %s
+# 1. index.html 引用的所有哈希资产必须全部 200
+$h = (Invoke-WebRequest &quot;https://evolution-ai.design/?_cb=$cb&quot; -UseBasicParsing).Content
+[regex]::Matches($h, 'assets/[^&quot;'']+\.(js|css)') | ForEach-Object { $_.Value } | Select-Object -Unique | ForEach-Object {
+  try { (Invoke-WebRequest &quot;https://evolution-ai.design/$_?_cb=$cb&quot; -Method Head -UseBasicParsing).StatusCode } catch { &quot;$_ 404 ← 不合格&quot; }
+}
+# 2. 中英路径语言断言
+#    docs/EVOLUTION_AI_paper.md      首行含&quot;贝叶斯&quot;、不含 153/955
+#    docs/en/EVOLUTION_AI_paper.md   首行含&quot;Bayesian&quot;、不含 153/955
+# 3. 首页整体 200
+</code></pre>
+<p>全部通过后告知用户：<strong>若仍见旧版，Ctrl+Shift+R 强刷</strong>（CDN/浏览器缓存非故障）。</p>
+<h2>五、注意事项（反模式清单）</h2>
+<ol>
+<li><strong>禁止无缓存破坏参数测公网</strong>——测到的是 CDN 缓存，会误判&quot;没修好&quot;或&quot;已修好&quot;。</li>
+<li><strong>禁止部分目录同步</strong>——每次 build 入口哈希名都变，只同步 <code>docs/</code>+<code>index.html</code> 而不同步 <code>assets/</code> = 必然黑屏（本项目真实事故）。</li>
+<li><strong>禁止只推 main 不推 gh-pages</strong>——公网由 gh-pages 驱动，main 推送不影响站点。</li>
+<li><strong>双语修改必须成对</strong>——只改中文版会让英文版带着旧数字继续传播；图表 SVG 也有中英两份。</li>
+<li><strong>事实数字以 <code>docs/VALIDATION_REPORT_20261025.md</code> 为唯一口径</strong>——154 端点（152 路由+2 系统）、1000+ 测试（200 算法/411 后端含 1 skip+2 xfail/416 前端）。</li>
+<li><strong>先探测再下结论</strong>——本案第一次回复误判为&quot;浏览器缓存&quot;，实际故障在 gh-pages 层；逐层探测可在首轮就定位。</li>
+</ol>
+</body></html>

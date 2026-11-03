@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>车头方向检测全量回归报告</title>
+<style>
+body{background:#0f0f1e;color:#eee;font-family:sans-serif;margin:0;padding:20px}
+h1{text-align:center;color:#2ecc71}
+.sub{text-align:center;color:#888;margin-bottom:20px}
+.summary{background:#16213e;border-radius:10px;padding:15px;margin-bottom:20px;text-align:center;font-size:18px}
+.pass{color:#2ecc71} .fail{color:#e74c3c} .warn{color:#f39c12}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;text-align:left;border-bottom:1px solid #333}
+th{background:#1a1a2e;color:#3498db}
+.pass-row{background:#0a3a0a} .fail-row{background:#3a0a0a}
+</style></head><body>
+<h1>车头方向检测全量回归报告</h1>
+<div class="sub">19款车 × 2方向 = 38用例 | 准确率 19/19 (100%)</div>
+<div class="summary">
+  <span class="pass">通过 19/19</span> |
+  <span class="fail">失败 0</span> |
+  <span class="warn">低置信 26</span>
+</div>
+<table>
+<tr><th>#</th><th>车型</th><th>原图方向</th><th>原图置信度</th><th>原图轮源</th><th>翻转方向</th><th>翻转置信度</th><th>翻转轮源</th><th>结果</th></tr>
+<tr class="pass-row"><td>1</td><td>bentley/bentayga</td><td>left</td><td>100%</td><td>brightness</td><td>right</td><td>100%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>2</td><td>bentley/flying-spur</td><td>left</td><td>30%</td><td>none(unreliable)</td><td>right</td><td>30%</td><td>none(unreliable)</td><td>✅</td></tr>
+<tr class="pass-row"><td>3</td><td>bentley/continental-gtc</td><td>left</td><td>40%</td><td>none(unreliable)</td><td>right</td><td>40%</td><td>none(unreliable)</td><td>✅</td></tr>
+<tr class="pass-row"><td>4</td><td>bentley/continental-gt</td><td>left</td><td>60%</td><td>brightness</td><td>right</td><td>60%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>5</td><td>rolls-royce/cullinan</td><td>left</td><td>60%</td><td>brightness</td><td>right</td><td>60%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>6</td><td>rolls-royce/phantom</td><td>left</td><td>30%</td><td>none(unreliable)</td><td>right</td><td>30%</td><td>none(unreliable)</td><td>✅</td></tr>
+<tr class="pass-row"><td>7</td><td>rolls-royce/ghost</td><td>left</td><td>30%</td><td>none(unreliable)</td><td>right</td><td>30%</td><td>none(unreliable)</td><td>✅</td></tr>
+<tr class="pass-row"><td>8</td><td>rolls-royce/wraith</td><td>left</td><td>80%</td><td>brightness</td><td>right</td><td>80%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>9</td><td>ferrari/f8-tributo</td><td>left</td><td>20%</td><td>brightness</td><td>right</td><td>20%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>10</td><td>ferrari/sf90</td><td>left</td><td>40%</td><td>none(unreliable)</td><td>right</td><td>40%</td><td>none(unreliable)</td><td>✅</td></tr>
+<tr class="pass-row"><td>11</td><td>ferrari/roma</td><td>left</td><td>30%</td><td>brightness</td><td>right</td><td>30%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>12</td><td>porsche/911</td><td>left</td><td>100%</td><td>brightness</td><td>right</td><td>100%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>13</td><td>porsche/taycan</td><td>left</td><td>40%</td><td>none(unreliable)</td><td>right</td><td>40%</td><td>none(unreliable)</td><td>✅</td></tr>
+<tr class="pass-row"><td>14</td><td>porsche/macan</td><td>left</td><td>30%</td><td>none(unreliable)</td><td>right</td><td>30%</td><td>none(unreliable)</td><td>✅</td></tr>
+<tr class="pass-row"><td>15</td><td>porsche/cayenne</td><td>left</td><td>20%</td><td>brightness</td><td>right</td><td>20%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>16</td><td>porsche/panamera</td><td>left</td><td>20%</td><td>brightness</td><td>right</td><td>20%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>17</td><td>bugatti/divo</td><td>left</td><td>80%</td><td>contour</td><td>right</td><td>80%</td><td>contour</td><td>✅</td></tr>
+<tr class="pass-row"><td>18</td><td>bugatti/veyron</td><td>left</td><td>20%</td><td>brightness</td><td>right</td><td>20%</td><td>brightness</td><td>✅</td></tr>
+<tr class="pass-row"><td>19</td><td>bugatti/chiron</td><td>left</td><td>40%</td><td>none(unreliable)</td><td>right</td><td>40%</td><td>none(unreliable)</td><td>✅</td></tr>
+</table></body></html>

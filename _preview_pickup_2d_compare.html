@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>皮卡 2D 渲染 · 修复前后对比（1bfb91ef）</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background:#0F1622; color:#E5E9F0; font-family:'Segoe UI','Microsoft YaHei',sans-serif; padding:28px 20px 40px; }
+  .wrap { max-width:1240px; margin:0 auto; }
+  h1 { font-size:20px; font-weight:600; letter-spacing:.5px; margin-bottom:6px; }
+  .sub { color:#8B98A9; font-size:12.5px; margin-bottom:22px; line-height:1.8; }
+  .sub code { color:#38BDF8; font-family:Consolas,monospace; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:980px){ .grid { grid-template-columns:1fr; } }
+  .panel { background:#131C2B; border:1px solid #1E2A3A; border-radius:14px; overflow:hidden; }
+  .panel-head { display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid #1E2A3A; font-size:14px; font-weight:600; }
+  .panel-head .tag { font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600; margin-left:auto; }
+  .before .panel-head { color:#FF6B6B; } .before .panel-head .tag { background:rgba(255,107,107,.14); color:#FF6B6B; }
+  .after  .panel-head { color:#34D399; } .after  .panel-head .tag { background:rgba(52,211,153,.14); color:#34D399; }
+  .panel svg { display:block; width:100%; height:auto; }
+  ul { list-style:none; padding:12px 16px 16px; }
+  li { font-size:12.5px; line-height:1.75; color:#B7C2D0; padding-left:1.5em; position:relative; }
+  li::before { content:attr(data-n); position:absolute; left:0; }
+  .before li::before { color:#FF6B6B; } .after li::before { color:#34D399; }
+  li b { color:#E5E9F0; font-weight:600; }
+  .foot { margin-top:18px; font-size:12px; color:#6B7A8D; line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>皮卡（Pickup）2D 渲染 · 修复前后对比</h1>
+  <div class="sub">
+    两图使用同一组 <code>carPresets</code> 官方参数（L 5600 / W 1980 / H 1880 / WB 3450 / GC 230 / 轮径 780 mm），
+    差异仅来自<b style="color:#E5E9F0">比例语义</b>（特征线基准）与<b style="color:#E5E9F0">拓扑结构</b>（驾驶室 / 货箱分段）修正 · 修复提交 <code>1bfb91ef</code>
+  </div>
+  <div class="grid">
+    <div class="panel before">
+      <div class="panel-head">修复前 · 缺陷态 <span class="tag">旅行车化轮廓</span></div>
+      <div id="svg-before"></div>
+      <ul>
+        <li data-n="①"><b>车顶贯通至车尾</b>——无驾驶室 / 货箱分段，皮卡被渲染成旅行车轮廓（拓扑缺失）</li>
+        <li data-n="②"><b>腰带线自 underbody 起算</b>——实际离地 = GC + 0.72H ≈ 1584mm，较 F-150 基准 ≈1240mm 偏高约 344mm</li>
+        <li data-n="③"><b>车顶绘制高度 = GC + H = 2110mm</b>——与 H 标注 1880mm 不符，整车虚高 230mm（名实不符）</li>
+        <li data-n="④"><b>高度比例写死于组件</b>（0.60 / 0.72 / 0.80），与 3D 端（0.76 / 0.62 / 0.66）互不一致</li>
+      </ul>
+    </div>
+    <div class="panel after">
+      <div class="panel-head">修复后 · 1bfb91ef <span class="tag">皮卡专属拓扑</span></div>
+      <div id="svg-after"></div>
+      <ul>
+        <li data-n="①"><b>短驾驶室 + 开放货箱</b>——车顶止于驾驶室后壁（后轴中心前 500mm，F-150 基准），货箱段 ≈1600mm ≈ F-150 1676mm 等比</li>
+        <li data-n="②"><b>LINE_RATIOS 离地语义</b>——腰带 = 0.66H = 1241mm、货箱栏板顶 = 0.58H = 1090mm，与官方基准对齐</li>
+        <li data-n="③"><b>车顶 = H = 1880mm</b>——H 标注名实相符，整车高度与标注严格一致</li>
+        <li data-n="④"><b>2D / 3D 同源共享</b>——比例唯一来源迁移至 carProfile.js，测试组 12 逐点交叉校验一致（全量 167/167 通过）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot">
+    本页为本地验证预览（public/_* 约定，不入库）· 渲染公式与 src/components/Car2D.vue 及 src/utils/carProfile.js 完全一致 ·
+    修复前几何复现自旧版管线（underbody 高度基准 + 贯通车顶轮廓 + 本地写死比例表）
+  </div>
+</div>
+<script>
+// Pickup 官方参数（src/config/carPresets.js）
+const P = { FO:1050, WB:3450, RO:1100, W:1980, H:1880, gc:230, hoodLen:1350, wd:780, wa:28, rwa:20, rsa:15 }
+const R2 = n => Math.round(n * 100) / 100
+
+function render(mode) {
+  const after = mode === 'after'
+  const SW = 800, SH = 420, padTop = 30, dimH = 84
+  const gY = SH - dimH
+  const L = P.FO + P.WB + P.RO
+
+  // 缩放：修复前高度约束 = H + GC（旧语义），修复后 = H（离地总高语义）
+  const denom = after ? P.H : P.H + P.gc
+  const scale = Math.min((SW - 150) / L, (gY - padTop) / denom)
+  const s = v => v * scale
+
+  const rearX = s(L), fwx = s(P.FO), rwx = s(P.FO + P.WB)
+  const wr = s(P.wd / 2), wcy = gY - wr
+  const uy = gY - s(P.gc) // underbody（侧裙下缘）
+
+  // 特征线：修复前自 underbody 起算（写死 0.60/0.72/0.80），修复后自地面起算（LINE_RATIOS 离地语义）
+  const roof  = after ? gY - s(P.H)          : uy - s(P.H)
+  const belt  = after ? gY - s(P.H * 0.66)   : uy - s(P.H * 0.72)
+  const hoodL = after ? gY - s(P.H * 0.62)   : uy - s(P.H * 0.60)
+  const tail  = after ? gY - s(P.H * 0.58)   : uy - s(P.H * 0.80) // 修复后 = 货箱栏板顶
+
+  const hoodEnd = Math.min(s(P.hoodLen), rearX * 0.42)
+  const rise = hoodL - belt
+  const run = Math.min(s(140), Math.max(rise * 0.9, s(20)))
+  const cowl = Math.max(hoodEnd - run, s(30))
+
+  const tailRes = Math.max(s(90), rearX * 0.06)
+  const wsRun = (belt - roof) / Math.tan(P.wa * Math.PI / 180)
+  const wsTop = Math.min(Math.max(hoodEnd + wsRun, hoodEnd + s(120)), rearX - tailRes - s(120))
+
+  const slant = Math.min(Math.max(P.rsa / 60, 0), 1)
+  const maxRoof = rearX - tailRes - wsTop
+  const minRoof = Math.min(maxRoof, Math.max(s(400), maxRoof * 0.25))
+  const roofLen = Math.max(maxRoof * (1 - slant * 0.6), minRoof)
+
+  let rwTop, rwBot
+  if (after) {
+    // 皮卡专属：车顶止于驾驶室后壁（后轮中心朝车头 500mm），后窗近直立微向前收
+    rwTop = Math.max(rwx - s(500), wsTop + s(300))
+    rwBot = rwTop - s(120)
+  } else {
+    // 旧管线：贯通车顶 + C 柱斜滑至腰带（旅行车化的来源）
+    rwTop = wsTop + roofLen
+    const vertH = (belt - roof) * (0.5 + slant * 0.35)
+    const tanR = Math.tan(P.rwa * Math.PI / 180)
+    const rr = tanR > 0.05 ? vertH / tanR : (rearX - tailRes - rwTop)
+    rwBot = Math.min(Math.max(rwTop + rr, rwTop + s(30)), rearX - tailRes)
+  }
+
+  const ar = wr * 1.16
+  const dy = Math.max(uy - wcy, 0)
+  const chord = Math.sqrt(Math.max(ar * ar - dy * dy, (wr * 0.35) ** 2))
+  const fAL = Math.max(fwx - chord, s(30))
+  const fAR = Math.min(fwx + chord, rwx - chord - s(20))
+  const rAL = rwx - chord
+  const rAR = Math.min(rwx + chord, rearX - s(20))
+
+  const noseR = Math.min(s(90), s(P.FO) * 0.5)
+  const arches = `L${R2(rAR)},${R2(uy)} A${R2(ar)},${R2(ar)} 0 1 0 ${R2(rAL)},${R2(uy)} L${R2(fAR)},${R2(uy)} A${R2(ar)},${R2(ar)} 0 1 0 ${R2(fAL)},${R2(uy)} L0,${R2(uy)} Z`
+  const head = `M0,${R2(uy)} L0,${R2(hoodL + s(55))} Q${R2(noseR)},${R2(hoodL)} ${R2(cowl)},${R2(hoodL)} L${R2(hoodEnd)},${R2(belt)} L${R2(wsTop)},${R2(roof)}`
+
+  const silhouette = after
+    ? `${head} L${R2(rwTop)},${R2(roof)} L${R2(rwBot)},${R2(tail)} L${R2(rearX - s(24))},${R2(tail)} Q${R2(rearX)},${R2(tail + s(8))} ${R2(rearX)},${R2(tail + s(48))} L${R2(rearX)},${R2(uy + s(26))} Q${R2(rearX)},${R2(uy)} ${R2(rearX - s(36))},${R2(uy)} ${arches}`
+    : `${head} L${R2(rwTop)},${R2(roof)} L${R2(rwBot)},${R2(belt)} Q${R2(rearX - s(20))},${R2(tail + s(16))} ${R2(rearX)},${R2(tail + s(56))} L${R2(rearX)},${R2(uy + s(26))} Q${R2(rearX)},${R2(uy)} ${R2(rearX - s(36))},${R2(uy)} ${arches}`
+
+  const windowD = `M${R2(hoodEnd)},${R2(belt)} L${R2(wsTop)},${R2(roof)} L${R2(rwTop)},${R2(roof)} L${R2(rwBot)},${R2(belt)} Z`
+  const beltD = `M${R2(hoodEnd)},${R2(belt)} L${R2(after ? rwTop : rwBot)},${R2(belt)}`
+  const pillarX = wsTop + (rwTop - wsTop) * 0.55
+
+  const wheel = cx => `<circle cx="${R2(cx)}" cy="${R2(wcy)}" r="${R2(wr)}" fill="rgba(10,12,18,0.9)" stroke="rgba(255,255,255,0.75)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="${R2(cx)}" cy="${R2(wcy)}" r="${R2(wr * 0.58)}" fill="none" stroke="rgba(74,222,128,0.55)" stroke-width="1" vector-effect="non-scaling-stroke"/><circle cx="${R2(cx)}" cy="${R2(wcy)}" r="${R2(wr * 0.12)}" fill="rgba(255,255,255,0.5)"/>`
+
+  // 缺陷 / 修正点标记（对应下方清单 ①②）
+  const mark = after
+    ? `<text x="440" y="102" fill="#34D399" font-size="14" font-weight="600">①</text><text x="548" y="204" fill="#34D399" font-size="14" font-weight="600">②</text>`
+    : `<text x="540" y="78" fill="#FF6B6B" font-size="14" font-weight="600">①</text><text x="665" y="120" fill="#FF6B6B" font-size="14" font-weight="600">②</text>`
+
+  const d1 = gY + 20, d2 = gY + 42, d3 = gY + 64
+  return `<svg viewBox="0 0 800 420" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" font-family="Inter,'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs><pattern id="grid-${mode}" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs>
+  <rect width="100%" height="100%" fill="url(#grid-${mode})"/>
+  <ellipse cx="${R2((fwx + rwx) / 2)}" cy="${gY}" rx="${R2((P.WB + P.wd * 1.6) / 2 * scale)}" ry="${R2(s(12))}" fill="rgba(0,0,0,0.5)"/>
+  <path d="${silhouette}" fill="rgba(74,222,128,0.06)" stroke="#4ade80" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+  <path d="${windowD}" fill="rgba(59,130,246,0.12)" stroke="#3b82f6" stroke-width="1.1" vector-effect="non-scaling-stroke"/>
+  <line x1="${R2(pillarX)}" y1="${R2(roof + s(60))}" x2="${R2(pillarX)}" y2="${R2(belt - s(40))}" stroke="rgba(59,130,246,0.55)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+  <path d="${beltD}" fill="none" stroke="rgba(74,222,128,0.55)" stroke-width="1" stroke-dasharray="4,3" vector-effect="non-scaling-stroke"/>
+  ${wheel(fwx)}${wheel(rwx)}
+  <line x1="-24" y1="${gY}" x2="${R2(rearX + 48)}" y2="${gY}" stroke="rgba(255,255,255,0.22)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+  <g font-size="11">
+    <line x1="0" y1="${gY + 3}" x2="0" y2="${d3 + 4}" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <line x1="${R2(fwx)}" y1="${gY + 3}" x2="${R2(fwx)}" y2="${d2 + 4}" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <line x1="${R2(rwx)}" y1="${gY + 3}" x2="${R2(rwx)}" y2="${d2 + 4}" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <line x1="${R2(rearX)}" y1="${gY + 3}" x2="${R2(rearX)}" y2="${d3 + 4}" stroke="rgba(255,255,255,0.32)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <line x1="0" y1="${d1}" x2="${R2(fwx)}" y2="${d1}" stroke="#00ff88" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <text x="${R2(fwx / 2)}" y="${d1 - 5}" text-anchor="middle" fill="#00ff88" font-weight="600">FO ${P.FO}mm</text>
+    <line x1="${R2(rwx)}" y1="${d1}" x2="${R2(rearX)}" y2="${d1}" stroke="#ff6b6b" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <text x="${R2((rwx + rearX) / 2)}" y="${d1 - 5}" text-anchor="middle" fill="#ff6b6b" font-weight="600">RO ${P.RO}mm</text>
+    <line x1="${R2(fwx)}" y1="${d2}" x2="${R2(rwx)}" y2="${d2}" stroke="rgba(255,255,255,0.6)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <text x="${R2((fwx + rwx) / 2)}" y="${d2 - 5}" text-anchor="middle" fill="rgba(255,255,255,0.78)">WB ${P.WB}mm</text>
+    <line x1="0" y1="${d3}" x2="${R2(rearX)}" y2="${d3}" stroke="rgba(255,255,255,0.6)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <text x="${R2(rearX / 2)}" y="${d3 - 5}" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-weight="600">L ${L}mm</text>
+    <line x1="${R2(rwTop)}" y1="${R2(roof)}" x2="${R2(rearX + 48)}" y2="${R2(roof)}" stroke="rgba(255,255,255,0.32)" stroke-width="1" stroke-dasharray="3,3" vector-effect="non-scaling-stroke"/>
+    <line x1="${R2(rearX + 44)}" y1="${gY}" x2="${R2(rearX + 44)}" y2="${R2(roof)}" stroke="rgba(255,255,255,0.6)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <text transform="rotate(-90 ${R2(rearX + 56)} ${R2((gY + roof) / 2)})" x="${R2(rearX + 56)}" y="${R2((gY + roof) / 2)}" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-weight="600">H ${P.H}mm</text>
+    <text x="${R2(rearX + 44)}" y="${R2(roof - 10)}" text-anchor="end" fill="rgba(255,255,255,0.55)">W ${P.W}mm</text>
+  </g>
+  ${mark}
+</svg>`
+}
+
+document.getElementById('svg-before').innerHTML = render('before')
+document.getElementById('svg-after').innerHTML = render('after')
+</script>
+</body>
+</html>

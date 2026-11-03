@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>v15 官网候选视觉验证</title>
+<style>
+body{background:#0f0f1e;color:#eee;font-family:sans-serif;margin:0;padding:20px}
+h1{text-align:center;margin-bottom:10px}
+.sub{text-align:center;color:#888;margin-bottom:20px;font-size:13px}
+.brand-section{margin-bottom:40px;border:1px solid #333;border-radius:10px;padding:15px;background:#16213e}
+.brand-title{font-size:20px;color:#e94560;margin-bottom:10px;font-weight:bold}
+.car-block{margin-bottom:25px}
+.car-title{font-size:16px;color:#0f3460;background:#e94560;display:inline-block;padding:4px 12px;border-radius:4px;margin-bottom:10px;font-weight:bold}
+.candidates{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.cand{background:#1a1a2e;border:2px solid transparent;border-radius:6px;overflow:hidden;cursor:pointer;position:relative}
+.cand:hover{border-color:#e94560}
+.cand img{width:100%;height:170px;object-fit:contain;background:#000;display:block}
+.cand .meta{padding:6px 8px;font-size:11px;color:#aaa;background:#16213e}
+.cand .fname{color:#e94560;font-weight:bold}
+.cand .dims{color:#0f3460;background:#eee;padding:1px 4px;border-radius:2px;margin-left:4px}
+.pass{border-color:#2ecc71 !important}
+.pass-badge{position:absolute;top:5px;right:5px;background:#2ecc71;color:#000;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:bold}
+</style></head><body>
+<h1>v15 官网候选图视觉验证</h1>
+<div class="sub">仅官网来源（BMW mediapool / Bugatti newsroom / Bentley motors / Porsche newsroom / Ferrari.com）| 请逐张检查：正侧视90° + 纯净背景 + 车型正确</div>
+<div id="root"></div>
+<script>
+const CARS = [
+  ["rolls-royce","ghost","Rolls-Royce Ghost"],
+  ["rolls-royce","cullinan","Rolls-Royce Cullinan"],
+  ["bugatti","chiron","Bugatti Chiron"],
+  ["bugatti","veyron","Bugatti Veyron"],
+  ["bugatti","divo","Bugatti Divo"],
+  ["bentley","continental-gt","Bentley Continental GT"],
+  ["bentley","continental-gtc","Bentley Continental GTC"],
+  ["bentley","flying-spur","Bentley Flying Spur"],
+  ["bentley","bentayga","Bentley Bentayga"],
+  ["porsche","taycan","Porsche Taycan"],
+  ["ferrari","sf90","Ferrari SF90"],
+  ["ferrari","f8-tributo","Ferrari F8 Tributo"],
+  ["ferrari","roma","Ferrari Roma"]
+];
+
+async function exists(url){
+  try{const r=await fetch(url,{method:'HEAD'});return r.ok;}catch(e){return false;}
+}
+
+async function build(){
+  const root=document.getElementById('root');
+  for(const [brand,model,name] of CARS){
+    const section=document.createElement('div');
+    section.className='car-block';
+    const title=document.createElement('div');
+    title.className='car-title';
+    title.textContent=name;
+    section.appendChild(title);
+
+    const grid=document.createElement('div');
+    grid.className='candidates';
+
+    // 尝试 cand_01 到 cand_40
+    for(let i=1;i<=40;i++){
+      const fname=`cand_${String(i).padStart(2,'0')}.jpg`;
+      const url=`/_candidates_v15/${brand}/${model}/${fname}`;
+      // 也检查带 dok 号的文件名（Rolls-Royce）
+      const urlPattern=`/_candidates_v15/${brand}/${model}/`;
+      if(!await exists(url)) continue;
+      const cand=document.createElement('div');
+      cand.className='cand';
+      cand.innerHTML=`<img src="${url}" loading="lazy" onerror="this.parentElement.style.display='none'">
+        <div class="meta"><span class="fname">${fname}</span></div>`;
+      grid.appendChild(cand);
+    }
+
+    // 检查带 dok 号的文件（Rolls-Royce 格式: cand_01_P90401223.jpg）
+    // 用目录列表不可行，改为检查已知 dok 号
+    if(brand==="rolls-royce"){
+      const doks = model==="ghost" 
+        ? ["P90401223","P90401224","P90612626","P90651071","P90651072","P90651074","P90651076","P90651078","P90649576","P90649577","P90649578","P90649579","P90649580","P90649581"]
+        : ["P90549024","P90549026","P90549025","P90403691","P90403692","P90403693","P90403694","P90403695","P90403696","P90403697","P90403698","P90403699","P90403700","P90403701","P90403702","P90403703","P90403704","P90403705","P90403706","P90403707","P90403708","P90403709","P90403710","P90403711","P90403712","P90403713","P90403714","P90403715","P90403716","P90403717","P90403718","P90403719","P90403720","P90403721","P90403722","P90403723"];
+      for(let idx=0;idx<doks.length;idx++){
+        const fname=`cand_${String(idx+1).padStart(2,'0')}_${doks[idx]}.jpg`;
+        const url=`/_candidates_v15/${brand}/${model}/${fname}`;
+        if(!await exists(url)) continue;
+        const cand=document.createElement('div');
+        cand.className='cand';
+        cand.innerHTML=`<img src="${url}" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <div class="meta"><span class="fname">${doks[idx]}</span></div>`;
+        grid.appendChild(cand);
+      }
+    }
+
+    if(grid.children.length===0){
+      const empty=document.createElement('div');
+      empty.style.color='#888';
+      empty.textContent='（无候选图）';
+      section.appendChild(empty);
+    } else {
+      const count=document.createElement('div');
+      count.style.cssText='color:#888;font-size:12px;margin-bottom:8px;';
+      count.textContent=`${grid.children.length} 张候选`;
+      section.appendChild(count);
+      section.appendChild(grid);
+    }
+    root.appendChild(section);
+  }
+}
+build();
+</script>
+</body></html>
