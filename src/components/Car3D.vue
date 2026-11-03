@@ -111,12 +111,13 @@ import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline
 import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
-import { createSeatRow, createInteriorTrim, createIpConsole, createLuggageTrim, createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
+import { createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
 import { deriveInteriorLayout } from '../utils/carInteriorLayout.js'
 import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from '../three/geometry/smoothing.js'
 import { disposeObject } from '../three/dispose.js'
 import { createDoorRig } from '../three/parts/doors.js'
 import { addBandGlass, addDloPane } from '../three/parts/glass.js'
+import { addInteriorSeats } from '../three/interior/seats.js'
 
 const { t } = useI18n()
 
@@ -503,50 +504,16 @@ const alignNurbsToProfile = (body, mesh, P) => {
 }
 
 /**
- * 门板内饰 + 扶手重挂到对应车门铰链。
- *
- * createInteriorTrim 产出的是世界坐标网格（BoxGeometry 居中、position = AABB 中心），
- * 这里把 position 减去铰链轴（x / z，铰链 y=0），再挂为铰链子节点：
- * 之后与门板/门玻璃同轴同角度旋转 → 开门时门板内饰与扶手随门一同摆出。
- * 按网格名 `door-{trim|armrest}-{front|rear}-{left|right}` 与 doorHinges 的 { key, sign } 配对。
- * NURBS 路径无门铰链（doorHinges 为空）→ 保持原位挂载。
+ * 内饰座椅 + 舱内附件装配：几何与挂载全部在 three/interior/seats.js（P2 拆分）。
+ * 调用时序是契约——必须在 createDoorRig 之后，否则门板内饰拿不到铰链、开门时不跟动。
  */
-const attachDoorTrimToHinges = (trimGroup) => {
-  if (!doorHinges.length) return
-  // 遍历快照：reparent 会从 trimGroup 摘除子节点并改写 children
-  for (const mesh of [...trimGroup.children]) {
-    const m = /^door-(trim|armrest)-(front|rear)-(left|right)$/.exec(mesh.name)
-    if (!m) continue
-    const key = m[2]
-    const sign = m[3] === 'left' ? -1 : 1
-    const target = doorHinges.find((d) => d.key === key && d.sign === sign)
-    if (!target) continue
-    mesh.position.x -= target.hinge.position.x
-    mesh.position.z -= target.hinge.position.z
-    target.hinge.add(mesh)
-  }
-}
-
-/** 按 carProfile 座椅布局逐排生成内饰座椅并挂入父级（挤出路径与 NURBS 路径共用） */
-const addInteriorSeats = (parent, P) => {
-  const preset = resolveSeatPreset(props.carType, props.carParams)
-  for (let row = 1; row <= (P.seatRows || 1); row++) {
-    parent.add(createSeatRow(P, row, { materialVariant: preset }))
-  }
-  // 其余内饰件（门板内饰 / 中央通道 / 顶棚 / 地毯 / 安全带固定点）与座椅同一父级、同一坐标源
-  const trim = createInteriorTrim(P)
-  parent.add(trim)
-  attachDoorTrimToHinges(trim)
-  // IP/CONSOLE 功能模块 + 前/后行李舱内饰（deriveIpConsoleLayout / deriveLuggageLayout 同一真源）
-  parent.add(createIpConsole(P))
-  parent.add(createLuggageTrim(P))
-}
-
 const createCar = () => {
   // 每次重建先清空门铰链/门缝引用：NURBS 路径不建门，若残留上一台车的铰链会让
   // 门板内饰误挂到已销毁的 Group。动画每帧读取的也是这里的引用，必须同源。
   doorHinges = []
   doorSeams = []
+  // 座椅材质预设由调用方解析（内饰模块不读 props）
+  const seatPreset = resolveSeatPreset(props.carType, props.carParams)
   // 有后端真实网格时走高保真路径：车身先对齐到 carProfile 坐标系，再与内饰件同父级共存
   if (props.nurbsMesh) {
     const P = deriveCarProfile(props.carParams, props.carType)
@@ -554,7 +521,7 @@ const createCar = () => {
     const body = createNurbsCar(props.nurbsMesh)
     alignNurbsToProfile(body, props.nurbsMesh, P)
     root.add(body)
-    addInteriorSeats(root, P)
+    addInteriorSeats({ parent: root, P, preset: seatPreset, doorHinges })
     return root
   }
   const group = new THREE.Group()
@@ -1246,7 +1213,7 @@ const createCar = () => {
   // ---- 内饰座椅：按 carProfile 的座椅布局（seatRows / seatRowCounts / H 点 / 排距）逐排生成 ----
   // 纯参数化几何、无贴图；由 createCar 统一构建 → 车型切换时随 updateCar() 整体重建。
   // 玻璃为 depthWrite:false 透明件，座舱内座椅可从风挡/侧窗看到。
-  addInteriorSeats(group, P)
+  addInteriorSeats({ parent: group, P, preset: seatPreset, doorHinges })
 
   return group
 }
