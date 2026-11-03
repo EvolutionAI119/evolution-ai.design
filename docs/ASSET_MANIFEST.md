@@ -51,7 +51,7 @@
 | W-05 | 3D 预览调试 | 截图 → 根因分类 → 最小修复 → 多机位复验 | S-06 | skill 触发 + 浏览器实机 | 可用 |
 | W-06 | 发布闭环 | vitest → build → dist 全量同步 → 公网 MD5 比对 | S-01 | 手动授权后执行 | 可用（**冻结中**） |
 | W-07 | 训练评审 | 训练完成 → `POST /workflows/training-review` → 合规性审核 → 质量审核 | 后端 workflow 路由、登录 Token | API：9 个 `/workflows` 端点 | 可用 |
-| W-08 | 贝叶斯优化 | 参数空间（14 维）→ RBF-GP → EI/UCB 建议 | `bayes_optimizer.py` | 后端 bayes 路由 | 可用；无自动双判据收敛（雏形） |
+| W-08 | 贝叶斯优化 | 参数空间（14 维）→ RBF-GP → EI/UCB 建议 → 双判据收敛参考 | `bayes_optimizer.py` | 后端 bayes 路由 | 可用；`convergence()` 输出停滞+离散度双判据（仅作停止参考） |
 
 ### 3.1 工作流节点契约（标准化封装）
 
@@ -147,5 +147,5 @@ description: <触发词：中文/English；明确“不用于……”>
 | 无编排器/评审 agent | 任务路由靠人工与描述匹配 | M3 增加 A-02/A-03 |
 | 内饰校验未技能化（S-08 雏形） | L1~L5 每次靠人记文档 | M3 封装为 skill + 脚本 |
 | W-04 依赖 SISA 侧手工执行 | 同步不可自动验证 | 增加只读核对脚本（不回流） |
-| W-08 无自动收敛 | 需人工判停 | 保持现状，文档标注“停止参考” |
+| W-08 收敛为参考信号 | `convergence()` 只判停、不自动终止会话；阈值需按项目标定量标定 | 会话摘要已暴露该字段，按需调 `window`/`improvement_eps`/`score_std_eps` |
 | 数据集无版本/许可字段 | 无法追溯来源 | 在 data_card 增加 `version` / `license` 列 |

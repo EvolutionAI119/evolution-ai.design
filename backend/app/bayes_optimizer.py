@@ -311,6 +311,65 @@ class BayesSession:
             ],
         }
 
+    def convergence(self, *, window: int = 5, improvement_eps: float = 0.05,
+                    score_std_eps: float = 0.05,
+                    min_observations: int = 8) -> Dict[str, Any]:
+        """双判据自动收敛参考（W-08）
+
+        只在**参考**层面给出「可以停」的信号，不替调用方自动终止会话：
+          ① 改进停滞：最近 `window` 次观测内最优值相对提升 ≤ `improvement_eps`；
+          ② 探索饱和：同一窗口内观测分数的标准差 ≤ `score_std_eps` × |最优值|。
+        两条同时满足才标记 `converged=True`；观测数不足 `min_observations` 时
+        只报告 `ready=False`，避免早期样本噪声误判。
+
+        方向统一用内部最大化分数（minimize 已取负），与 `best()` 同源。
+        """
+        window = max(2, int(window))
+        n = len(self.observations)
+        result: Dict[str, Any] = {
+            "converged": False,
+            "ready": n >= max(1, int(min_observations)),
+            "n_observations": n,
+            "window": window,
+            "best_score": self.best()["score"] if n else None,
+            "criteria": {
+                "improvement_eps": float(improvement_eps),
+                "score_std_eps": float(score_std_eps),
+                "min_observations": int(min_observations),
+            },
+        }
+        if not result["ready"]:
+            result["reason"] = (
+                f"观测数 {n} < {int(min_observations)}，暂不给出收敛判断")
+            return result
+
+        y = self._internal_scores()
+        tail = y[-window:]
+        base = float(tail[0])
+        best_now = float(tail.max())
+        denom = max(abs(base), abs(best_now), 1e-9)
+        improvement = (best_now - base) / denom
+        score_std = float(tail.std()) / max(abs(best_now), 1e-9)
+
+        stop_by_improvement = improvement <= improvement_eps
+        stop_by_std = score_std <= score_std_eps
+        result["criteria"].update({
+            "improvement": round(improvement, 6),
+            "score_std": round(score_std, 6),
+            "stop_by_improvement": stop_by_improvement,
+            "stop_by_std": stop_by_std,
+        })
+        result["converged"] = stop_by_improvement and stop_by_std
+        result["reason"] = (
+            "双判据满足：目标改进停滞且观测离散度低，可参考停止"
+            if result["converged"] else
+            "未收敛：" + "、".join(filter(None, [
+                None if stop_by_improvement else "目标仍在提升",
+                None if stop_by_std else "观测离散度仍高",
+            ]))
+        )
+        return result
+
     def summary(self) -> Dict[str, Any]:
         return {
             "session_id": self.session_id,
@@ -320,6 +379,7 @@ class BayesSession:
             "n_observations": len(self.observations),
             "space": self.space.to_spec(),
             "best": self.best(),
+            "convergence": self.convergence(),
         }
 
 
