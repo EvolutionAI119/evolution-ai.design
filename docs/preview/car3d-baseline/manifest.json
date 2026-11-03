@@ -13,7 +13,8 @@
     "front": "正交，dist=5（半视口高 3）",
     "left": "正交，dist=5（半视口高 3）",
     "iso45": "透视，rotation=(π/4, π/4)，dist=10",
-    "interior": "透视 + 开门，默认 rotation=(0.4, 0.8)，dist=8"
+    "interior": "透视 + 开门，默认 rotation=(0.4, 0.8)，dist=8",
+    "cockpit": "座舱内，rotation=(0.02, π)，dist=1，pan=(0,0)"
   },
   "doorAngle": "默认 70°（carParams.door_open_angle），由开门按钮驱动缓动",
   "shots": [
@@ -25,8 +26,8 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -50,8 +51,8 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
@@ -75,8 +76,8 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -100,8 +101,8 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
@@ -125,8 +126,8 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -150,8 +151,8 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
@@ -175,8 +176,8 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -200,8 +201,58 @@
       "type": "sedan",
       "width": 1280,
       "height": 800,
-      "meshes": 197,
-      "triangles": 43124,
+      "meshes": 201,
+      "triangles": 43268,
+      "hingeMaxY": 1.222,
+      "doorBtnActive": true,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.9
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.9
+        ]
+      }
+    },
+    {
+      "name": "cockpit-door0",
+      "note": "座舱内视角（看向右前门） · 关门",
+      "view": "perspective",
+      "door": false,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 201,
+      "triangles": 43268,
+      "hingeMaxY": 0,
+      "doorBtnActive": false,
+      "bbox": {
+        "min": [
+          -2.585,
+          0,
+          -1.108
+        ],
+        "max": [
+          2.464,
+          1.472,
+          1.108
+        ]
+      }
+    },
+    {
+      "name": "cockpit-door1",
+      "note": "座舱内视角（看向右前门） · 开门 70°",
+      "view": "perspective",
+      "door": true,
+      "type": "sedan",
+      "width": 1280,
+      "height": 800,
+      "meshes": 201,
+      "triangles": 43268,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {

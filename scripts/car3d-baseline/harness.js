@@ -12,6 +12,8 @@ const door = q.get('door') === '1'
 const type = q.get('type') || 'sedan'
 const width = Number(q.get('w') || 1280)
 const height = Number(q.get('h') || 800)
+// 非预设机位（cockpit）：{rotX, rotY, distance, panX, panY}，由采集脚本按分镜传入
+const pose = q.get('pose') ? JSON.parse(q.get('pose')) : null
 
 const root = document.getElementById('app')
 root.style.width = `${width}px`
@@ -97,8 +99,11 @@ const run = async () => {
   document.querySelectorAll('.control-buttons .ctrl-btn')[2]
     ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
   await wait(200)
-  // 瞬时定位到预设机位（与帧率解耦），再留一帧让渲染落地
-  window.__CAR3D_SCENES__?.[0]?.userData?.__car3d__?.setViewInstant?.(view)
+  // 瞬时定位到预设机位（与帧率解耦），再留一帧让渲染落地；
+  // cockpit 等非预设机位走 setCameraPose，按采集脚本给定的位姿落位
+  const hook = window.__CAR3D_SCENES__?.[0]?.userData?.__car3d__
+  if (pose) hook?.setCameraPose?.(pose)
+  else hook?.setViewInstant?.(view)
   await wait(250)
   if (door) {
     // 瞬时摆到 70° 稳态：不依赖 rAF 计时，保证分镜可重复

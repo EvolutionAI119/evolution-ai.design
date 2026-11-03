@@ -4,7 +4,7 @@
 |---|---|
 | 版本 | P0-2026-11-03 |
 | 用途 | Car3D 拆分（P1~P4）与开门/内饰改动的回归判据 |
-| 产物 | [car3d-baseline/](preview/car3d-baseline/)：8 张 PNG + `manifest.json`（合计约 824 KB） |
+| 产物 | [car3d-baseline/](preview/car3d-baseline/)：10 张 PNG + `manifest.json`（合计约 990 KB） |
 | 采集脚本 | [car3d_baseline.mjs](../scripts/car3d_baseline.mjs)（puppeteer-core + 本机 Edge） |
 | 比对脚本 | [car3d_baseline_compare.mjs](../scripts/car3d_baseline_compare.mjs)（pixelmatch + 指标容差） |
 
@@ -24,6 +24,7 @@
 | `left-door0/1` | 正交 `left`，dist=5 | 驾驶员侧纯侧视 |
 | `iso45-door0/1` | 透视 `isometric`，rotation=(π/4, π/4)，dist=10 | 45° 等轴 |
 | `interior-door0/1` | 透视 `perspective`，默认 rotation=(0.4, 0.8)，dist=8 | 内饰观察位（开门）；Car3D 无独立内饰机位，用该固定机位代理 |
+| `cockpit-door0/1` | 座舱内，rotation=(0.02, π)，dist=1.0，pan=(0,0) | 车内看向右前门；D-1 门内板验收机位（非预设机位，经 `setCameraPose` 瞬时落位） |
 
 ## 2. 生成与比对
 
@@ -47,24 +48,24 @@ node scripts/car3d_baseline_compare.mjs --cur docs/preview/car3d-baseline/_curre
 
 退出码 `0` 全通过、`1` 有差异、`2` 缺文件。差异图（`*.diff.png`）与 `_current/` 为临时产物，**不提交**。
 
-可重复性：相机与门位姿均通过 `scene.userData.__car3d__` 的 `setViewInstant` / `setDoor` 瞬时定位，不依赖帧率与缓动；连续两次采集比对 **8/8 通过、像素差 0.00%**（2026-11-03）。
+可重复性：相机与门位姿均通过 `scene.userData.__car3d__` 的 `setViewInstant` / `setCameraPose` / `setDoor` 瞬时定位，不依赖帧率与缓动；连续两次采集比对 **10/10 通过、像素差 0.00%**（2026-11-03）。
 
 ## 3. 基线数值（sedan）
 
-- 网格数 197，三角面 43124（8 个分镜一致；开门只旋转铰链，不改变拓扑）。
+- 网格数 201，三角面 43268（10 个分镜一致；开门只旋转铰链，不改变拓扑）。
 - 铰链峰值角：`door0 = 0`，`door1 = 1.222 rad`（70°）。
 - 包围盒（以 `front-door0` 为例）：`min [-2.585, 0, -1.108]`，`max [2.464, 1.472, ...]`；开门分镜的 z 向包围盒会随门板外摆增大，属预期。
 
 ## 4. 体积控制
 
-- 只保留 4 机位 × 2 门态共 8 张 1280×800 PNG，合计约 824 KB；`manifest.json` < 10 KB。
-- 不提交 `_current/`、`*.diff.png`、浏览器临时 profile；比对产物随用随删。
+- 只保留 5 机位 × 2 门态共 10 张 1280×800 PNG，合计约 990 KB；`manifest.json` < 6 KB。
+- 不提交 `_current/`、`*.diff.png`、浏览器临时 profile；比对产物随用随删（`.tmp-car3d-*/` 已加入 `.gitignore`）。
 - 视觉有意变更（例如门内板补面）后，先复核差异归因，再整体重采集覆盖基线并同步更新本文件的数值。
 
 ## 5. 已知观察（基线已固定，勿在拆分中无意改变）
 
-- 开门状态下，门片玻璃在 45°/内饰机位呈「上翘薄片」，高于车顶轮廓；属既有实现现象，待门内板补面（D-1 B 方案）时一并复核。
-- 内饰分镜为 `perspective` 代理机位；新增真正内饰机位属于后续体验优化，不纳入 P0 判据。
+- 开门状态下，门片玻璃在 45°/内饰/cockpit 机位呈「上翘薄片」，高于车顶轮廓；属既有实现现象，门内板补面（D-1 B 方案）未改变该现象，需独立处理。
+- 门内板补面仅在座舱侧可见：`cockpit-door1` 相对「隐藏门内板」状态像素贡献约 0.8%，其余 4 机位 0.00%（外表面仍为车漆，门内板被门板本体遮挡）。
 
 ## 6. 依赖
 

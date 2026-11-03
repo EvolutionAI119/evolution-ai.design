@@ -25,12 +25,15 @@ const KEEP_SERVER = args.includes('--keep-server')
 const PORT = Number(process.env.VITE_PORT || 5173)
 const BASE = `http://127.0.0.1:${PORT}/scripts/car3d-baseline/harness.html`
 
-// 固定机位：正 / 侧 / 45° / 内饰（Car3D 无内饰预设，用 perspective + 开门作为座舱观察位）
+// 固定机位：正 / 侧 / 45° / 内饰 / cockpit（座舱内看向右前门，用于门内板验收）
+// cockpit 不是 Car3D 预设机位，通过 __car3d__.setCameraPose 瞬时落位（与帧率解耦）
+const COCKPIT_POSE = { rotX: 0.02, rotY: Math.PI, distance: 1.0, panX: 0, panY: 0 }
 const VIEWS = [
   { id: 'front', view: 'front', note: '正视（正交）' },
   { id: 'left', view: 'left', note: '左侧视（正交，驾驶员侧）' },
   { id: 'iso45', view: 'isometric', note: '45° 等轴（透视）' },
-  { id: 'interior', view: 'perspective', note: '内饰观察位（透视 + 开门）' }
+  { id: 'interior', view: 'perspective', note: '内饰观察位（透视 + 开门）' },
+  { id: 'cockpit', view: 'perspective', pose: COCKPIT_POSE, note: '座舱内视角（看向右前门）' }
 ]
 const DOOR_STATES = [0, 1]
 
@@ -89,6 +92,7 @@ try {
         name: `${v.id}-door${door}`,
         view: v.view,
         door,
+        ...(v.pose ? { pose: v.pose } : {}),
         note: `${v.note} · ${door ? '开门 70°' : '关门'}`
       })
     }
@@ -96,7 +100,8 @@ try {
   for (const shot of shots) {
     const page = await browser.newPage()
     await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 1 })
-    const url = `${BASE}?view=${shot.view}&door=${shot.door}&w=1280&h=800&type=sedan`
+    const url = `${BASE}?view=${shot.view}&door=${shot.door}&w=1280&h=800&type=sedan` +
+      (shot.pose ? `&pose=${encodeURIComponent(JSON.stringify(shot.pose))}` : '')
     await page.goto(url, { waitUntil: 'load', timeout: 30000 })
     await page.waitForFunction(
       () => window.__CAR3D_SCENES__ && window.__CAR3D_SCENES__.length > 0,
@@ -121,7 +126,8 @@ try {
       front: '正交，dist=5（半视口高 3）',
       left: '正交，dist=5（半视口高 3）',
       iso45: '透视，rotation=(π/4, π/4)，dist=10',
-      interior: '透视 + 开门，默认 rotation=(0.4, 0.8)，dist=8'
+      interior: '透视 + 开门，默认 rotation=(0.4, 0.8)，dist=8',
+      cockpit: `座舱内，rotation=(${COCKPIT_POSE.rotX}, π)，dist=${COCKPIT_POSE.distance}，pan=(0,0)`
     },
     doorAngle: '默认 70°（carParams.door_open_angle），由开门按钮驱动缓动',
     shots: metrics

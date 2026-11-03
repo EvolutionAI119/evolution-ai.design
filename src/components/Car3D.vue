@@ -115,6 +115,7 @@ import { createSeatRow, createInteriorTrim, createIpConsole, createLuggageTrim, 
 import { deriveInteriorLayout } from '../utils/carInteriorLayout.js'
 import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from '../three/geometry/smoothing.js'
 import { disposeObject } from '../three/dispose.js'
+import { createDoorInnerPanel } from '../three/parts/doors.js'
 
 const { t } = useI18n()
 
@@ -1125,6 +1126,11 @@ const createCar = () => {
     const h = new THREE.Mesh(handleGeom, chromeMat)
     h.position.set(handleX - hingeX, dl.handleY, zSide * 0.016)
     hinge.add(h)
+    // 门内板补面（D-1 B 方案）：内饰面 + 门槛过渡 + 扶手托板，随铰链同角度开合
+    hinge.add(createDoorInnerPanel({
+      width: w, height: doorH, offsetX: (leadX + trailX) / 2 - hingeX,
+      bottomY: doorBottom, zSide, wireframe: wireframeMode.value
+    }))
     group.add(hinge)
     doorHinges.push({ hinge, sign: zSide, key })
   }
@@ -1437,6 +1443,20 @@ const initScene = () => {
   // 瞬时定位到预设机位：相机缓动依赖帧数，截图采集需与帧率解耦
   scene.userData.__car3d__.setViewInstant = (key) => {
     setViewAngle(key)
+    currentRotation.x = targetRotation.x
+    currentRotation.y = targetRotation.y
+    currentDistance = targetDistance
+    currentPan.x = targetPan.x
+    currentPan.y = targetPan.y
+  }
+  // 任意机位瞬时定位（cockpit 等非预设机位）：同样与帧率/缓动解耦，仅采集端使用
+  scene.userData.__car3d__.setCameraPose = (pose = {}) => {
+    if (typeof pose.rotX === 'number') targetRotation.x = pose.rotX
+    if (typeof pose.rotY === 'number') targetRotation.y = pose.rotY
+    if (typeof pose.distance === 'number') targetDistance = pose.distance
+    if (typeof pose.panX === 'number') targetPan.x = pose.panX
+    if (typeof pose.panY === 'number') targetPan.y = pose.panY
+    isOrthoCamera = !!pose.ortho
     currentRotation.x = targetRotation.x
     currentRotation.y = targetRotation.y
     currentDistance = targetDistance
