@@ -3,22 +3,10 @@ import { createScene } from '../three/scene/createScene.js'
 import { attachInteractions } from '../three/scene/interactions.js'
 import { createFlightFx } from '../three/scene/flightFx.js'
 import { createAnimator } from '../three/scene/animator.js'
+import { viewPresets, orthoViewportSize } from '../three/scene/viewPresets.js'
 import { assembleCar } from '../three/assembly/assembleCar.js'
 import { resolveFlightParams, flightControlEnvelope } from '../utils/flightPhysics.js'
 import { disposeObject } from '../three/dispose.js'
-
-// 视角预设：车长沿 X 轴（X+ 朝车头）。正交视角 dist 经 0.6 系数映射为半视口高度 d
-// front=相机在 +X（正对车头）/ rear=-X / left=-Z（驾驶员侧）/ right=+Z
-const viewPresets = {
-  front: { x: 0, y: Math.PI / 2, dist: 5, ortho: true },
-  rear: { x: 0, y: -Math.PI / 2, dist: 5, ortho: true },
-  left: { x: 0, y: Math.PI, dist: 5, ortho: true },
-  right: { x: 0, y: 0, dist: 5, ortho: true },
-  top: { x: Math.PI / 2, y: 0, dist: 5, ortho: true },
-  bottom: { x: -Math.PI / 2, y: 0, dist: 5, ortho: true },
-  isometric: { x: Math.PI / 4, y: Math.PI / 4, dist: 10, ortho: false },
-  perspective: { x: 0.4, y: 0.8, dist: 8, ortho: false }
-}
 
 /**
  * 场景编排 composable（P4 拆分）：接管 createCar / initScene / updateCar / 生命周期 / watch。
@@ -237,16 +225,14 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
       animator?.setOrtho(preset.ortho)
 
       if (preset.ortho) {
+        // 容器尺寸由组件侧 containerRef 读取后传入；模块只负责纯函数换算
         const container = containerRef.value
         if (container) {
-          const w = container.clientWidth
-          const h = container.clientHeight
-          const aspect = w / h
-          const d = preset.dist * 0.6
-          orthoCamera.left = -d * aspect
-          orthoCamera.right = d * aspect
-          orthoCamera.top = d
-          orthoCamera.bottom = -d
+          const vp = orthoViewportSize(preset.dist, container.clientWidth, container.clientHeight)
+          orthoCamera.left = vp.left
+          orthoCamera.right = vp.right
+          orthoCamera.top = vp.top
+          orthoCamera.bottom = vp.bottom
           orthoCamera.updateProjectionMatrix()
         }
       }
