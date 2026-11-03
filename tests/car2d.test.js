@@ -352,8 +352,8 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
 
     it('侧围轮廓 G1 圆角/cowl/轮拱 notch 收敛到 carProfile.bodySideOutline 单一真源，useCarScene 消费之', () => {
       const prof = readFileSync(resolve(process.cwd(), 'src/utils/carProfile.js'), 'utf8')
-      // P4：createCar 已从 Car3D.vue 迁入 composables/useCarScene.js，消费点随之迁移
-      const carScene = readFileSync(resolve(process.cwd(), 'src/composables/useCarScene.js'), 'utf8')
+      // P5 批次 2：createCar 的车身壳装配已迁至 three/geometry/bodyShell.js，消费点随之迁移
+      const carScene = readFileSync(resolve(process.cwd(), 'src/three/geometry/bodyShell.js'), 'utf8')
       // 轮廓真源在 carProfile.js：三处 G1 圆角 + cowl 斜坡 + 底边轮拱 notch
       expect(prof).toContain('export function bodySideOutline')
       expect(prof).toContain('filletCorner')
