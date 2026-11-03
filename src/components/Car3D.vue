@@ -115,7 +115,7 @@ import { createSeatRow, createInteriorTrim, createIpConsole, createLuggageTrim, 
 import { deriveInteriorLayout } from '../utils/carInteriorLayout.js'
 import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from '../three/geometry/smoothing.js'
 import { disposeObject } from '../three/dispose.js'
-import { createDoorInnerPanel } from '../three/parts/doors.js'
+import { createDoorRig } from '../three/parts/doors.js'
 
 const { t } = useI18n()
 
@@ -1086,66 +1086,22 @@ const createCar = () => {
   group.add(tl2)
 
   // ---- 车门分缝线 + 门板（可绕前铰链打开）+ 门把手（随门板运动）----
-  // 分缝线：前缝/B柱缝/后缝 竖向暗色薄槽（sill→腰带线）；门板：贴侧壁的薄面板挂到铰链 Group，
-  // animate() 按 door_open_angle 缓动 rotation.y 开合，把手 parent 到对应门板随动。
-  const seamMat = new THREE.MeshStandardMaterial({ color: 0x08080c, metalness: 0.3, roughness: 0.8, wireframe: wireframeMode.value })
-  const doorMat = bodyMat   // 门板与车身共用同一车漆，避免腰线两侧高光/色差断裂
-  const handleGeom = new THREE.BoxGeometry(0.14, 0.022, 0.02)
-  const doorBottom = bodyBottomY + 0.02
-  // 门板顶边 = 玻璃洞口肩线（而非腰带线）：合并门洞从门槛一直开到玻璃底，
-  // 门板必须同样覆盖到肩线，否则关门时腰带线到玻璃底之间留一条 24mm 横缝。
-  const doorTop = shoulderY
-  const doorH = doorTop - doorBottom
-  const seamW = (props.carParams?.door_seam_width ?? 8) / 1000
-  doorHinges = []
-  doorSeams = []
-  const addSeam = (x) => {
-    for (const zSide of [1, -1]) {
-      const s = new THREE.Mesh(new THREE.BoxGeometry(seamW, doorH, 0.004), seamMat)
-      s.name = 'door-seam'
-      s.position.set(x, doorBottom + doorH / 2, zSide * (fit.wall + 0.002))
-      group.add(s)
-      doorSeams.push(s)   // 开门时随动画隐藏：否则细缝条会悬在空洞中央形成遮挡
-    }
-  }
-  addSeam(dl.frontSeamX); addSeam(dl.midSeamX)
-  if (dl.rearSeamX !== null) addSeam(dl.rearSeamX)
-  // 门板 + 铰链（常规前铰：前门铰链在前缝、后门铰链在 B柱缝，均向后开）
-  // 门板宽度 = 缝到缝 − 4mm：门洞（缝到缝 − 8mm）四缘被门板叠压 2mm → 门板是全车
-  // 唯一门几何且关门严密封闭；门缝观感由门洞边缘内缩的深色洞壁读出（真车 shut line）。
-  const mkDoor = (key, hingeX, leadX, trailX, handleX, zSide) => {
-    const hinge = new THREE.Group()
-    // 具名：视觉基线/调试按名定位门铰链（不改运动学，仅便于外部读取）
-    hinge.name = `door-hinge-${key}-${zSide > 0 ? 'right' : 'left'}`
-    hinge.position.set(hingeX, 0, zSide * fit.wall)
-    const w = Math.max(Math.abs(trailX - leadX) - 0.004, 0.05)   // X+ 朝车头：leading 边 X 更大，取绝对宽
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(w, doorH, 0.012), doorMat)
-    panel.position.set((leadX + trailX) / 2 - hingeX, doorBottom + doorH / 2, zSide * 0.006)
-    panel.castShadow = true
-    hinge.add(panel)
-    const h = new THREE.Mesh(handleGeom, chromeMat)
-    h.position.set(handleX - hingeX, dl.handleY, zSide * 0.016)
-    hinge.add(h)
-    // 门内板补面（D-1 B 方案）：内饰面 + 门槛过渡 + 扶手托板，随铰链同角度开合
-    hinge.add(createDoorInnerPanel({
-      width: w, height: doorH, offsetX: (leadX + trailX) / 2 - hingeX,
-      bottomY: doorBottom, zSide, wireframe: wireframeMode.value
-    }))
-    group.add(hinge)
-    doorHinges.push({ hinge, sign: zSide, key })
-  }
-  for (const zSide of [1, -1]) {
-    mkDoor('front', dl.frontSeamX, dl.frontSeamX, dl.midSeamX, dl.frontHandleX, zSide)
-    if (dl.rearSeamX !== null) mkDoor('rear', dl.midSeamX, dl.midSeamX, dl.rearSeamX, dl.rearHandleX, zSide)
-  }
-  // 侧窗门片挂到对应车门铰链：几何按铰链轴平移（几何原为世界坐标），
-  // 之后与门板同轴同角度旋转 → 玻璃随门一同打开、与门板上下沿严格对齐
-  for (const dg of doorGlass) {
-    const target = doorHinges.find((d) => d.key === dg.key && d.sign === dg.zSide)
-    if (!target) continue
-    dg.mesh.geometry.translate(-target.hinge.position.x, 0, -target.hinge.position.z)
-    target.hinge.add(dg.mesh)
-  }
+  // 几何组装整体在 parts/doors.js（P2 拆分）：此处只传真源坐标与共用材质实例，
+  // 返回的铰链/缝条引用交给 animate() 逐帧驱动开合，运动学与拆分前一致。
+  const doorRig = createDoorRig({
+    parent: group,
+    wall: fit.wall,
+    doorLayout: dl,
+    bodyBottomY,
+    shoulderY,
+    bodyMat,
+    chromeMat,
+    doorSeamWidth: props.carParams?.door_seam_width ?? 8,
+    doorGlass,
+    wireframe: wireframeMode.value
+  })
+  doorHinges = doorRig.hinges
+  doorSeams = doorRig.seams
 
   // 凸面镜片圆角贴花：两片镜共用一张（disposeObject 统一随材质释放）
   const mirrorGlassAlpha = (() => {

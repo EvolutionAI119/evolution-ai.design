@@ -1,11 +1,11 @@
-# Car3D.vue 拆分设计（只出设计，不改代码）
+# Car3D.vue 拆分设计与实施进度
 
 | 项 | 内容 |
 |---|---|
-| 版本 | v1.0 · 2026-11-02 |
-| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1875 行 / 84 KB） |
+| 版本 | v1.1 · 2026-11-03（补实施进度） |
+| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1787 行 / 81 KB） |
 | 目标 | 行数降 40% 以上；渲染结果零差异；纯函数可单测 |
-| 约束 | **本轮不实施**；拆分前先补渲染基线；每步独立提交、全绿 |
+| 约束 | 每批只搬一个模块、行为不变；拆分前先补渲染基线；每步独立提交、全绿 |
 | 关联 | [ASSET_MANIFEST.md](ASSET_MANIFEST.md)、[2D_LAYOUT_VERIFICATION.md](2D_LAYOUT_VERIFICATION.md) |
 
 ---
@@ -101,6 +101,23 @@ scene/createScene.js ─> scene/{interactions,animate}.js ─> useCarScene.js
 
 ---
 
-## 7. 本轮结论
+## 7. 实施进度（2026-11-03）
 
-**只出设计，不改代码。** 下一步先做 P0 截图基线；在拿到基线前不动 Car3D。
+| 阶段 | 已完成 | 验证 |
+|---|---|---|
+| P0 | 5 机位 × 2 门态 = 10 分镜基线 + `manifest.json`，采集/比对脚本可重复 | 连续两轮 10/10、像素 0.00% |
+| P1 | `geometry/smoothing.js`、`three/dispose.js` 抽出 | 全量 829 测试 + 基线 10/10 |
+| P2 | `parts/doors.js`：`createDoorRig`（门缝/门板/把手/门内板 + 门片玻璃挂载） | 全量 829 测试；基线 10/10、像素 0.00%；门开合 1.222 rad（70°）不变 |
+
+P2 剩余模块按「耦合面从小到大」推进，每批单独提交：
+
+1. `parts/glass.js`：`addBandGlass` / `addDloPane`，需保留 `doorGlass` 收集顺序供 doors 使用；
+2. `interior/seats.js`：`addInteriorSeats` + `attachDoorTrimToHinges`（改为注入 doorHinges，禁止横向 import）；
+3. `parts/lightsBumpers.js`：保险杠/大灯/尾灯，贴合外表面坐标全来自 profile；
+4. `parts/mirrors.js`：镜壳/凸面镜片，注意 `CanvasTexture` alphaMap 必须随材质释放；
+5. `parts/wheels.js`：车轮/轮腔衬/升力装置，VTOL 状态耦合最重，放最后；
+6. `materials.js` 收口：统一材质与复用缓存（与上述各批共享实例）。
+
+## 8. 本轮结论
+
+P0 基线与 P1/P2 首批拆分已落地；剩余按第 7 节顺序推进，每批以 `npx vitest run` + `node scripts/car3d_baseline.mjs --out .tmp-car3d-current` + `node scripts/car3d_baseline_compare.mjs --cur .tmp-car3d-current` 为闸门，任何分镜像素差超 1% 先归因再决定修复或回滚。
