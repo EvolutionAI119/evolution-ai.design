@@ -3,7 +3,7 @@
 | 项 | 内容 |
 |---|---|
 | 版本 | v1.1 · 2026-11-03（补实施进度） |
-| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1787 行 / 81 KB） |
+| 对象 | [src/components/Car3D.vue](../src/components/Car3D.vue)（1760 行 / 76 KB） |
 | 目标 | 行数降 40% 以上；渲染结果零差异；纯函数可单测 |
 | 约束 | 每批只搬一个模块、行为不变；拆分前先补渲染基线；每步独立提交、全绿 |
 | 关联 | [ASSET_MANIFEST.md](ASSET_MANIFEST.md)、[2D_LAYOUT_VERIFICATION.md](2D_LAYOUT_VERIFICATION.md) |
@@ -108,15 +108,15 @@ scene/createScene.js ─> scene/{interactions,animate}.js ─> useCarScene.js
 | P0 | 5 机位 × 2 门态 = 10 分镜基线 + `manifest.json`，采集/比对脚本可重复 | 连续两轮 10/10、像素 0.00% |
 | P1 | `geometry/smoothing.js`、`three/dispose.js` 抽出 | 全量 829 测试 + 基线 10/10 |
 | P2 | `parts/doors.js`：`createDoorRig`（门缝/门板/把手/门内板 + 门片玻璃挂载） | 全量 829 测试；基线 10/10、像素 0.00%；门开合 1.222 rad（70°）不变 |
+| P2 | `parts/glass.js`：`addBandGlass` / `addDloPane`（入参全显式，`doorGlass` 收集仍由 createCar 完成） | 全量 829 测试；基线 10/10、像素 0.00%；网格 201 / 三角面 43268 不变 |
 
 P2 剩余模块按「耦合面从小到大」推进，每批单独提交：
 
-1. `parts/glass.js`：`addBandGlass` / `addDloPane`，需保留 `doorGlass` 收集顺序供 doors 使用；
-2. `interior/seats.js`：`addInteriorSeats` + `attachDoorTrimToHinges`（改为注入 doorHinges，禁止横向 import）；
-3. `parts/lightsBumpers.js`：保险杠/大灯/尾灯，贴合外表面坐标全来自 profile；
-4. `parts/mirrors.js`：镜壳/凸面镜片，注意 `CanvasTexture` alphaMap 必须随材质释放；
-5. `parts/wheels.js`：车轮/轮腔衬/升力装置，VTOL 状态耦合最重，放最后；
-6. `materials.js` 收口：统一材质与复用缓存（与上述各批共享实例）。
+1. `interior/seats.js`：`addInteriorSeats` + `attachDoorTrimToHinges`（改为注入 doorHinges，禁止横向 import）；
+2. `parts/lightsBumpers.js`：保险杠/大灯/尾灯，贴合外表面坐标全来自 profile；
+3. `parts/mirrors.js`：镜壳/凸面镜片，注意 `CanvasTexture` alphaMap 必须随材质释放；
+4. `parts/wheels.js`：车轮/轮腔衬/升力装置，VTOL 状态耦合最重，放最后；
+5. `materials.js` 收口：统一材质与复用缓存（与上述各批共享实例）。
 
 ## 8. 本轮结论
 

@@ -108,7 +108,7 @@ import { useI18n } from 'vue-i18n'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { deriveCarProfile, deriveWheelFitment, archLinerProfile, bodySideOutline, deriveDoorLayout, deriveLiftDevices, filletCorner, deriveNurbsFrame } from '../utils/carProfile.js'
-import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, buildDloStripRange, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, bandGlassSpine, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP, DLO_APERTURE_INSET } from '../utils/carGlass.js'
+import { deriveCabinGlass, dloZAt, pillarPlacement, buildDloFrame, deriveDloPaneRanges, deriveDloApertures, buildDoorAperturePolygon, shellHalfZAt, insideBodyMaterial, ROOF_FILLETS, BODY_BEVEL_SIZE, GLASS_SURFACE_GAP, DLO_APERTURE_INSET } from '../utils/carGlass.js'
 import { resolveFlightParams, quinticSmoothstep, hoverBobOffset,
   turnDurationSec, attitudeSample, flightControlEnvelope } from '../utils/flightPhysics.js'
 import { createSeatRow, createInteriorTrim, createIpConsole, createLuggageTrim, createSteeringWheel, resolveSeatPreset } from '../utils/carInterior.js'
@@ -116,6 +116,7 @@ import { deriveInteriorLayout } from '../utils/carInteriorLayout.js'
 import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from '../three/geometry/smoothing.js'
 import { disposeObject } from '../three/dispose.js'
 import { createDoorRig } from '../three/parts/doors.js'
+import { addBandGlass, addDloPane } from '../three/parts/glass.js'
 
 const { t } = useI18n()
 
@@ -835,72 +836,43 @@ const createCar = () => {
   })
 
   // 斜面玻璃带：脊柱线由 carGlass.bandGlassSpine 生成（可单测）——含车顶 G1 圆角包裹
-  // 采样与顶面搭接，玻璃随车身同一圆角弯曲。
-  // 偏移量 = BODY_BEVEL_SIZE + GLASS_SURFACE_GAP：ExtrudeGeometry 的 bevel 会把整个侧壁
-  // 沿 X-Y 外扩 bevelSize(=BODY_BEVEL_SIZE)，车身真实壁面因此在原始轮廓外该尺寸；
-  // 玻璃必须骑在这层外扩壁面上，再留贴面间隙避免共面 z-fighting。
-  // minOffsetRatio=1：全程保持同一偏移——旧实现让法线转向车顶时偏移渐减到 0，
-  // 玻璃在 A 柱顶/C 柱顶瞬间沉入车身 30mm，肉眼即 COWL/车顶前缘的台阶折痕。
-  const GLASS_GAP = BODY_BEVEL_SIZE + GLASS_SURFACE_GAP
-  const addBandGlass = (x1, y1, x2, y2, width, topInset = 0, bottomInset = 0, fillet = null) => {
-    const spine = bandGlassSpine(x1, y1, x2, y2, {
-      topInset, bottomInset, offset: GLASS_GAP, minOffsetRatio: 1, fillet
-    })
-    const hw = width / 2
-    const verts = []
-    for (let i = 0; i < spine.length - 1; i++) {
-      const [ax, ay] = spine[i]
-      const [bx, by] = spine[i + 1]
-      const az = hw * taperK(ay)
-      const bz = hw * taperK(by)
-      verts.push(ax, ay, -az, ax, ay, az, bx, by, -bz)
-      verts.push(ax, ay, az, bx, by, bz, bx, by, -bz)
-    }
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3))
-    g.computeVertexNormals()
-    const m = new THREE.Mesh(g, glassMat)
-    m.userData.noCastShadow = true
-    group.add(m)
-  }
-
+  // 采样与顶面搭接，玻璃随车身同一圆角弯曲（几何在 parts/glass.js，P2 拆分）。
   // 前风挡：底缘 = COWL（bottomInset 下退避开 bevel 外扩角），顶缘停在 A 柱顶圆角
   // 下方 FRONT_GLASS_TOP_BORDER 处——不包裹圆角、不搭上车顶：玻璃顶边始终低于车顶，
   // 车身色车顶前缘完整可见（旧实现搭接车顶 20mm，在顶面烧出一道高光横带 = 穿模）。
   const ws = cabin.windshield
-  addBandGlass(ws.x1, ws.y1, ws.x2, ws.y2, ws.width,
-    ws.topInset + FRONT_GLASS_TOP_BORDER, ws.bottomInset)
+  addBandGlass({
+    group, material: glassMat, taperK,
+    x1: ws.x1, y1: ws.y1, x2: ws.x2, y2: ws.y2, width: ws.width,
+    topInset: ws.topInset + FRONT_GLASS_TOP_BORDER, bottomInset: ws.bottomInset
+  })
   // 后风挡：顶缘同样停在车顶后缘圆角下方（皮卡无后风挡）；
   // 底缘下退 cPillarBottom 至 C 柱底圆角切点（玻璃不戳入尾部圆角）
   if (cabin.rearWindow) {
     const rw = cabin.rearWindow
-    addBandGlass(rw.x1, rw.y1, rw.x2, rw.y2, rw.width,
-      rw.topInset + FRONT_GLASS_TOP_BORDER, ROOF_FILLETS.cPillarBottom)
+    addBandGlass({
+      group, material: glassMat, taperK,
+      x1: rw.x1, y1: rw.y1, x2: rw.x2, y2: rw.y2, width: rw.width,
+      topInset: rw.topInset + FRONT_GLASS_TOP_BORDER, bottomInset: ROOF_FILLETS.cPillarBottom
+    })
   }
 
   // 侧窗 DLO（左右各分片）：多边形与 2D windowPath 逐点同源，顶部两角内收避开 G1 圆角；
   // Z 轮廓 = tumblehome 线性内收 + barrel 桶面圆弧鼓肚（dloZAt 纯函数，可单测）。
   // 面片沿高度细分成条带网格——四角面片无法表达桶面曲率
   // 侧窗按车门分缝切成 4 片/侧：A 柱前固定片 + 前门片 + 后门片 + C 柱后固定片。
-  // 门片挂到对应车门铰链 Group（与门板同轴同角度），开门时玻璃随门一同外摆；
+  // 门片不直接挂载，先收集进 doorGlass，再由 createDoorRig 挂到对应车门铰链 Group
+  // （与门板同轴同角度）——收集顺序是 doors 的输入契约，必须留在本例程里完成。
   // 分缝两侧各留半个缝宽间隙 → 玻璃上同样能看到门缝（与 2D 分缝线同坐标）。
-  const DLO_ROWS = 16
   const doorGlass = []
-  const addDloPane = (xFront, xRear, zSide, hingeKey) => {
-    const positions = buildDloStripRange(cabin.dlo, dloFrame, DLO_ROWS, zSide, xFront, xRear)
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3))
-    g.computeVertexNormals()
-    const panel = new THREE.Mesh(g, glassMat)
-    panel.userData.noCastShadow = true
-    if (hingeKey) doorGlass.push({ key: hingeKey, zSide, mesh: panel })
-    else group.add(panel)
-  }
   for (const zSide of [1, -1]) {
     // 分片边界与门缝坐标全部来自 carGlass.deriveDloPaneRanges（纯函数，可单测）：
     // A 柱前固定片 / 前门片 / 后门片（双门与皮卡无此片）/ C 柱后固定片
     for (const pane of paneRanges) {
-      addDloPane(pane.xFront, pane.xRear, zSide, pane.hingeKey)
+      addDloPane({
+        group, material: glassMat, doorGlass, cabin, dloFrame,
+        xFront: pane.xFront, xRear: pane.xRear, zSide, hingeKey: pane.hingeKey
+      })
     }
   }
 
