@@ -450,6 +450,69 @@ function smoothNormalsKeepHardEdges(geom, tol = 1e-4, angleDeg = 32, hardEdgesY 
 }
 
 /**
+ * 沿 y = yCut 平面切分跨越该高度的三角形（就地重建 position）。
+ *
+ * ExtrudeGeometry 的侧围端盖由 earcut 生成，其中存在大量细长三角形，部分会横跨
+ * 腰带线。greenhouse 收窄在腰带线处存在斜率拐点（t 由钳位区进入倾角/桶面段），
+ * 横跨拐点的三角形被压成「折板」：整个三角形只能持有一条面法线，无法表达上下
+ * 两块板面的差异，掠射角下渲染成一块大面积渐变亮面（拓扑破面）。
+ * 在收窄前把这类三角形沿拐点切成上/下两组（中间四边形拆两个三角形），
+ * 使每个三角形只落在单侧平面或单侧曲面内；腰线仍由 smoothNormalsKeepHardEdges
+ * 钉成硬边——高光收成锐利折线，不再出现跨越腰线的破面。
+ *
+ * @param {THREE.BufferGeometry} geom 非索引车身挤出几何
+ * @param {number} yCut 切分高度（米），取 DLO 底边
+ * @param {number} [eps=1e-4] 落在切面附近视为已在切面上（不拆，避免退化三角形）
+ * @returns {number} 被切分的三角形数
+ */
+function splitTrianglesAtY(geom, yCut, eps = 1e-4) {
+  const pos = geom.attributes.position
+  const arr = pos.array
+  const out = []
+  let splitCount = 0
+
+  const pushTri = (a, b, c) => {
+    out.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2])
+  }
+
+  for (let o = 0; o < arr.length; o += 9) {
+    const v = [
+      [arr[o], arr[o + 1], arr[o + 2]],
+      [arr[o + 3], arr[o + 4], arr[o + 5]],
+      [arr[o + 6], arr[o + 7], arr[o + 8]]
+    ]
+    const s = v.map((p) => (p[1] > yCut + eps ? 1 : p[1] < yCut - eps ? -1 : 0))
+    // 全部同侧，或已有顶点压在切面上：保持原三角形（不制造退化面）
+    if (s.includes(0) || !s.includes(1) || !s.includes(-1)) {
+      pushTri(v[0], v[1], v[2])
+      continue
+    }
+    // 唯一异侧顶点：循环移位到首位，保持原绕序不变
+    let lone = 0
+    for (let i = 0; i < 3; i++) {
+      if (s[i] !== s[(i + 1) % 3] && s[i] !== s[(i + 2) % 3]) { lone = i; break }
+    }
+    const A = v[lone]
+    const B = v[(lone + 1) % 3]
+    const C = v[(lone + 2) % 3]
+    const t1 = (yCut - A[1]) / (B[1] - A[1])
+    const P = [A[0] + (B[0] - A[0]) * t1, yCut, A[2] + (B[2] - A[2]) * t1]
+    const t2 = (yCut - A[1]) / (C[1] - A[1])
+    const Q = [A[0] + (C[0] - A[0]) * t2, yCut, A[2] + (C[2] - A[2]) * t2]
+    pushTri(A, P, Q)
+    pushTri(B, P, Q)
+    pushTri(B, Q, C)
+    splitCount++
+  }
+
+  if (!splitCount) return 0
+  geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(out), 3))
+  geom.deleteAttribute('uv')       // 重排后 uv 数量不再匹配；本模型不使用贴图
+  geom.deleteAttribute('normal')   // 收窄后由 smoothNormalsKeepHardEdges 统一重算
+  return splitCount
+}
+
+/**
  * 车身洞口内壁 + 风挡暗舱底材质分组
  *
  * 车身由侧围轮廓整宽挤出：一切轮廓内 holes（门洞/侧窗分片洞口）沿 Z 贯穿，
@@ -828,6 +891,8 @@ const createCar = () => {
   // （shellHalfZAt 为唯一 Z 公式：车身、风挡带、DLO 玻璃共用同一条内收曲线）
   const taperK = (y) => shellHalfZAt(y, dloFrame, bodyExtentZ) / bodyExtentZ
   const applyGreenhouseTaper = (geom) => {
+    // 先把横跨腰带线的长三角形切开，否则收窄后折板会渲染成大面积渐变破面
+    splitTrianglesAtY(geom, dloFrame.dloYBot)
     const pos = geom.attributes.position
     for (let i = 0; i < pos.count; i++) {
       pos.setZ(i, pos.getZ(i) * taperK(pos.getY(i)))
@@ -1172,6 +1237,7 @@ const createCar = () => {
   const addSeam = (x) => {
     for (const zSide of [1, -1]) {
       const s = new THREE.Mesh(new THREE.BoxGeometry(seamW, doorH, 0.004), seamMat)
+      s.name = 'door-seam'
       s.position.set(x, doorBottom + doorH / 2, zSide * (fit.wall + 0.002))
       group.add(s)
       doorSeams.push(s)   // 开门时随动画隐藏：否则细缝条会悬在空洞中央形成遮挡
@@ -1184,6 +1250,8 @@ const createCar = () => {
   // 唯一门几何且关门严密封闭；门缝观感由门洞边缘内缩的深色洞壁读出（真车 shut line）。
   const mkDoor = (key, hingeX, leadX, trailX, handleX, zSide) => {
     const hinge = new THREE.Group()
+    // 具名：视觉基线/调试按名定位门铰链（不改运动学，仅便于外部读取）
+    hinge.name = `door-hinge-${key}-${zSide > 0 ? 'right' : 'left'}`
     hinge.position.set(hingeX, 0, zSide * fit.wall)
     const w = Math.max(Math.abs(trailX - leadX) - 0.004, 0.05)   // X+ 朝车头：leading 边 X 更大，取绝对宽
     const panel = new THREE.Mesh(new THREE.BoxGeometry(w, doorH, 0.012), doorMat)
@@ -1484,6 +1552,24 @@ const initScene = () => {
     }
   })
   scene.add(carGroup)
+
+  // 视觉基线/调试钩子（只读状态 + 瞬时摆位）：不参与正常交互，供截图采集与几何校验
+  scene.userData.__car3d__.setDoor = (open) => {
+    doorOpen.value = open
+    doorProgress = open ? 1 : 0
+    const openRad = ((props.carParams?.door_open_angle ?? 70) * Math.PI) / 180
+    for (const d of doorHinges) d.hinge.rotation.y = d.sign * openRad
+    for (const s of doorSeams) s.visible = !open
+  }
+  scene.userData.__car3d__.viewState = () => ({
+    rotX: currentRotation.x,
+    rotY: currentRotation.y,
+    targetX: targetRotation.x,
+    targetY: targetRotation.y,
+    distance: currentDistance,
+    targetDistance,
+    ortho: isOrthoCamera
+  })
 
   boundContainer = container
   container.addEventListener('mousedown', onMouseDown)
