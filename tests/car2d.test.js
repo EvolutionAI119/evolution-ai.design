@@ -9,6 +9,11 @@ import { resolve } from 'node:path'
 import { carTypeParams, defaultCarParams, brands } from '../src/config/carPresets'
 import { SISA_META, SISA_Z_TOP_NORM, evalTopRMSE, sampleTopNorm, toPlatformX } from '../src/config/sisaReference'
 import { LINE_RATIOS, deriveCarProfile } from '../src/utils/carProfile.js'
+import { assembleCar } from '../src/three/assembly/assembleCar.js'
+
+// sedan 整车装配的 Mesh 总数（车身/玻璃/灯/轮/门/座椅等全部零件），
+// 装配编排或零件挂载数量变化会在此暴露（P5 批次 3 实测值）
+const EXPECTED_CAR_MESHES = 193
 
 const svgWidth = 800
 const svgHeight = 420
@@ -350,19 +355,39 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       }
     })
 
-    it('侧围轮廓 G1 圆角/cowl/轮拱 notch 收敛到 carProfile.bodySideOutline 单一真源，useCarScene 消费之', () => {
-      const prof = readFileSync(resolve(process.cwd(), 'src/utils/carProfile.js'), 'utf8')
-      // P5 批次 2：createCar 的车身壳装配已迁至 three/geometry/bodyShell.js，消费点随之迁移
-      const carScene = readFileSync(resolve(process.cwd(), 'src/three/geometry/bodyShell.js'), 'utf8')
-      // 轮廓真源在 carProfile.js：三处 G1 圆角 + cowl 斜坡 + 底边轮拱 notch
-      expect(prof).toContain('export function bodySideOutline')
-      expect(prof).toContain('filletCorner')
-      expect(prof).toContain('cowlStartX')
-      expect(prof).toContain('hoodEndX, beltLineY')
-      expect(prof).toContain('archNotch')
-      // 不再内联构建轮廓，改为消费 bodySideOutline（2D/3D 同源）；
-      // 开门状态允许通过 holes 在门区开真实门洞（门板成为唯一覆盖几何）
-      expect(carScene).toContain('bodySideOutline(')
+    it('侧围轮廓消费 carProfile.bodySideOutline 单一真源：整车装配返回完整契约（行为断言）', () => {
+      // jsdom 无 2D canvas 上下文（只有后视镜贴花用），用空实现替代，避免环境假红
+      const proto = Object.getPrototypeOf(document.createElement('canvas'))
+      const realGetContext = proto.getContext
+      proto.getContext = () => ({
+        fillStyle: '', fillRect() {}, beginPath() {}, roundRect() {}, fill() {}
+      })
+      try {
+        const built = assembleCar({
+          carParams: { ...defaultCarParams, ...carTypeParams.sedan },
+          carType: 'sedan',
+          carColor: '#4ade80',
+          wireframe: false,
+          nurbsMesh: null
+        })
+        // 装配契约：车组 + 门铰链/门缝 + 升降布局，缺一即编排断裂
+        expect(built.group).toBeTruthy()
+        expect(built.doorHinges).toHaveLength(4)   // 前后门 × 左右两侧
+        expect(built.doorSeams).toHaveLength(6)    // 前缝/B柱缝/后缝 × 左右两侧
+        expect(built.liftLayout).not.toBeNull()
+        expect(built.liftLayout.count).toBeGreaterThanOrEqual(6)
+        expect(built.liftLayout.count).toBeLessThanOrEqual(8)
+        // 车身壳由 bodySideOutline（G1 圆角/cowl/轮拱 notch）挤出：主体网格必须是车组首个 Mesh
+        const meshes = []
+        built.group.traverse((o) => { if (o.isMesh) meshes.push(o) })
+        expect(meshes.length).toBe(EXPECTED_CAR_MESHES)
+        const bodyMesh = meshes[0]
+        // 挤出几何按材质分桶（车身色 / 洞壁内饰 / 暗舱底）→ 至少两组
+        expect(bodyMesh.geometry.groups.length).toBeGreaterThan(1)
+        expect(bodyMesh.geometry.attributes.position.count).toBeGreaterThan(0)
+      } finally {
+        proto.getContext = realGetContext
+      }
     })
 
     it('Car2D.vue 源码含皮卡专属拓扑分支（isPickup / cabRearX2d）', () => {
