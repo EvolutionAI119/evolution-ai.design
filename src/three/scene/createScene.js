@@ -12,8 +12,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
  *
  * 调试钩子契约（采集端依赖，签名与字段冻结）：
  * `scene.userData.__car3d__ = { wireframe, nurbs, setViewInstant, setCameraPose, ... }`
- * —— 本模块只负责创建对象与两个与机位相关的函数；`setDoor` / `viewState` 依赖车门
- * 铰链与动画状态，仍由组件在 createCar 之后补挂（挂载时机不变）。
+ * —— 本模块负责创建对象、两个与机位相关的函数，并提供 `setHooks` 供调用方补挂
+ * `setDoor` / `viewState`（挂载时机仍是 createCar 之后，字段名不变）。
+ * 场景销毁（注册表摘除 / renderer 释放 / 画布移除 / scene 清空）统一走 `disposeScene`，
+ * 调用方不再直接触碰全局调试钩子。
  *
  * @param {object} opts
  * @param {HTMLElement} opts.container 渲染画布挂载点（同时用于取宽高）
@@ -21,6 +23,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
  * @param {boolean} opts.nurbs NURBS 态标记（供多实例采样端定位）
  * @param {object} opts.viewControls 机位状态访问器（组件提供）：
  *   { applyPreset(key), snap(), setTargets(pose), setOrtho(bool) }
+ * @returns {{ scene, camera, renderer, orthoCamera, setViewInstant, setCameraPose,
+ *   setHooks, disposeScene }}
  */
 export function createScene({ container, wireframe = false, nurbs = false, viewControls }) {
   const width = container.clientWidth
@@ -124,5 +128,37 @@ export function createScene({ container, wireframe = false, nurbs = false, viewC
   scene.userData.__car3d__.setViewInstant = setViewInstant
   scene.userData.__car3d__.setCameraPose = setCameraPose
 
-  return { scene, camera, renderer, orthoCamera, setViewInstant, setCameraPose }
+  /**
+   * 补挂调试钩子字段（浅合并）：`setDoor` / `viewState` 由调用方在 createCar 之后注册，
+   * `wireframe` / `nurbs` 在状态变化时同步。字段名与挂载时机由调用方保持不变。
+   */
+  const setHooks = (hooks = {}) => {
+    Object.assign(scene.userData.__car3d__, hooks)
+  }
+
+  /**
+   * 场景销毁：摘除全局实例注册表 → 修正 __THREE_SCENE__ 指针 → 释放 renderer
+   * （含 WEBGL_lose_context）→ 移除画布 → 清空场景。
+   * 调用方负责在此之前停帧循环、释放车组/特效与交互解绑。
+   */
+  const disposeScene = () => {
+    if (typeof window !== 'undefined' && Array.isArray(window.__CAR3D_SCENES__)) {
+      const reg = window.__CAR3D_SCENES__
+      const idx = reg.indexOf(scene)
+      if (idx >= 0) reg.splice(idx, 1)
+      // 修正全局调试指针，避免继续指向已销毁场景
+      window.__THREE_SCENE__ = reg.length ? reg[reg.length - 1] : null
+    }
+    renderer.dispose()
+    const gl = renderer.getContext()
+    const ext = gl.getExtension('WEBGL_lose_context')
+    if (ext) ext.loseContext()
+    renderer.domElement.remove()
+    scene.clear()
+  }
+
+  return {
+    scene, camera, renderer, orthoCamera,
+    setViewInstant, setCameraPose, setHooks, disposeScene
+  }
 }

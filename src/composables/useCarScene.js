@@ -26,6 +26,9 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
   const currentView = ref(readProps().viewAngle)
 
   let scene, camera, renderer, carGroup
+  // createScene 返回的场景 API（setHooks / disposeScene）：调试钩子补挂与全局注册表摘除
+  // 一律走该实例，composable 不再直接写 scene.userData 字段。
+  let sceneApi = null
   // initScene 实际绑定事件的容器元素。onUnmounted 触发时 Vue 已清空模板 ref
   // （containerRef.value === null），卸载解绑必须用这个缓存引用，否则监听泄漏。
   let boundContainer = null
@@ -130,7 +133,7 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
     }
 
     // 场景基座（渲染器/相机/灯光/环境/地面/网格 + __car3d__ 注册）全部在 scene/createScene.js
-    const sceneApi = createScene({
+    sceneApi = createScene({
       container,
       wireframe: wireframeMode.value,
       nurbs: !!props.nurbsMesh,
@@ -164,12 +167,14 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
     scene.add(carGroup)
 
     // 视觉基线/调试钩子：setDoor / viewState 依赖门铰链与动画状态，仍在 createCar 之后补挂；
-    // setViewInstant / setCameraPose 由 createScene 注册（字段与行为不变）
-    scene.userData.__car3d__.setDoor = (open) => {
-      doorOpen.value = open
-      animator?.setDoorInstant(open)
-    }
-    scene.userData.__car3d__.viewState = () => animator.getState()
+    // 字段名与挂载时机不变，写入走 createScene.setHooks（composable 不直接改 scene.userData）
+    sceneApi.setHooks({
+      setDoor: (open) => {
+        doorOpen.value = open
+        animator?.setDoorInstant(open)
+      },
+      viewState: () => animator.getState()
+    })
 
     boundContainer = container
     // 交互（拖拽/缩放/resize）在 scene/interactions.js：只写 target*，缓动留给 animate 批。
@@ -243,7 +248,7 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
   const toggleWireframe = () => {
     wireframeMode.value = !wireframeMode.value
     emitWireframe(wireframeMode.value)
-    if (scene) scene.userData.__car3d__.wireframe = wireframeMode.value   // 多实例定位标记同步
+    if (sceneApi) sceneApi.setHooks({ wireframe: wireframeMode.value })   // 多实例定位标记同步
     updateCar()
   }
 
@@ -257,7 +262,7 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
   const updateCar = () => {
     const props = readProps()
     if (!scene || !carGroup) return
-    scene.userData.__car3d__.nurbs = !!props.nurbsMesh   // 生成后 nurbs 标记同步，供多实例定位
+    sceneApi.setHooks({ nurbs: !!props.nurbsMesh })   // 生成后 nurbs 标记同步，供多实例定位
     scene.remove(carGroup)
     disposeFlightFx()
     currentLiftLayout = null   // 旧布局随旧车失效，createCar 重新赋值后再被 flightFx.ensure 复用
@@ -321,25 +326,14 @@ export function useCarScene({ containerRef, getProps, emitViewAngle, emitWirefra
     }
     boundContainer = null
     disposeObject(carGroup)
-    if (typeof window !== 'undefined' && Array.isArray(window.__CAR3D_SCENES__)) {
-      const reg = window.__CAR3D_SCENES__
-      const idx = reg.indexOf(scene)
-      if (idx >= 0) reg.splice(idx, 1)
-      // 修正全局调试指针，避免继续指向已销毁场景
-      window.__THREE_SCENE__ = reg.length ? reg[reg.length - 1] : null
+    // 场景销毁收进 createScene.disposeScene：注册表摘除 → __THREE_SCENE__ 修正 →
+    // renderer dispose/loseContext/画布移除 → scene.clear
+    if (sceneApi) {
+      sceneApi.disposeScene()
+      sceneApi = null
     }
-    if (renderer) {
-      renderer.dispose()
-      const gl = renderer.getContext()
-      const ext = gl.getExtension('WEBGL_lose_context')
-      if (ext) ext.loseContext()
-      renderer.domElement.remove()
-      renderer = null
-    }
-    if (scene) {
-      scene.clear()
-      scene = null
-    }
+    renderer = null
+    scene = null
   })
 
   return {
