@@ -1,5 +1,6 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { createScene } from '../three/scene/createScene.js'
+import { disposeObject } from '../three/dispose.js'
 import { attachInteractions } from '../three/scene/interactions.js'
 import { createFlightFx } from '../three/scene/flightFx.js'
 import { createAnimator } from '../three/scene/animator.js'
