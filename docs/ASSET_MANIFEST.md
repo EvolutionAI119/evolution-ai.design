@@ -34,7 +34,7 @@
 | S-05 | `troubleshoot-i18n-deploy` | [.trae/skills/troubleshoot-i18n-deploy/SKILL.md](../.trae/skills/troubleshoot-i18n-deploy/SKILL.md) | 中文界面显示英文、文档数字过期、公网白屏/黑屏 | 两类故障的定位与修复 | 可用 |
 | S-06 | `threejs-automotive-preview-debugging` | [.trae/skills/threejs-automotive-preview-debugging/SKILL.md](../.trae/skills/threejs-automotive-preview-debugging/SKILL.md) | 高光白带、反射异常、破面、零件不可见/比例失调 | Car3D 渲染根因与多视角截图 | 可用（2026-11-02 入库） |
 | S-07 | `wheel-arch-envelope-sync` | [.trae/skills/wheel-arch-envelope-sync/SKILL.md](../.trae/skills/wheel-arch-envelope-sync/SKILL.md) | 轮拱造型异常、车轮穿壳、拱顶不足、EVO→SISA 同步 | 轮拱包络跨平台对齐 | 可用（2026-11-02 入库） |
-| S-08 | 内饰布置校验 | — | 需要把 L1~L5 检查固化为可调用技能 | 当前只有 [2D_LAYOUT_VERIFICATION.md](2D_LAYOUT_VERIFICATION.md) 文档 | 雏形（建议 M3 技能化） |
+| S-08 | 内饰布置校验 | `.trae/skills/interior-layout-verify/` | 需要把 L1~L5 检查固化为可调用技能 | 技能封装 4 条 vitest + cockpit 基线命令，细则见 [2D_LAYOUT_VERIFICATION.md](2D_LAYOUT_VERIFICATION.md) | 可用（M3 已技能化） |
 
 仓库外由 TRAE 提供的通用技能（`algorithm-debugging`、`TRAE-*` 等）不计入本清单。
 
@@ -51,7 +51,7 @@
 | W-05 | 3D 预览调试 | 截图 → 根因分类 → 最小修复 → 多机位复验 | S-06 | skill 触发 + 浏览器实机 | 可用 |
 | W-06 | 发布闭环 | vitest → build → dist 全量同步 → 公网 MD5 比对 | S-01 | 手动授权后执行 | 可用（**冻结中**） |
 | W-07 | 训练评审 | 训练完成 → `POST /workflows/training-review` → 合规性审核 → 质量审核 | 后端 workflow 路由、登录 Token | API：9 个 `/workflows` 端点 | 可用 |
-| W-08 | 贝叶斯优化 | 参数空间（14 维）→ RBF-GP → EI/UCB 建议 | `bayes_optimizer.py` | 后端 bayes 路由 | 可用；无自动双判据收敛（雏形） |
+| W-08 | 贝叶斯优化 | 参数空间（14 维）→ RBF-GP → EI/UCB 建议 → 双判据收敛参考 | `bayes_optimizer.py` | 后端 bayes 路由 | 可用；`convergence()` 输出停滞+离散度双判据（仅作停止参考） |
 
 ### 3.1 工作流节点契约（标准化封装）
 
@@ -144,8 +144,8 @@ description: <触发词：中文/English；明确“不用于……”>
 
 | 缺口 | 影响 | 建议 |
 |---|---|---|
-| 无编排器/评审 agent | 任务路由靠人工与描述匹配 | M3 增加 A-02/A-03 |
-| 内饰校验未技能化（S-08 雏形） | L1~L5 每次靠人记文档 | M3 封装为 skill + 脚本 |
+| 无编排器/评审 agent | 任务路由靠人工与描述匹配 | 定义已完成（[AGENT_DEFINITIONS.md](AGENT_DEFINITIONS.md)），实现待排期 |
+| 内饰校验技能化（S-08） | 已封装为 skill，仍需人判断阈值变更是否合规 | 阈值改动必须同时更新文档与测试 |
 | W-04 依赖 SISA 侧手工执行 | 同步不可自动验证 | 增加只读核对脚本（不回流） |
-| W-08 无自动收敛 | 需人工判停 | 保持现状，文档标注“停止参考” |
+| W-08 收敛为参考信号 | `convergence()` 只判停、不自动终止会话；阈值需按项目标定量标定 | 会话摘要已暴露该字段，按需调 `window`/`improvement_eps`/`score_std_eps` |
 | 数据集无版本/许可字段 | 无法追溯来源 | 在 data_card 增加 `version` / `license` 列 |
