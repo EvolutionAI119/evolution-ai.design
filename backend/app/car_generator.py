@@ -6,6 +6,7 @@ import numpy as np
 from pathlib import Path
 
 from .nurbs import NURBSSurface, ControlPoint
+from . import param_contract
 
 
 class NURBSCarBodyGenerator:
@@ -44,66 +45,24 @@ class NURBSCarBodyGenerator:
     @staticmethod
     def _flat_index(groups):
         """建立 {参数名: 所属分组} 索引，供扁平格式覆盖使用"""
-        idx = {}
-        for gname, items in groups.items():
-            for key in items:
-                idx.setdefault(key, gname)
-        return idx
+        return param_contract.flat_index(groups)
 
-    #: 前端字段名 → 后端配置参数名
-    #:
-    #: 前端 `src/config/carPresets.js` 与后端 `config/automotive_parameters.json`
-    #: 的命名并不一致，且部分字段语义不同。此前两者从未对接，
-    #: 导致即使传参也无法命中，参数滑杆与几何脱节。
-    #:
-    #: 映射原则（以**几何语义**为准，而非字面相同）：
-    #:   wheel_base / front_overhang / rear_overhang 为纯命名差异，直接映射；
-    #:   roof_height **两者同名但语义完全不同**（前端=车顶纵向跨度 550~1000，
-    #:   后端 roof_height=车顶板厚度 30~100），若按原名注入会把 850 当成
-    #:   板厚、量级错 10 倍以上，故映射到语义对应的 roof_length；
-    #:   rear_slant_angle 与 c_pillar_angle 同为 C 柱倾角，做同义映射。
-    PARAM_ALIASES = {
-        "wheel_base": "wheelbase",
-        "front_overhang": "overhang_front",
-        "rear_overhang": "overhang_rear",
-        "roof_height": "roof_length",
-        "rear_slant_angle": "c_pillar_angle",
-    }
+    #: 前端字段名 → 后端配置参数名（与 API 校验共用同一定义，见 param_contract）
+    PARAM_ALIASES = param_contract.PARAM_ALIASES
 
     #: 这些前端字段名**必须强制走别名**，即使后端存在同名参数。
     #: 用于处理"同名不同义"的陷阱（当前为 roof_height）。
-    FORCE_ALIAS = frozenset({"roof_height"})
+    FORCE_ALIAS = param_contract.FORCE_ALIAS
 
     @staticmethod
     def resolve_overrides(overrides):
         """把扁平参数覆盖解析为分组格式
 
-        同时处理**前端与后端参数名不一致**的问题（见 `PARAM_ALIASES`
-        与 `FORCE_ALIAS`）。公开此方法便于路由层与测试单独验证，
-        无需构造生成器。
+        别名映射与未知字段忽略的语义统一由 `param_contract` 提供，
+        保证 `/car/generate` 与 `/import-export/import` 共用同一套契约。
+        公开此方法便于路由层与测试单独验证，无需构造生成器。
         """
-        if not overrides:
-            return {}
-        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                '..', 'config', 'automotive_parameters.json')
-        with open(cfg_path, 'r', encoding='utf-8') as f:
-            groups = json.load(f)['automotive_parameters']
-        idx = {}
-        for gname, items in groups.items():
-            for key in items:
-                idx.setdefault(key, gname)
-        out = {}
-        for k, v in overrides.items():
-            if k in NURBSCarBodyGenerator.FORCE_ALIAS:
-                name = NURBSCarBodyGenerator.PARAM_ALIASES.get(k)
-            else:
-                name = k if k in idx else NURBSCarBodyGenerator.PARAM_ALIASES.get(k)
-            if name is None:
-                continue
-            g = idx.get(name)
-            if g:
-                out.setdefault(g, {})[name] = v
-        return out
+        return param_contract.resolve_flat_overrides(overrides)
 
     def _init_coords(self):
         """初始化车身坐标系关键尺寸与**统一硬点链**

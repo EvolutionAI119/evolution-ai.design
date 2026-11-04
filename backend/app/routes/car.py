@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any
 
 from ..car_generator import NURBSCarBodyGenerator as CarBodyGenerator
+from .. import param_contract
 from ..database import User
 from ..schemas import (CarGenerateRequest, CarComponentGenerateRequest,
                        CarComponentResponse, CarCompleteResponse)
@@ -23,6 +24,17 @@ def _get_generator() -> CarBodyGenerator:
     if _generator is None:
         _generator = CarBodyGenerator()
     return _generator
+
+
+def _reject_out_of_range(params_override) -> None:
+    """与 /import-export/import 共用同一套别名映射与区间校验。
+
+    越界值一律 422 拒绝（不夹紧、不静默通过），错误消息包含
+    字段名、实际值、允许区间。未知字段名沿用既有语义忽略。
+    """
+    errors = param_contract.validate_flat_overrides(params_override)
+    if errors:
+        raise HTTPException(status_code=422, detail="; ".join(errors[:5]))
 
 
 # 无需 side/position 参数的部件
@@ -54,6 +66,7 @@ async def generate_complete_car(request: CarGenerateRequest,
     注意：请求体中的 `params_override` 会**真正应用到几何**。
     此前该字段被接收但从未传递，导致前端参数滑杆与几何脱节。
     """
+    _reject_out_of_range(request.params_override)
     try:
         start = time.time()
         car = _get_generator().generate_complete_car(
@@ -129,6 +142,7 @@ async def regenerate_car(request: CarGenerateRequest,
     修正：此前该接口只是新建一个**默认**生成器，`params_override` 被完全丢弃，
     与 docstring 声称的"用新参数重新生成"不符。
     """
+    _reject_out_of_range(request.params_override)
     try:
         global _generator
         _generator = CarBodyGenerator()

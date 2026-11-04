@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 
 from ..car_generator import NURBSCarBodyGenerator
+from .. import param_contract
 from ..config import settings
 from ..fence.guards import read_upload_limited
 from ..fence.killswitch import killswitch_dependency
@@ -37,17 +38,17 @@ from ..utils.import_preview import (
 router = APIRouter(prefix="/api/v1/import-export", tags=["导入改参导出"])
 
 
-# ============== 分组中文名 ↔ 英文稳定键 双向映射 ==============
-# 前端所有显示与 i18n key 统一使用英文稳定键；后端保留中文原有 key（ automotive_parameters.json 不变）。
-GROUP_ZH_TO_EN = {
-    "整车尺寸": "overall_dimensions",
-    "车身部件": "body_components",
-    "造型角度": "styling_angles",
-    "A级曲面参数": "class_a_params",
-    "比例参数": "proportions",
-    "飞行参数": "flight_parameters",
-}
-GROUP_EN_TO_ZH = {v: k for k, v in GROUP_ZH_TO_EN.items()}
+# ============== 参数契约：分组名 ↔ 英文稳定键 + 别名/区间校验 ==============
+# 唯一事实来源在 `app/param_contract.py`，与 `/car/generate` 共用，
+# 避免两个入口对同名参数（尤其 roof_height 同名不同义）给出不一致的语义。
+GROUP_ZH_TO_EN = param_contract.GROUP_ZH_TO_EN
+GROUP_EN_TO_ZH = param_contract.GROUP_EN_TO_ZH
+
+_normalize_group = param_contract.normalize_group
+_group_key = param_contract.group_key
+_validate_override = param_contract.validate_group_value
+resolve_grouped_key = param_contract.resolve_grouped_key
+_check_and_apply = param_contract.check_and_apply_group_value
 
 
 # 对外兼容旧符号：_BRAND_MODEL_CATALOG / _MODEL_FALLBACK_BY_KEYWORD / _infer_brand_model
@@ -59,24 +60,6 @@ _MODEL_FALLBACK_BY_KEYWORD = list(DEFAULT_INFERRER.fallback_keywords)
 def _infer_brand_model(name_text: Optional[str]) -> (Optional[str], Optional[str]):
     """老的入口（复用 BrandModelInferrer 默认单例），保持与 E2E 测试兼容"""
     return DEFAULT_INFERRER.infer(name_text)
-
-
-def _normalize_group(params: dict, group: str) -> str:
-    """把分组名规范化为 automotive_parameters.json 中使用的中文 key。
-    支持三种输入：中文原名 / 英文稳定键 / JSON 默认 key。
-    若找不到，原样返回（调用方仍会校验并报 422）。
-    """
-    if group in params:
-        return group
-    zh = GROUP_EN_TO_ZH.get(group)
-    if zh and zh in params:
-        return zh
-    return group
-
-
-def _group_key(group_zh: str) -> str:
-    """返回分组英文稳定键；找不到时回退为把中文直接 slug（兜底避免崩溃）"""
-    return GROUP_ZH_TO_EN.get(group_zh, group_zh)
 
 
 def _get_sid(session_id: str) -> dict:
@@ -133,23 +116,6 @@ def _flatten_params(params: dict) -> List[dict]:
                     "category": meta.get("category", ""),
                 })
     return result
-
-
-def _validate_override(params: dict, group: str, key: str, value: float) -> Optional[str]:
-    """校验参数值是否在合法范围内。支持传入中文或英文分组名。"""
-    g = _normalize_group(params, group)
-    if g not in params:
-        return f"Parameter group '{group}' does not exist"
-    if key not in params[g]:
-        return f"Parameter '{key}' does not exist in group '{group}'"
-    meta = params[g][key]
-    if not isinstance(meta, dict) or "value" not in meta:
-        return f"Parameter '{group}.{key}' has invalid structure"
-    lo = meta.get("min_value", 0)
-    hi = meta.get("max_value", 9999)
-    if value < lo or value > hi:
-        return f"Value {value} for '{group}.{key}' is out of range [{lo}, {hi}]"
-    return None
 
 
 def _create_session(config: dict, overrides: dict, name: Optional[str] = None,
@@ -231,13 +197,12 @@ async def import_model(data: ImportModelRequest):
     applied: Dict[str, Dict[str, float]] = {}
     for group, items in overrides.items():
         for key, val in items.items():
-            err = _validate_override(auto_params, group, key, val)
+            ref, err = _check_and_apply(auto_params, group, key, val)
             if err:
                 errors.append(err)
                 continue
-            g = _normalize_group(auto_params, group)
-            auto_params[g][key]["value"] = val
-            applied.setdefault(g, {})[key] = val
+            g, ckey = ref
+            applied.setdefault(g, {})[ckey] = val
     if errors:
         raise HTTPException(status_code=422, detail="; ".join(errors[:5]))
     meta = {"source_format": ".json (inline)"}
@@ -307,14 +272,15 @@ async def import_model_file(file: UploadFile = File(...)):
                     if key not in default_params.get(group, {}):
                         continue
                     val = meta_in["value"]
-                    err = _validate_override(default_params, group, key, val)
+                    default_val = default_params[group][key].get("value")
+                    ref, err = _check_and_apply(default_params, group, key, val)
                     if err:
                         errors.append(err)
                         continue
-                    default_val = default_params[group][key].get("value")
                     if val != default_val:
-                        calc_overrides.setdefault(group, {})[key] = val
-                        applied_full.setdefault(group, {})[key] = val
+                        g, ckey = ref
+                        calc_overrides.setdefault(g, {})[ckey] = val
+                        applied_full.setdefault(g, {})[ckey] = val
             if errors:
                 raise HTTPException(status_code=422, detail="; ".join(errors[:5]))
             overrides = calc_overrides
@@ -331,13 +297,12 @@ async def import_model_file(file: UploadFile = File(...)):
                 if not isinstance(items, dict):
                     continue
                 for key, val in items.items():
-                    err = _validate_override(ap, group, key, val)
+                    ref, err = _check_and_apply(ap, group, key, val)
                     if err:
                         errors.append(err)
                         continue
-                    g = _normalize_group(ap, group)
-                    ap[g][key]["value"] = val
-                    applied_json.setdefault(g, {})[key] = val
+                    g, ckey = ref
+                    applied_json.setdefault(g, {})[ckey] = val
             if errors:
                 raise HTTPException(status_code=422, detail="; ".join(errors[:5]))
             meta["original_filename"] = filename
@@ -363,13 +328,12 @@ async def import_model_file(file: UploadFile = File(...)):
         applied_cad: Dict[str, Dict[str, float]] = {}
         for group, items in result.overrides.items():
             for key, val in items.items():
-                err = _validate_override(ap, group, key, val)
+                ref, err = _check_and_apply(ap, group, key, val)
                 if err:
                     errors.append(err)
                     continue
-                g = _normalize_group(ap, group)
-                ap[g][key]["value"] = val
-                applied_cad.setdefault(g, {})[key] = val
+                g, ckey = ref
+                applied_cad.setdefault(g, {})[ckey] = val
         if errors:
             raise HTTPException(status_code=422, detail="; ".join(errors[:5]))
         meta = result.to_meta()
@@ -444,20 +408,22 @@ async def modify_params(session_id: str, req: ParamModifyRequest):
         raise HTTPException(status_code=422, detail="; ".join(errors[:10]))
     # 再全部应用
     for item in req.overrides:
-        g = _normalize_group(params, item.group)
-        params[g][item.key]["value"] = item.value
-        s["overrides"].setdefault(g, {})[item.key] = item.value
+        ref, _ = resolve_grouped_key(params, item.group, item.key)
+        g, ckey = ref
+        params[g][ckey]["value"] = item.value
+        s["overrides"].setdefault(g, {})[ckey] = item.value
     # 持久化（关键：否则 Redis 中仍是旧值）
     _save_sid(session_id, s)
     # 返回修改过的参数
     changed = []
     for item in req.overrides:
-        g = _normalize_group(params, item.group)
-        meta = params[g][item.key]
+        ref, _ = resolve_grouped_key(params, item.group, item.key)
+        g, ckey = ref
+        meta = params[g][ckey]
         changed.append({
             "group": g,
             "group_key": _group_key(g),
-            "key": item.key,
+            "key": ckey,
             "name": meta.get("name", item.key),
             "value": meta["value"],
             "unit": meta.get("unit", ""),
