@@ -77,7 +77,7 @@ const zh = {
     viewerReset: '重置视角', viewerWireframe: '线框模式', viewerAutoRotate: '自动旋转', viewerFullscreen: '全屏',
     paramConfig: '参数配置', dimensions: '整车尺寸', components: '车身部件', angles: '造型角度',
     overallLength: '整车长度 (mm)', overallWidth: '整车宽度 (mm)', overallHeight: '整车高度 (mm)',
-    wheelBase: '轴距 (mm)', hoodLength: '发动机盖长度 (mm)', roofHeight: '车顶高度 (mm)',
+    wheelBase: '轴距 (mm)', hoodLength: '发动机盖长度 (mm)', roofHeight: '车顶跨度 (mm)',
     wheelDiameter: '车轮直径 (mm)', doorFrontLength: '前车门长度 (mm)', hoodAngle: '发动机盖角度 (°)',
     windshieldAngle: '前风挡角度 (°)', rearWindowAngle: '后风挡角度 (°)', componentGenerate: '部件生成',
     hood: '发动机盖', roof: '车顶', wheel: '车轮', doorFront: '前车门', doorRear: '后车门',
@@ -479,7 +479,7 @@ const zh = {
     paramNames: {
       overall_length: '整车长度', overall_width: '整车宽度', overall_height: '整车高度',
       wheel_base: '轴距', track_width: '轮距', ground_clearance: '离地间隙',
-      hood_length: '发动机盖长度', roof_height: '车顶高度', wheel_diameter: '车轮直径',
+      hood_length: '发动机盖长度', roof_height: '车顶跨度', wheel_diameter: '车轮直径',
       windshield_angle: '前风挡倾角', rear_window_angle: '后风挡倾角',
       rear_slant_angle: '尾部溜背角', front_overhang: '前悬', rear_overhang: '后悬'
     },
@@ -960,7 +960,7 @@ const en = {
     viewerReset: 'Reset view', viewerWireframe: 'Wireframe mode', viewerAutoRotate: 'Auto rotate', viewerFullscreen: 'Fullscreen',
     paramConfig: 'Parameter Configuration', dimensions: 'Vehicle Dimensions', components: 'Body Components', angles: 'Styling Angles',
     overallLength: 'Overall Length (mm)', overallWidth: 'Overall Width (mm)', overallHeight: 'Overall Height (mm)',
-    wheelBase: 'Wheel Base (mm)', hoodLength: 'Hood Length (mm)', roofHeight: 'Roof Height (mm)',
+    wheelBase: 'Wheel Base (mm)', hoodLength: 'Hood Length (mm)', roofHeight: 'Roof Span (mm)',
     wheelDiameter: 'Wheel Diameter (mm)', doorFrontLength: 'Front Door Length (mm)', hoodAngle: 'Hood Angle (°)',
     windshieldAngle: 'Windshield Angle (°)', rearWindowAngle: 'Rear Window Angle (°)', componentGenerate: 'Component Generation',
     hood: 'Hood', roof: 'Roof', wheel: 'Wheel', doorFront: 'Front Door', doorRear: 'Rear Door',
@@ -1362,7 +1362,7 @@ const en = {
     paramNames: {
       overall_length: 'Overall length', overall_width: 'Overall width', overall_height: 'Overall height',
       wheel_base: 'Wheelbase', track_width: 'Track width', ground_clearance: 'Ground clearance',
-      hood_length: 'Hood length', roof_height: 'Roof height', wheel_diameter: 'Wheel diameter',
+      hood_length: 'Hood length', roof_height: 'Roof span', wheel_diameter: 'Wheel diameter',
       windshield_angle: 'Windshield angle', rear_window_angle: 'Rear window angle',
       rear_slant_angle: 'Rear slant angle', front_overhang: 'Front overhang', rear_overhang: 'Rear overhang'
     },

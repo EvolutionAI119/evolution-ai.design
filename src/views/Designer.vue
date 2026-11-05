@@ -274,8 +274,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.overall_length"
-                  :min="carParams.wheel_base + 1000"
-                  :max="carParams.wheel_base + 3800"
+                  :min="Math.max(rangeMin('overall_length', 3000), carParams.wheel_base + 1000)"
+                  :max="Math.min(rangeMax('overall_length', 6000), carParams.wheel_base + 3800)"
                   step="10"
                   class="param-slider"
                   @input="designer.onOverallLengthChange"
@@ -289,8 +289,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.overall_width"
-                  min="1600"
-                  max="2200"
+                  :min="rangeMin('overall_width', 1500)"
+                  :max="rangeMax('overall_width', 2200)"
                   step="10"
                   class="param-slider"
                 />
@@ -303,8 +303,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.overall_height"
-                  min="1100"
-                  max="2000"
+                  :min="rangeMin('overall_height', 1200)"
+                  :max="rangeMax('overall_height', 2000)"
                   step="10"
                   class="param-slider"
                 />
@@ -317,8 +317,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.wheel_base"
-                  :min="1800"
-                  :max="carParams.overall_length - 1000"
+                  :min="rangeMin('wheel_base', 2000)"
+                  :max="Math.min(rangeMax('wheel_base', 4000), carParams.overall_length - 1000)"
                   step="10"
                   class="param-slider"
                   @input="designer.onWheelBaseChange"
@@ -370,8 +370,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.hood_length"
-                  min="700"
-                  max="1800"
+                  :min="rangeMin('hood_length', 1000)"
+                  :max="rangeMax('hood_length', 1600)"
                   step="10"
                   class="param-slider"
                 />
@@ -384,8 +384,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.roof_height"
-                  min="250"
-                  max="1200"
+                  :min="rangeMin('roof_height', 1200)"
+                  :max="rangeMax('roof_height', 2000)"
                   step="10"
                   class="param-slider"
                 />
@@ -398,8 +398,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.wheel_diameter"
-                  min="550"
-                  max="850"
+                  :min="rangeMin('wheel_diameter', 350)"
+                  :max="rangeMax('wheel_diameter', 600)"
                   step="10"
                   class="param-slider"
                 />
@@ -412,8 +412,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.windshield_angle"
-                  min="20"
-                  max="60"
+                  :min="rangeMin('windshield_angle', 55)"
+                  :max="rangeMax('windshield_angle', 75)"
                   step="1"
                   class="param-slider"
                 />
@@ -482,8 +482,8 @@
                 <input
                   type="range"
                   v-model.number="carParams.glass_barrel_radius"
-                  min="500"
-                  max="4000"
+                  :min="rangeMin('glass_barrel_radius', 400)"
+                  :max="rangeMax('glass_barrel_radius', 5000)"
                   step="50"
                   class="param-slider"
                 />
@@ -507,7 +507,7 @@
                   <span class="param-name">{{ t('designer.bPillarWidthRatio') }}</span>
                   <span class="param-value">{{ (carParams.b_pillar_width_ratio * 100).toFixed(1) }}%</span>
                 </div>
-                <input type="range" v-model.number="carParams.b_pillar_width_ratio" min="0.08" max="0.30" step="0.01" class="param-slider" />
+                <input type="range" v-model.number="carParams.b_pillar_width_ratio" :min="rangeMin('b_pillar_width_ratio', 0.02)" :max="rangeMax('b_pillar_width_ratio', 0.12)" step="0.01" class="param-slider" />
               </div>
               <div class="param-item">
                 <div class="param-label-row">
@@ -535,7 +535,7 @@
                   <span class="param-name">{{ t('designer.handleXRatio') }}</span>
                   <span class="param-value">{{ (carParams.handle_x_ratio * 100).toFixed(0) }}%</span>
                 </div>
-                <input type="range" v-model.number="carParams.handle_x_ratio" min="0.05" max="0.35" step="0.01" class="param-slider" />
+                <input type="range" v-model.number="carParams.handle_x_ratio" :min="rangeMin('handle_x_ratio', 0.1)" max="0.35" step="0.01" class="param-slider" />
               </div>
               <div class="param-item">
                 <div class="param-label-row">
@@ -699,6 +699,7 @@ import Car3D from '../components/Car3D.vue'
 import Car2D from '../components/Car2D.vue'
 import CarSection2D from '../components/CarSection2D.vue'
 import { carTypes, brands, bodyColors } from '../config/carPresets'
+import { toBackendParams } from '../config/paramMapping'
 import { carAPI, buildAPI, aiAPI } from '../api'
 import { useDesignerStore } from '../stores/designer'
 import { useAuthStore } from '../stores/auth'
@@ -737,6 +738,17 @@ const nurbsQuality = ref(null)
 const nurbsMeshData = ref(null)
 
 const carParams = params
+
+// 滑杆区间约束：优先用后端只读契约（store.loadParamRanges），后端不可用时回退本地值。
+// 前端品牌预设只负责展示，实际提交前经 paramMapping 映射成后端语义。
+const rangeMin = (frontendKey, fallback) => {
+  const r = designer.rangeOf(frontendKey)
+  return r ? r.min : fallback
+}
+const rangeMax = (frontendKey, fallback) => {
+  const r = designer.rangeOf(frontendKey)
+  return r ? r.max : fallback
+}
 
 // 反重力飞控指标卡（与后端 flight_envelope.flight_control 同公式）：
 // 续航倍数 ≥3× / 姿态 ±2° / 延迟 ≤100ms / 峰值因子 ≤1.25 —— 随参数实时联动
@@ -998,7 +1010,7 @@ const generateCar = async () => {
   try {
     const response = await carAPI.generate({
       car_type: carType.value,
-      params: carParams.value,
+      params: toBackendParams(carParams.value),
       color: selectedColor.value
     })
     const data = response.data
@@ -1186,6 +1198,7 @@ const aiOptimize = async () => {
 
 onMounted(() => {
   loadAiStats()
+  designer.loadParamRanges()
   preloadAllImages()
 })
 

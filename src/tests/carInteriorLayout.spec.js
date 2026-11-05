@@ -635,17 +635,9 @@ describe('滑轨全行程（G 组）— 有效行程由布置几何联动收窄�
     expect(t.limited).toBe(t.effective < t.design - 1e-9)
   })
 
-  it('mpv / pickup 布置余量充足，保留全量机械行程（limited=false）', () => {
-    for (const type of ['mpv', 'pickup']) {
-      const t = deriveSeatTrackTravel(profileOf(type))
-      expect(t.limited).toBe(false)
-      expect(t.effective).toBeCloseTo(t.design, 12)
-    }
-  })
-
-  it('sedan/suv/coupe/sport 全量行程必收窄（limited=true），有效行程锁定整改值', () => {
-    // 整改验收值（mm）：与 INTERIOR_PROJECT_ACCEPTANCE §4.1 滑轨表逐一对应
-    const expected = { sedan: 233.8, suv: 144.7, coupe: 140.0, sport: 120.0 }
+  it('mpv / pickup 在契约设计值下同样需收窄（limited=true）', () => {
+    // 轮毂直径按后端契约收窄后，前排纵向空间变小，mpv/pickup 不再能保留全量行程
+    const expected = { mpv: 274.6, pickup: 176.5 }
     for (const [type, effMm] of Object.entries(expected)) {
       const t = deriveSeatTrackTravel(profileOf(type))
       expect(t.limited).toBe(true)
@@ -653,8 +645,22 @@ describe('滑轨全行程（G 组）— 有效行程由布置几何联动收窄�
     }
   })
 
+  it('sedan 全量行程安全；suv/coupe/sport 全量行程必收窄（limited=true）', () => {
+    // 整改验收值（mm）：与当前契约设计值下的布置几何逐一对应
+    const expected = { suv: 254.3, coupe: 140.0, sport: 120.0 }
+    for (const [type, effMm] of Object.entries(expected)) {
+      const t = deriveSeatTrackTravel(profileOf(type))
+      expect(t.limited).toBe(true)
+      expect(t.effective * 1000).toBeCloseTo(effMm, 0)
+    }
+    const sedan = deriveSeatTrackTravel(profileOf('sedan'))
+    expect(sedan.limited).toBe(false)
+    expect(sedan.effective).toBeCloseTo(sedan.design, 12)
+  })
+
   it('R-01 复现性断言：suv 若沿用全量行程，最后端靠背侵入 B 柱（证明收窄必要）', () => {
-    const P = profileOf('suv')
+    // 用历史轮毂直径 760mm 复现原始缺陷（当前契约设计值 600mm 下间隙已增大，不再复现）
+    const P = profileOf('suv', { wheel_diameter: 760 })
     const L = deriveInteriorLayout(P)
     const t = L.travel
     // 全量半行程 130mm > 允许后向 14.7mm → 全量最后端余量 = 24.7 − 130 = −105.3mm（侵入）

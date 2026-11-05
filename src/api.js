@@ -190,6 +190,7 @@ export const carAPI = {
   generateComponent: (component, data) => api.post('/car/generate/component', { component, ...data }),
   getComponents: () => api.get('/car/components'),
   getParameters: () => api.get('/car/parameters'),
+  getParameterSchema: () => api.get('/car/parameters/schema'),
   regenerate: (data) => api.post('/car/regenerate', data),
   export: (data) => api.post('/car/export', data)
 }

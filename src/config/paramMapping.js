@@ -78,3 +78,10 @@ export function toBackendGroups (frontendParams = {}) {
   }
   return groups
 }
+
+/** 从后端 schema.flat 取某前端字段的 [min,max]；缺失时返回 null（调用方用本地回退） */
+export function resolveRange (schemaFlat, frontendKey) {
+  const meta = schemaFlat?.[toBackendKey(frontendKey)]
+  if (!meta || typeof meta.min !== 'number' || typeof meta.max !== 'number') return null
+  return { min: meta.min, max: meta.max }
+}

@@ -61,10 +61,12 @@ describe('调角器扫掠 — 逐角间隙 + 限位角（R-01/R-03 运动学佐�
     expect(r1.gapAtMaxSafe).toBeGreaterThanOrEqual(MARGIN - 1e-9)
   })
 
-  it('sedan 前排调角器锁设计角：滑轨最后端时设计角即安全上限（R-03 运动学闭环）', () => {
+  it('sedan 前排调角器锁上限高于设计角：设计角仍处于安全区（R-03 运动学闭环）', () => {
     const [r1] = deriveReclinerSweep(profileOf('sedan'))
     expect(r1.limited).toBe(true)
-    expect(r1.maxSafeAft).toBeCloseTo(r1.design, 9)
+    // 契约轮毂设计值收窄后纵向空间增大，安全上限提升；设计角仍须落在安全侧
+    expect(r1.maxSafeAft).toBeGreaterThanOrEqual(r1.design - 1e-9)
+    expect(r1.gapAtMaxSafe).toBeGreaterThanOrEqual(MARGIN - 1e-9)
   })
 
   it('mpv 三排全覆盖：中排障碍 = 第 3 排坐垫前缘，末排障碍 = 座舱后界', () => {

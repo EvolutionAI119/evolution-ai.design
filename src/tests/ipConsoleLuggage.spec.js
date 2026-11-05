@@ -162,11 +162,8 @@ describe('前/后行李舱内饰布置 — 六车型', () => {
   it.each(ALL_TYPES)('%s 前行李舱（frunk）存在性与几何合法', (type) => {
     const P = profileOf(type)
     const T = deriveLuggageLayout(P)
-    if (type === 'suv') {
-      // 前轮拱跳动包络占据整个前舱 → 几何上无前行李舱（与工程一致：SUV 前舱为动力舱）
-      expect(T.frunk).toBeNull()
-      return
-    }
+    // 轮毂直径收窄到后端契约（350~600mm）后，前轮拱跳动包络相应减小，
+    // SUV 前舱也出现可用空间 → frunk 存在（不再是必空），一律走几何合法性校验。
     const f = T.frunk
     expect(f).toBeTruthy()
     // 避让前轮拱转向包络、不越出车头

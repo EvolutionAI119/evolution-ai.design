@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { carTypeParams, defaultCarParams, brands } from '../config/carPresets'
+import { carAPI } from '../api'
+import { resolveRange } from '../config/paramMapping'
 
 function snakeToCamel(obj) {
   if (!obj || typeof obj !== 'object') return obj
@@ -22,6 +24,23 @@ export const useDesignerStore = defineStore('designer', () => {
   const viewMode = ref('3d')
   const isLoading = ref(false)
   const generating = ref(false)
+  // 后端只读参数契约（schema.flat）：选车型/滑杆用它约束输入，避免默认载荷越界
+  const paramSchemaFlat = ref({})
+
+  async function loadParamRanges() {
+    try {
+      const res = await carAPI.getParameterSchema()
+      paramSchemaFlat.value = (res.data && res.data.flat) || {}
+    } catch (_) {
+      // 后端不可用时保持空：UI 退回各滑杆的本地回退区间
+      paramSchemaFlat.value = {}
+    }
+  }
+
+  /** 前端字段（如 roof_height）→ 后端契约区间；无契约返回 null */
+  function rangeOf(frontendKey) {
+    return resolveRange(paramSchemaFlat.value, frontendKey)
+  }
 
   const currentCarTypeParams = computed(() => carTypeParams[carType.value] || {})
   
@@ -195,8 +214,11 @@ export const useDesignerStore = defineStore('designer', () => {
     viewMode,
     isLoading,
     generating,
+    paramSchemaFlat,
     currentCarTypeParams,
     mergedParams,
+    loadParamRanges,
+    rangeOf,
     setCarType,
     setBrand,
     selectModel,

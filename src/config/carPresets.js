@@ -26,11 +26,11 @@ const archFlatten = (type) => ({
   wheel_arch_flatten: { sedan: 0, suv: 0.25, coupe: 0, sport: 0, mpv: 0.05, pickup: 0.35 }[type] ?? 0.1
 })
 
-// 车门/B柱/把手布置（UI 可调，前后端同步）：默认值取实车常用区间
-// B柱宽 = 0.16 × 座舱高（轿车 ≈75mm，实车 60~120mm）；把手距腰带线 ≈50mm；
+// 车门/B柱/把手布置（UI 可调，前后端同步）：默认值取后端契约区间内设计值
+// B柱宽 = 0.12 × 座舱高（轿车 ≈55mm，后端允许 0.02~0.12）；把手距腰带线 ≈50mm；
 // 把手 X 位于门尾段 15% 处（紧邻分缝，符合真车把手位置）
 const doorParams = () => ({
-  b_pillar_width_ratio: 0.16,
+  b_pillar_width_ratio: 0.12,
   door_open_angle: 70,
   door_seam_width: 8,
   handle_drop_ratio: 0.10,
@@ -54,10 +54,10 @@ export const defaultCarParams = {
   track_width: 1680,
   ground_clearance: 150,
   hood_length: 1200,
-  roof_height: 1000,
-  wheel_diameter: 750,
+  roof_height: 1400,
+  wheel_diameter: 600,
   ...archFlatten('sedan'),
-  windshield_angle: 30,
+  windshield_angle: 55,
   rear_window_angle: 25,
   rear_slant_angle: 15,
   ...glassParams('sedan'),
@@ -71,8 +71,8 @@ export const carTypeParams = {
   sedan: {
     overall_length: 4950, overall_width: 1880, overall_height: 1460,
     wheel_base: 2890, track_width: 1600, ground_clearance: 140,
-    hood_length: 1050, roof_height: 550, wheel_diameter: 680,
-    windshield_angle: 35, rear_window_angle: 28, rear_slant_angle: 18,
+    hood_length: 1050, roof_height: 1300, wheel_diameter: 600,
+    windshield_angle: 55, rear_window_angle: 28, rear_slant_angle: 18,
     ...glassParams('sedan'),
     ...flightParams('sedan'),
     ...archFlatten('sedan'),
@@ -81,8 +81,8 @@ export const carTypeParams = {
   suv: {
     overall_length: 5050, overall_width: 1980, overall_height: 1780,
     wheel_base: 2950, track_width: 1680, ground_clearance: 210,
-    hood_length: 1150, roof_height: 850, wheel_diameter: 760,
-    windshield_angle: 28, rear_window_angle: 22, rear_slant_angle: 12,
+    hood_length: 1150, roof_height: 1500, wheel_diameter: 600,
+    windshield_angle: 55, rear_window_angle: 22, rear_slant_angle: 12,
     ...glassParams('suv'),
     ...flightParams('suv'),
     ...archFlatten('suv'),
@@ -91,8 +91,8 @@ export const carTypeParams = {
   coupe: {
     overall_length: 4800, overall_width: 1890, overall_height: 1380,
     wheel_base: 2780, track_width: 1620, ground_clearance: 120,
-    hood_length: 1350, roof_height: 420, wheel_diameter: 700,
-    windshield_angle: 40, rear_window_angle: 35, rear_slant_angle: 40,
+    hood_length: 1350, roof_height: 1250, wheel_diameter: 600,
+    windshield_angle: 55, rear_window_angle: 35, rear_slant_angle: 40,
     ...glassParams('coupe'),
     ...flightParams('coupe'),
     ...archFlatten('coupe'),
@@ -101,28 +101,28 @@ export const carTypeParams = {
   sport: {
     overall_length: 4600, overall_width: 1980, overall_height: 1250,
     wheel_base: 2700, track_width: 1700, ground_clearance: 100,
-    hood_length: 1500, roof_height: 350, wheel_diameter: 720,
-    windshield_angle: 45, rear_window_angle: 42, rear_slant_angle: 50,
+    hood_length: 1500, roof_height: 1200, wheel_diameter: 600,
+    windshield_angle: 55, rear_window_angle: 42, rear_slant_angle: 50,
     ...glassParams('sport'),
     ...flightParams('sport'),
     ...archFlatten('sport'),
     front_overhang: 950, rear_overhang: 950
   },
   mpv: {
-    overall_length: 5200, overall_width: 1920, overall_height: 1830,
+    overall_length: 5200, overall_width: 1920, overall_height: 1900,
     wheel_base: 3100, track_width: 1640, ground_clearance: 160,
-    hood_length: 850, roof_height: 950, wheel_diameter: 700,
-    windshield_angle: 25, rear_window_angle: 15, rear_slant_angle: 8,
+    hood_length: 1000, roof_height: 1550, wheel_diameter: 600,
+    windshield_angle: 55, rear_window_angle: 15, rear_slant_angle: 8,
     ...glassParams('mpv'),
     ...flightParams('mpv'),
     ...archFlatten('mpv'),
     front_overhang: 880, rear_overhang: 1220
   },
   pickup: {
-    overall_length: 5600, overall_width: 1980, overall_height: 1880,
+    overall_length: 5600, overall_width: 1980, overall_height: 1920,
     wheel_base: 3450, track_width: 1680, ground_clearance: 230,
-    hood_length: 1350, roof_height: 750, wheel_diameter: 780,
-    windshield_angle: 28, rear_window_angle: 20, rear_slant_angle: 15,
+    hood_length: 1350, roof_height: 1250, wheel_diameter: 600,
+    windshield_angle: 55, rear_window_angle: 20, rear_slant_angle: 15,
     ...glassParams('pickup'),
     ...flightParams('pickup'),
     ...archFlatten('pickup'),
@@ -188,10 +188,10 @@ const brandsRaw = [
     name: 'Rolls-Royce',
     color: '#4ade80',
     models: [
-      { key: 'phantom', name: 'Phantom', params: { overall_length: 5770, overall_width: 2018, overall_height: 1648, wheel_base: 3552, track_width: 1680, ground_clearance: 150, hood_length: 1300, roof_height: 750, wheel_diameter: 750, windshield_angle: 28, rear_window_angle: 22, rear_slant_angle: 12, front_overhang: 1050, rear_overhang: 1168 }, image: mk('Rolls-Royce Phantom luxury sedan side view black', 'landscape_16_9') },
-      { key: 'ghost', name: 'Ghost', params: { overall_length: 5546, overall_width: 1948, overall_height: 1550, wheel_base: 3295, track_width: 1640, ground_clearance: 145, hood_length: 1200, roof_height: 650, wheel_diameter: 720, windshield_angle: 30, rear_window_angle: 24, rear_slant_angle: 14, front_overhang: 1020, rear_overhang: 1231 }, image: mk('Rolls-Royce Ghost luxury sedan side view silver', 'landscape_16_9') },
-      { key: 'cullinan', name: 'Cullinan', params: { overall_length: 5341, overall_width: 2000, overall_height: 1835, wheel_base: 3295, track_width: 1680, ground_clearance: 215, hood_length: 1200, roof_height: 900, wheel_diameter: 780, windshield_angle: 26, rear_window_angle: 20, rear_slant_angle: 10, front_overhang: 970, rear_overhang: 1076 }, image: mk('Rolls-Royce Cullinan luxury SUV side view white', 'landscape_16_9') },
-      { key: 'wraith', name: 'Wraith', params: { overall_length: 5285, overall_width: 1947, overall_height: 1507, wheel_base: 3112, track_width: 1630, ground_clearance: 135, hood_length: 1400, roof_height: 550, wheel_diameter: 710, windshield_angle: 38, rear_window_angle: 32, rear_slant_angle: 35, front_overhang: 1090, rear_overhang: 1083 }, image: mk('Rolls-Royce Wraith luxury coupe side view blue', 'landscape_16_9') }
+      { key: 'phantom', name: 'Phantom', params: { overall_length: 5770, overall_width: 2018, overall_height: 1648, wheel_base: 3552, track_width: 1680, ground_clearance: 150, hood_length: 1300, roof_height: 1500, wheel_diameter: 590, windshield_angle: 62, rear_window_angle: 22, rear_slant_angle: 12, front_overhang: 1050, rear_overhang: 1168 }, image: mk('Rolls-Royce Phantom luxury sedan side view black', 'landscape_16_9') },
+      { key: 'ghost', name: 'Ghost', params: { overall_length: 5546, overall_width: 1948, overall_height: 1550, wheel_base: 3295, track_width: 1640, ground_clearance: 145, hood_length: 1200, roof_height: 1450, wheel_diameter: 580, windshield_angle: 63, rear_window_angle: 24, rear_slant_angle: 14, front_overhang: 1020, rear_overhang: 1231 }, image: mk('Rolls-Royce Ghost luxury sedan side view silver', 'landscape_16_9') },
+      { key: 'cullinan', name: 'Cullinan', params: { overall_length: 5341, overall_width: 2000, overall_height: 1835, wheel_base: 3295, track_width: 1680, ground_clearance: 215, hood_length: 1200, roof_height: 1500, wheel_diameter: 590, windshield_angle: 61, rear_window_angle: 20, rear_slant_angle: 10, front_overhang: 970, rear_overhang: 1076 }, image: mk('Rolls-Royce Cullinan luxury SUV side view white', 'landscape_16_9') },
+      { key: 'wraith', name: 'Wraith', params: { overall_length: 5285, overall_width: 1947, overall_height: 1507, wheel_base: 3112, track_width: 1630, ground_clearance: 135, hood_length: 1400, roof_height: 1350, wheel_diameter: 575, windshield_angle: 66, rear_window_angle: 32, rear_slant_angle: 35, front_overhang: 1090, rear_overhang: 1083 }, image: mk('Rolls-Royce Wraith luxury coupe side view blue', 'landscape_16_9') }
     ]
   },
   {
@@ -199,10 +199,10 @@ const brandsRaw = [
     name: 'Bentley',
     color: '#3b82f6',
     models: [
-      { key: 'continental-gt', name: 'Continental GT', params: { overall_length: 4850, overall_width: 1954, overall_height: 1405, wheel_base: 2851, track_width: 1650, ground_clearance: 125, hood_length: 1450, roof_height: 480, wheel_diameter: 730, windshield_angle: 38, rear_window_angle: 33, rear_slant_angle: 38, front_overhang: 1000, rear_overhang: 999 }, image: mk('Bentley Continental GT coupe side view green', 'landscape_16_9') },
-      { key: 'continental-gtc', name: 'Continental GTC', params: { overall_length: 4850, overall_width: 1954, overall_height: 1405, wheel_base: 2851, track_width: 1650, ground_clearance: 125, hood_length: 1450, roof_height: 480, wheel_diameter: 730, windshield_angle: 38, rear_window_angle: 33, rear_slant_angle: 38, front_overhang: 1000, rear_overhang: 999 }, image: mk('Bentley Continental GTC convertible side view blue', 'landscape_16_9') },
-      { key: 'flying-spur', name: 'Flying Spur', params: { overall_length: 5316, overall_width: 1978, overall_height: 1484, wheel_base: 3194, track_width: 1660, ground_clearance: 140, hood_length: 1300, roof_height: 600, wheel_diameter: 730, windshield_angle: 32, rear_window_angle: 26, rear_slant_angle: 16, front_overhang: 1060, rear_overhang: 1062 }, image: mk('Bentley Flying Spur sedan side view black', 'landscape_16_9') },
-      { key: 'bentayga', name: 'Bentayga', params: { overall_length: 5125, overall_width: 1998, overall_height: 1742, wheel_base: 2995, track_width: 1680, ground_clearance: 200, hood_length: 1200, roof_height: 850, wheel_diameter: 760, windshield_angle: 28, rear_window_angle: 22, rear_slant_angle: 12, front_overhang: 1030, rear_overhang: 1100 }, image: mk('Bentley Bentayga luxury SUV side view white', 'landscape_16_9') }
+      { key: 'continental-gt', name: 'Continental GT', params: { overall_length: 4850, overall_width: 1954, overall_height: 1405, wheel_base: 2851, track_width: 1650, ground_clearance: 125, hood_length: 1450, roof_height: 1300, wheel_diameter: 585, windshield_angle: 66, rear_window_angle: 33, rear_slant_angle: 38, front_overhang: 1000, rear_overhang: 999 }, image: mk('Bentley Continental GT coupe side view green', 'landscape_16_9') },
+      { key: 'continental-gtc', name: 'Continental GTC', params: { overall_length: 4850, overall_width: 1954, overall_height: 1405, wheel_base: 2851, track_width: 1650, ground_clearance: 125, hood_length: 1450, roof_height: 1300, wheel_diameter: 585, windshield_angle: 66, rear_window_angle: 33, rear_slant_angle: 38, front_overhang: 1000, rear_overhang: 999 }, image: mk('Bentley Continental GTC convertible side view blue', 'landscape_16_9') },
+      { key: 'flying-spur', name: 'Flying Spur', params: { overall_length: 5316, overall_width: 1978, overall_height: 1484, wheel_base: 3194, track_width: 1660, ground_clearance: 140, hood_length: 1300, roof_height: 1400, wheel_diameter: 585, windshield_angle: 64, rear_window_angle: 26, rear_slant_angle: 16, front_overhang: 1060, rear_overhang: 1062 }, image: mk('Bentley Flying Spur sedan side view black', 'landscape_16_9') },
+      { key: 'bentayga', name: 'Bentayga', params: { overall_length: 5125, overall_width: 1998, overall_height: 1742, wheel_base: 2995, track_width: 1680, ground_clearance: 200, hood_length: 1200, roof_height: 1500, wheel_diameter: 590, windshield_angle: 62, rear_window_angle: 22, rear_slant_angle: 12, front_overhang: 1030, rear_overhang: 1100 }, image: mk('Bentley Bentayga luxury SUV side view white', 'landscape_16_9') }
     ]
   },
   {
@@ -210,9 +210,9 @@ const brandsRaw = [
     name: 'Bugatti',
     color: '#f59e0b',
     models: [
-      { key: 'chiron', name: 'Chiron', params: { overall_length: 4544, overall_width: 2038, overall_height: 1212, wheel_base: 2711, track_width: 1720, ground_clearance: 95, hood_length: 1550, roof_height: 320, wheel_diameter: 740, windshield_angle: 48, rear_window_angle: 42, rear_slant_angle: 52, front_overhang: 920, rear_overhang: 913 }, image: mk('Bugatti Chiron hypercar side view blue', 'landscape_16_9') },
-      { key: 'veyron', name: 'Veyron', params: { overall_length: 4462, overall_width: 1998, overall_height: 1159, wheel_base: 2710, track_width: 1710, ground_clearance: 90, hood_length: 1500, roof_height: 300, wheel_diameter: 720, windshield_angle: 46, rear_window_angle: 40, rear_slant_angle: 50, front_overhang: 900, rear_overhang: 852 }, image: mk('Bugatti Veyron supercar side view black', 'landscape_16_9') },
-      { key: 'divo', name: 'Divo', params: { overall_length: 4579, overall_width: 2038, overall_height: 1212, wheel_base: 2711, track_width: 1730, ground_clearance: 90, hood_length: 1550, roof_height: 310, wheel_diameter: 740, windshield_angle: 50, rear_window_angle: 44, rear_slant_angle: 55, front_overhang: 930, rear_overhang: 938 }, image: mk('Bugatti Divo hypercar side view blue carbon', 'landscape_16_9') }
+      { key: 'chiron', name: 'Chiron', params: { overall_length: 4544, overall_width: 2038, overall_height: 1212, wheel_base: 2711, track_width: 1720, ground_clearance: 100, hood_length: 1550, roof_height: 1250, wheel_diameter: 590, windshield_angle: 72, rear_window_angle: 42, rear_slant_angle: 52, front_overhang: 920, rear_overhang: 913 }, image: mk('Bugatti Chiron hypercar side view blue', 'landscape_16_9') },
+      { key: 'veyron', name: 'Veyron', params: { overall_length: 4462, overall_width: 1998, overall_height: 1200, wheel_base: 2710, track_width: 1710, ground_clearance: 100, hood_length: 1500, roof_height: 1250, wheel_diameter: 580, windshield_angle: 71, rear_window_angle: 40, rear_slant_angle: 50, front_overhang: 900, rear_overhang: 852 }, image: mk('Bugatti Veyron supercar side view black', 'landscape_16_9') },
+      { key: 'divo', name: 'Divo', params: { overall_length: 4579, overall_width: 2038, overall_height: 1212, wheel_base: 2711, track_width: 1730, ground_clearance: 100, hood_length: 1550, roof_height: 1250, wheel_diameter: 590, windshield_angle: 73, rear_window_angle: 44, rear_slant_angle: 55, front_overhang: 930, rear_overhang: 938 }, image: mk('Bugatti Divo hypercar side view blue carbon', 'landscape_16_9') }
     ]
   },
   {
@@ -220,11 +220,11 @@ const brandsRaw = [
     name: 'Porsche',
     color: '#ef4444',
     models: [
-      { key: '911', name: '911 Carrera', params: { overall_length: 4519, overall_width: 1852, overall_height: 1299, wheel_base: 2450, track_width: 1580, ground_clearance: 105, hood_length: 1100, roof_height: 400, wheel_diameter: 680, windshield_angle: 42, rear_window_angle: 35, rear_slant_angle: 45, front_overhang: 920, rear_overhang: 1149 }, image: mk('Porsche 911 sports car side view red', 'landscape_16_9') },
-      { key: 'taycan', name: 'Taycan', params: { overall_length: 4963, overall_width: 1966, overall_height: 1381, wheel_base: 2900, track_width: 1660, ground_clearance: 125, hood_length: 1200, roof_height: 500, wheel_diameter: 710, windshield_angle: 38, rear_window_angle: 32, rear_slant_angle: 35, front_overhang: 980, rear_overhang: 1083 }, image: mk('Porsche Taycan electric sedan side view white', 'landscape_16_9') },
-      { key: 'panamera', name: 'Panamera', params: { overall_length: 5049, overall_width: 1937, overall_height: 1423, wheel_base: 2950, track_width: 1650, ground_clearance: 130, hood_length: 1300, roof_height: 550, wheel_diameter: 710, windshield_angle: 35, rear_window_angle: 28, rear_slant_angle: 30, front_overhang: 1020, rear_overhang: 1079 }, image: mk('Porsche Panamera sedan side view gray', 'landscape_16_9') },
-      { key: 'cayenne', name: 'Cayenne', params: { overall_length: 4926, overall_width: 1983, overall_height: 1673, wheel_base: 2895, track_width: 1680, ground_clearance: 190, hood_length: 1200, roof_height: 780, wheel_diameter: 760, windshield_angle: 28, rear_window_angle: 22, rear_slant_angle: 15, front_overhang: 950, rear_overhang: 1081 }, image: mk('Porsche Cayenne SUV side view white', 'landscape_16_9') },
-      { key: 'macan', name: 'Macan', params: { overall_length: 4686, overall_width: 1923, overall_height: 1624, wheel_base: 2807, track_width: 1650, ground_clearance: 180, hood_length: 1150, roof_height: 720, wheel_diameter: 730, windshield_angle: 30, rear_window_angle: 24, rear_slant_angle: 18, front_overhang: 900, rear_overhang: 979 }, image: mk('Porsche Macan compact SUV side view black', 'landscape_16_9') }
+      { key: '911', name: '911 Carrera', params: { overall_length: 4519, overall_width: 1852, overall_height: 1299, wheel_base: 2450, track_width: 1580, ground_clearance: 105, hood_length: 1100, roof_height: 1250, wheel_diameter: 570, windshield_angle: 68, rear_window_angle: 35, rear_slant_angle: 45, front_overhang: 920, rear_overhang: 1149 }, image: mk('Porsche 911 sports car side view red', 'landscape_16_9') },
+      { key: 'taycan', name: 'Taycan', params: { overall_length: 4963, overall_width: 1966, overall_height: 1381, wheel_base: 2900, track_width: 1660, ground_clearance: 125, hood_length: 1200, roof_height: 1350, wheel_diameter: 575, windshield_angle: 66, rear_window_angle: 32, rear_slant_angle: 35, front_overhang: 980, rear_overhang: 1083 }, image: mk('Porsche Taycan electric sedan side view white', 'landscape_16_9') },
+      { key: 'panamera', name: 'Panamera', params: { overall_length: 5049, overall_width: 1937, overall_height: 1423, wheel_base: 2950, track_width: 1650, ground_clearance: 130, hood_length: 1300, roof_height: 1400, wheel_diameter: 575, windshield_angle: 65, rear_window_angle: 28, rear_slant_angle: 30, front_overhang: 1020, rear_overhang: 1079 }, image: mk('Porsche Panamera sedan side view gray', 'landscape_16_9') },
+      { key: 'cayenne', name: 'Cayenne', params: { overall_length: 4926, overall_width: 1983, overall_height: 1673, wheel_base: 2895, track_width: 1680, ground_clearance: 190, hood_length: 1200, roof_height: 1450, wheel_diameter: 590, windshield_angle: 62, rear_window_angle: 22, rear_slant_angle: 15, front_overhang: 950, rear_overhang: 1081 }, image: mk('Porsche Cayenne SUV side view white', 'landscape_16_9') },
+      { key: 'macan', name: 'Macan', params: { overall_length: 4686, overall_width: 1923, overall_height: 1624, wheel_base: 2807, track_width: 1650, ground_clearance: 180, hood_length: 1150, roof_height: 1350, wheel_diameter: 585, windshield_angle: 63, rear_window_angle: 24, rear_slant_angle: 18, front_overhang: 900, rear_overhang: 979 }, image: mk('Porsche Macan compact SUV side view black', 'landscape_16_9') }
     ]
   },
   {
@@ -232,9 +232,9 @@ const brandsRaw = [
     name: 'Ferrari',
     color: '#dc2626',
     models: [
-      { key: 'sf90', name: 'SF90 Stradale', params: { overall_length: 4710, overall_width: 1972, overall_height: 1186, wheel_base: 2650, track_width: 1700, ground_clearance: 90, hood_length: 1450, roof_height: 300, wheel_diameter: 730, windshield_angle: 50, rear_window_angle: 45, rear_slant_angle: 55, front_overhang: 980, rear_overhang: 1080 }, image: mk('Ferrari SF90 supercar side view red', 'landscape_16_9') },
-      { key: 'f8-tributo', name: 'F8 Tributo', params: { overall_length: 4611, overall_width: 1979, overall_height: 1206, wheel_base: 2650, track_width: 1700, ground_clearance: 95, hood_length: 1400, roof_height: 320, wheel_diameter: 720, windshield_angle: 48, rear_window_angle: 42, rear_slant_angle: 52, front_overhang: 950, rear_overhang: 1011 }, image: mk('Ferrari F8 Tributo sports car side view red', 'landscape_16_9') },
-      { key: 'roma', name: 'Roma', params: { overall_length: 4656, overall_width: 1974, overall_height: 1301, wheel_base: 2670, track_width: 1680, ground_clearance: 105, hood_length: 1350, roof_height: 420, wheel_diameter: 710, windshield_angle: 40, rear_window_angle: 34, rear_slant_angle: 40, front_overhang: 970, rear_overhang: 1016 }, image: mk('Ferrari Roma GT coupe side view silver', 'landscape_16_9') }
+      { key: 'sf90', name: 'SF90 Stradale', params: { overall_length: 4710, overall_width: 1972, overall_height: 1200, wheel_base: 2650, track_width: 1700, ground_clearance: 100, hood_length: 1450, roof_height: 1250, wheel_diameter: 585, windshield_angle: 73, rear_window_angle: 45, rear_slant_angle: 55, front_overhang: 980, rear_overhang: 1080 }, image: mk('Ferrari SF90 supercar side view red', 'landscape_16_9') },
+      { key: 'f8-tributo', name: 'F8 Tributo', params: { overall_length: 4611, overall_width: 1979, overall_height: 1206, wheel_base: 2650, track_width: 1700, ground_clearance: 100, hood_length: 1400, roof_height: 1250, wheel_diameter: 580, windshield_angle: 72, rear_window_angle: 42, rear_slant_angle: 52, front_overhang: 950, rear_overhang: 1011 }, image: mk('Ferrari F8 Tributo sports car side view red', 'landscape_16_9') },
+      { key: 'roma', name: 'Roma', params: { overall_length: 4656, overall_width: 1974, overall_height: 1301, wheel_base: 2670, track_width: 1680, ground_clearance: 105, hood_length: 1350, roof_height: 1300, wheel_diameter: 575, windshield_angle: 67, rear_window_angle: 34, rear_slant_angle: 40, front_overhang: 970, rear_overhang: 1016 }, image: mk('Ferrari Roma GT coupe side view silver', 'landscape_16_9') }
     ]
   }
 ]
