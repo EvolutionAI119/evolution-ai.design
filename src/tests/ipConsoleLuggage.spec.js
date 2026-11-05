@@ -129,10 +129,16 @@ describe('前/后行李舱内饰布置 — 六车型', () => {
     const T = deriveLuggageLayout(P)
     if (type === 'pickup') {
       expect(T.meta.type).toBe('pickup-bed')
-      // 货箱衬里内表面在栏板内
-      expect(T.rear.halfZ).toBeCloseTo(P.pickup.bedInteriorHalfZ - INTERIOR_GEOM.luggageWallT, 9)
+      // 货箱衬里内表面在栏板内，且横向不得越过后轮拱腔体（否则地板/内衬从轮口穿出）
+      const archInner = Math.max(0.30,
+        P.halfTrack - P.tireWidth / 2 - INTERIOR_GEOM.wagonArchClearance)
+      expect(T.rear.halfZ).toBeLessThanOrEqual(P.pickup.bedInteriorHalfZ - INTERIOR_GEOM.luggageWallT + 1e-9)
+      expect(T.rear.halfZ).toBeLessThanOrEqual(archInner - INTERIOR_GEOM.luggageWallT - 0.02 + 1e-9)
       expect(T.rear.x1).toBeLessThanOrEqual(P.pickup.bedFrontX)
       expect(T.rear.x0).toBeGreaterThanOrEqual(P.pickup.bedRearX)
+      // 内腔不得越出车身车尾面、也不得越过驾驶室后壁
+      expect(T.rear.x0).toBeGreaterThan(P.rearX)
+      expect(T.rear.x1).toBeLessThan(P.pickup.cabRearX)
     } else if (type === 'suv' || type === 'mpv') {
       expect(T.meta.type).toBe('wagon')
       // 旅行式货舱：前界不越过末排靠背后缘；VDA 容积口径 coverY ≤ 舱顶
@@ -148,11 +154,20 @@ describe('前/后行李舱内饰布置 — 六车型', () => {
     }
   })
 
-  it('suv 旅行式货舱含后轮拱饰盒并输出拱间净宽', () => {
-    const T = deriveLuggageLayout(profileOf('suv'))
-    expect(T.rear.archBoxes.length).toBe(2)
+  it('suv 旅行式货舱输出拱间净宽；舱宽已收口时无多余轮拱饰盒', () => {
+    const P = profileOf('suv')
+    const T = deriveLuggageLayout(P)
+    const G = INTERIOR_GEOM
+    const archInner = Math.max(0.30,
+      P.halfTrack - P.tireWidth / 2 - G.wagonArchClearance)
+    expect(T.meta.widthBetweenArches).toBeCloseTo(2 * archInner, 9)
     expect(T.meta.widthBetweenArches).toBeGreaterThan(0.9)
-    // 饰盒在舱内、不超出舱顶
+    // 舱壁外表面已在轮拱线以内 → 不存在台阶，饰盒应为空；若舱宽大于拱间净宽则必须有两盒
+    if (T.rear.halfZ + G.luggageWallT > archInner + 0.005) {
+      expect(T.rear.archBoxes.length).toBe(2)
+    } else {
+      expect(T.rear.archBoxes.length).toBe(0)
+    }
     for (const b of T.rear.archBoxes) {
       expect(b.y1).toBeLessThanOrEqual(T.rear.topY)
       expect(b.y0).toBeCloseTo(T.rear.floorY, 9)

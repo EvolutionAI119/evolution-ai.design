@@ -148,36 +148,81 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
   roofLen = Math.min(roofLen, Math.max(maxRoofLength - 0.15, 0.15))
 
   // ---------- 7. 后窗 + 约束 3 ----------
+  // 权威语义（详见 backend/app/param_contract.py 的 semantics.rear_window_angle）：
+  //   rear_window_angle = 后风挡玻璃面与**竖直方向**的夹角，数值越大越「躺」。
+  //   换算：水平进深 dx = 竖向落差 dy · tan(a)；dy 取真实玻璃带高（车顶 → 腰带线）。
+  //   旧实现把 a 当「与水平面夹角」用（dx = dy / tan a），且用比例缩放的假高度反解，
+  //   两条误差源叠加使几何隐含角与声明角系统性偏离（sedan 隐含 48.7° vs 声明 28°）。
   const rAngle = (rAngleDeg * Math.PI) / 180
+  const rearWindowBandHeight = roofTopY - beltLineY      // 真实玻璃带竖向高度（m）
   let rearWindowTopX = windshieldTopX - roofLen
-  const rearWindowHeightRatio = 0.5 + slantFactor * 0.35
-  const rearWindowHeight = (roofTopY - beltLineY) * rearWindowHeightRatio
-  let rearWindowBottomX = Math.max(
-    rearWindowTopX - rearWindowHeight / Math.tan(rAngle),
-    trunkStartX
-  )
+  // 约束 3：后窗下缘不得越过甲板起点（水平进深上限）。越界时**显式钳制并留痕**，
+  // 不再像旧实现那样静默改写角度（钳位会改变隐含角 → 一致性门禁必须能看见）。
+  const rearWindowMaxRun = Math.max(rearWindowTopX - trunkStartX, 0)
+  const rearWindowRunRaw = rearWindowBandHeight * Math.tan(rAngle)
+  const rearWindowRun = Math.min(rearWindowRunRaw, rearWindowMaxRun)
+  let rearWindowAngleClamped = rearWindowRun < rearWindowRunRaw - 1e-9
+  let rearWindowBottomX = rearWindowTopX - rearWindowRun
+  // 几何隐含角（由最终几何反算，与声明角对比即一致性门禁）
+  let rearWindowImpliedAngleDeg = (Math.atan2(rearWindowRun, rearWindowBandHeight) * 180) / Math.PI
+  // 兼容字段：真实玻璃带高（旧值是比例缩放的假高，仅用于旧公式反解）
+  const rearWindowHeight = rearWindowBandHeight
+
+  // 轮拱包络椭圆（依赖 beltLineY，须在 §8 之前派生：皮卡后壁锚点要用后拱前唇）
+  const wheelArch = deriveWheelArch(wheelR, gc, beltLineY, carType)
 
   // ---------- 8. 皮卡专属拓扑（覆盖通用车顶/后窗推导） ----------
   let pickup = null
   if (carType === 'pickup') {
     // 货箱栏板上沿 = H × bed 比例（≈F-150 栏板高 1.09m，高于轮拱、低于腰带线）
     const bedWallY = H * (lineRatios.bed ?? 0.58)
-    // 驾驶室后壁在后轮中心朝车头 0.5m（F-150：货箱前端位于后轴上方）；
-    // 若轴距过小则向前收，保证货箱 ≥0.5m
-    const cabRearX = Math.max(rearWheelX + 0.5, rearX + 0.38)
-    const cabWindowBottomX = cabRearX + 0.12            // 驾驶室后窗下沿微向前收
+    // ---- 拓扑约束（穿模防线）----
+    // 皮卡的「后窗」载体是驾驶室后壁（货箱前隔板）。该壁必须**整体位于门后缝之后**
+    // （X 更小），否则后壁会切入门区 → 门板与后壁互相穿插（外观可见的深色板）。
+    // 门后缝 rearBound = 后轮拱前唇 + 40mm（与 deriveDoorLayout.rearBound 同表达式）。
+    const doorRearSeamX = rearWheelX + wheelArch.rear.rx + 0.04
+    // 后壁顶（车顶后缘）锚在门后缝之后 cabRearMargin：留出 C 柱与后固定片的正宽度。
+    const cabRearMargin = 0.05
+    const cabRearX = doorRearSeamX - cabRearMargin
+    // ---- 倾角语义（与 §7 一致：rear_window_angle = 与竖直方向夹角，越大越躺）----
+    //   水平进深 dx = 竖向落差 dy · tan(a)；dy = 车顶 → 货箱栏板（后壁全高）。
+    //   方向：壁的自上而下**向后倾**（下端更靠车尾），与轿车/SUV 的 C 柱同向。
+    const cabWallDrop = roofTopY - bedWallY
+    const cabWallRunRaw = cabWallDrop * Math.tan(rAngle)
+    // 边界约束：壁底不得越过「车尾面 + 300mm」，否则货箱内腔长度归零。
+    const cabWallRunMax = Math.max(cabRearX - (rearX + 0.30), 0)
+    const cabWallRun = Math.min(cabWallRunRaw, cabWallRunMax)
+    const cabWallAngleClamped = cabWallRun < cabWallRunRaw - 1e-9
+    // 壁底（货箱前沿，bedWallY 高度）
+    const cabBaseX = cabRearX - cabWallRun
+    // 后壁实际隐含倾角（由最终几何反算；被钳位时与声明角不同 → 一致性门禁可见）
+    const cabWallImpliedAngleDeg = (Math.atan2(cabWallRun, cabWallDrop) * 180) / Math.PI
+    // DLO 底后角落在后壁直线上（腰带线高度）：按壁的直线方程插值
+    const cabBandFrac = (roofTopY - beltLineY) / cabWallDrop
+    const cabWindowBottomX = cabRearX - cabWallRun * cabBandFrac
     pickup = {
       bedWallY,
-      cabRearX,
-      cabWindowBottomX,
-      bedFrontX: cabRearX + 0.18,
-      bedRearX: rearX - 0.12,
+      cabRearX,                                      // 后壁顶（车顶后缘）
+      cabBaseX,                                      // 后壁底（货箱前沿，bedWallY 高度）
+      cabWindowBottomX,                              // DLO 底后角（beltLineY 高度，落在后壁直线上）
+      // 货箱前后界的语义是「货箱内腔」：前壁贴在驾驶室后壁之后（X 更小），
+      // 后壁收在车尾面（rearX）之内。旧值 front = cabRearX + 0.18 / rear = rearX - 0.12
+      // 让货箱与驾驶室重叠 180mm、并越出车尾 120mm——货箱底板与内衬从驾驶室门区、
+      // 车尾面直接穿出（外观可见的深色板）。此处按内腔语义收紧，几何即天然合规。
+      bedFrontX: cabBaseX,                           // 货箱前沿 = 后壁底（无空隙）
+      bedRearX: rearX + 0.12,
       bedInteriorHalfZ: W / 2 - 0.16,
-      wallTopRearX: rearX + 0.02
+      wallTopRearX: rearX + 0.02,
+      // 后壁直线方程参数（供玻璃/内饰侧按高度插值取 X）：
+      //   x(y) = cabRearX − cabWallRun · (roofTopY − y) / cabWallDrop
+      cabWallRun,
+      cabWallDrop
     }
     roofLen = windshieldTopX - cabRearX
     rearWindowTopX = cabRearX
     rearWindowBottomX = cabWindowBottomX
+    rearWindowAngleClamped = cabWallAngleClamped
+    rearWindowImpliedAngleDeg = cabWallImpliedAngleDeg
   }
 
   // ---------- 9. 车顶行李架（仅 SUV / MPV，沿车长方向、半嵌车顶） ----------
@@ -207,9 +252,6 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     }
     wing.supportH = wing.y - wing.deckY
   }
-
-  // 轮拱包络椭圆（依赖 beltLineY，返回值前派生）
-  const wheelArch = deriveWheelArch(wheelR, gc, beltLineY, carType)
 
   // ---------- 11. 接近角 / 离去角（布置设计基准，2D/3D 同源，可按车型调节） ----------
   // 缺省 = 前（后）轮接地点与车身前（后）立面底角连线的最大坡度角 atan(gc/FO)、atan(gc/RO)；
@@ -251,6 +293,13 @@ export function deriveCarProfile(rawParams, carType = 'sedan') {
     windshieldHeight, windshieldTopX,
     slantFactor, roofLen,
     rearWindowTopX, rearWindowHeight, rearWindowBottomX,
+    // 后窗倾角一致性门禁三件套：
+    //   rearWindowAngleDeg        = 声明角（参数 rear_window_angle，deg，与竖直方向夹角）
+    //   rearWindowImpliedAngleDeg = 几何隐含角（由最终坐标反算）
+    //   rearWindowAngleClamped    = 是否因边界约束被钳制（钳制 ⟹ 隐含角 ≠ 声明角，须留痕）
+    rearWindowAngleDeg: rAngleDeg,
+    rearWindowImpliedAngleDeg,
+    rearWindowAngleClamped,
     // 轮拱：转向+跳动包络椭圆（拱心=静置接地轮心；竖唇落裙边；见 deriveWheelArch）
     wheelArch,
     wheelArchRadius: wheelArch.front.rx, // 前拱开口半宽（兼容旧消费方）
@@ -312,7 +361,9 @@ export function roofFilletSet(P, carType, fillets) {
   } = P
   const tailCtrlX = rearX + 0.02, tailCtrlY = trunkLineY - 0.016
   if (pickup) {
-    const cabBotX = pickup.cabWindowBottomX
+    // 驾驶室后壁：顶 = cabRearX（车顶后缘），底 = cabBaseX（货箱前沿）。
+    // 圆角一律以**壁底**为第三点，保证圆角切线沿真实后壁方向。
+    const cabBotX = pickup.cabBaseX
     return {
       front: filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, F.aPillarTop),
       cabTop: filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, cabBotX, pickup.bedWallY, F.pickupCabTop),
@@ -366,7 +417,6 @@ export function bodySideOutline(P, carType, fillets, ramps = null) {
   }
 
   if (pickup) {
-    const cabBotX = pickup.cabWindowBottomX
     const fs = roofFilletSet(P, carType, F)
     const f1 = fs.front, f2 = fs.cabTop, f3 = fs.cabBase
     M(R.front.rampX, bodyBottomY); L(frontX, R.front.cornerY)

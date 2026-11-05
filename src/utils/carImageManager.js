@@ -138,10 +138,13 @@ export const buildRuntimeSvgDataUrl = (model, brandKey) => {
     const slantFactor = Math.min(Math.max(rear_slant_angle / 60, 0), 1)
     const roofLen = Math.max(maxRoofLength * (1 - slantFactor * 0.6), s(800))
     const rearWindowTopX = windshieldTopX + roofLen
+    // 后风挡：权威语义 rear_window_angle = 后风挡面与**竖直方向**夹角（越大越躺）。
+    // 2D 坐标 X 增大指向车尾、Y 向下为正 → 水平进深 = 竖直带高 × tan(a)（与 3D carProfile 同向）。
+    // 旧实现按「与水平面夹角」用 /tan，同参数会得到 2~3 倍进深（后窗压到行李盖上）。
     const rearWindowVertHeight = beltLineY - roofTopY
-    const rearWindowHeightRatio = 0.5 + slantFactor * 0.35
-    const rearWindowHeight = rearWindowVertHeight * rearWindowHeightRatio
-    const rearWindowBottomX = rearWindowTopX + rearWindowHeight / Math.tan(rwRad)
+    const rearWindowMaxRun = Math.max(trunkStartX - rearWindowTopX, 0)
+    const rearWindowRun = Math.min(rearWindowVertHeight * Math.tan(rwRad), rearWindowMaxRun)
+    const rearWindowBottomX = rearWindowTopX + rearWindowRun
 
     const wheelRadius = s(wheel_diameter / 2)
     const wheelCenterY = groundLineY - wheelRadius   // 轮胎底部正好 = groundLineY

@@ -10,7 +10,8 @@ import {
   BODY_BEVEL_SIZE,
   DLO_APERTURE_INSET
 } from '../../utils/carGlass.js'
-import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from './smoothing.js'
+import { smoothNormalsKeepHardEdges, splitTrianglesAtY, splitTrianglesAtAbsZ, subdivideSideCapLongEdges } from './smoothing.js'
+import { assignShellOwners, groupShellByOwner } from './panelOwnership.js'
 
 /**
  * 车身壳装配（P5 批次 2）：侧围轮廓 → 洞口 → 挤出 → greenhouse 收窄 → 洞壁内饰化。
@@ -20,102 +21,39 @@ import { smoothNormalsKeepHardEdges, splitTrianglesAtY } from './smoothing.js'
  */
 
 /**
- * 车身洞口内壁 + 风挡暗舱底材质分组
+ * 车身洞口内壁材质分组（平台侧「面片归属」修法，采纳 SISA 提案修法 2）
  *
  * 车身由侧围轮廓整宽挤出：一切轮廓内 holes（门洞/侧窗分片洞口）沿 Z 贯穿，
  * 洞壁因此横贯整车宽度；若保留车身色，洞口里会看到大片车漆板——即「多余车身」。
- * 把三角形重心落在任一口径矩形内、且不在外蒙皮端面（|z| 接近半车宽的倒角环带
- * 保留车身色作门框/窗框唇边）的三角形归入材质组 1，用深色内饰材质渲染，
- * 洞内读作座舱内壁；柱条/车顶的外蒙皮保持车身色 → 车身色顶部边界与玻璃清晰区分。
+ * 洞壁三角形归入材质组 1（深色内饰），洞内读作座舱内壁。
  *
- * 风挡/后风挡斜面无法挖 Z 向洞（斜面是挤出侧壁而非端盖）：把斜面玻璃带覆盖的
- * 中央区三角形改判为内饰深色（带平面法向朝上、|z| 在玻璃半宽内），
- * 透过透明玻璃读到的是深色舱影而非车身色壁；A/C 柱区（玻璃半宽以外）保持车身色。
+ * 归属判据（与提案 A1/A2 对齐）：
+ *   - **穷尽 + 互斥**：每个面片在一次遍历中拿到恰好一个归属（车漆 / 洞壁内饰），
+ *     不存在「被两条判据链各改判一次」的重叠可能；
+ *   - 判据用的是**真实洞口多边形的等距带**（polygonEdgeDistance ≤ APERTURE_BAND），
+ *     不再是 bbox 近似（bbox 会把洞口外的车身三角形误判成内饰 → 洞口下沿锯齿）；
+ *   - 端盖（|nz|>0.6，车侧漆面）与水平壁（|ny|>0.8，门槛/窗台）必留车漆；
+ *   - 贴外轮廓线的外皮由 isBodyMaterial 排除。
+ *
+ * 风挡/后风挡斜面**不再改判车身面片**：斜面墙是整宽大三角形，任何「按重心判
+ * 是否落在玻璃半宽内」的写法都会把整片斜面墙染成深色（黑带 + 齿状边）。
+ * 舱影改为独立几何（见 parts/glass.js 的 addBandCabinShadow），其覆盖区与玻璃
+ * 逐点同源 ⟹ 两件不可能重叠。
  *
  * @param {THREE.BufferGeometry} geom 车身挤出几何（非索引，就地重排）
- * @param {Array<{x0:number,x1:number,y0:number,y1:number}>} rects 洞口矩形列表（米）
- * @param {number} zCap 外蒙皮端面保留带宽（|z| ≥ zCap 的三角形保持车身色）
- * @param {Array<{x1,y1,x2,y2,bottomInset,topInset,halfWidth}>} [bands] 斜面玻璃带暗舱底
- * @param {Function} [taperK] greenhouse 收窄比例（y）→ ratio（bands 的 |z| 判据用）
- * @param {Function} [isBodyMaterial] (x,y)→bool：点是否在车身实体内（外轮廓内且不在洞口内）。
- *   用于把「位置落在洞口口径矩形内」的外皮三角形（轮廓线上的车顶前缘/风挡边框）排除，
- *   只改判真正横贯车宽的洞口隧道壁。
+ * @param {Array<{key:string, pts:Array<number[]>}>} apertures 真实洞口多边形（与挖洞同一份）
+ * @param {number|Function} zCap 外蒙皮端面保留带宽（可传 (y)=>收窄后的外皮界）
+ * @param {Function} [isBodyMaterial] (x,y)→bool：点是否在车身实体内（外轮廓内且不在洞口内）
+ * @param {number[]} [hardEdgesY] 需要钉成硬边的高度（腰带线）——重排后重算法线必须
+ *   沿用同一组硬边，否则收窄拐点被焊接平均，翼子板/后围会出现斜向明暗条带
  * @returns {number} 归入内饰组的三角形数
  */
-export function splitBodyAperturesInterior(geom, rects, zCap, bands = [], taperK = null, isBodyMaterial = null) {
-  const pos = geom.attributes.position
-  const arr = pos.array
-  const nTri = pos.count / 3
-  const exterior = []
-  const interior = []
-  // 玻璃带平面单位法线：暗舱底只改判**与带平面平行**的三角形。旧判据「法向朝上
-  // ny>0.35」会连带把车顶前缘/COWL 等近水平面（ny≈1）也染成暗色，形成车顶黑边；
-  // 用与带面法线的点积（|dot|>0.9）可精确锁定斜面墙本身。
-  const bandNormals = bands.map((b) => {
-    const dx = b.x2 - b.x1
-    const dy = b.y2 - b.y1
-    const len = Math.hypot(dx, dy) || 1
-    return [dy / len, -dx / len]
-  })
-  for (let i = 0; i < nTri; i++) {
-    const o = i * 9
-    const cx = (arr[o] + arr[o + 3] + arr[o + 6]) / 3
-    const cy = (arr[o + 1] + arr[o + 4] + arr[o + 7]) / 3
-    const cz = (arr[o + 2] + arr[o + 5] + arr[o + 8]) / 3
-    let inside = false
-    if (Math.abs(cz) < zCap) {
-      for (const r of rects) {
-        if (cx > r.x0 && cx < r.x1 && cy > r.y0 && cy < r.y1) {
-          // 外皮（车顶前缘/引擎盖/门槛等轮廓线上的三角形）重心也在矩形内，
-          // 但它们属于外形，必须保留车身色；只有实体内部（洞口隧道壁）改判内饰。
-          if (!isBodyMaterial || isBodyMaterial(cx, cy)) inside = true
-          break
-        }
-      }
-    }
-    if (!inside && bands.length && taperK) {
-      // 面几何法线（位置叉积；判据只取朝向，无需顶点法线）
-      const e1x = arr[o + 3] - arr[o]; const e1y = arr[o + 4] - arr[o + 1]; const e1z = arr[o + 5] - arr[o + 2]
-      const e2x = arr[o + 6] - arr[o]; const e2y = arr[o + 7] - arr[o + 1]; const e2z = arr[o + 8] - arr[o + 2]
-      let nx = e1y * e2z - e1z * e2y
-      let ny = e1z * e2x - e1x * e2z
-      let nz = e1x * e2y - e1y * e2x
-      const nl = Math.hypot(nx, ny, nz) || 1
-      nx /= nl; ny /= nl; nz /= nl
-      // 斜面墙：非端盖（|nz|<0.5）且法线与带平面法线近乎平行（|dot|>0.9）
-      if (Math.abs(nz) < 0.5) {
-        for (let bi = 0; bi < bands.length; bi++) {
-          const b = bands[bi]
-          const bn = bandNormals[bi]
-          if (Math.abs(nx * bn[0] + ny * bn[1]) <= 0.9) continue
-          const dx = b.x2 - b.x1; const dy = b.y2 - b.y1
-          const len2 = dx * dx + dy * dy || 1e-12
-          const len = Math.sqrt(len2)
-          const t = ((cx - b.x1) * dx + (cy - b.y1) * dy) / len2
-          if (t < b.bottomInset / len || t > 1 - b.topInset / len) continue
-          const px = b.x1 + dx * t; const py = b.y1 + dy * t
-          if (Math.hypot(cx - px, cy - py) > 0.03) continue          // 斜面墙条带（含 bevel 外扩）
-          if (Math.abs(cz) > b.halfWidth * taperK(cy) - 0.004) continue // A/C 柱区留车身色
-          inside = true
-          break
-        }
-      }
-    }
-    ;(inside ? interior : exterior).push(o)
-  }
-  if (!interior.length) return 0
-  const out = new Float32Array(arr.length)
-  let k = 0
-  for (const o of exterior) for (let j = 0; j < 9; j++) out[k++] = arr[o + j]
-  const extVerts = k / 3
-  for (const o of interior) for (let j = 0; j < 9; j++) out[k++] = arr[o + j]
-  geom.setAttribute('position', new THREE.BufferAttribute(out, 3))
-  geom.deleteAttribute('uv')          // 顶点重排后 uv 失效；本模型不使用贴图
-  smoothNormalsKeepHardEdges(geom)    // normal 属性不随重排走，必须整面重算
-  geom.clearGroups()
-  geom.addGroup(0, extVerts, 0)
-  geom.addGroup(extVerts, k / 3 - extVerts, 1)
-  return interior.length
+export function splitBodyAperturesInterior(geom, apertures, zCap, isBodyMaterial = null, hardEdgesY = null) {
+  const { owners } = assignShellOwners(geom, { apertures, zCapAt: zCap, isBodyMaterial })
+  const counts = groupShellByOwner(geom, owners)
+  // normal 属性不随重排走，必须整面重算；硬边集合必须与收窄前一致
+  smoothNormalsKeepHardEdges(geom, 1e-4, 32, hardEdgesY)
+  return counts.liner
 }
 
 /**
@@ -166,8 +104,10 @@ export function buildBodyShell({ P, carType, cabin, doorLayout, paneRanges }) {
   const glassApertures = deriveDloApertures(cabin.dlo, paneRanges)
   const doorPaneKeys = new Set(paneRanges.filter((p) => p.hingeKey).map((p) => p.key))
   const doorTowers = glassApertures.filter((ap) => doorPaneKeys.has(ap.key))
-  // 洞壁内饰化口径矩形（外扩 8mm 兜住洞壁边界三角形，见 splitBodyAperturesInterior）
-  const apertureRects = []
+  // 洞壁内饰化的**真实洞口多边形**（与挖洞用的是同一份数据 ⟹ 判据与几何同源）：
+  // 洞壁归属用「到洞口多边形边界的等距带」，不再用 bbox 近似
+  // （bbox 会把洞口外的车身三角形误判成内饰 → 洞口下沿锯齿）。
+  const apertures = []
   // A 柱前固定片 / C 柱后固定片：各自独立挖洞
   for (const ap of glassApertures) {
     if (doorPaneKeys.has(ap.key)) continue
@@ -176,12 +116,7 @@ export function buildBodyShell({ P, carType, cabin, doorLayout, paneRanges }) {
     for (let i = 1; i < ap.points.length; i++) p.lineTo(ap.points[i][0], ap.points[i][1])
     p.closePath()
     bodyShape.holes.push(p)
-    const xs = ap.points.map((q) => q[0])
-    const ys = ap.points.map((q) => q[1])
-    apertureRects.push({
-      x0: Math.min(...xs) - 0.008, x1: Math.max(...xs) + 0.008,
-      y0: Math.min(...ys) - 0.008, y1: Math.max(...ys) + 0.008
-    })
+    apertures.push({ key: ap.key, pts: ap.points })
   }
   // 门洞 + 门片玻璃洞口 → 单一简单多边形（腰带处不再有车身色横带）；
   // 退化时退回纯门洞矩形（不产生自交 holes，玻璃仍覆盖实体车身）
@@ -198,20 +133,10 @@ export function buildBodyShell({ P, carType, cabin, doorLayout, paneRanges }) {
   for (let i = 1; i < doorPoly.length; i++) doorHole.lineTo(doorPoly[i][0], doorPoly[i][1])
   doorHole.closePath()
   bodyShape.holes.push(doorHole)
-  // 口径矩形：门洞下半（到肩线）+ 每个门片塔楼各自 bbox——不能用合并多边形的
-  // 总 bbox，否则塔楼之间的 B 柱会被改判成深色内饰
-  apertureRects.push({
-    x0: doorRearEdge - 0.008, x1: doorFrontEdge + 0.008,
-    y0: doorHoleBottom - 0.008, y1: shoulderY + 0.004
-  })
-  for (const ap of doorTowers) {
-    const xs = ap.points.map((q) => q[0])
-    const ys = ap.points.map((q) => q[1])
-    apertureRects.push({
-      x0: Math.min(...xs) - 0.008, x1: Math.max(...xs) + 0.008,
-      y0: Math.min(...ys) - 0.008, y1: Math.max(...ys) + 0.008
-    })
-  }
+  // 门洞连同门片塔楼是**一个**洞口多边形（B 柱之间的肩线段是其边界的一部分），
+  // 因此归属判据也用这一份多边形——塔楼之间的 B 柱位于多边形内部，
+  // 不会被等距带扫到 ⟹ B 柱仍是车身色竖条。
+  apertures.push({ key: 'door', pts: doorPoly })
 
   // 外轮廓多边形：内外测试口径，供洞壁内饰化排除「外皮/倒角外扩带」三角形——
   // 轮廓上的车顶前缘、风挡边框必须保留车身色（见下方判据）。
@@ -243,8 +168,19 @@ export function buildBodyShell({ P, carType, cabin, doorLayout, paneRanges }) {
   // 内收——A/B/C 柱剪影与车顶随玻璃角度/桶面联动，玻璃面始终位于车身外侧同间隙
   // （shellHalfZAt 为唯一 Z 公式：车身、风挡带、DLO 玻璃共用同一条内收曲线）
   const taperK = (y) => shellHalfZAt(y, dloFrame, bodyExtentZ) / bodyExtentZ
+  // earcut 会切出跨越整块翼子板/车门的超长边端盖三角形：共面但角点落在法线突变处，
+  // 平滑法线沿长边线性插值会铺出一条斜向明暗渐变。先细分端盖长边（≤0.12m），
+  // 再按腰带线切分收窄，最后统一重算法线。
+  subdivideSideCapLongEdges(bodyGeom, 0.12)
   // 先把横跨腰带线的长三角形切开，否则收窄后折板会渲染成大面积渐变破面
   splitTrianglesAtY(bodyGeom, dloFrame.dloYBot)
+  // 洞口隧道壁在 ExtrudeGeometry 里是横跨全宽的长四边形：不切开就只能整块改判——
+  // 全深色会让洞口外缘缺一圈车色门框，并在窗台/门缝边缘露出锯齿状深色三角。
+  // 先沿 |z| 切成「外环带（车门框，保留车身色）+ 内腔（深色内饰）」两块，
+  // 分界线成为沿 Z 的直线，洞口边缘干净。收窄前切分点 = 收窄后的 zCapAt 曲线。
+  const apertureFrameLip = 0.03
+  const interiorHalfZ = bodyDepth / 2 - apertureFrameLip
+  splitTrianglesAtAbsZ(bodyGeom, interiorHalfZ)
   {
     const pos = bodyGeom.attributes.position
     for (let i = 0; i < pos.count; i++) {
@@ -257,30 +193,15 @@ export function buildBodyShell({ P, carType, cabin, doorLayout, paneRanges }) {
   // 宽泛爆白的「白带」；硬边让高光收成一条锐利折线，上下板面各自均匀过渡。
   smoothNormalsKeepHardEdges(bodyGeom, 1e-4, 32, [dloFrame.dloYBot])
 
-  // 洞壁内饰化：门洞 + 全部侧窗分片洞口的洞壁（横贯车宽）改判深色内饰材质，
-  // |z| ≥ 外蒙皮端面的倒角环带保留车身色作门框/窗框唇边；风挡/后风挡斜面玻璃带
-  // 中央区改判暗舱底（A/C 柱区留车身色）——透明玻璃后读到的是舱影而非车漆壁。
-  // 车顶边框：风挡/后风挡玻璃顶边停在柱顶圆角切点下方 FRONT_GLASS_TOP_BORDER 处——
-  // 玻璃不包裹圆角、不搭上车顶；车顶圆角（车身色）本身即「车身色顶部边界」。
-  // 暗舱底（内饰深色）只改判到玻璃顶边：玻璃覆盖区读作舱影，玻璃以上全是车身色，
-  // 不再出现「玻璃上方一条宽深色厚板」的观感。
-  const glassBands = [
-    { x1: cabin.windshield.x1, y1: cabin.windshield.y1,
-      x2: cabin.windshield.x2, y2: cabin.windshield.y2,
-      bottomInset: cabin.windshield.bottomInset + 0.01,
-      topInset: cabin.windshield.topInset + FRONT_GLASS_TOP_BORDER,
-      halfWidth: cabin.windshield.width / 2 }
-  ]
-  if (cabin.rearWindow) {
-    glassBands.push({
-      x1: cabin.rearWindow.x1, y1: cabin.rearWindow.y1,
-      x2: cabin.rearWindow.x2, y2: cabin.rearWindow.y2,
-      bottomInset: ROOF_FILLETS.cPillarBottom + 0.01,
-      topInset: cabin.rearWindow.topInset + FRONT_GLASS_TOP_BORDER,
-      halfWidth: cabin.rearWindow.width / 2
-    })
-  }
-  splitBodyAperturesInterior(bodyGeom, apertureRects, bodyDepth / 2, glassBands, taperK, isBodyMaterial)
+  // 洞壁内饰化（面片归属）：门洞 + 全部侧窗分片洞口的洞壁（横贯车宽）改判深色
+  // 内饰材质，|z| ≥ 外蒙皮端面的倒角环带保留车身色作门框/窗框唇边。
+  // 判据随收窄联动：内腔界 = interiorHalfZ·taperK(y)（切分点同源）。
+  // 用固定 bodyDepth/2 会把收窄后的 A/B/C 柱、车顶前缘、后侧围外蒙皮一并改判深色。
+  // 风挡/后风挡斜面**不在此改判**：舱影改由独立几何承担（parts/glass.js
+  // addBandCabinShadow），覆盖区与玻璃逐点同源 ⟹ 不可能出现黑带/重叠。
+  splitBodyAperturesInterior(
+    bodyGeom, apertures, (y) => interiorHalfZ * taperK(y), isBodyMaterial, [dloFrame.dloYBot]
+  )
 
   return {
     bodyGeom,
@@ -288,6 +209,8 @@ export function buildBodyShell({ P, carType, cabin, doorLayout, paneRanges }) {
     bodyExtentZ,
     dloFrame,
     taperK,
-    shoulderY
+    shoulderY,
+    // 真实洞口多边形（与挖洞、洞壁归属判据同一份）：供 A1–A5 等价判据审计
+    apertures
   }
 }

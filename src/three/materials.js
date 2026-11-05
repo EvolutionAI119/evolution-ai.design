@@ -15,6 +15,11 @@ import * as THREE from 'three'
 export function createMaterialSet({ carColor, wireframe = false }) {
   // 金属底漆 + 柔化清漆：底漆提供车身色层次，低峰值清漆保留连续高光。
   // 避免高金属度/低粗糙度在机盖、腰线和尾盖的掠射角反射成一条爆白硬带。
+  // 车身漆面必须双面渲染：车身是「侧围轮廓 + 洞口」整宽挤出的单一壳体，
+  // ExtrudeGeometry 对轮廓/洞口扫掠壁的绕序并不总是朝外（车头肩部、机盖前缘、
+  // 腰线一带会成片反绕）。单面材质下这些三角形被背面剔除 → 从车外看是成片
+  // 纯黑楔形/锯齿（既一直存在，又极像穿模）。双面渲染 + three 对背面翻转法线，
+  // 这些面按正确朝向着色，黑块消失；代价只是车身一层的额外光栅化。
   const bodyMat = new THREE.MeshPhysicalMaterial({
     color: new THREE.Color(carColor),
     metalness: 0.42,
@@ -22,6 +27,7 @@ export function createMaterialSet({ carColor, wireframe = false }) {
     clearcoat: 0.35,
     clearcoatRoughness: 0.24,
     envMapIntensity: 0.85,
+    side: THREE.DoubleSide,
     wireframe
   })
 

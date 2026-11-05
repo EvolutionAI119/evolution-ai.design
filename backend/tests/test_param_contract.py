@@ -267,3 +267,32 @@ def test_parameters_schema_endpoint_is_public_and_readonly():
     assert "rear_slant_angle" not in body["aliases"]
     assert body["semantics"]["roof_length"]["never_alias_to"] == "roof_height"
     assert body["semantics"]["rear_slant_angle"]["independent"] is True
+
+
+def test_rear_window_angle_semantics_is_vertical_basis():
+    """rear_window_angle 与竖直方向夹角：契约必须显式声明基准与公式，
+    否则各消费方会按「与水平面夹角」用 /tan，同参数得到 2~3 倍进深"""
+    sem = param_contract.parameter_schema()["semantics"]["rear_window_angle"]
+    assert sem["basis"] == "vertical"
+    assert sem["formula"] == "水平进深 dx = 玻璃带高 dy · tan(a)"
+    assert sem["not_interchangeable_with"] == "windshield_angle"
+    assert sem["range"] == [10, 60]
+
+
+def test_roof_height_three_calibers_are_explicit():
+    """roof_height 三口径（前端跨度 / 后端板厚 / 知识库高度）必须显式区分并各自区间"""
+    sem = param_contract.parameter_schema()["semantics"]
+    cal = sem["roof_height_calibers"]
+    assert set(cal) == {"frontend_span", "backend_thickness", "knowledge_base"}
+    assert cal["frontend_span"]["backend_field"] == "roof_length"
+    assert cal["frontend_span"]["range"] == [1200, 2000]
+    assert cal["backend_thickness"]["range"] == [30, 100]
+    assert cal["knowledge_base"]["range"] == [550, 900]
+    # 三者互不重叠：前端跨度合法值（1400）在板厚区间 [30,100] 必越界，
+    # 跨度口径的低值（850）也不合法 → 不可能被静默当作板厚接收
+    assert param_contract.validate_flat_overrides({"roof_height": 1400}) == []
+    assert param_contract.validate_flat_overrides({"roof_height": 850}) != []
+    assert param_contract.validate_flat_overrides({"roof_length": 850}) != []
+    # 几何消费状态显式标注为合同占位（deriveCarProfile 未读取该字段）
+    assert sem["roof_length"]["consumed_by_geometry"] is False
+    assert sem["roof_height"]["consumed_by_geometry"] is False

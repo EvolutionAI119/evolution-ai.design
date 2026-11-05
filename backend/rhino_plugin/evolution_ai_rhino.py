@@ -287,7 +287,8 @@ class RhinoCarBodyGenerator:
 
         rear_window_top_x = windshield_top_x + roof_len
         rear_window_top_y = windshield_top_y
-        rear_window_bottom_x = rear_window_top_x - height / math.tan(rear_window_angle)
+        # rear_window_angle = 后风挡面与竖直方向夹角（越大越躺）→ 水平进深 = 高度 × tan(a)
+        rear_window_bottom_x = rear_window_top_x - height * math.tan(rear_window_angle)
         rear_window_bottom_y = rear_window_top_y - height
 
         cx_base = rear_window_top_x
@@ -321,7 +322,7 @@ class RhinoCarBodyGenerator:
         rear_window_top_x = windshield_top_x + roof_len
         rear_window_angle = self._deg(self.p.p("造型角度", "rear_window_angle"))
         rear_window_height = self.p.p("车身部件", "rear_window_height")
-        rear_window_bottom_x = rear_window_top_x - rear_window_height / math.tan(rear_window_angle)
+        rear_window_bottom_x = rear_window_top_x - rear_window_height * math.tan(rear_window_angle)
 
         cx_start = rear_window_bottom_x
         cy_base = windshield_top_y - rear_window_height + 50

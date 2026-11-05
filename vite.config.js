@@ -103,9 +103,13 @@ export default defineConfig({
           if (p.includes('element-plus')) {
             return 'element-plus'
           }
-          if (p.includes('/three/')) {
+          // 仅对 node_modules 里的 three 分包：项目自身的 src/three/** 若也落进
+          // 'three' 分块，就会出现「three 块 ↔ three-examples 块」的循环依赖——
+          // OrbitControls 的 class extends 在 core 未初始化时求值 → 运行时报
+          // "Cannot access 'qe' before initialization"，整页 3D 不渲染。
+          if (p.includes('/node_modules/three/')) {
             // three 主包（build/、src/）与 examples 附加件分开缓存
-            return p.includes('/three/examples/') ? 'three-examples' : 'three'
+            return p.includes('/node_modules/three/examples/') ? 'three-examples' : 'three'
           }
           if (p.includes('vue') && !p.includes('/src/')) {
             return 'vue'

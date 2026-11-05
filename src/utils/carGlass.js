@@ -221,7 +221,7 @@ export function pointInPolygon(x, y, poly) {
  * @param {Array<{x:number,y:number}|number[]>} poly 闭合多边形顶点
  * @returns {number}
  */
-function polygonEdgeDistance(x, y, poly) {
+export function polygonEdgeDistance(x, y, poly) {
   let best = Infinity
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const p = poly[i]
@@ -362,7 +362,7 @@ export function deriveCabinGlass(P, opts = {}) {
   // f2 = 车顶后缘圆角（DLO 顶后角修裁量依据）；f3 = C 柱底圆角（DLO 底后角修裁量依据）
   const f2 = pickup
     ? filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY,
-        pickup.cabWindowBottomX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
+        pickup.cabBaseX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
     : filletCorner(windshieldTopX, roofTopY, rearWindowTopX, roofTopY,
         rearWindowBottomX, beltLineY, ROOF_FILLETS.roofRear)
   const f3 = pickup
@@ -382,10 +382,15 @@ export function deriveCabinGlass(P, opts = {}) {
     : dloTopRear + (dloBotRear - dloTopRear) * ((roofTopY - dloTopY) / ((roofTopY - beltLineY) || 1))
 
   // DLO 底后角：非皮卡沿 C 柱斜线上退 min(r3+0.014, 斜线长×0.45) 避开圆角切线区，
-  // 再向车头方向内移 4mm 落入轮廓内（皮卡保持驾驶室后壁锚点不变）
+  // 再向车头方向内移 4mm 落入轮廓内；
+  // 皮卡：底后角精确落在驾驶室后壁直线上（按后壁直线方程在 dloBotY 高度插值）
   let dlo3X = dloBotRear
   let dlo3Y = dloBotY
-  if (!pickup) {
+  if (pickup) {
+    const frac = (roofTopY - dloBotY) / (pickup.cabWallDrop || 1)
+    dlo3X = pickup.cabRearX - pickup.cabWallRun * frac
+    dlo3Y = dloBotY
+  } else {
     const cdx = rearWindowTopX - rearWindowBottomX
     const cdy = roofTopY - beltLineY
     const clen = Math.hypot(cdx, cdy) || 1

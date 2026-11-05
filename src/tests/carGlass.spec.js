@@ -123,11 +123,19 @@ describe('deriveCabinGlass 与 2D Car2D windowPath/pillarX 逐点同源', () => 
     expect(g.dloTopRear).toBeCloseTo(P.pickup.cabRearX, 10)
     expect(g.dloBotRear).toBeCloseTo(P.pickup.cabWindowBottomX, 10)
     const dloTopY = P.roofTopY - 0.035
+    // 驾驶室后壁直线的第三点必须是**壁底**（cabBaseX @ bedWallY），
+    // 不是壁在腰带线高度的交点（cabWindowBottomX）——后者高度不同，
+    // 会把圆角切线方向算歪（旧实现的「壁自上而下向后倾」方向依赖于此）。
     const f2p = filletCorner(P.windshieldTopX, P.roofTopY, P.pickup.cabRearX, P.roofTopY,
-      P.pickup.cabWindowBottomX, P.pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
+      P.pickup.cabBaseX, P.pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
     expect(g.dlo[2][0]).toBeCloseTo(filletXAtY(f2p, dloTopY) + 0.006, 10)
     expect(g.dlo[2][1]).toBeCloseTo(dloTopY, 10)
-    expect(g.dlo[3]).toEqual([P.pickup.cabWindowBottomX, P.beltLineY + 0.008])
+    // 底后角精确落在后壁直线上（按壁直线方程在 DLO 底边高度插值）
+    const wallX = (y) => P.pickup.cabRearX
+      - P.pickup.cabWallRun * ((P.roofTopY - y) / P.pickup.cabWallDrop)
+    const dloBotY = P.beltLineY + 0.008
+    expect(g.dlo[3][0]).toBeCloseTo(wallX(dloBotY), 10)
+    expect(g.dlo[3][1]).toBeCloseTo(dloBotY, 10)
     expect(g.pillar.x).toBeCloseTo(
       P.windshieldTopX + (P.pickup.cabRearX - P.windshieldTopX) * 0.55, 10
     )
@@ -143,12 +151,9 @@ describe('deriveCabinGlass 与 2D Car2D windowPath/pillarX 逐点同源', () => 
     expect(g.dlo[1][1]).toBeGreaterThan(g.dlo[0][1])
     expect(g.dlo[1][0]).toBeLessThan(g.dlo[0][0])
     // 顶后角与底后角关系（后窗斜面不回折）：
-    // 常规车 C 柱向后倾 → 底后角更靠车尾；皮卡驾驶室后窗 → 底后角在顶后角车头侧
-    if (type === 'pickup') {
-      expect(g.dlo[3][0]).toBeGreaterThan(g.dlo[2][0])
-    } else {
-      expect(g.dlo[2][0]).toBeGreaterThanOrEqual(g.dlo[3][0])
-    }
+    // 常规车 C 柱与皮卡驾驶室后壁均自上而下**向后倾** → 底后角更靠车尾（X 更小）。
+    // 皮卡不再是特例：驾驶室后壁的方向已与 C 柱统一（旧实现「向前倾」才是缺陷）。
+    expect(g.dlo[2][0]).toBeGreaterThanOrEqual(g.dlo[3][0])
     // B 柱严格落在 DLO 水平跨度内（55% 插值朝车尾方向）
     expect(g.pillar.x).toBeLessThan(P.windshieldTopX)
     expect(g.pillar.x).toBeGreaterThan(g.dloTopRear)
@@ -1218,9 +1223,11 @@ describe('六车型玻璃拓扑守卫（复刻 bodyShape 轮廓内点判定，�
     const tailEndY = trunkLineY - 0.056
     const pts = [[frontX, bodyBottomY]]
     if (pickup) {
+      // 驾驶室后壁圆角一律以**壁底** cabBaseX 为第三点（与 roofFilletSet 同源）：
+      // 用 cabWindowBottomX（壁在腰带线高度的交点）会把圆角切线方向算歪。
       const f1 = filletCorner(hoodEndX, beltLineY, windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, ROOF_FILLETS.aPillarTop)
-      const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, pickup.cabWindowBottomX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
-      const f3 = filletCorner(pickup.cabRearX, roofTopY, pickup.cabWindowBottomX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, ROOF_FILLETS.pickupCabBottom)
+      const f2 = filletCorner(windshieldTopX, roofTopY, pickup.cabRearX, roofTopY, pickup.cabBaseX, pickup.bedWallY, ROOF_FILLETS.pickupCabTop)
+      const f3 = filletCorner(pickup.cabRearX, roofTopY, pickup.cabBaseX, pickup.bedWallY, rearX - 0.024, pickup.bedWallY, ROOF_FILLETS.pickupCabBottom)
       quadTo(pts, frontX + 0.09, hoodLineY - 0.04, frontX + 0.02, hoodLineY)
       pts.push([cowlStartX, hoodLineY], [hoodEndX, beltLineY])
       for (const f of [f1, f2, f3]) {

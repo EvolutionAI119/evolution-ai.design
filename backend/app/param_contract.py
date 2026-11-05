@@ -294,10 +294,44 @@ def parameter_schema() -> Dict[str, Any]:
                 "meaning": "车顶跨度（mm）",
                 "range": list(bounds(groups["车身部件"][ROOF_SPAN])),
                 "never_alias_to": ROOF_THICKNESS,
+                "consumed_by_geometry": False,
+                "note": "前端 roof_height（跨度语义）唯一落点；当前几何由 A 柱顶→驾驶室后壁派生，"
+                        "本字段为合同占位（保留可调区间，尚未进入 deriveCarProfile）",
             },
             ROOF_THICKNESS: {
                 "meaning": "车顶板厚（mm）",
                 "range": list(bounds(groups["车身部件"][ROOF_THICKNESS])),
+                "consumed_by_geometry": False,
+                "note": "仅在设计导入（分组格式「车身部件.roof_height」）表达板厚，"
+                        "不得接收前端跨度值（850 会被判越界，量级差 10 倍）",
+            },
+            # 同名不同义：三个口径必须显式区分，否则 850 / 550~900 / 30~100 会互相串味
+            "roof_height_calibers": {
+                "frontend_span": {
+                    "field": "frontend.roof_height",
+                    "meaning": "车顶纵向跨度（mm）",
+                    "range": list(bounds(groups["车身部件"][ROOF_SPAN])),
+                    "backend_field": ROOF_SPAN,
+                },
+                "backend_thickness": {
+                    "field": f"backend.{'车身部件'}.{ROOF_THICKNESS}",
+                    "meaning": "车顶板厚（mm）",
+                    "range": list(bounds(groups["车身部件"][ROOF_THICKNESS])),
+                },
+                "knowledge_base": {
+                    "field": "brand_design_knowledge.roof_height",
+                    "meaning": "车顶纵向高度/跨度（mm，550~900）",
+                    "range": [550, 900],
+                },
+            },
+            "rear_window_angle": {
+                "meaning": "后风挡面与**竖直方向**的夹角（°），越大越躺",
+                "range": list(bounds(groups["造型角度"]["rear_window_angle"])),
+                "basis": "vertical",
+                "formula": "水平进深 dx = 玻璃带高 dy · tan(a)",
+                "not_interchangeable_with": "windshield_angle",
+                "note": "windshield_angle 以**水平面**为基准（dx = dy / tan(a)）；"
+                        "两者基准不同，不可直接相减或互相赋值",
             },
             "rear_slant_angle": {
                 "meaning": "尾部溜背角（°）",

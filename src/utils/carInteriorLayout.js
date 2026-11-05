@@ -16,6 +16,9 @@
 //   而不是「方向盘后 520mm」——后者会让坐垫整个压在前门洞前缘，乘员无处落脚。
 
 import { deriveDoorLayout } from './carProfile.js'
+import {
+  archCavities, archRearEdgeX, bodyOutlinePolygon, bodyTopAt, topEnvelopeOver
+} from './carBodyEnvelope.js'
 
 /** 内饰几何常量（2D 绘图与 3D 网格共用同一组数值，禁止在消费端另立数值） */
 export const INTERIOR_GEOM = {
@@ -198,31 +201,49 @@ export const seatSideEnvelope = (x, hPointY, G = INTERIOR_GEOM, lean = G.backLea
  * 旧算法把双座按「内宽 × 0.44」摆开，两座之间只剩 ~0.13m，
  * 前排中控台（宽 0.20m）必然与座椅相撞——侧视图看不出，横断面一剖即暴露。
  * 新算法显式让出中控台宽度 + 净距，再在剩余槽位内居中，从几何上杜绝重叠。
+ *
+ * halfLimit：本排可用半宽上限（默认判为车内壁）。落在后轮拱纵向区间的排必须传
+ * 「轮罩内壁半宽」，否则坐垫外缘会压进轮腔/轮胎包络（MPV 三排实测越界 81mm）。
  */
-export const rowSeatLayout = (P, count) => {
+export const rowSeatLayout = (P, count, halfLimit = Infinity) => {
   const G = INTERIOR_GEOM
   const halfBody = Math.max((P?.W ?? 1.88) / 2, 0.60)
   const halfInterior = Math.max(halfBody - G.bodyTrimThickness, 0.15)
+  const halfUsable = Math.min(halfInterior, halfLimit)
 
   if (count >= 3) {
     // 整体长椅：三座连续贴合（不留虚伪缝），外缘统一留门内壁净距
-    const outerZ = Math.max(halfInterior - G.seatToWallClearance, 0.30)
+    const outerZ = Math.max(halfUsable - G.seatToWallClearance, 0.30)
     const width = Math.min(G.seatMaxWidth, (outerZ * 2) / 3)
-    return { width, centers: [-width, 0, width], halfBody, halfInterior }
+    return { width, centers: [-width, 0, width], halfBody, halfInterior, halfUsable }
   }
 
   // 独立双座：内侧让出「中控台半宽 + 净距」，外侧留门内壁净距，余量在槽位内居中
   const innerZ = G.consoleWidth / 2 + G.seatToConsoleClearance
-  const outerZ = Math.max(halfInterior - G.seatToWallClearance, innerZ + G.seatMinWidth)
+  const outerZ = Math.max(halfUsable - G.seatToWallClearance, innerZ + G.seatMinWidth)
   const slot = outerZ - innerZ
   const width = Math.min(G.seatMaxWidth, slot)
   const center = innerZ + slot / 2
   return {
     width,
     centers: [-center, center],
-    halfBody, halfInterior,
+    halfBody, halfInterior, halfUsable,
     consoleHalf: G.consoleWidth / 2
   }
+}
+
+/**
+ * 该排是否落在后轮拱的纵向区间内：坐垫 AABB 与拱口椭圆在 X 上有交叠即算。
+ * 用于把末排横向收窄到轮罩内壁（轮拱是贯穿全宽的车身缺口，座椅外缘不得压进去）。
+ */
+export const seatRowHalfLimit = (P, x) => {
+  const a = archCavities(P).find((c) => c.side === 'rear')
+  if (!a) return Infinity
+  const G = INTERIOR_GEOM
+  const cx0 = x - G.cushionFrontOffset
+  const cx1 = cx0 + G.cushionDepth
+  const hit = cx0 < a.cx + a.rx && cx1 > a.cx - a.rx
+  return hit ? Math.max(a.archInnerZ - 0.02, 0.30) : Infinity
 }
 
 /** 座舱后界（X）：任何一排都不得越出；导出供运动学模型作末排调角器障碍 */
@@ -297,7 +318,10 @@ export const deriveRowPositions = (P) => {
     if (r === 1) {
       x = deriveFrontRowX(P)
     } else if (P.pickup && r === 2) {
-      x = P.pickup.cabRearX + 0.28
+      // 皮卡第二排必须整排留在驾驶室内：靠背后倾 + 头枕使座椅侧视包络向车尾外扩
+      // 约 0.365m，旧值 +0.28 让靠背/头枕越过驾驶室后壁、并从后壁上方穿出
+      // （实测头枕顶越界 377mm）。+0.40 留 35mm 余量，仍满足后排腿部空间下限。
+      x = P.pickup.cabRearX + 0.40
     } else if (r === 2 && A.rear) {
       x = Math.min(
         A.rear.x0 + G.rearHPointFromRearSeam,
@@ -331,7 +355,10 @@ export const deriveRowPlacement = (P, rowIndex) => {
     ? (P.seatHPointFront ?? 0.32)
     : (P.seatHPointRear || P.seatHPointFront || 0.32)
 
-  return { row: rowIndex, count: pos.count, x: pos.x, hPointY, pitch: pos.pitch, seat: rowSeatLayout(P, pos.count) }
+  return {
+    row: rowIndex, count: pos.count, x: pos.x, hPointY, pitch: pos.pitch,
+    seat: rowSeatLayout(P, pos.count, seatRowHalfLimit(P, pos.x))
+  }
 }
 
 /**
@@ -397,10 +424,13 @@ export function deriveInteriorLayout(P) {
   }
 
   // ---- 方向盘：与 3D 圆环同一锚点（X 同向、Y 同高、Z 同侧、半径同值）----
+  // Z 必须落在驾驶座中心线上（前排左座 centers[0]，Z- 为驾驶侧）：
+  // 旧值「半轮距 − 内缩」把方向盘横移到门内壁附近，比座椅中心外偏 0.25m，
+  // 既不在驾驶员正前方，又让轮缘侵入前轮拱腔体（coupe 可见穿出）。
   const steerWheel = {
     x: steerWheelX(P),
     y: front.hPointY + G.steerWheelAboveHPoint,
-    z: -(P.halfTrack ?? 0.80) + G.steerWheelFromTrack,
+    z: front.seat.centers[0],
     r: G.steerWheelRadius,
     tiltDeg: G.steerWheelTiltDeg,
     columnLen: G.steerColumnLength
@@ -574,13 +604,38 @@ export function deriveInteriorTrim(P) {
   const cabinRearX = P.pickup ? P.pickup.cabRearX - 0.02 : cabinRearBound(P)
   const lastRow = L.rows[L.rows.length - 1]
 
-  // 地毯：地板面之上，自座舱后壁铺到前围（仪表台前缘），前后排脚坑都覆盖
+  // 地毯：地板面之上，自座舱后壁铺到前围（仪表台前缘），前后排脚坑都覆盖。
+  // 横向沿 X 分段：只在轮拱纵向区间内收口到轮罩内壁（轮胎内缘）以内，其余段保持满内宽。
+  // 轮拱是贯穿全宽的车身缺口，等宽地板会伸进轮腔并与轮胎体积相交（SUV 实测 66mm 越界）；
+  // 一刀切收窄又会在门槛处留下无地板的空带，因此按拱区分段——既不出界也不缺料。
+  const carpetHalfZ = halfInterior - 0.01
+  const arches = archCavities(P)
+  const archHalfZ = arches.length
+    ? Math.min(carpetHalfZ, ...arches.map((a) => a.archInnerZ - 0.03))
+    : carpetHalfZ
+  const cx0 = Math.min(cabinRearX + 0.02, lastRow.x - 0.45)
+  const cx1 = L.ip.frontX
+  const gaps = arches
+    .map((a) => [a.cx - a.rx - 0.04, a.cx + a.rx + 0.04])
+    .map(([a0, a1]) => [Math.max(cx0, a0), Math.min(cx1, a1)])
+    .filter(([a0, a1]) => a1 > a0)
+    .sort((p, q) => p[0] - q[0])
+  const carpetSpans = []
+  let cursor = cx0
+  for (const [g0, g1] of gaps) {
+    if (g0 > cursor) carpetSpans.push({ x0: cursor, x1: g0, halfZ: carpetHalfZ })
+    carpetSpans.push({ x0: Math.max(g0, cursor), x1: g1, halfZ: archHalfZ })
+    cursor = g1
+  }
+  if (cursor < cx1) carpetSpans.push({ x0: cursor, x1: cx1, halfZ: carpetHalfZ })
   const carpet = {
-    x0: Math.min(cabinRearX + 0.02, lastRow.x - 0.45),
-    x1: L.ip.frontX,
+    x0: cx0,
+    x1: cx1,
     y0: floorY,
     y1: floorY + G.carpetThickness,
-    halfZ: halfInterior - 0.01
+    halfZ: carpetHalfZ,
+    halfZOverArch: archHalfZ,
+    spans: carpetSpans
   }
 
   // 顶棚：车顶内表面之下，自风挡顶（车顶起点）到座舱后界（皮卡到驾驶室后壁）
@@ -595,6 +650,15 @@ export function deriveInteriorTrim(P) {
   }
   // x 方向规范化：短舱车型（sport）可能使 x0 > x1，按实际跨度取小值
   if (headliner.x0 >= headliner.x1) headliner.x0 = headliner.x1 - 0.30
+  // 顶棚后缘收口：车顶后缘圆角与尾门斜面处「侧视上界」已下落，顶棚矩形压到该处
+  // 就会从后上角穿出（MPV 实测 14mm；皮卡越过驾驶室后壁 780mm）。
+  // 只前移 x0、不动 y0/y1——顶棚始终贴在车顶内表面，仅把后界退到车顶仍为全高的一段。
+  const roofPoly = bodyOutlinePolygon(P, P?.carType)
+  const roofMinTop = headliner.y1 + 0.004
+  for (let i = 0; i < 80 && headliner.x0 < headliner.x1 &&
+    bodyTopAt(roofPoly, headliner.x0) < roofMinTop; i++) {
+    headliner.x0 += 0.02
+  }
 
   // 中央通道：前排中控台本体 + 向后连通后排的低通道（不侵入两侧座椅的 Z 区间）
   const tunnel = {
@@ -647,7 +711,11 @@ export function deriveInteriorTrim(P) {
       ? A.bPillarX1 + 0.005
       : (A.rear ? Math.min(A.rear.x0 + 0.06, row.x - 0.30) : row.x - 0.30)
     for (const side of [-1, 1]) {
-      const z = side * (halfInterior - G.seatBeltAnchorInset)
+      // 下固定点贴门内壁；该排若已因轮罩收窄，则跟随座椅外缘——否则固定点落进轮腔
+      const zBase = row.seat.halfUsable < halfInterior
+        ? row.seat.halfUsable - 0.02
+        : halfInterior - G.seatBeltAnchorInset
+      const z = side * zBase
       belts.push({ row: row.row, side, kind: 'upper', x: upperX, y: upperY, z })
       belts.push({ row: row.row, side, kind: 'lower', x: row.x - 0.10, y: floorY + 0.10, z })
     }
@@ -690,10 +758,20 @@ export function deriveIpConsoleLayout(P) {
   const face = ip.rearX   // IP 后面板（面向乘员），模块自此向舱内（X 减小方向）凸出
 
   // ---- IP 本体分件：上体（软质搪塑）/ 下体（硬质注塑），供材质规格与 3D 分层 ----
+  // 下体前缘须让开前轮拱腔体：轮拱是贯穿全宽的车身缺口，IP 下体若铺到 cowl 面，
+  // 其前下外角会落进轮腔、从轮口看到深色楔形块（sedan/suv 实测越界 18~157mm）。
+  // 取「下半体最接近拱心的高度」求拱后缘 X（拱心附近腔体最深、后缘最靠后）。
   const splitY = ip.bottomY + (ip.topY - ip.bottomY) * 0.55
+  const fArch = P.frontWheelX != null && P.wheelArch?.front
+    ? { cx: P.frontWheelX, cy: P.archY ?? 0, rx: P.wheelArch.front.rx, ry: P.wheelArch.front.ry }
+    : null
+  const lowerArchX = fArch
+    ? archRearEdgeX(fArch, Math.min(Math.max(fArch.cy, ip.bottomY), splitY))
+    : -Infinity
+  const lowerX1 = lowerArchX > -Infinity ? Math.min(ip.frontX, lowerArchX - 0.015) : ip.frontX
   const shells = {
     upper: mk(face - 0.02, ip.frontX, splitY, ip.topY, -halfInterior, halfInterior),
-    lower: mk(face - 0.02, ip.frontX, ip.bottomY, splitY, -halfInterior, halfInterior)
+    lower: mk(face - 0.02, Math.max(lowerX1, face - 0.02), ip.bottomY, splitY, -halfInterior, halfInterior)
   }
 
   // ---- 驾驶信息区：组合仪表在方向盘正前方（驾驶侧 Z-），上沿贴 IP 顶 ----
@@ -832,22 +910,35 @@ export function deriveLuggageLayout(P) {
 
   // ---- 后行李舱：三种拓扑（皮卡货箱 / 旅行式货舱 SUV·MPV / 封闭式行李舱 轿车系）----
   let cargoFloorY = Math.max(bodyBottom + G.luggageFloorAbove, lastRow.hPointY - 0.12)
+  // 后轮拱净宽（半值）：轮拱是贯穿全宽的车身缺口，凡纵向跨进拱区的舱体
+  // （皮卡货箱、旅行式货舱）横向都必须收口到该值以内，否则地板/衬板/前壁的
+  // 矩形角会落在轮胎之上的可见腔体区（实测 MPV 27mm、SUV 30mm、皮卡 95mm 露黑）。
+  const rearArch = archCavities(P).find((a) => a.side === 'rear')
+  const archInnerZ = rearArch
+    ? Math.max(0.30, (P.halfTrack ?? 0.80) - (P.tireWidth ?? 0.25) / 2 - G.wagonArchClearance)
+    : Infinity
+  const capToArch = (x0, x1, hz) => (rearArch && archInnerZ < Infinity &&
+    x0 < rearArch.cx + rearArch.rx && x1 > rearArch.cx - rearArch.rx
+    ? Math.min(hz, archInnerZ - wallT - 0.02)
+    : hz)
   let rear
   if (P.pickup) {
     const b = P.pickup
     const floor = Math.max(bodyBottom + 0.15, b.bedWallY - 0.55)
     const halfBed = Math.max(b.bedInteriorHalfZ - wallT, 0.30)
-    const x0 = b.bedRearX + 0.02
-    const x1 = b.bedFrontX - 0.02
+    // 货箱内腔双向夹紧：后不越车尾面（rearX）、前不越驾驶室后壁（cabRearX）
+    const x0 = Math.max(b.bedRearX + 0.02, (P.rearX ?? 0) + 0.02)
+    const x1 = Math.min(b.bedFrontX - 0.02, b.cabRearX - 0.02)
+    const bayHalfZ = capToArch(x0, x1, halfBed)
     rear = {
       type: 'pickup-bed',
-      x0, x1, floorY: floor, topY: b.bedWallY - 0.02, halfZ: halfBed,
+      x0, x1, floorY: floor, topY: b.bedWallY - 0.02, halfZ: bayHalfZ,
       length: x1 - x0,
       // 货箱为开放舱：衬里 = 地板 + 前壁 + 两侧壁 + 尾门内板；栏板顶为舱口
-      aperture: { bottomY: floor, topY: b.bedWallY, halfZ: halfBed + wallT, x: x0 },
+      aperture: { bottomY: floor, topY: b.bedWallY, halfZ: bayHalfZ + wallT, x: x0 },
       widthBetweenArches: null,
       archBoxes: [],
-      volumeL: Math.round((x1 - x0) * (b.bedWallY - 0.02 - floor) * 2 * halfBed * 0.92 * 1000)
+      volumeL: Math.round((x1 - x0) * (b.bedWallY - 0.02 - floor) * 2 * bayHalfZ * 0.92 * 1000)
     }
   } else {
     const wagon = P.carType === 'suv' || P.carType === 'mpv'
@@ -856,6 +947,7 @@ export function deriveLuggageLayout(P) {
     const topY = wagon
       ? (P.roofTopY ?? P.H) - G.trunkTopInset
       : (P.trunkLineY ?? (P.H ?? 1.5) * 0.60) - G.trunkTopInset
+    const bayHalfZ = capToArch(x0, x1, halfZ)
     // 舱深下限 0.22m：浅于此时压低地板（不低于车身底板 +80mm）
     if (topY - cargoFloorY < 0.22) cargoFloorY = Math.max(bodyBottom + 0.08, topY - 0.22)
     // 旅行式货舱：后轮拱侵入侧壁 → 轮拱饰盒，并输出「拱间净宽」人机指标
@@ -864,26 +956,27 @@ export function deriveLuggageLayout(P) {
     if (wagon && P.rearWheelX != null && P.wheelArch?.rear) {
       const rx = P.wheelArch.rear.rx
       if (P.rearWheelX > x0 && P.rearWheelX < x1) {
-        const archInner = Math.max(0.30,
-          (P.halfTrack ?? 0.80) - (P.tireWidth ?? 0.25) / 2 - G.wagonArchClearance)
-        const boxTop = Math.min(cargoFloorY + 0.35, topY - 0.10)
-        for (const s of [1, -1]) {
-          archBoxes.push(mk(P.rearWheelX - rx, P.rearWheelX + rx, cargoFloorY, boxTop,
-            s > 0 ? archInner : -halfZ - wallT, s > 0 ? halfZ + wallT : -archInner))
+        widthBetweenArches = 2 * archInnerZ
+        // 舱宽已收口到拱间净宽时不存在台阶，饰盒退化为零厚度，不再生成
+        if (bayHalfZ + wallT > archInnerZ + 0.005) {
+          const boxTop = Math.min(cargoFloorY + 0.35, topY - 0.10)
+          for (const s of [1, -1]) {
+            archBoxes.push(mk(P.rearWheelX - rx, P.rearWheelX + rx, cargoFloorY, boxTop,
+              s > 0 ? archInnerZ : -bayHalfZ - wallT, s > 0 ? bayHalfZ + wallT : -archInnerZ))
+          }
         }
-        widthBetweenArches = 2 * archInner
       }
     }
     // 容积口径：旅行式货舱按 VDA 惯例计至遮物帘/窗线（beltLine - 20mm），
     // 盖板以上空间只作净空标注、不计容积——避免把玻璃区算进行李容积造成系统性高估。
     const coverY = wagon ? Math.min(topY, (P.beltLineY ?? topY) - 0.02) : topY
-    const baseVolume = (x1 - x0) * (coverY - cargoFloorY) * 2 * (halfZ + wallT)
+    const baseVolume = (x1 - x0) * (coverY - cargoFloorY) * 2 * (bayHalfZ + wallT)
     const archLoss = archBoxes.length
       ? archBoxes.reduce((v, b2) => v + (b2.x1 - b2.x0) * (Math.min(b2.y1, coverY) - b2.y0) * Math.abs(b2.z1 - b2.z0), 0)
       : 0
     rear = {
       type: wagon ? 'wagon' : 'trunk',
-      x0, x1, floorY: cargoFloorY, topY, halfZ,
+      x0, x1, floorY: cargoFloorY, topY, halfZ: bayHalfZ,
       length: x1 - x0,
       coverY,
       aperture: wagon
@@ -897,12 +990,20 @@ export function deriveLuggageLayout(P) {
 
   // ---- 通用部件（三拓扑共用：衬板 / 地板 / 门槛 / 锚点 / 照明 / 锁扣 / 地板下井）----
   const r = rear
+  // 尾段上界收口：溜背/尾门斜面让车身「侧视上界」在尾段快速下落，而衬板与尾门内板
+  // 是按矩形派生的全高板——不按上界收口就会从斜面与后围穿出（SUV 实测 637mm、
+  // MPV 653mm 的深色板，外观可见）。这里只压衬板/内板高度，容积口径不变。
+  const bodyPoly = bodyOutlinePolygon(P, P?.carType)
+  const topCapOver = (x0, x1) => topEnvelopeOver(bodyPoly, x0, x1, 10) - 0.02
+  const linerTopY = Math.max(Math.min(r.topY, topCapOver(r.x0, r.x1)), r.floorY + 0.05)
+  const lidTopY = Math.max(Math.min(r.aperture.topY, topCapOver(r.x0 - wallT - 0.02, r.x0 - 0.02)),
+    r.floorY + 0.05)
   const common = {
     floorCarpet: mk(r.x0, r.x1, r.floorY - 0.012, r.floorY, -r.halfZ, r.halfZ),
-    sideLiners: [1, -1].map((s) => mk(r.x0, r.x1, r.floorY, r.topY,
+    sideLiners: [1, -1].map((s) => mk(r.x0, r.x1, r.floorY, linerTopY,
       s > 0 ? r.halfZ : -r.halfZ - wallT, s > 0 ? r.halfZ + wallT : -r.halfZ)),
-    frontLiner: mk(r.x1, r.x1 + wallT, r.floorY, Math.min(r.topY, r.floorY + 0.60), -r.halfZ, r.halfZ),
-    lidInner: mk(r.x0 - wallT - 0.02, r.x0 - 0.02, r.floorY, r.aperture.topY, -r.halfZ, r.halfZ),
+    frontLiner: mk(r.x1, r.x1 + wallT, r.floorY, Math.min(linerTopY, r.floorY + 0.60), -r.halfZ, r.halfZ),
+    lidInner: mk(r.x0 - wallT - 0.02, r.x0 - 0.02, r.floorY, lidTopY, -r.halfZ, r.halfZ),
     sillPlate: mk(r.x0 - 0.02, r.x0 + 0.14, r.floorY - 0.006, r.floorY + 0.006,
       -(r.aperture.halfZ), r.aperture.halfZ),
     hooks: [

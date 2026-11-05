@@ -7,7 +7,7 @@ import { createMaterialSet } from '../materials.js'
 import { createNurbsCar, alignNurbsToProfile } from './nurbsCar.js'
 import { buildBodyShell, FRONT_GLASS_TOP_BORDER } from '../geometry/bodyShell.js'
 import { createDoorRig } from '../parts/doors.js'
-import { addBandGlass, addDloPane } from '../parts/glass.js'
+import { addBandGlass, addBandCabinShadow, addDloPane } from '../parts/glass.js'
 import { addInteriorSeats } from '../interior/seats.js'
 import { createLightsBumpers } from '../parts/lightsBumpers.js'
 import { createMirrors } from '../parts/mirrors.js'
@@ -15,16 +15,16 @@ import { createWheels, addArchLiners, createLiftDucts } from '../parts/wheels.js
 
 /**
  * 阴影约定唯一解释点（P6 收口）：`userData.noCastShadow` 的网格（玻璃 / 门内板 /
- * 风道盘唇等）不投实心影，其余网格统一投影并接收阴影。
+ * 风道盘唇等）不投实心影，其余网格统一投影；除 `userData.noReceiveShadow`
+ * （车身漆面，见下）外统一接收阴影。
  *
  * 挤出路径与 NURBS 路径都在装配末尾走这一处，调用方（composable）不再重复 traverse。
- * 与 `bodyMesh.castShadow` 同源：车身网格没有 noCastShadow 标记，因此结果恒为 true。
  */
 function applyShadowFlags(group) {
   group.traverse((child) => {
     if (child.isMesh) {
       child.castShadow = !child.userData.noCastShadow
-      child.receiveShadow = true
+      child.receiveShadow = !child.userData.noReceiveShadow
     }
   })
   return group
@@ -123,7 +123,11 @@ export function assembleCar({ carParams, carType, carColor, wireframe, nurbsMesh
 
   const bodyMesh = new THREE.Mesh(bodyGeom, bodyMats)
   bodyMesh.castShadow = true
-  bodyMesh.receiveShadow = true
+  // 车身不自受体阴影：车身漆面是 DoubleSide（见 materials.js 的绕序说明），
+  // 阴影贴图会把背面也写进深度，机身自遮挡在机盖/车顶掠射角形成大片噪点状
+  // 阴影痤疮。投影保持开启（地面仍有车影），仅关闭自接收（applyShadowFlags 生效）。
+  bodyMesh.userData.noReceiveShadow = true
+  bodyMesh.receiveShadow = false
   group.add(bodyMesh)
 
   // 皮卡货箱：深色内舱面嵌于栏板之间（略高于栏板上沿，俯视呈开放货舱）
@@ -158,12 +162,26 @@ export function assembleCar({ carParams, carType, carColor, wireframe, nurbsMesh
     x1: ws.x1, y1: ws.y1, x2: ws.x2, y2: ws.y2, width: ws.width,
     topInset: ws.topInset + FRONT_GLASS_TOP_BORDER, bottomInset: ws.bottomInset
   })
+  // 前风挡舱影：独立几何，覆盖区与玻璃逐点同源（同一脊柱线 + 同一逐点半宽），
+  // 离面量比玻璃内收 0.5mm ⟹ 夹在车身斜面墙与玻璃之间，不与任何件重叠。
+  // 旧实现是「把车身斜面墙整片改判内饰深色」——斜面墙是整宽大三角形，
+  // 任何重心判据都会整片命中 ⟹ 玻璃外的 A/C 柱区被染黑（黑带）且边界成齿状。
+  addBandCabinShadow({
+    group, material: interiorMat, taperK,
+    x1: ws.x1, y1: ws.y1, x2: ws.x2, y2: ws.y2, width: ws.width,
+    topInset: ws.topInset + FRONT_GLASS_TOP_BORDER, bottomInset: ws.bottomInset
+  })
   // 后风挡：顶缘同样停在车顶后缘圆角下方（皮卡无后风挡）；
   // 底缘下退 cPillarBottom 至 C 柱底圆角切点（玻璃不戳入尾部圆角）
   if (cabin.rearWindow) {
     const rw = cabin.rearWindow
     addBandGlass({
       group, material: glassMat, taperK,
+      x1: rw.x1, y1: rw.y1, x2: rw.x2, y2: rw.y2, width: rw.width,
+      topInset: rw.topInset + FRONT_GLASS_TOP_BORDER, bottomInset: ROOF_FILLETS.cPillarBottom
+    })
+    addBandCabinShadow({
+      group, material: interiorMat, taperK,
       x1: rw.x1, y1: rw.y1, x2: rw.x2, y2: rw.y2, width: rw.width,
       topInset: rw.topInset + FRONT_GLASS_TOP_BORDER, bottomInset: ROOF_FILLETS.cPillarBottom
     })

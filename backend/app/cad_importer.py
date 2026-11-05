@@ -809,7 +809,9 @@ def infer_car_params(geom: ImportedGeometry,
     _set("styling_angles", "windshield_angle",   ws_angle)
     _set("styling_angles", "hood_angle",         3.0 if H / max(L, 1e-6) > 0.33 else 6.0)
     _set("styling_angles", "rear_slant_angle",   40.0 if body_hw_ratio < 0.72 else 25.0)
-    _set("styling_angles", "rear_window_angle",  ws_angle - 8.0)
+    # windshield_angle 以水平面为基准，rear_window_angle 以**竖直方向**为基准（二者不可直接相减）
+    # → 同倾角的竖直基准角 = 90 − ws_angle（给出 22~28°，落在 10~60° 合同区间内）
+    _set("styling_angles", "rear_window_angle",  90.0 - ws_angle)
 
     # ---- Class A surface defaults (degrees retained, quality preserved) ----
     _set("class_a_params", "surface_degree_u", 3.0)

@@ -118,8 +118,10 @@ def side_profile(m: Model) -> Tuple[np.ndarray, List[Tuple[float, float, float]]
     roof_z = H
 
     # 风挡 / 后窗：由倾角推导水平投影
+    # windshield_angle 为与水平面夹角 → 进深 = 高 / tan(a)
     ws_h = max((H - (GC + H * 0.42)) / max(math.tan(math.radians(m.ws_angle)), 0.15), L * 0.06)
-    rw_h = max((H - (GC + H * 0.38)) / max(math.tan(math.radians(m.rw_angle)), 0.12), L * 0.05)
+    # rear_window_angle 为与**竖直方向**夹角（越大越躺）→ 进深 = 高 × tan(a)
+    rw_h = max((H - (GC + H * 0.38)) * math.tan(math.radians(m.rw_angle)), L * 0.05)
     ws_top_x = cowl + min(ws_h, L * 0.20)
     rw_top_x = cabin_x1 - min(rw_h, L * 0.20)
 

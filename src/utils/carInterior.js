@@ -271,8 +271,14 @@ export function createInteriorTrim(P) {
   const zSpan = (halfZ) => [-halfZ, halfZ]
 
   // ---- 地毯 / 顶棚：座舱内表面的两块「包裹层」----
-  const [cz0, cz1] = zSpan(T.carpet.halfZ)
-  addBox('carpet', { x0: T.carpet.x0, x1: T.carpet.x1, y0: T.carpet.y0, y1: T.carpet.y1, z0: cz0, z1: cz1 }, mats.carpet)
+  // 地毯按 X 分段渲染（轮拱区间内收口到轮罩内壁，其余满宽），段与段共用同一材质
+  const carpetSpans = T.carpet.spans ?? [{ x0: T.carpet.x0, x1: T.carpet.x1, halfZ: T.carpet.halfZ }]
+  carpetSpans.forEach((sp, i) => {
+    const [cz0, cz1] = zSpan(sp.halfZ)
+    addBox(`carpet-${i}`, {
+      x0: sp.x0, x1: sp.x1, y0: T.carpet.y0, y1: T.carpet.y1, z0: cz0, z1: cz1
+    }, mats.carpet)
+  })
 
   const [hz0, hz1] = zSpan(T.headliner.halfZ)
   addBox('headliner', { x0: T.headliner.x0, x1: T.headliner.x1, y0: T.headliner.y0, y1: T.headliner.y1, z0: hz0, z1: hz1 }, mats.headliner)

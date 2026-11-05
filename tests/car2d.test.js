@@ -10,8 +10,11 @@ import { LINE_RATIOS, deriveCarProfile } from '../src/utils/carProfile.js'
 import { assembleCar } from '../src/three/assembly/assembleCar.js'
 
 // sedan 整车装配的 Mesh 总数（车身/玻璃/灯/轮/门/座椅等全部零件），
-// 装配编排或零件挂载数量变化会在此暴露（P5 批次 3 实测值）
-const EXPECTED_CAR_MESHES = 193
+// 装配编排或零件挂载数量变化会在此暴露。
+// 基线（P5 批次 3）= 193；内饰地毯改为按轮拱区间分段渲染：carpet ×1 → carpet-0/1/2 ×3 = +2；
+// 风挡/后风挡舱影改为独立几何 +2（舱影不再靠「改判车身斜面墙」实现，因此玻璃外的
+// A/C 柱区不会被染黑，同时舱影与玻璃覆盖区逐点同源）⟹ 193 + 2 + 2 = 197
+const EXPECTED_CAR_MESHES = 197
 
 const svgWidth = 800
 const svgHeight = 420
@@ -183,17 +186,20 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       expect(result4.slantFactor).toBe(1)
     })
 
-    it('侧窗关键点应钳位在甲板起点与车尾之间（SUV/MPV 大倾角不越出车尾）', () => {
+    it('侧窗关键点应落在车顶跨度内（SUV/MPV 后窗不越出甲板起点、不越过车尾）', () => {
       for (const type of ['suv', 'mpv']) {
         const result = computeCar2D({ ...defaultCarParams, ...carTypeParams[type] }, type)
         expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.rearX + 0.001)
-        expect(result.rearWindowBottomX).toBeGreaterThanOrEqual(result.trunkStartX - 0.001)
+        // 2D X 增大指向车尾：后窗下沿必须落在甲板起点**之前**（X 更小），
+        // 否则后窗会盖到行李箱盖/尾门上（旧语义按水平夹角算，下沿恰好贴到 trunkStartX）
+        expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.trunkStartX + 0.001)
+        expect(result.rearWindowBottomX).toBeGreaterThan(result.windshieldTopX)
         expect(result.windshieldTopX).toBeGreaterThan(result.hoodEndX)
         expect(result.rearWindowTopX).toBeGreaterThan(result.windshieldTopX)
       }
-      // pickup：后窗下沿在驾驶室（cabWindowBottom），位于风挡顶之后、车尾之前
+      // pickup：驾驶室后壁自上而下向后倾，后窗下沿在顶缘之后（2D X 更大）、车尾之前
       const pk = computeCar2D({ ...defaultCarParams, ...carTypeParams.pickup }, 'pickup')
-      expect(pk.rearWindowBottomX).toBeLessThan(pk.rearWindowTopX)
+      expect(pk.rearWindowBottomX).toBeGreaterThan(pk.rearWindowTopX)
       expect(pk.rearWindowBottomX).toBeGreaterThan(pk.windshieldTopX)
       expect(pk.rearWindowBottomX).toBeLessThan(pk.rearX)
     })
@@ -208,7 +214,7 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
       expect(result.roofTopY).toBeGreaterThanOrEqual(padTop - 0.001)
       expect(result.wheelBottomY).toBeCloseTo(result.groundY, 6)
       expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.rearX + 0.001)
-      expect(result.rearWindowBottomX).toBeGreaterThanOrEqual(result.trunkStartX - 0.001)
+      expect(result.rearWindowBottomX).toBeLessThanOrEqual(result.trunkStartX + 0.001)
     })
   })
 
@@ -328,14 +334,19 @@ describe('Car2D 几何计算测试（重构后管线）', () => {
   })
 
   describe('12. 皮卡拓扑与 2D/3D 比例一致性（F-150 基准）', () => {
-    it('驾驶室后壁 = 后轮中心朝车头 0.5m，车顶不贯通、货箱段 ≥1.5m', () => {
+    it('驾驶室后壁锚在后轮拱前唇（门后缝）之后 50mm，车顶不贯通、货箱段 ≥1.5m', () => {
       const params = { ...defaultCarParams, ...carTypeParams.pickup }
       const result = computeCar2D(params, 'pickup')
-      expect(result.cabRearX2d).toBeCloseTo(result.rearWheelCX - result.scale * 500, 6)
+      const p3d = result.profile
+      // 后壁锚点 = 后轮拱前唇 + 40mm（门后缝）− 50mm（C 柱余量），与 3D deriveCarProfile 同源；
+      // 这保证后壁不切入门区（旧常量「后轮中心 +0.5m」会随轮径/拱包络漂移而切进门板）
+      expect(result.cabRearX2d).toBeCloseTo(
+        result.rearWheelCX - (p3d.pickup.cabRearX - p3d.rearWheelX) * 1000 * result.scale, 6)
       expect(result.cabRearX2d).toBeGreaterThan(result.windshieldTopX)   // 车顶长度为正
       expect(result.rearWindowTopX).toBeCloseTo(result.cabRearX2d, 6)    // 车顶止于驾驶室后壁
       expect(result.rearX - result.cabRearX2d).toBeGreaterThan(result.scale * 1500) // 货箱段 ≈1.6m（F-150 1676mm 等比）
-      expect(result.rearWindowBottomX).toBeLessThan(result.cabRearX2d)   // 后窗下沿微向前收
+      // 后壁自上而下向后倾：后窗下沿在顶缘之后（2D X 更大）
+      expect(result.rearWindowBottomX).toBeGreaterThan(result.cabRearX2d)
     })
 
     it('2D 与 3D 关键比例逐点一致（carProfile 同源推导）', () => {

@@ -353,10 +353,19 @@ describe('deriveCarProfile 全车型物理约束', () => {
 })
 
 describe('MPV / SUV：后窗与行李架（原缺陷回归）', () => {
-  it('MPV 后窗被约束在甲板起点，不突出车身', () => {
+  it('MPV 后窗按「与竖直方向夹角」派生，不越过甲板起点', () => {
     const p = deriveCarProfile(carTypeParams.mpv, 'mpv')
-    // 15° 后窗按角度会落到 -3.00m（超出后保险杠），必须被钳制到 trunkStartX
-    expect(p.rearWindowBottomX).toBe(p.trunkStartX)
+    // 权威语义（param_contract.semantics.rear_window_angle）：rear_window_angle =
+    // 后风挡面与**竖直方向**的夹角（越大越躺）→ 水平进深 dx = 玻璃带高 · tan(a)。
+    // 15° ⇒ 近竖直后窗，水平进深仅 173mm，旧实现的「与水平面夹角」语义会给出 2.4m（超车尾）。
+    const bandH = p.roofTopY - p.beltLineY
+    const run = bandH * Math.tan((p.rearWindowAngleDeg * Math.PI) / 180)
+    expect(p.rearWindowBottomX).toBeCloseTo(p.rearWindowTopX - run, 10)
+    // 几何隐含角 == 声明角（未被钳制）
+    expect(p.rearWindowImpliedAngleDeg).toBeCloseTo(p.rearWindowAngleDeg, 6)
+    expect(p.rearWindowAngleClamped).toBe(false)
+    // 下缘不得越过甲板起点（3D X+ 车头 ⇒ 下缘须在 trunkStartX 之前）
+    expect(p.rearWindowBottomX).toBeGreaterThan(p.trunkStartX)
     expect(p.rearWindowBottomX).toBeGreaterThan(p.rearX)
   })
 
@@ -370,9 +379,14 @@ describe('MPV / SUV：后窗与行李架（原缺陷回归）', () => {
     expect(p.rails.y).toBeLessThan(p.roofTopY + 0.02)
   })
 
-  it('SUV 同样钳制后窗、行李架合规', () => {
+  it('SUV 同样按竖直夹角派生后窗、行李架合规', () => {
     const p = deriveCarProfile(carTypeParams.suv, 'suv')
-    expect(p.rearWindowBottomX).toBe(p.trunkStartX)
+    const bandH = p.roofTopY - p.beltLineY
+    const run = bandH * Math.tan((p.rearWindowAngleDeg * Math.PI) / 180)
+    expect(p.rearWindowBottomX).toBeCloseTo(p.rearWindowTopX - run, 10)
+    expect(p.rearWindowImpliedAngleDeg).toBeCloseTo(p.rearWindowAngleDeg, 6)
+    expect(p.rearWindowAngleClamped).toBe(false)
+    expect(p.rearWindowBottomX).toBeGreaterThan(p.trunkStartX)
     expect(p.rails).not.toBeNull()
   })
 
@@ -401,11 +415,19 @@ describe('sport：GT 尾翼落在后甲板上', () => {
 })
 
 describe('pickup：专属拓扑（短驾驶室 + 开放货箱）', () => {
-  it('驾驶室后壁位于后轮中心朝车头 0.5m（F-150 基准），车顶不贯通', () => {
+  it('驾驶室后壁锚在门后缝之后 50mm（不得切入门区），且落在 F-150 基准区间', () => {
     const p = deriveCarProfile(carTypeParams.pickup, 'pickup')
     expect(p.pickup).not.toBeNull()
     const { cabRearX } = p.pickup
-    expect(cabRearX).toBeCloseTo(p.rearWheelX + 0.5, 5)
+    // 后壁锚点 = 后轮拱前唇 + 40mm（门后缝）− 50mm（C 柱余量）：
+    // 这是穿模防线的核心——后壁若越过门后缝会切入门区 → 门板与后壁互相穿插。
+    const doorRearSeamX = p.rearWheelX + p.wheelArch.rear.rx + 0.04
+    expect(cabRearX).toBeCloseTo(doorRearSeamX - 0.05, 10)
+    // 后壁整体位于门后缝之后（3D X+ 车头 ⇒ X 更小）
+    expect(cabRearX).toBeLessThan(doorRearSeamX)
+    // F-150 基准：驾驶室后壁在后轮中心朝车头 0.40~0.55m
+    expect(cabRearX - p.rearWheelX).toBeGreaterThan(0.40)
+    expect(cabRearX - p.rearWheelX).toBeLessThan(0.55)
     expect(cabRearX).toBeGreaterThan(p.rearX)
   })
 

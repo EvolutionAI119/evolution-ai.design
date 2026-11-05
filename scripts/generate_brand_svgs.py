@@ -234,10 +234,12 @@ def generate_svg(brand_key, model_key, model_name, params, brand_color):
     slantFactor = min(max(params['rear_slant_angle'] / 60, 0), 1)
     roofLen = max(maxRoofLength * (1 - slantFactor * 0.6), s(800))
     rearWindowTopX = windshieldTopX + roofLen
+    # rear_window_angle = 后风挡面与**竖直方向**夹角（越大越躺）；SVG 的 X 增大指向车尾，
+    # 故水平进深 = 竖直带高 × tan(a)，并钳制在甲板起点之内（与 3D carProfile 同源）
     rearWindowVertHeight = beltLineY - roofTopY
-    rearWindowHeightRatio = 0.5 + slantFactor * 0.35
-    rearWindowHeight = rearWindowVertHeight * rearWindowHeightRatio
-    rearWindowBottomX = rearWindowTopX + rearWindowHeight / math.tan(rearWindowAngleRad)
+    rearWindowMaxRun = max(trunkStartX - rearWindowTopX, 0)
+    rearWindowRun = min(rearWindowVertHeight * math.tan(rearWindowAngleRad), rearWindowMaxRun)
+    rearWindowBottomX = rearWindowTopX + rearWindowRun
 
     underY = groundClearanceLine_Y - 4
 

@@ -367,12 +367,14 @@ describe('横断面右视图 — 中控台与座椅的横向关系（6 车型全
     }
   })
 
-  it('方向盘横断面 Z 与 3D 同源（驾驶侧 Z-，内缩量取常量）', () => {
+  it('方向盘横断面 Z 与 3D 同源（落在驾驶座中心线上，Z<0）', () => {
     for (const type of ALL_TYPES) {
       const P = profileOf(type)
       const S = deriveSectionLayout(P)
-      expect(S.steerWheel.z).toBe(deriveInteriorLayout(P).steerWheel.z)
-      expect(S.steerWheel.z).toBeCloseTo(-P.halfTrack + INTERIOR_GEOM.steerWheelFromTrack, 12)
+      const L = deriveInteriorLayout(P)
+      expect(S.steerWheel.z).toBe(L.steerWheel.z)
+      // 方向盘中心 = 前排左座（驾驶侧）中心线：不得外偏到门内壁/轮拱
+      expect(S.steerWheel.z).toBeCloseTo(L.rows[0].seat.centers[0], 12)
       expect(S.steerWheel.z).toBeLessThan(0)
     }
   })
@@ -439,11 +441,19 @@ describe('座椅纵向基准 — 门洞锚定与人机工程封顶（6 车型全
     expect(L.rows[0].x - L.rows[1].x).toBeGreaterThanOrEqual(INTERIOR_GEOM.minRowPitch - 1e-9)
   })
 
-  it('皮卡后排贴驾驶室后壁（不落入货箱）', () => {
+  it('皮卡后排整排留在驾驶室内（靠背/头枕不越后壁）', () => {
     const P = profileOf('pickup')
     const row2 = deriveRowPlacement(P, 2)
-    expect(row2.x).toBeCloseTo(P.pickup.cabRearX + 0.28, 12)
+    // 后移量按侧视包络外扩量（靠背后倾 + 头枕 ≈0.365m）定值，留 35mm 余量
+    expect(row2.x).toBeCloseTo(P.pickup.cabRearX + 0.40, 12)
     expect(row2.x).toBeGreaterThan(P.pickup.cabRearX)
+    // 穿模门禁：包络后缘（靠背 + 头枕）不得越过驾驶室后壁
+    const env = deriveInteriorLayout(P).rows[1].envelope
+    const rearMost = Math.min(
+      ...env.backrest.points.map((p) => p[0]),
+      ...env.headrest.points.map((p) => p[0])
+    )
+    expect(rearMost).toBeGreaterThan(P.pickup.cabRearX - 0.02)
   })
 
   it.each(ALL_TYPES)('%s 相邻排纵向间距 ≥ 最小排距，且不越出座舱后界', (type) => {
@@ -527,7 +537,12 @@ describe('剩余内饰件 — 舱内边界与座椅无干涉（6 车型全量）
     const G = INTERIOR_GEOM
     expect(T.belts.length).toBe(L.rows.length * 4)   // 每排 × 两侧 × 上/下
     for (const b of T.belts) {
-      expect(Math.abs(b.z)).toBeCloseTo(T.halfInterior - G.seatBeltAnchorInset, 12)
+      const row = L.rows.find((r) => r.row === b.row)
+      // 固定点贴门内壁；该排若因轮罩收窄，固定点跟随座椅外缘（不得落进轮腔）
+      const expectZ = row.seat.halfUsable < T.halfInterior
+        ? row.seat.halfUsable - 0.02
+        : T.halfInterior - G.seatBeltAnchorInset
+      expect(Math.abs(b.z)).toBeCloseTo(expectZ, 12)
       if (b.kind === 'upper') {
         expect(b.y).toBeGreaterThanOrEqual(T.beltLineY - 1e-9)
         expect(b.y).toBeLessThanOrEqual(P.roofTopY - 0.12 + 1e-9)
@@ -548,14 +563,22 @@ describe('剩余内饰件 3D 网格 — 与布置层逐值同源（无第二套�
     expect(group.name).toBe('interior-trim')
     const byName = (n) => group.children.find((c) => c.name === n)
 
-    const carpet = byName('carpet')
-    expect(carpet).toBeTruthy()
-    expect(carpet.position.x).toBeCloseTo((T.carpet.x0 + T.carpet.x1) / 2, 12)
-    expect(carpet.position.y).toBeCloseTo((T.carpet.y0 + T.carpet.y1) / 2, 12)
-    expect(carpet.position.z).toBeCloseTo(0, 12)
-    expect(carpet.geometry.parameters.width).toBeCloseTo(T.carpet.x1 - T.carpet.x0, 12)
-    expect(carpet.geometry.parameters.height).toBeCloseTo(T.carpet.y1 - T.carpet.y0, 12)
-    expect(carpet.geometry.parameters.depth).toBeCloseTo(T.carpet.halfZ * 2, 12)
+    // 地毯按轮拱区间分段渲染：每段一个网格，段首尾相接、无缺料、无越界段
+    const spans = T.carpet.spans
+    expect(spans.length).toBeGreaterThan(0)
+    expect(spans[0].x0).toBeCloseTo(T.carpet.x0, 12)
+    expect(spans[spans.length - 1].x1).toBeCloseTo(T.carpet.x1, 12)
+    for (let i = 0; i < spans.length; i++) {
+      if (i > 0) expect(spans[i].x0).toBeCloseTo(spans[i - 1].x1, 12)
+      const m = byName(`carpet-${i}`)
+      expect(m).toBeTruthy()
+      expect(m.position.x).toBeCloseTo((spans[i].x0 + spans[i].x1) / 2, 12)
+      expect(m.position.y).toBeCloseTo((T.carpet.y0 + T.carpet.y1) / 2, 12)
+      expect(m.position.z).toBeCloseTo(0, 12)
+      expect(m.geometry.parameters.width).toBeCloseTo(spans[i].x1 - spans[i].x0, 12)
+      expect(m.geometry.parameters.height).toBeCloseTo(T.carpet.y1 - T.carpet.y0, 12)
+      expect(m.geometry.parameters.depth).toBeCloseTo(spans[i].halfZ * 2, 12)
+    }
 
     const headliner = byName('headliner')
     expect(headliner.geometry.parameters.depth).toBeCloseTo(T.headliner.halfZ * 2, 12)
@@ -593,7 +616,7 @@ describe('剩余内饰件 3D 网格 — 与布置层逐值同源（无第二套�
       expect(o.renderOrder).toBe(2)
       expect(o.userData.noCastShadow).toBe(true)
     })
-    expect(meshCount).toBe(4 + T.doors.length + T.armrests.length + T.belts.length)
+    expect(meshCount).toBe(T.carpet.spans.length + 3 + T.doors.length + T.armrests.length + T.belts.length)
   })
 })
 

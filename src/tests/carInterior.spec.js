@@ -111,10 +111,10 @@ describe('createSeatRow — 座椅几何不越出座舱包络', () => {
     expect(driver.position.z).toBeLessThan(0)
   })
 
-  it('皮卡第二排贴近驾驶室后壁（不按轿车排距后移）', () => {
+  it('皮卡第二排整排留在驾驶室内（靠背/头枕不越后壁）', () => {
     const P = profileOf('pickup')
     const row2 = seatGroupsOf(createSeatRow(P, 2))[0]
-    expect(row2.position.x).toBeCloseTo(P.pickup.cabRearX + 0.28, 6)
+    expect(row2.position.x).toBeCloseTo(P.pickup.cabRearX + 0.40, 6)
   })
 })
 
