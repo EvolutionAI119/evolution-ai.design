@@ -1260,11 +1260,14 @@ class NURBSCarBodyGenerator:
     PBR_TIRE = {'metallicFactor': 0.1, 'roughnessFactor': 0.9}
     PBR_RIM = {'metallicFactor': 0.85, 'roughnessFactor': 0.3}
 
-    def _build_trimesh_scene(self):
-        """用trimesh从NURBS采样网格构建3D场景（平滑法线 + PBR材质）"""
+    def _build_trimesh_scene(self, car=None):
+        """用trimesh从NURBS采样网格构建3D场景（平滑法线 + PBR材质）
+
+        car 可传入已生成的整车数据，避免导出多格式时重复生成。
+        """
         import trimesh
         from trimesh.visual.material import PBRMaterial
-        car = self.generate_complete_car()
+        car = car if car is not None else self.generate_complete_car()
         scene = trimesh.Scene()
         for comp in car['components']:
             if 'points' in comp and comp['points']:
@@ -1343,14 +1346,15 @@ class NURBSCarBodyGenerator:
         except Exception:
             pass
 
-    def export_glb(self, output_path: str) -> str:
-        data = self._build_trimesh_scene().export(file_type='glb')
+    def export_glb(self, output_path: str, car=None, scene=None) -> str:
+        scene = scene if scene is not None else self._build_trimesh_scene(car=car)
+        data = scene.export(file_type='glb')
         Path(output_path).write_bytes(data)
         return output_path
 
-    def export_stl(self, output_path: str) -> str:
+    def export_stl(self, output_path: str, car=None, scene=None) -> str:
         import trimesh
-        scene = self._build_trimesh_scene()
+        scene = scene if scene is not None else self._build_trimesh_scene(car=car)
         meshes = [g for g in scene.geometry.values() if hasattr(g, 'faces')]
         if meshes:
             data = trimesh.util.concatenate(meshes).export(file_type='stl')
@@ -1359,14 +1363,15 @@ class NURBSCarBodyGenerator:
         Path(output_path).write_bytes(data if isinstance(data, bytes) else data.encode())
         return output_path
 
-    def export_obj(self, output_path: str) -> str:
-        data = self._build_trimesh_scene().export(file_type='obj')
+    def export_obj(self, output_path: str, car=None, scene=None) -> str:
+        scene = scene if scene is not None else self._build_trimesh_scene(car=car)
+        data = scene.export(file_type='obj')
         Path(output_path).write_bytes(data if isinstance(data, bytes) else data.encode('utf-8'))
         return output_path
 
-    def export_step(self, output_path: str) -> str:
+    def export_step(self, output_path: str, car=None) -> str:
         """导出STEP格式（基于NURBS数据生成AP214）"""
-        car = self.generate_complete_car()
+        car = car if car is not None else self.generate_complete_car()
         lines = [
             "ISO-10303-21;", "HEADER;",
             "FILE_DESCRIPTION(('EVOLUTION AI NURBS Car Body Model'),'2;1');",

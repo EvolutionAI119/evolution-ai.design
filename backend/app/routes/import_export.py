@@ -502,6 +502,8 @@ async def export_model(session_id: str, req: ExportFromSessionRequest):
     export_dir = settings.exports_path / f"import_export_{session_id}_{ts}"
     export_dir.mkdir(parents=True, exist_ok=True)
     start = time.time()
+    car = None
+    scene = None
     files = []
     for fmt in req.formats:
         fl = fmt.lower()
@@ -509,14 +511,17 @@ async def export_model(session_id: str, req: ExportFromSessionRequest):
         out_name = f"{name}{info['ext']}"
         out_path = export_dir / out_name
         if fl == "json":
-            car = generator.generate_complete_car()
+            car = car if car is not None else generator.generate_complete_car()
             out_path.write_text(json.dumps(car, ensure_ascii=False, indent=2), encoding="utf-8")
         elif fl in ("stl", "obj", "glb", "gltf"):
+            car = car if car is not None else generator.generate_complete_car()
+            scene = scene if scene is not None else generator._build_trimesh_scene(car=car)
             method = {"glb": generator.export_glb, "gltf": generator.export_glb,
                       "stl": generator.export_stl, "obj": generator.export_obj}[fl]
-            method(str(out_path))
+            method(str(out_path), scene=scene)
         elif fl in ("step", "stp", "iges", "igs"):
-            generator.export_step(str(out_path))
+            car = car if car is not None else generator.generate_complete_car()
+            generator.export_step(str(out_path), car=car)
         files.append({
             "format": fl, "filename": out_name, "path": str(out_path),
             "size": out_path.stat().st_size if out_path.exists() else 0,
