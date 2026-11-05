@@ -16,7 +16,7 @@ os.chdir(ROOT)
 
 EXPECTED_FACTS = {
     'modules': 19,
-    'routes_total': 152,
+    'routes_total': 153,
     'main_direct': 2,
     'tables': 17,
     'formats': 20,

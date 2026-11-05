@@ -134,6 +134,15 @@ async def get_car_parameters():
     return {"parameters": _get_generator().params}
 
 
+@router.get("/parameters/schema")
+async def get_car_parameters_schema():
+    """只读参数契约（游客公开）：分组 / 默认值 / min-max 区间 / 别名 / 语义隔离。
+
+    前端选车型时拉取本接口约束输入，避免默认载荷越界；本接口不写回配置。
+    """
+    return param_contract.parameter_schema()
+
+
 @router.post("/regenerate", response_model=CarCompleteResponse)
 async def regenerate_car(request: CarGenerateRequest,
                          current: User = Depends(get_current_user)):

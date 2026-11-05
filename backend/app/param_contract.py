@@ -37,17 +37,22 @@ GROUP_EN_TO_ZH = {v: k for k, v in GROUP_ZH_TO_EN.items()}
 # ============== 前端字段名 → 后端配置参数名 ==============
 # 映射原则（以**几何语义**为准，而非字面相同）：
 #   wheel_base / front_overhang / rear_overhang 为纯命名差异，直接映射；
-#   roof_height **两者同名但语义完全不同**（前端=车顶纵向跨度 550~1000，
+#   roof_height **两者同名但语义完全不同**（前端=车顶纵向跨度，
 #   后端 roof_height=车顶板厚度 30~100），若按原名注入会把 850 当成
 #   板厚、量级错 10 倍以上，故映射到语义对应的 roof_length；
-#   rear_slant_angle 与 c_pillar_angle 同为 C 柱倾角，做同义映射。
+#   rear_slant_angle 后端已有独立同名参数（5~60），保持独立，不得再映射到
+#   c_pillar_angle（两者区间不同：c_pillar_angle 为 20~45）。
 PARAM_ALIASES = {
     "wheel_base": "wheelbase",
     "front_overhang": "overhang_front",
     "rear_overhang": "overhang_rear",
     "roof_height": "roof_length",
-    "rear_slant_angle": "c_pillar_angle",
 }
+
+#: 车顶语义隔离（契约硬约束）：车顶跨度与车顶板厚是**两个独立字段**。
+#: 前端 roof_height（跨度语义）只能落到 ROOF_SPAN，绝不能落到 ROOF_THICKNESS。
+ROOF_SPAN = "roof_length"
+ROOF_THICKNESS = "roof_height"
 
 #: 这些前端字段名**必须强制走别名**，即使后端存在同名参数。
 #: 用于处理「同名不同义」的陷阱（当前为 roof_height）。
@@ -129,6 +134,10 @@ def resolve_grouped_key(
 
     分组内优先使用原名（显式分组即显式语义，例如「车身部件.roof_height」
     就是板厚）；仅当原名不存在时才尝试别名（如「整车尺寸.wheel_base」）。
+
+    车顶隔离：`roof_length` 与 `roof_height` 各自原名优先命中自己的区间
+    （[1200,2000] / [30,100]），不会被对方吞掉；前端经共享映射表统一提交
+    `roof_length`，因此不会把车顶跨度误判成板厚。
     """
     g = normalize_group(params, group)
     if g not in params:
@@ -244,3 +253,56 @@ def validate_flat_overrides(
             canonical = f"{group_key(g)}.{name}"
             errors.append(_range_error(key, canonical, value, lo, hi))
     return errors
+
+
+def parameter_schema() -> Dict[str, Any]:
+    """只读参数契约：分组、默认值、区间、别名与车顶语义隔离说明。
+
+    供前端选车型时拉取区间约束输入，避免默认载荷越界；不得用于写回配置。
+    """
+    groups = load_parameter_groups()
+    out_groups: Dict[str, Any] = {}
+    flat: Dict[str, Any] = {}
+    for zh, items in groups.items():
+        en = group_key(zh)
+        params: Dict[str, Any] = {}
+        for key, meta in items.items():
+            if not isinstance(meta, dict):
+                continue
+            lo, hi = bounds(meta)
+            row = {
+                "name": meta.get("name"),
+                "value": meta.get("value"),
+                "unit": meta.get("unit"),
+                "type": meta.get("type"),
+                "category": meta.get("category"),
+                "min": lo,
+                "max": hi,
+                "group": en,
+                "group_zh": zh,
+            }
+            params[key] = row
+            flat.setdefault(key, row)
+        out_groups[en] = {"zh": zh, "params": params}
+    return {
+        "source": "backend/config/automotive_parameters.json",
+        "groups": out_groups,
+        "flat": flat,
+        "aliases": dict(PARAM_ALIASES),
+        "semantics": {
+            ROOF_SPAN: {
+                "meaning": "车顶跨度（mm）",
+                "range": list(bounds(groups["车身部件"][ROOF_SPAN])),
+                "never_alias_to": ROOF_THICKNESS,
+            },
+            ROOF_THICKNESS: {
+                "meaning": "车顶板厚（mm）",
+                "range": list(bounds(groups["车身部件"][ROOF_THICKNESS])),
+            },
+            "rear_slant_angle": {
+                "meaning": "尾部溜背角（°）",
+                "independent": True,
+                "never_alias_to": "c_pillar_angle",
+            },
+        },
+    }

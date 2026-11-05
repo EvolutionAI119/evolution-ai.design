@@ -227,3 +227,43 @@ def test_import_group_alias_maps_to_canonical_key():
     rows = {p["key"]: p for p in client.get(f"{BASE}/{sid}/params").json()}
     assert rows["wheelbase"]["value"] == 2890
     assert "wheel_base" not in rows
+
+
+# ---------------------------------------------------------------------------
+# 5. 车顶跨度 / 板厚隔离 & rear_slant_angle 独立
+# ---------------------------------------------------------------------------
+def test_roof_length_is_independent_span_field():
+    """roof_length 是车顶跨度独立字段，原名优先命中自身，不落到板厚"""
+    groups = param_contract.load_parameter_groups()
+    idx = param_contract.flat_index(groups)
+    assert param_contract.resolve_flat_name("roof_length", idx) == "roof_length"
+    ref, err = param_contract.resolve_grouped_key(groups, "车身部件", "roof_length")
+    assert err is None and ref == ("车身部件", "roof_length")
+    # 跨度与板厚各自保留各自区间
+    assert param_contract.bounds(groups["车身部件"]["roof_length"]) == (1200, 2000)
+    assert param_contract.bounds(groups["车身部件"]["roof_height"]) == (30, 100)
+
+
+def test_rear_slant_angle_remains_independent():
+    """rear_slant_angle 后端已有独立参数（5~60），不得再映射到 c_pillar_angle"""
+    out = param_contract.resolve_flat_overrides({"rear_slant_angle": 18})
+    assert out == {"造型角度": {"rear_slant_angle": 18}}
+    assert "c_pillar_angle" not in param_contract.PARAM_ALIASES
+    assert param_contract.validate_flat_overrides({"rear_slant_angle": 18}) == []
+    # 独立区间生效：18 合法，70 越界且提示 [5, 60]
+    errors = param_contract.validate_flat_overrides({"rear_slant_angle": 70})
+    assert len(errors) == 1 and "[5, 60]" in errors[0]
+
+
+def test_parameters_schema_endpoint_is_public_and_readonly():
+    r = client.get("/api/v1/car/parameters/schema")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["flat"]["roof_length"]["min"] == 1200
+    assert body["flat"]["roof_length"]["max"] == 2000
+    assert body["flat"]["roof_height"]["min"] == 30
+    assert body["flat"]["roof_height"]["max"] == 100
+    assert body["aliases"]["roof_height"] == "roof_length"
+    assert "rear_slant_angle" not in body["aliases"]
+    assert body["semantics"]["roof_length"]["never_alias_to"] == "roof_height"
+    assert body["semantics"]["rear_slant_angle"]["independent"] is True
