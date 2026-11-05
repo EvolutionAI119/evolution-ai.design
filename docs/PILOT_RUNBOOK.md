@@ -22,7 +22,24 @@
 | 前端（仅 UI 脚本） | Vite `5173`（或自定义 `VITE_PORT`），`/api/v1` 代理到 8000 | 浏览器打开 `http://127.0.0.1:5173/#/designer` |
 | Python 环境 | 后端依赖已安装（`backend/` 下可 `python -c "import app.main"`） | — |
 
-### 1.1 启动服务（两个终端）
+### 1.1 参数唯一真源与映射（复跑前必读）
+
+- 后端 [`backend/config/automotive_parameters.json`](../backend/config/automotive_parameters.json) 是参数区间的唯一真源；
+- 前端扁平参数（`src/config/carPresets.js`）提交前必须经共享映射表 [`src/config/paramMapping.js`](../src/config/paramMapping.js)
+  转成后端语义，禁止在后端猜别名：
+
+| 前端键 | 后端键 | 说明 |
+|---|---|---|
+| `wheel_base` | `wheelbase` | 轴距 |
+| `front_overhang` | `overhang_front` | 前悬 |
+| `rear_overhang` | `overhang_rear` | 后悬 |
+| `roof_height` | `roof_length` | **车顶跨度 1200–2000mm**，与板厚 `roof_height`（30–100mm）是完全不同的两个字段 |
+| `rear_slant_angle` | `rear_slant_angle` | 独立合法参数，不再映射到 `c_pillar_angle` |
+
+- 只读区间端点（游客可访问，前端选车型时拉取用于约束滑杆）：
+  `GET /api/v1/car/parameters/schema`，返回 `groups` / `flat`（含 `min`/`max`/`group`）/ `aliases` / `semantics`。
+
+### 1.2 启动服务（两个终端）
 
 ```powershell
 # 终端 A：后端（backend/ 目录）
@@ -46,14 +63,11 @@ npx vite --port 5173
 ### 2.1 运行
 
 ```powershell
-# 严格模式（默认）：如实记录前端原始参数的结果
-node scripts/pilot_api_run.mjs
+# 默认（严格）：前端设计值经映射表转后端语义后原值直通，不得夹紧
+node scripts/pilot_api_run.mjs --runs 10 --out pilot-artifacts/api
 
-# 完整链路模式：生成阶段原值被拒（422）后，用夹紧到后端区间的参数重试
-node scripts/pilot_api_run.mjs --clamp-generate
-
-# 自定义次数/输出目录
-node scripts/pilot_api_run.mjs --runs 10 --out pilot-artifacts/api --clamp-generate
+# 诊断模式（仅排查越界用）：原值被拒后按区间夹紧重试；结果不能作为验收证据
+node scripts/pilot_api_run.mjs --runs 10 --out pilot-artifacts/api-diagnostic --clamp-generate
 ```
 
 参数说明：
@@ -62,12 +76,12 @@ node scripts/pilot_api_run.mjs --runs 10 --out pilot-artifacts/api --clamp-gener
 |---|---|---|
 | `--runs` | 10 | 运行次数；计划固定为 4×sedan、3×suv、3×pickup |
 | `--out` | `pilot-artifacts/api` | 产物目录 |
-| `--clamp-generate` | 关闭 | 生成阶段先发前端原值；若 422 再发按后端区间夹紧的值。**仅用于验证下游链路**，原值失败会记录在 `stages.generateExact` |
+| `--clamp-generate` | 关闭 | 诊断专用：原值 422 后按区间夹紧重试。**验收要求 0 次 422，启用本开关的结果不得作为通过证据**；原值结果记录在 `stages.generateExact` |
 
 ### 2.2 每轮做什么
 
 1. `POST /api/v1/car/generate`（前端参数集，扁平 `params`）；
-2. `POST /api/v1/import-export/import`（转成分组参数，先发原值、再夹紧重试）；
+2. `POST /api/v1/import-export/import`（经共享映射表转成后端英文分组键，默认发原值、不做夹紧重试）；
 3. `GET /api/v1/import-export/{sid}/preview`（3D 点云）；
 4. `POST /api/v1/import-export/{sid}/export` 依次导出 `step/glb/stl/obj/json`；
 5. `GET /api/v1/import-export/{sid}/download/{filename}` 取回文件；
@@ -91,22 +105,26 @@ pilot-artifacts/api/
 
 | 字段 | 含义 | 通过判据 |
 |---|---|---|
-| `successRate` | 成功轮次占比 | 100 |
-| `p95GenerateMs` | 生成 P95 | ≤ 1000ms（中试实测 343） |
-| `p95ExportMs` | 单格式导出 P95 | ≤ 3000ms（实测 1209） |
-| `p95TotalMs` | 端到端 P95 | ≤ 5000ms（实测 1723） |
-| `productOpenRate` | 产物可打开率 | 100（实测 100） |
-| `paramFidelity` | 尺寸保真（长/宽/高误差 %） | 长 ≤0.1、宽 ≤0.5、高 ≤5 |
-| `exactImportRejected` | 原始前端参数被区间校验拒绝的次数 | 严格模式下应 >0（证明校验生效） |
-| `memStart`/`memEnd` | 后端 WS 内存与句柄 | 无持续增长（实测 472.5→493.9MB，841→844） |
+| `successRate` | 成功轮次占比 | 100（本轮 100） |
+| `p95GenerateMs` | 生成 P95 | ≤ 1000ms（本轮 386；上轮 343） |
+| `p95ExportMs` | 单格式导出 P95 | ≤ 3000ms（本轮 1388；上轮 1209） |
+| `p95TotalMs` | 端到端 P95（含 `generateExact` 与 `validate` 下载校验） | ≤ 5000ms（本轮 2355） |
+| `productOpenRate` | 产物可打开率 | 100（本轮 100） |
+| `paramFidelity` | 尺寸保真（长/宽/高误差 %） | 长 ≤0.1、宽 ≤0.5、高 ≤5（本轮 L 0、W 0.07–0.54、H 2.35–3.10） |
+| `exactImportRejected` | 原始设计值被区间校验拒绝次数 | **0**（非 0 说明映射表或默认载荷仍越界） |
+| `memStart`/`memEnd` | 后端 WS 内存与句柄 | 无持续增长（本轮 494.6→486.1MB，845→847） |
 
-中试基线（2026-11-04，10 轮）：`successRate 100`、`p95GenerateMs 343`、`p95ExportMs 1209`、
-`p95TotalMs 1723`、`productOpenRate 100`、STEP 822 实体、GLB 26,820 顶点 / 49,892 面。
+中试基线（2026-11-05，严格直通、无夹紧，10 轮）：`successRate 100`、`p95GenerateMs 386`、
+`p95ExportMs 1388`、`p95TotalMs 2355`、`productOpenRate 100`、`exactImportRejected 0/10`、
+STEP 822 实体、GLB 26,820 顶点 / 49,892 面。
 
-> **当前预期（参数严格校验后）**：前端原始参数中 `roof_height`、`wheel_diameter`、
-> `windshield_angle`（导入侧还有 `c_pillar_angle`）超出后端区间，默认运行会在生成阶段如实记录
-> 422；这是第 1 项参数契约的验收证据，不是脚本故障。要跑完整下游链路请加 `--clamp-generate`，
-> 或等待"参数以哪端为准"的裁决。
+> `p95TotalMs` 统计口径自 2026-11-05 起包含 `generateExact`（同一生成请求的重复计时）与
+> `validate`（下载 + 格式校验），与 2026-11-04 的 1723ms **不可直接比较**；可比项仅为
+> `p95GenerateMs`（343→386）与 `p95ExportMs`（1209→1388）。两者均在绝对门限内，但相对上轮上浮
+> 12%–15%，归因见第 5 节「P95 上浮」。
+
+> **参数单真源后的预期**：默认路径应 **0 次 422**。若出现 422，必须按「哪个键 / 哪个入口 /
+> 哪个默认载荷」逐条定位修复，**不得用 `--clamp-generate` 掩盖后当作通过**。
 
 ---
 
@@ -158,18 +176,20 @@ pilot-artifacts/ui/
 
 | 字段 | 含义 | 通过判据 |
 |---|---|---|
-| `successRate` | 成功轮次占比 | 100（实测 100） |
-| `p95UiElapsedMs` | 单轮全流程 P95 | ≤ 20000ms（实测 10801） |
-| `p95GenerateRequestMs` | 生成请求 P95 | ≤ 3000ms（实测 1728） |
-| `svgOpenRate` | 2D 图纸可打开率 | 100（实测 100） |
-| `sceneRegistryStable` | 场景注册稳定（NURBS 存在、mesh>20） | `true` |
-| `meshSeries`/`triSeries` | 每轮 mesh/三角面 | 同车型内稳定（中试：sedan 147 mesh/77,006 tris；suv 138/77,348；pickup 143/79,638；与基线脚本的统计口径不同，各自门限为准） |
-| `heapStartMB`→`heapEndMB` | JS 堆 | 无持续增长（实测 59.7→60.8） |
-| `pageErrors`/`consoleErrors`/`failedRequests` | 运行期错误 | 全部为 0 |
+| `successRate` | 成功轮次占比 | 100（本轮 100） |
+| `p95UiElapsedMs` | 单轮全流程 P95 | ≤ 20000ms（本轮 5731；上轮 10801） |
+| `p95GenerateRequestMs` | 生成请求 P95 | ≤ 3000ms（本轮 953；上轮 1728） |
+| `svgOpenRate` | 2D 图纸可打开率 | 100（本轮 100） |
+| `sceneRegistryStable` | 场景注册稳定（NURBS 存在、mesh>20） | `true`（本轮 true） |
+| `meshSeries`/`triSeries` | 每轮 mesh/三角面 | 同车型内稳定（本轮 sedan 145/75,398；suv 147/75,684；pickup 141/78,006；与基线脚本统计口径不同，各自门限为准） |
+| `heapStartMB`→`heapEndMB` | JS 堆 | 无持续增长（本轮 61.9→59.9） |
+| `pageErrors`/`consoleErrors`/`failedRequests` | 运行期错误 | 全部为 0（本轮 0/0/0） |
 
-> **当前预期（参数严格校验后）**：Designer 默认品牌参数同样含越界值，点击生成会收到 422，
-> UI 中试会在生成阶段失败。这是**参数源未裁决**导致的已知影响，不是渲染回归；
-> 待裁决后重跑。若只需验证渲染链路，可在页面手动把滑杆调到后端区间内再生成。
+> **必须用硬件 GL**（`PILOT_GL=hw`）。SwiftShader 下 pickup 单轮实测可达 120s（2026-11-05
+> 校验中复现 120,407ms），P95 判据完全失真，不能作为验收数据。
+
+> **参数单真源后的预期**：Designer 切换车型后滑杆已按 `/car/parameters/schema` 的区间约束，
+> 点击生成应 0 次 422；出现 422 即说明某个默认载荷未落在区间内，按 3.4 的「键/入口/载荷」定位。
 
 ---
 
@@ -183,8 +203,8 @@ node scripts/car3d_baseline_compare.mjs --cur docs/preview/car3d-baseline/_curre
 ```
 
 判据（[`docs/CAR3D_BASELINE.md`](./CAR3D_BASELINE.md)）：像素差 ≤1%、三角面 ±0.5%、
-bbox ±5%、网格数 ±0.5%；退出码 0 通过。中试当次实测：10/10 分镜、像素差 0.00–0.01%、
-201 mesh / 43,268 tris、hinge 1.222。
+bbox ±5%、网格数 ±0.5%；退出码 0 通过。中试当次实测：10/10 分镜、像素差 0.00%、
+201 mesh / 43,246 tris、hinge 1.222。
 
 ---
 
@@ -195,9 +215,11 @@ bbox ±5%、网格数 ±0.5%；退出码 0 通过。中试当次实测：10/10 �
 | 脚本卡住/每轮数百秒，run05 超时 | `PILOT_GL` 未设 → SwiftShader；外部孤儿 `server/index.js` 占 CPU | 设 `PILOT_GL=hw`；结束无关 node 进程 |
 | `ReferenceError: disposeObject is not defined`，3D 仅 1 mesh | `useCarScene.js` 漏 import（已修复，提交 e7042516） | 确认修复在 HEAD；重跑 |
 | 后端 8000 无响应 / 进程消失 | 后台子进程被宿主清理；冷启动未完成 | 用独立 top-level 进程启动；等 25–35s 健康检查 |
-| 生成 422 | 参数越界（严格校验生效） | 见 2.4/3.4 的"当前预期"，不要夹紧后当作通过 |
-| 生成仍**不**返回 422、越界值被接受 | 8000 端口是契约提交之前的旧进程 | 重启后端后再跑；`/api/v1/car/generate` 由旧代码持有则新契约不生效 |
-| 基线 0/10 | 工作区未提交几何改动改变 mesh/tris | 用 HEAD worktree 复核；几何改动去留待裁决 |
+| 生成 422 | 前端默认载荷或映射仍越界（契约已单真源，正常应为 0） | 按「键 / 入口 / 默认载荷」逐条定位，改设计值或映射表；**不要夹紧掩盖** |
+| 生成**不**返回 422、越界值被接受 | 8000 端口是契约提交之前的旧进程 | 重启后端后再跑；旧进程持有 `/api/v1/car/generate` 则新契约不生效 |
+| 基线 0/10 | 工作区存在未提交几何改动，或参数设计值改动后未重采 | 用 HEAD worktree 复核；有意变更需整体重采并提交基线 |
+| API `p95ExportMs` 上浮（1209→1388ms，门限 3000 内） | 同机外部孤儿 `node server/index.js` 长期占用 CPU（本轮累计 CPU 68,884s） | 结束无关 node 进程后复测；仅当绝对门限内且归因明确时才作参考 |
+| UI P95 数百秒、单轮 120s | `PILOT_GL` 未设 → SwiftShader 软渲染（pickup 78k tris 最明显） | 必须设 `PILOT_GL=hw`；该数据不得用于验收 |
 
 ---
 
@@ -211,11 +233,11 @@ npx vitest run
 # 2) 后端全量测试
 cd backend; python -m pytest tests -q; cd ..
 
-# 3) 后端中试（严格记录 422；完整链路加 --clamp-generate）
-node scripts/pilot_api_run.mjs
+# 3) 后端中试（严格直通，要求 0 次 422）
+node scripts/pilot_api_run.mjs --runs 10 --out pilot-artifacts/api
 
 # 4) 前端中试（务必硬件 GL）
-$env:PILOT_GL='hw'; node scripts/pilot_ui_run.mjs; Remove-Item Env:PILOT_GL
+$env:PILOT_GL='hw'; node scripts/pilot_ui_run.mjs --runs 10 --out pilot-artifacts/ui; Remove-Item Env:PILOT_GL
 
 # 5) 3D 基线
 node scripts/car3d_baseline.mjs --out docs/preview/car3d-baseline/_current
