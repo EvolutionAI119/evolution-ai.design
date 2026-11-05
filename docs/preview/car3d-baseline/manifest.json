@@ -27,7 +27,7 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -52,19 +52,19 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
         "min": [
           -2.585,
           0,
-          -1.9
+          -1.946
         ],
         "max": [
           2.464,
           1.472,
-          1.9
+          1.946
         ]
       }
     },
@@ -77,7 +77,7 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -102,19 +102,19 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
         "min": [
           -2.585,
           0,
-          -1.9
+          -1.946
         ],
         "max": [
           2.464,
           1.472,
-          1.9
+          1.946
         ]
       }
     },
@@ -127,7 +127,7 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -152,19 +152,19 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
         "min": [
           -2.585,
           0,
-          -1.9
+          -1.946
         ],
         "max": [
           2.464,
           1.472,
-          1.9
+          1.946
         ]
       }
     },
@@ -177,7 +177,7 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -202,19 +202,19 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
         "min": [
           -2.585,
           0,
-          -1.9
+          -1.946
         ],
         "max": [
           2.464,
           1.472,
-          1.9
+          1.946
         ]
       }
     },
@@ -227,7 +227,7 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 0,
       "doorBtnActive": false,
       "bbox": {
@@ -252,19 +252,19 @@
       "width": 1280,
       "height": 800,
       "meshes": 201,
-      "triangles": 43268,
+      "triangles": 43246,
       "hingeMaxY": 1.222,
       "doorBtnActive": true,
       "bbox": {
         "min": [
           -2.585,
           0,
-          -1.9
+          -1.946
         ],
         "max": [
           2.464,
           1.472,
-          1.9
+          1.946
         ]
       }
     }
