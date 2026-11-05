@@ -1,4 +1,4 @@
-# 发布前最终检查清单（2026-11-04 穿模修复批次）
+﻿# 发布前最终检查清单（2026-11-04 穿模修复批次）
 
 > 用途：`gh-pages` 推送前的逐项核对表。**全部勾选后才允许推送公网**（既定流程：先本地验证，再发布）。
 > 关联报告：[CLIP_FIX_REPORT_20261104.md](./CLIP_FIX_REPORT_20261104.md)
@@ -7,10 +7,10 @@
 
 ## 0. 前置条件（当前状态：未提交）
 
-- [ ] 工作树改动已提交（本轮 8 改 3 新增，见 `git status`）
-  - 已改：`src/utils/carProfile.js`、`carInteriorLayout.js`、`carInterior.js`、`vite.config.js`、4 个测试文件
-  - 新增：`src/utils/carBodyEnvelope.js`、`src/tests/carBodyEnvelope.spec.js`、`docs/CLIP_FIX_REPORT_20261104.md`
-- [ ] 提交信息说明「为什么」：穿模四类根因 + 生产分块 TDZ 修复，而非仅列文件
+- [ ] 工作树改动已提交（本轮 12 改 5 新增，见 `git status`）
+  - 已改：`src/utils/carProfile.js`、`carInteriorLayout.js`、`carInterior.js`、`src/three/materials.js`、`src/three/assembly/assembleCar.js`、`src/three/geometry/bodyShell.js`、`src/three/geometry/smoothing.js`、`vite.config.js`、4 个测试文件
+  - 新增：`src/utils/carBodyEnvelope.js`、`src/tests/carBodyEnvelope.spec.js`、`src/tests/bodyShellAperture.spec.js`、`docs/CLIP_FIX_REPORT_20261104.md`
+- [ ] 提交信息说明「为什么」：穿模四类根因 + 车漆黑楔形四层根因 + 生产分块 TDZ 修复，而非仅列文件
 - [ ] `dist/` 为**本次修复后**的构建（当前 `dist/index.html` 时间戳晚于源码改动）
 - [ ] 无临时脚本残留（`scripts/_tmp_*.mjs` 应为 0 个）
 
@@ -23,8 +23,9 @@ Get-ChildItem scripts -Filter "_tmp_*"
 
 ## 1. 代码与测试门禁
 
-- [ ] 全量单测全绿：`853 / 853`，`25 / 25` 文件
+- [ ] 全量单测全绿：`861 / 861`，`26 / 26` 文件
 - [ ] 穿模门禁 spec 在列（`src/tests/carBodyEnvelope.spec.js`），且含「轮廓采样点全部有限」断言
+- [ ] 车漆黑楔形门禁 spec 在列（`src/tests/bodyShellAperture.spec.js`）：六车型内饰组 `sideFacing=0` / `upHorizontal=0`，`bodyMat` 为 `DoubleSide`
 - [ ] 六车型零可见穿模断言在列（suv / mpv / pickup 为本次重点）
 - [ ] 皮卡第二排「包络后缘 > cabRearX − 20mm」断言在列
 - [ ] `python scripts/pre_commit_check.py` → `GATE PASS`（facts / docs / sisa 三项）
