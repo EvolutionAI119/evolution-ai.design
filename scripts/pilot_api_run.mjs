@@ -11,6 +11,7 @@ import path from 'node:path'
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { carTypeParams } from '../src/config/carPresets.js'
+import { toBackendGroups, toBackendParams } from '../src/config/paramMapping.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const BASE = 'http://127.0.0.1:8000'
@@ -30,47 +31,22 @@ const PLAN = [
   ...Array(3).fill('pickup')
 ]
 
-// 前端扁平参数 → 后端分组参数（含前端/后端同名不同义的已知别名）
-const toGroups = (p) => {
-  const groups = {
-    整车尺寸: {
-      overall_length: p.overall_length,
-      overall_width: p.overall_width,
-      overall_height: p.overall_height,
-      wheelbase: p.wheel_base,
-      track_width: p.track_width,
-      ground_clearance: p.ground_clearance
-    },
-    车身部件: {
-      hood_length: p.hood_length,
-      roof_length: p.roof_height,
-      wheel_diameter: p.wheel_diameter,
-      door_open_angle: p.door_open_angle,
-      wheel_arch_flatten: p.wheel_arch_flatten
-    },
-    造型角度: {
-      windshield_angle: p.windshield_angle,
-      rear_window_angle: p.rear_window_angle,
-      c_pillar_angle: p.rear_slant_angle,
-      side_glass_angle: p.side_glass_angle,
-      glass_barrel_angle: p.glass_barrel_angle
-    }
-  }
-  return groups
-}
+// 前端扁平参数 → 后端分组参数：统一走前端共享映射表，禁止在此重复猜测别名
+// （roof_height→roof_length；rear_slant_angle 保持独立；分组名用后端英文稳定键）
+const toGroups = (p) => toBackendGroups(p)
 
-// 已知后端区间（用于“夹紧后重试”，只为验证导出链路仍可产出，不掩盖前端越界事实）
+// 已知后端区间（仅 --clamp-generate 显式启用时使用；默认路径如实记录越界，不夹紧掩盖）
 const RANGES = {
-  整车尺寸: {
+  overall_dimensions: {
     overall_length: [3000, 6000], overall_width: [1500, 2200], overall_height: [1200, 2000],
     wheelbase: [2000, 4000], track_width: [1400, 1800], ground_clearance: [100, 300]
   },
-  车身部件: {
+  body_components: {
     hood_length: [1000, 1600], roof_length: [1200, 2000], wheel_diameter: [350, 600],
-    door_open_angle: [0, 80], wheel_arch_flatten: [0, 0.5]
+    door_open_angle: [0, 80], wheel_arch_flatten: [0, 0.5], b_pillar_width_ratio: [0.02, 0.12]
   },
-  造型角度: {
-    windshield_angle: [55, 75], rear_window_angle: [10, 60], c_pillar_angle: [20, 45],
+  styling_angles: {
+    windshield_angle: [55, 75], rear_window_angle: [10, 60], rear_slant_angle: [5, 60],
     side_glass_angle: [1, 40], glass_barrel_angle: [0, 20]
   }
 }
@@ -80,7 +56,7 @@ const clampGroups = (groups) => {
     out[g] = {}
     for (const [k, v] of Object.entries(items)) {
       const r = RANGES[g]?.[k]
-      out[g][k] = r ? Math.min(r[1], Math.max(r[0], v)) : v
+      out[g][k] = r && typeof v === 'number' ? Math.min(r[1], Math.max(r[0], v)) : v
     }
   }
   return out
@@ -205,7 +181,7 @@ for (let i = 0; i < TOTAL; i++) {
   // 1) 算法生成（严格校验后前端原始参数可能越界：默认如实记录 422；
   //    传 --clamp-generate 时再用夹紧参数重试，保证「生成→导出」链路仍可验证）
   const groups = toGroups(params)
-  let gen = await req('POST', '/api/v1/car/generate', { car_type: type, params })
+  let gen = await req('POST', '/api/v1/car/generate', { car_type: type, params: toBackendParams(params) })
   let genData = null
   try { genData = JSON.parse(gen.data) } catch { genData = null }
   rec.stages.generateExact = {
