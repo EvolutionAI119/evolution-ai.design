@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 
+import gc
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -482,6 +483,13 @@ def create_app() -> FastAPI:
         settings.exports_path.mkdir(parents=True, exist_ok=True)
         # 安全围栏 · 技术监测：显式初始化审计事件流（幂等；懒加载兜底见 emit）
         configure_audit()
+        # 生成链路 GC 尖峰治理：一次 /car/generate 会分配约 1.7MB 容器对象，
+        # 默认阈值下约每两次请求触发一次 gen2 全量扫描（实测单次 130~145ms，
+        # 期间进程 CPU 打满、响应耗时由 ~120ms 抬到 ~250ms）。
+        # 被扫描对象几乎全是启动期常驻对象（路由/ORM/Pydantic/配置），
+        # 将其移入永久代后不再参与自动回收扫描；响应内容不变（逐字节哈希一致）。
+        gc.collect()
+        gc.freeze()
 
     @app.get("/api/v1/health")
     def health_check():
